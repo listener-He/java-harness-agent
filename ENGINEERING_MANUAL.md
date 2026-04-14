@@ -5,8 +5,8 @@
 ### A Comprehensive Guide to Agent-Driven Engineering for Backend Development
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](ENGINEERING_MANUAL.md)
-[![Language](https://img.shields.io/badge/language-English-green.svg)](ENGINEERING_MANUAL.md)
-[![中文版](https://img.shields.io/badge/中文版-available-red.svg)](ENGINEERING_MANUAL_zh.md)
+[![Language](https://img.shields.io/badge/language-English-green.svg)](README.md)
+[![中文版](https://img.shields.io/badge/中文版-available-red.svg)](README_zh.md)
 
 **Sustainable • Interruptible • Self-Correcting • Anti-Bloat**
 
@@ -14,7 +14,7 @@
 
 ---
 
-**Language Versions**: [English (this file)](ENGINEERING_MANUAL.md) | [中文版工程手册](README_zh.md)
+**Language Versions**: [English (this file)](ENGINEERING_MANUAL.md) | [中文版工程手册](ENGINEERING_MANUAL_zh.md)
 
 </div>
 

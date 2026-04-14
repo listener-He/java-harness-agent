@@ -5,8 +5,8 @@
 ### 面向后端研发的 Agent 驱动工程完整指南
 
 [![版本](https://img.shields.io/badge/version-1.0.0-blue.svg)](ENGINEERING_MANUAL_zh.md)
-[![语言](https://img.shields.io/badge/语言-中文-green.svg)](ENGINEERING_MANUAL_zh.md)
-[![English](https://img.shields.io/badge/English-available-red.svg)](ENGINEERING_MANUAL.md)
+[![语言](https://img.shields.io/badge/语言-中文-green.svg)](README_zh.md)
+[![English](https://img.shields.io/badge/English-available-red.svg)](README.md)
 
 **可持续 • 可中断 • 自我纠偏 • 防膨胀**
 
