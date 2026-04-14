@@ -6,7 +6,7 @@
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](ENGINEERING_MANUAL.md)
 [![Language](https://img.shields.io/badge/language-English-green.svg)](ENGINEERING_MANUAL.md)
-[![中文版](https://img.shields.io/badge/中文版-available-red.svg)](README_zh.md)
+[![中文版](https://img.shields.io/badge/中文版-available-red.svg)](ENGINEERING_MANUAL_zh.md)
 
 **Sustainable • Interruptible • Self-Correcting • Anti-Bloat**
 

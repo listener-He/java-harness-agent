@@ -4,6 +4,7 @@
 
 ### 面向后端研发的 Agent 驱动工程框架
 
+[![English](https://img.shields.io/badge/English-available-red.svg)](README.md)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://www.oracle.com/java/)
 [![Agent-Ready](https://img.shields.io/badge/Agent-Ready-brightgreen.svg)](README.md)
@@ -11,7 +12,7 @@
 
 **通过意图驱动架构，将自然语言需求转化为生产级代码**
 
-[English](README.md) | [工程手册](ENGINEERING_MANUAL.md) | [快速开始](#-快速上手)
+ [工程手册](ENGINEERING_MANUAL_zh.md) | [快速开始](#-快速上手)
 
 </div>
 
