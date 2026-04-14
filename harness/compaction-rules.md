@@ -31,7 +31,7 @@
 
 ## 3. 归档与死链清理 (Archiving & Cleanup)
 
-1. **移动文件**：知识提取完成后，将当前 Session 的 `openspec.md` 移动到 `.trae/llm_wiki/archive/specs_archive/` 目录下（重命名为 `YYYYMMDD_特性名称.md`）。
+1. **移动文件**：知识提取完成后，将当前 Session 的 `openspec.md` 移动到 `.trae/llm_wiki/archive/` 目录下（重命名为 `YYYYMMDD_特性名称.md`）。
 2. **清理活跃索引**：打开 `.trae/llm_wiki/wiki/specs/index.md`，将该特性的链接从中删除，或移至底部的“已归档”区块。
 
 ---

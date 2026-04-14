@@ -11,21 +11,21 @@
 
 ### 1. 核心愿景与规范 (Philosophy & Schema)
 *了解我们为何而建，以及必须遵守的代码与设计模板。*
-- 🎯 **[系统愿景与设计原则 (Purpose)](/.trae/llm_wiki/purpose.md)**：开发前的必读哲学，防过度设计。
-- 📑 **[全局规范与契约模板 (Schema)](/.trae/llm_wiki/schema/openspec_schema.md)**：所有提案和设计的骨架标准。
-- 🛠️ **[系统能力与技能大盘 (Skills)](/.trae/skills/trae-skill-index/SKILL.md)**：当前可用的所有专有 Agent 技能（如系统设计、Java 规范、文档同步等）汇总。
+- 🎯 **[系统愿景与设计原则 (Purpose)](purpose.md)**：开发前的必读哲学，防过度设计。
+- 📑 **[全局规范与契约模板 (Schema)](schema/openspec_schema.md)**：所有提案和设计的骨架标准。
+- 🛠️ **[系统能力与技能大盘 (Skills)](../skills/trae-skill-index/SKILL.md)**：当前可用的所有专有 Agent 技能（如系统设计、Java 规范、文档同步等）汇总。
 
 ### 2. 活跃知识域 (Active Domains)
 *按业务与技术切分的子域入口（一级节点）。需要什么上下文，点进哪个 Index。*
 
-- 🧠 **[领域模型与业务字典 (Domain)](/.trae/llm_wiki/wiki/domain/index.md)**：包含业务名词解释、状态机、行业数据字典等。
-- 🔌 **[API 契约 (API)](/.trae/llm_wiki/wiki/api/index.md)**：系统所有对外暴露的接口定义与入参出参汇总。
-- 🗄️ **[数据模型 (Data)](/.trae/llm_wiki/wiki/data/index.md)**：数据库表结构、索引设计、ER 图。
-- 🏗️ **[架构决策 (Architecture)](/.trae/llm_wiki/wiki/architecture/index.md)**：核心架构图、ADR (架构决策记录)。
-- 📝 **[活跃需求 (Specs)](/.trae/llm_wiki/wiki/specs/index.md)**：当前正在开发或近期完成的 `openspec.md` 需求文档集。
-- 🧪 **[测试策略 (Testing)](/.trae/llm_wiki/wiki/testing/index.md)**：单元测试规范与核心模块的测试策略说明。
-- 🚦 **[动态偏好与禁忌 (Preferences)](/.trae/llm_wiki/wiki/preferences/index.md)**：人类主观打分沉淀的历史经验和代码红线。*(注意：当偏好库超过 500 行时，Agent 必须主动将其按域或技术栈拆分为子文件，如 `preferences/java_rules.md`)*
+- 🧠 **[领域模型与业务字典 (Domain)](wiki/domain/index.md)**：包含业务名词解释、状态机、行业数据字典等。
+- 🔌 **[API 契约 (API)](wiki/api/index.md)**：系统所有对外暴露的接口定义与入参出参汇总。
+- 🗄️ **[数据模型 (Data)](wiki/data/index.md)**：数据库表结构、索引设计、ER 图。
+- 🏗️ **[架构决策 (Architecture)](wiki/architecture/index.md)**：核心架构图、安全基线、ADR (架构决策记录)。
+- 📝 **[活跃需求 (Specs)](wiki/specs/index.md)**：当前正在开发或近期完成的 `openspec.md` 需求文档集。
+- 🧪 **[测试与证据 (Testing)](wiki/testing/index.md)**：单元测试规范、客观测试证据落盘标准。
+- 🚦 **[动态偏好与禁忌 (Preferences)](wiki/preferences/index.md)**：人类主观打分沉淀的历史经验、安全红线和代码禁忌。*(注意：当偏好库超过 500 行时，Agent 必须主动将其按域或技术栈拆分为子文件)*
 
 ### 3. 冷数据区 (Cold Storage)
 *已失效或被提取后的历史资料。*
-- 🧊 **[归档区 (Archive)](/.trae/llm_wiki/archive/index.md)**：已完成提取的过期需求文档和废弃规范。
+- 🧊 **[归档区 (Archive)](archive/index.md)**：已完成提取的过期需求文档和废弃规范。
