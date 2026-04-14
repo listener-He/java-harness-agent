@@ -1,6 +1,26 @@
-# 后端 Agent 研发体系（工程规范手册 + Onboarding）
+<div align="center">
 
-本目录定义了一套面向**后端研发**的 Agent 驱动工程流程：通过“意图网关 + 生命周期状态机 + 知识图谱（LLM Wiki）+ 技能（Skills）+ 钩子纠偏（Hooks）”实现可持续演进、可断点续传、可自我纠偏、防膨胀的研发闭环。
+# 后端 Agent 研发体系<br/>工程规范手册 + Onboarding
+
+### 面向后端研发的 Agent 驱动工程完整指南
+
+[![版本](https://img.shields.io/badge/version-1.0.0-blue.svg)](ENGINEERING_MANUAL_zh.md)
+[![语言](https://img.shields.io/badge/语言-中文-green.svg)](ENGINEERING_MANUAL_zh.md)
+[![English](https://img.shields.io/badge/English-available-red.svg)](ENGINEERING_MANUAL.md)
+
+**可持续 • 可中断 • 自我纠偏 • 防膨胀**
+
+[快速上手](#0-新人-3-分钟上手) | [架构总览](#1-架构总览) | [使用场景](#01-如何使用多场景示例)
+
+---
+
+**语言版本**: [中文（本文件）](ENGINEERING_MANUAL_zh.md) | [English Manual](ENGINEERING_MANUAL.md)
+
+</div>
+
+---
+
+本目录定义了一套面向**后端研发**的 Agent 驱动工程流程：通过"意图网关 + 生命周期状态机 + 知识图谱（LLM Wiki）+ 技能（Skills）+ 钩子纠偏（Hooks）"实现可持续演进、可断点续传、可自我纠偏、防膨胀的研发闭环。
 
 本文档既是工程规范手册，也是新人快速上手指南。
 
@@ -528,3 +548,19 @@ flowchart TB
 - 知识漏斗：[intent/context-funnel.md](intent/context-funnel.md)
 - 生命周期：[harness/lifecycle.md](harness/lifecycle.md)
 - Hooks：[harness/hooks.md](harness/hooks.md)
+
+---
+
+**相关文档**：
+- **📘 主 README（中文）**：[README_zh.md](README_zh.md) - 项目概览与快速入门指南
+- **🇺🇸 English Version**: [ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md) - Complete English documentation
+
+---
+
+<div align="center">
+
+**为可持续的智能后端开发而构建**
+
+[⬆ 返回顶部](#后端-agent-研发体系br工程规范手册--onboarding)
+
+</div>
