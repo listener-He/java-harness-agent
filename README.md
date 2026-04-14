@@ -9,7 +9,9 @@
 [![Agent-Ready](https://img.shields.io/badge/Agent-Ready-brightgreen.svg)](README.md)
 [![Lifecycle](https://img.shields.io/badge/Lifecycle-Stable-success.svg)](harness/lifecycle.md)
 
-*Transforming Natural Language Requirements into Production-Ready Code through Intent-Driven Architecture*
+**Transforming Natural Language Requirements into Production-Ready Code through Intent-Driven Architecture**
+
+[简体中文](README_zh.md) | [Engineering Manual](ENGINEERING_MANUAL.md) | [Quick Start](#-quick-start)
 
 </div>
 
@@ -491,7 +493,8 @@ Failure rollback + max retry threshold (3 attempts). Stop and request human inte
 
 ## 📖 Related Documentation
 
-- **📘 Engineering Manual**: [ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md) - Comprehensive Chinese guide with detailed workflows
+- **📘 Engineering Manual**: [ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md) - Comprehensive English guide with detailed workflows
+- **🇨🇳 Chinese README**: [README_zh.md](README_zh.md) - Complete Chinese version of this README
 - **📌 Project Rules**: [project-rules.md](project-rules.md) - Master rule entry point
 - **🗺️ Knowledge Graph**: [llm_wiki/sitemap.md](llm_wiki/sitemap.md) - Root navigation
 - **📝 Contract Template**: [llm_wiki/schema/openspec_schema.md](llm_wiki/schema/openspec_schema.md)
