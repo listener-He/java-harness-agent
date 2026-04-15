@@ -208,7 +208,7 @@ flowchart TB
 本层解决“知识如何组织、如何检索、如何防膨胀”的问题。
 
 - **关键文件**
-    - [.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
+    - [KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
         - **做什么**：知识图谱根节点，只挂载顶级域入口；是 Agent 的强制检索起点。
     - schema/
         - [schema/index.md](.agents/llm_wiki/schema/index.md)：规范域索引（路由器），告诉你“该读哪份契约/该跳到哪份流程”。
