@@ -13,10 +13,12 @@ import sys
 
 WIKI_DIR = ".agents/llm_wiki"
 
+EXIT_FAIL = 2
+
 def check_wiki():
     if not os.path.exists(WIKI_DIR):
         print(f"❌ 目录不存在: {WIKI_DIR}")
-        return
+        return EXIT_FAIL
 
     all_md_files = glob.glob(f"{WIKI_DIR}/**/*.md", recursive=True)
     all_md_files = [os.path.normpath(f) for f in all_md_files]
@@ -72,25 +74,32 @@ def check_wiki():
     print("\n⚠️  【超长文件预警】 (>500行，建议按业务拆分):")
     if oversized_files:
         for f, lines in oversized_files:
-            print(f"  - {f} ({lines} 行)")
+            print(f"  - [WARN] {f} ({lines} 行)")
     else:
         print("  ✅ 无超长文件")
 
     print("\n🔗  【死链检测】:")
     if dead_links:
         for src, link in dead_links:
-            print(f"  - [{src}] 包含了无效链接 -> '{link}'")
+            print(f"  - [FAIL] [{src}] 包含了无效链接 -> '{link}'")
     else:
         print("  ✅ 无死链")
 
     print("\n🏝️  【孤岛检测】 (未被任何 Index 引用的活跃知识):")
     if orphans:
         for o in orphans:
-            print(f"  - {o}")
+            print(f"  - [WARN] {o}")
     else:
         print("  ✅ 无孤岛文件")
         
-    print("\n💡 提示: 本工具仅作诊断。如果存在问题，请 Agent 根据需要自行决定是否修复或重构。")
+    if dead_links:
+        print("\n结论: ❌ FAIL")
+        return EXIT_FAIL
+    if oversized_files or orphans:
+        print("\n结论: ⚠️ WARN")
+        return 0
+    print("\n结论: ✅ OK")
+    return 0
 
 if __name__ == "__main__":
-    check_wiki()
+    raise SystemExit(check_wiki())

@@ -18,7 +18,7 @@
 ### Phase 2: Propose (方案提案 / 系统设计)
 - **挂载技能**：`[devops-system-design](../skills/devops-system-design/SKILL.md)`, `[devops-task-planning](../skills/devops-task-planning/SKILL.md)`
 - **动作**：严格遵循 `../llm_wiki/schema/openspec_schema.md` 的契约模板。进行数据库表设计、ER图绘制、API与架构可扩展性设计。
-- **产出**：在 `../llm_wiki/wiki/specs/` 下生成涵盖接口、数据模型、业务逻辑的 `openspec.md`。
+- **产出**：在 `../llm_wiki/wiki/specs/` 下生成 `openspec.md`。当 Risk Level 为 LOW 时允许使用 Slim Spec（见 `openspec_schema.md`）；MEDIUM/HIGH 必须使用完整模板。
 
 ### Phase 3: Review (技术审查)
 - **挂载技能**：`[devops-review-and-refactor](../skills/devops-review-and-refactor/SKILL.md)`, `[global-backend-standards](../skills/global-backend-standards/SKILL.md)`

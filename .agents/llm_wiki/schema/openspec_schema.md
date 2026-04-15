@@ -4,6 +4,29 @@
 
 ---
 
+## Slim Spec（仅用于 LOW 风险）
+
+当变更敏感度为 LOW 时，允许将 `openspec.md` 降级为 Slim Spec，用于降低审批疲劳与文档成本。Slim Spec 必须包含如下结构，并带 `spec_mode: SLIM` 标记。
+
+```markdown
+spec_mode: SLIM
+
+# 变更摘要 (Change Summary)
+- 改了什么：一句话
+- 为什么改：一句话
+
+# 影响面清单 (Scope of Change)
+- 文件/模块清单（路径即可）
+
+# 风险与回滚 (Risk & Rollback)
+- 为什么是 LOW：一句话
+- 回滚步骤：一句话或步骤列表
+
+# 验证与证据 (Verification & Evidence)
+- 本地验证：构建/测试/手工步骤（写你实际跑过的）
+- 证据：日志片段/截图/链接（如有）
+```
+
 ## 1. 需求背景 (Context)
 - **业务目标**：一句话说明为什么要加这个功能。
 - **影响面清单 (Scope of Change)**：列出本次特性将新增或修改的模块/包/关键类（为 Review 和 QA 提供客观 Checklist）。

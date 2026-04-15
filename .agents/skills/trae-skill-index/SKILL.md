@@ -44,6 +44,7 @@ This is the root node of the Skill Knowledge Graph. Use this index to navigate t
 - **[code-review-checklist](../code-review-checklist/SKILL.md)**: MANDATORY Code Review Checklist.
 - **[api-documentation-rules](../api-documentation-rules/SKILL.md)**: API接口文档规范。
 - **[database-documentation-sync](../database-documentation-sync/SKILL.md)**: 数据库文档同步规范。
+- **[linter-severity-standard](../linter-severity-standard/SKILL.md)**: Linter 严重等级（FAIL/WARN/IGNORE）标准。
 - **[oss-module](../aliyun-oss/SKILL.md)**: OSS对象存储模块。
 
 ### 5. 🕸️ Meta Skills (元技能)

@@ -9,6 +9,23 @@ import os
 import sys
 import re
 
+EXIT_FAIL = 2
+
+SLIM_MARKER_PATTERN = re.compile(r"^\s*spec_mode\s*:\s*SLIM\s*$", re.IGNORECASE | re.MULTILINE)
+
+FULL_REQUIRED_HEADERS = [
+    (re.compile(r"#+\s+.*(API|接口).*", re.IGNORECASE), "API 契约模块"),
+    (re.compile(r"#+\s+.*(数据|模型|表结构|Data Model).*", re.IGNORECASE), "数据模型模块"),
+    (re.compile(r"#+\s+.*(BDD|验收|Acceptance Criteria).*", re.IGNORECASE), "验收标准模块"),
+]
+
+SLIM_REQUIRED_HEADERS = [
+    (re.compile(r"#+\s+.*(变更摘要|Change Summary).*", re.IGNORECASE), "变更摘要"),
+    (re.compile(r"#+\s+.*(影响面|Scope of Change).*", re.IGNORECASE), "影响面清单"),
+    (re.compile(r"#+\s+.*(风险|回滚|Rollback).*", re.IGNORECASE), "风险与回滚"),
+    (re.compile(r"#+\s+.*(验证|证据|Verification|Evidence).*", re.IGNORECASE), "验证与证据"),
+]
+
 def check_schema(file_path):
     if not os.path.exists(file_path):
         print(f"❌ 文件不存在: {file_path}")
@@ -18,36 +35,46 @@ def check_schema(file_path):
         content = f.read()
 
     print(f"📊 === 契约文件体检: {file_path} ===")
-    
-    # 必备标题检查
-    required_headers = [
-        (r'#+\s+.*(API|接口).*', "API 契约模块"),
-        (r'#+\s+.*(数据|模型|表结构).*', "数据模型模块"),
-        (r'#+\s+.*BDD.*', "BDD 验收标准")
-    ]
-    
-    missing_headers = []
-    for pattern, name in required_headers:
-        if not re.search(pattern, content, re.IGNORECASE):
-            missing_headers.append(name)
-            
-    if missing_headers:
-        print("⚠️  发现缺失关键结构:")
-        for m in missing_headers:
-            print(f"  - 找不到与 '{m}' 相关的标题结构")
-    else:
-        print("✅ 关键标题结构完整")
 
-    # 代码块检查
-    if "```json" not in content:
-        print("⚠️  警告: 文件中未发现 ```json 代码块，前端/QA 可能缺乏可用的 Mock 数据。")
+    is_slim = bool(SLIM_MARKER_PATTERN.search(content))
+    if is_slim:
+        print("模式: SLIM")
+        required = SLIM_REQUIRED_HEADERS
     else:
-        print("✅ 包含 JSON 数据样例")
-        
-    print("\n💡 提示: 这是一个可选的防呆检查，请 Agent 根据具体业务判断是否需要补充。")
+        print("模式: FULL")
+        required = FULL_REQUIRED_HEADERS
+
+    fail_items = []
+    for pattern, name in required:
+        if not pattern.search(content):
+            fail_items.append(name)
+
+    if fail_items:
+        print("发现项:")
+        for item in fail_items:
+            print(f"  - [FAIL] 缺失: {item}")
+    else:
+        print("关键结构: ✅ OK")
+
+    warn_items = []
+    if not is_slim and "```json" not in content:
+        warn_items.append("未发现 ```json 代码块")
+        print("发现项:")
+        print("  - [WARN] 未发现 ```json 代码块")
+    elif not is_slim:
+        print("JSON Example: ✅ OK")
+
+    if fail_items:
+        print("\n结论: ❌ FAIL")
+        return EXIT_FAIL
+    if warn_items:
+        print("\n结论: ⚠️ WARN")
+        return 0
+    print("\n结论: ✅ OK")
+    return 0
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python schema_checker.py <path_to_openspec.md>")
         sys.exit(1)
-    check_schema(sys.argv[1])
+    raise SystemExit(check_schema(sys.argv[1]))

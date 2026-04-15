@@ -38,10 +38,8 @@
 - **只读校验（不修改文件）**：
   - OpenSpec 结构体检：`python .agents/scripts/wiki/schema_checker.py <path_to_openspec.md>`
   - Wiki 图谱体检：`python .agents/scripts/wiki/wiki_linter.py`
-- **失败策略（触发 fail_hook）**：
-  - 发现死链：必须修复或移除引用后再流转
-  - OpenSpec 缺失关键模块（API/数据模型/BDD）：必须补齐后再流转
-  - 超长预警（>500 行）：允许作为 WARNING，但必须给出拆分计划或明确理由
+- **严重等级**：按 `[linter-severity-standard](../skills/linter-severity-standard/SKILL.md)` 执行。
+- **失败策略（触发 fail_hook）**：以脚本 exit code 为准：存在 FAIL（非 0）则必须停止推进并回退修复；WARN 允许推进但必须解释与给出后续动作。
 - **可选证据**（允许写入报告文件）：`python .agents/scripts/wiki/zero_residue_audit.py`（默认输出到 `.agents/workflow/runs/`）
 
 #### Explorer 阶段补丁：explore_report.md 的“核心上下文锚点”
