@@ -27,17 +27,19 @@ description: "意图网关技能：接收自然语言需求，执行上下文检
 
 ### 步骤 2：意图映射与冲突检测 (Intent Mapping & Conflict Resolution)
 根据用户输入，将任务映射到一个或多个意图（意图词表详见 `.agents/router/ROUTER.md`）。
-- 例如：“帮我理一下这个需求，然后出个表结构设计”，对应意图为 `[Explore.Requirements, Propose.Data]`。
+- 例如：“帮我理一下这个需求，然后出个表结构设计”，对应意图为 `[Explore.Req, Propose.Data]`。
+- 例如：“代码体检/架构评审”，对应意图为 `[Audit.Codebase]`（只读）。
+- 例如：“规范是什么/某文档怎么理解”，对应意图为 `[QA.Doc]`（默认只读，必要时可选 `QA.Doc.Actionize`）。
 - **冲突检测**：如果判定并发执行会导致同一个文件（如某个 `index.md`）的写入冲突，必须安排串行执行，或建立独立的 Session 沙箱。
 
-### 步骤 3：生成启动计划 (Generate Launch Plan)
-在决定了意图和流程后，你需要生成一份 `launch_spec.md`。
-- **动作**：将 `launch_spec.md` 写入当前工作区或指定的 Session 目录中。
-- **内容必须包含**：
-  - 本次任务的意图集合。
-  - 在步骤1中收集到的关键上下文和禁忌。
-  - 即将进入的 Harness 生命周期阶段（如：直接进入 Explorer 阶段，或直接进入 Implement 阶段）。
+### 步骤 3：可选发车：生成启动计划 (Optional Launch Plan)
+仅当满足以下条件之一时，才生成 `launch_spec.md` 并进入 Harness 生命周期：
+- 用户明确要“做需求/改代码/出方案并落地”，且意图队列包含 `Explore.Req`、`Propose.*`、`Implement.*`、`QA.Test` 等生命周期意图
+- 用户在 `QA.Doc` 的 Actionize Gate 明确同意，将其升级为 `QA.Doc.Actionize`
+
+严格只读意图（如 `Audit.Codebase`、默认的 `QA.Doc`）只交付报告/答案，不生成 `launch_spec.md`，不写回 Wiki。
 
 ### 步骤 4：交付与流转 (Handoff)
 - 结束本技能的执行，并在回复中告知用户：
-  > "意图网关分析完毕。已根据 Sitemap 检索并装配了上下文，启动计划已生成。接下来我们将进入 Harness 生命周期的 `[目标阶段名称]` 阶段。"
+  > "意图网关分析完毕。已根据 Sitemap 检索并装配了上下文。"
+  > "若已发车：启动计划已生成，接下来进入 Harness 生命周期的 `[目标阶段名称]`。"

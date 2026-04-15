@@ -17,10 +17,23 @@
 | 意图代码 | 触发场景 | 对应生命周期阶段 | 关联核心技能 (Skills) | 并发规则 (Concurrency) |
 |---|---|---|---|---|
 | `Explore.Req` | 需求分析与任务拆分 | Explorer | `[product-manager-expert](../skills/product-manager-expert/SKILL.md)`, `[prd-task-splitter](../skills/prd-task-splitter/SKILL.md)` | 串行 |
+| `Audit.Codebase` | 代码体检 / 架构评审 / 风险扫描（只读） | Gateway (Read-only) | `[intent-gateway](../skills/intent-gateway/SKILL.md)`, `[devops-review-and-refactor](../skills/devops-review-and-refactor/SKILL.md)` | 串行 |
+| `QA.Doc` | 基于 Wiki/需求文档的问答（只读） | Gateway (Doc QA) | `[intent-gateway](../skills/intent-gateway/SKILL.md)` | 串行 |
+| `QA.Doc.Actionize` | 将问答结论动作化为可执行意图队列（需确认） | Gateway -> Lifecycle (HITL) | `[intent-gateway](../skills/intent-gateway/SKILL.md)`, `[devops-lifecycle-master](../skills/devops-lifecycle-master/SKILL.md)` | 串行 |
 | `Propose.API` | 新增/修改接口与架构 | Propose -> Review | `[devops-system-design](../skills/devops-system-design/SKILL.md)` | 顺序无关 (可与 Data 并发) |
 | `Propose.Data`| 新增/修改数据库表或索引 | Propose -> Review | `[devops-system-design](../skills/devops-system-design/SKILL.md)` | 顺序无关 (可与 API 并发) |
 | `Implement.Code` | 编写业务逻辑代码 / 修复 Bug | Implement -> QA | `[devops-feature-implementation](../skills/devops-feature-implementation/SKILL.md)`, `[devops-bug-fix](../skills/devops-bug-fix/SKILL.md)` | 必须等待 Propose 结束 |
 | `QA.Test` | 编写测试用例 / 代码审查 | QA | `[devops-testing-standard](../skills/devops-testing-standard/SKILL.md)` | 必须等待 Implement 结束 |
+
+### 流程 1：只读审计（`Audit.Codebase`）
+- 目标：对当前代码库做分析/评估，产出结构化审计报告与证据引用
+- 只读约束：不改代码、不写 Wiki、不生成 launch spec、不进入 lifecycle
+- 允许动作：只读检索与读取；允许运行测试/构建，但不得修改任何已跟踪文件
+- 产出要求：每条结论必须带证据（文件路径 + 行号范围）与影响/建议
+
+### 流程 2：Doc QA（`QA.Doc` / `QA.Doc.Actionize`）
+- `QA.Doc`：按知识漏斗逐层下钻，输出带引用的答案（引用到 Wiki/需求段落，必要时补充代码引用）
+- `QA.Doc.Actionize`：将问答结论转成“可执行意图队列”，必须先问一次是否发车；同意后才生成 launch spec 并进入生命周期
 
 ## 🚀 第三动作：生成启动计划 (Launch Spec) 与发车
 > **⚠️ 引擎 SOP 纪律 (Standard Engine)**：大模型（Agent）是整个流程的“智能主控引擎”。在生成任务队列并发车时，你有充分的灵活性：
