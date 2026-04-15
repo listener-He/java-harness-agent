@@ -10,6 +10,16 @@
 [![Agent-Ready](https://img.shields.io/badge/Agent-Ready-brightgreen.svg)](README.md)
 [![Lifecycle](https://img.shields.io/badge/Lifecycle-Stable-success.svg)](.agents/workflow/LIFECYCLE.md)
 
+## ⚠️ Critical Positioning Statement
+
+> **This project is NOT a traditional development framework or human-facing tool.**
+>
+> **It is a pure LLM-native specification harness designed exclusively for autonomous execution by large language models.**
+>
+> From day one, this system was architected to be **driven entirely by AI agents**, not humans. Every component—from the Intent Gateway to the Lifecycle State Machine, from the Knowledge Graph to the Skills Matrix—is engineered as executable protocol for LLMs to self-navigate, self-correct, and self-evolve.
+>
+> **If you're evaluating this with "human developer tool" standards, you will fundamentally misunderstand its design philosophy.** This is infrastructure for machine-to-machine coordination in software engineering workflows.
+
 **Java Harness Agent is an Agent-driven backend engineering framework designed for sustainable software development. It integrates an Intent Gateway, a 6-phase Lifecycle State Machine, Contract-first OpenSpec design, and a drill-down LLM Wiki (Knowledge Graph) to prevent context bloat, enabling AI agents to autonomously build, test, and self-correct production-ready code.**
 
 [Engineering Manual](ENGINEERING_MANUAL.md) | [Quick Start](#-quick-start)
