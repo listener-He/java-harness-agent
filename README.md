@@ -10,7 +10,7 @@
 [![Agent-Ready](https://img.shields.io/badge/Agent-Ready-brightgreen.svg)](README.md)
 [![Lifecycle](https://img.shields.io/badge/Lifecycle-Stable-success.svg)](.agents/workflow/LIFECYCLE.md)
 
-**Transforming Natural Language Requirements into Production-Ready Code through Intent-Driven Architecture**
+**Java Harness Agent is an Agent-driven backend engineering framework designed for sustainable software development. It integrates an Intent Gateway, a 6-phase Lifecycle State Machine, Contract-first OpenSpec design, and a drill-down LLM Wiki (Knowledge Graph) to prevent context bloat, enabling AI agents to autonomously build, test, and self-correct production-ready code.**
 
 [Engineering Manual](ENGINEERING_MANUAL.md) | [Quick Start](#-quick-start)
 
