@@ -342,6 +342,83 @@ sequenceDiagram
 
 ---
 
+## 🔍 Read-Only & Q&A Modes
+
+### Audit Mode (`Audit.Codebase`)
+
+**Goal**: Perform read-only analysis and assessment of the codebase, producing structured audit reports
+
+**Constraints**:
+- ❌ No code modifications
+- ❌ No Wiki writes
+- ❌ No launch spec generation
+- ❌ No lifecycle entry
+
+**Allowed Operations**:
+- ✅ Read-only retrieval and reading
+- ✅ Run tests/builds (but do not modify any tracked files)
+
+**Output Requirements**: Each conclusion must include evidence (file path + line range) and impact/recommendations
+
+---
+
+### Documentation Q&A Mode (`QA.Doc` / `QA.Doc.Actionize`)
+
+#### QA.Doc (Pure Q&A)
+- **Goal**: Answer questions based on Wiki/requirement documents
+- **Method**: Drill down through knowledge funnel, output answers with citations
+- **Citations**: Wiki/requirement paragraphs, supplement with code references when needed
+- **Does NOT trigger lifecycle**
+
+#### QA.Doc.Actionize (Q&A to Action)
+- **Goal**: Convert Q&A conclusions into executable intent queues
+- **Critical Step**: Must ask user whether to "launch" first
+- **After Confirmation**: Generate launch spec and enter lifecycle
+- **Without Confirmation**: Output answer only, no side effects
+
+---
+
+## 🚦 Intent Gateway: From Natural Language to Executable Queues
+
+The Intent Gateway transforms natural language requirements into structured intent queues that drive the entire lifecycle.
+
+### Core Intent Types
+
+| Intent Code | Trigger Scenario | Lifecycle Phase | Key Skills | Concurrency |
+|---|---|---|---|---|
+| `Explore.Req` | Requirement analysis & task splitting | Explorer | product-manager-expert, prd-task-splitter | Sequential |
+| `Audit.Codebase` | Code audit / architecture review (read-only) | Gateway | intent-gateway, devops-review-and-refactor | Sequential |
+| `QA.Doc` | Wiki/requirements Q&A (read-only) | Gateway | intent-gateway | Sequential |
+| `QA.Doc.Actionize` | Convert Q&A to executable intents (needs confirmation) | Gateway → Lifecycle | intent-gateway, devops-lifecycle-master | Sequential |
+| `Propose.API` | Add/modify interfaces & architecture | Propose → Review | devops-system-design | Parallel with Data |
+| `Propose.Data` | Add/modify database tables or indexes | Propose → Review | devops-system-design | Parallel with API |
+| `Implement.Code` | Write business logic / fix bugs | Implement → QA | devops-feature-implementation, devops-bug-fix | Wait for Propose |
+| `QA.Test` | Write test cases / code review | QA | devops-testing-standard | Wait for Implement |
+
+### Launch Spec Template (Machine-Friendly, Supports Breakpoint Resume)
+
+Status values: `PENDING`, `IN_PROGRESS`, `DONE`, `WAITING_APPROVAL`, `FAILED`
+
+```markdown
+# Launch Spec - {YYYYMMDD_HHMMSS}
+
+## State Machine
+| Intent | Status | Phase | Artifact/Log | Failed_Reason |
+|---|---|---|---|---|
+| Explore.Req | IN_PROGRESS | 1_Explorer | `explore_report.md` | - |
+| Propose.API | PENDING | - | - | - |
+| Implement.Code | PENDING | - | - | - |
+
+## Breakpoint Resume
+- If session interrupted/human delayed: First action is to read this file upon wake-up.
+- If `WAITING_APPROVAL` exists: Enter Approval checkpoint, read corresponding `openspec.md`, wait for human confirmation, then switch status to `IN_PROGRESS` and proceed to Implement.
+- If `FAILED` exists: Stop automatic progression, report `Failed_Reason` to human and request intervention.
+```
+
+**Key Discipline**: The state machine table drives workflow progression. Only update `Status/Phase/Failed_Reason` fields to avoid checkbox matching failures and state confusion.
+
+---
+
 ## 🛡️ Self-Correction Mechanisms
 
 | Mechanism | Trigger | Condition | Effect | Evaluation |
@@ -364,6 +441,9 @@ sequenceDiagram
 - **[devops-lifecycle-master](.agents/skills/devops-lifecycle-master/SKILL.md)** - Lifecycle orchestration, enforces phase boundaries
 - **[skill-graph-manager](.agents/skills/skill-graph-manager/SKILL.md)** - Maintains skill knowledge graph bidirectional links
 - **[trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)** - Master skill index for quick capability discovery
+
+#### Read-Only & Q&A
+- **[intent-gateway](.agents/skills/intent-gateway/SKILL.md)** - Supports `Audit.Codebase` (code audit), `QA.Doc` (doc Q&A), `QA.Doc.Actionize` (Q&A to action)
 
 #### Requirements & Design
 - **[product-manager-expert](.agents/skills/product-manager-expert/SKILL.md)** - Requirement clarification, scope definition, acceptance criteria
@@ -407,6 +487,7 @@ sequenceDiagram
 | **Implement** | devops-feature-implementation, devops-bug-fix, utils-usage-standard, aliyun-oss |
 | **QA** | devops-testing-standard, code-review-checklist |
 | **Archive** | api-documentation-rules, database-documentation-sync |
+| **Audit/QA.Doc** | intent-gateway, devops-review-and-refactor |
 
 ---
 

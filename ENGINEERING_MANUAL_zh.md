@@ -115,9 +115,23 @@
 
 - 目标：当你不确定是否破坏了图谱或契约结构时，做一次确定性体检。
 - 可选工具（仅输出报告，不改文件）：
-    - 图谱体检：[wiki\_linter.py](.agents/scripts/wiki/wiki_linter.py)（死链/孤岛/超长预警）
-    - 契约体检：[schema\_checker.py](.agents/scripts/wiki/schema_checker.py)（关键结构缺失检查）
-    - 偏好体检：[pref\_tag\_checker.py](.agents/scripts/wiki/pref_tag_checker.py)（规则标签规范检查）
+    - 图谱体检：[wiki_linter.py](.agents/scripts/wiki/wiki_linter.py)（死链/孤岛/超长预警）
+    - 契约体检：[schema_checker.py](.agents/scripts/wiki/schema_checker.py)（关键结构缺失检查）
+    - 偏好体检：[pref_tag_checker.py](.agents/scripts/wiki/pref_tag_checker.py)（规则标签规范检查）
+
+### 场景 I：只读审计（`Audit.Codebase`）
+
+- 目标：对代码库进行只读分析、评估，产出结构化审计报告与证据引用
+- 只读约束：不改代码、不写 Wiki、不生成 launch spec、不进入 lifecycle
+- 允许动作：只读检索与读取；允许运行测试/构建，但不得修改任何已跟踪文件
+- 产出要求：每条结论必须带证据（文件路径 + 行号范围）与影响/建议
+- 典型场景：架构评审、代码质量扫描、技术债务评估
+
+### 场景 J：文档问答（`QA.Doc` / `QA.Doc.Actionize`）
+
+- **QA.Doc**：按知识漏斗逐层下钻，输出带引用的答案（引用到 Wiki/需求段落，必要时补充代码引用）
+- **QA.Doc.Actionize**：将问答结论转成“可执行意图队列”，必须先问一次是否发车；同意后才生成 launch spec 并进入生命周期
+- 典型场景：查询业务规则、了解 API 用法、确认架构决策
 
 ***
 
@@ -289,6 +303,57 @@ flowchart LR
   D --> E[写入 launch_spec]
   E --> F[进入 Lifecycle]
 ```
+
+#### 核心意图类型与并发规则
+
+| 意图代码 | 触发场景 | 生命周期阶段 | 关键技能 | 并发规则 |
+|---|---|---|---|---|
+| `Explore.Req` | 需求分析与任务拆分 | Explorer | product-manager-expert, prd-task-splitter | 串行 |
+| `Audit.Codebase` | 代码体检 / 架构评审（只读） | Gateway | intent-gateway, devops-review-and-refactor | 串行 |
+| `QA.Doc` | Wiki/需求文档问答（只读） | Gateway | intent-gateway | 串行 |
+| `QA.Doc.Actionize` | 将问答转为可执行意图（需确认） | Gateway → Lifecycle | intent-gateway, devops-lifecycle-master | 串行 |
+| `Propose.API` | 新增/修改接口与架构 | Propose → Review | devops-system-design | 可与 Data 并行 |
+| `Propose.Data` | 新增/修改数据库表或索引 | Propose → Review | devops-system-design | 可与 API 并行 |
+| `Implement.Code` | 编写业务逻辑 / 修复 Bug | Implement → QA | devops-feature-implementation, devops-bug-fix | 等待 Propose 结束 |
+| `QA.Test` | 编写测试用例 / 代码审查 | QA | devops-testing-standard | 等待 Implement 结束 |
+
+#### 只读审计流程（`Audit.Codebase`）
+
+- **目标**：对代码库进行只读分析、评估，产出结构化审计报告与证据引用
+- **约束**：不改代码、不写 Wiki、不生成 launch spec、不进入 lifecycle
+- **允许动作**：只读检索与读取；允许运行测试/构建，但不得修改任何已跟踪文件
+- **产出要求**：每条结论必须带证据（文件路径 + 行号范围）与影响/建议
+- **典型场景**：架构评审、代码质量扫描、技术债务评估
+
+#### 文档问答流程（`QA.Doc` / `QA.Doc.Actionize`）
+
+- **QA.Doc**：按知识漏斗逐层下钻，输出带引用的答案（引用到 Wiki/需求段落，必要时补充代码引用）。不触发生命周期。
+- **QA.Doc.Actionize**：将问答结论转成“可执行意图队列”，必须先问一次是否发车；同意后才生成 launch spec 并进入生命周期。未确认时：仅输出答案，无副作用。
+- **典型场景**：查询业务规则、了解 API 用法、确认架构决策
+
+#### Launch Spec 模板与断点续传机制
+
+Agent 必须在 `router/runs/` 下生成 `launch_spec_{timestamp}.md` 以持久化意图队列并跟踪状态。
+
+**状态枚举**：`PENDING`, `IN_PROGRESS`, `DONE`, `WAITING_APPROVAL`, `FAILED`
+
+```markdown
+# 启动计划 - {YYYYMMDD_HHMMSS}
+
+## 状态机
+| Intent | Status | Phase | Artifact/Log | Failed_Reason |
+|---|---|---|---|---|
+| Explore.Req | IN_PROGRESS | 1_Explorer | `explore_report.md` | - |
+| Propose.API | PENDING | - | - | - |
+| Implement.Code | PENDING | - | - | - |
+
+## 断点续传
+- 若会话中断/人类延迟回复：唤醒后第一动作先读本文件。
+- 若存在 `WAITING_APPROVAL`：进入 Approval 等待点，读取对应 `openspec.md`，等待人类确认后将状态切回 `IN_PROGRESS` 并进入 Implement。
+- 若存在 `FAILED`：停止自动推进，向人类报告 `Failed_Reason` 并请求介入。
+```
+
+**关键纪律**：状态机表格驱动工作流推进。只更新 `Status/Phase/Failed_Reason` 字段，避免 Checkbox 匹配失败与状态错乱。完成每个 Archive 阶段后，Agent 必须主动回溯读取 `launch_spec.md`，以决定是执行下一个意图还是向用户汇报完成。
 
 ### 3.2 Context Funnel（知识漏斗：正向检索 + 反向写回）
 
@@ -488,10 +553,14 @@ flowchart TB
   用途：维护技能知识图谱的双向链接与中心索引一致性。\
   使用阶段：技能创建/修改后。\
   触发：新增技能或调整技能关系时。
-- [trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)\
+- **[trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)**\
   用途：技能总索引入口，帮助 Agent 快速找到合适的专家能力。\
   使用阶段：任何阶段（查能力）。\
   触发：不确定用哪个技能解决当前问题时。
+- **[intent-gateway](.agents/skills/intent-gateway/SKILL.md)**（只读模式）\
+  用途：支持 `Audit.Codebase`（代码审计）、`QA.Doc`（文档问答）、`QA.Doc.Actionize`（问答转行动）。\
+  使用阶段：Gateway（只读）。\
+  触发：需要只读分析或文档问答时。
 
 ### 6.2 生命周期阶段 → 推荐技能
 
@@ -503,6 +572,7 @@ flowchart TB
 | Implement | devops-feature-implementation, devops-bug-fix, utils-usage-standard, aliyun-oss                        |
 | QA        | devops-testing-standard, code-review-checklist                                                         |
 | Archive   | api-documentation-rules, database-documentation-sync                                                   |
+| Audit/QA.Doc | intent-gateway, devops-review-and-refactor                                                          |
 
 ***
 

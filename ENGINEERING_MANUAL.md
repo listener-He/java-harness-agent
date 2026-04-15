@@ -123,6 +123,20 @@ This section provides typical "follow-along" playbooks. The rules remain consist
   - Contract health check: [schema_checker.py](.agents/scripts/wiki/schema_checker.py) (critical structure missing checks)
   - Preference health check: [pref_tag_checker.py](.agents/scripts/wiki/pref_tag_checker.py) (rule tag规范 checks)
 
+### Scenario I: Read-Only Audit (`Audit.Codebase`)
+
+- **Goal**: Perform read-only analysis and assessment of the codebase, producing structured audit reports with evidence citations.
+- **Read-Only Constraints**: No code modifications, no Wiki writes, no launch spec generation, no lifecycle entry.
+- **Allowed Operations**: Read-only retrieval and reading; allowed to run tests/builds but must not modify any tracked files.
+- **Output Requirements**: Each conclusion must include evidence (file path + line range) and impact/recommendations.
+- **Typical Scenarios**: Architecture review, code quality scanning, technical debt assessment.
+
+### Scenario J: Documentation Q&A (`QA.Doc` / `QA.Doc.Actionize`)
+
+- **QA.Doc**: Drill down through knowledge funnel, output answers with citations (cite Wiki/requirement paragraphs, supplement with code references when needed).
+- **QA.Doc.Actionize**: Convert Q&A conclusions into "executable intent queues"; must ask user whether to "launch" first; only generate launch spec and enter lifecycle after confirmation.
+- **Typical Scenarios**: Query business rules, understand API usage, confirm architecture decisions.
+
 ---
 
 ## 1. Architecture Overview
@@ -286,6 +300,57 @@ flowchart LR
   D --> E[Write launch_spec]
   E --> F[Enter Lifecycle]
 ```
+
+#### Core Intent Types & Concurrency Rules
+
+| Intent Code | Trigger Scenario | Lifecycle Phase | Key Skills | Concurrency |
+|---|---|---|---|---|
+| `Explore.Req` | Requirement analysis & task splitting | Explorer | product-manager-expert, prd-task-splitter | Sequential |
+| `Audit.Codebase` | Code audit / architecture review (read-only) | Gateway | intent-gateway, devops-review-and-refactor | Sequential |
+| `QA.Doc` | Wiki/requirements Q&A (read-only) | Gateway | intent-gateway | Sequential |
+| `QA.Doc.Actionize` | Convert Q&A to executable intents (needs confirmation) | Gateway → Lifecycle | intent-gateway, devops-lifecycle-master | Sequential |
+| `Propose.API` | Add/modify interfaces & architecture | Propose → Review | devops-system-design | Parallel with Data |
+| `Propose.Data` | Add/modify database tables or indexes | Propose → Review | devops-system-design | Parallel with API |
+| `Implement.Code` | Write business logic / fix bugs | Implement → QA | devops-feature-implementation, devops-bug-fix | Wait for Propose |
+| `QA.Test` | Write test cases / code review | QA | devops-testing-standard | Wait for Implement |
+
+#### Read-Only Audit Flow (`Audit.Codebase`)
+
+- **Goal**: Perform read-only analysis and assessment of the codebase, producing structured audit reports with evidence citations
+- **Constraints**: No code modifications, no Wiki writes, no launch spec generation, no lifecycle entry
+- **Allowed Operations**: Read-only retrieval and reading; allowed to run tests/builds but must not modify any tracked files
+- **Output Requirements**: Each conclusion must include evidence (file path + line range) and impact/recommendations
+- **Typical Scenarios**: Architecture review, code quality scanning, technical debt assessment
+
+#### Documentation Q&A Flow (`QA.Doc` / `QA.Doc.Actionize`)
+
+- **QA.Doc**: Drill down through knowledge funnel, output answers with citations (cite Wiki/requirement paragraphs, supplement with code references when needed). Does NOT trigger lifecycle.
+- **QA.Doc.Actionize**: Convert Q&A conclusions into "executable intent queues"; must ask user whether to "launch" first; only generate launch spec and enter lifecycle after confirmation. Without confirmation: output answer only, no side effects.
+- **Typical Scenarios**: Query business rules, understand API usage, confirm architecture decisions
+
+#### Launch Spec Template & Breakpoint Resume Mechanism
+
+The Agent must generate `launch_spec_{timestamp}.md` under `router/runs/` to persist the intent queue and track state.
+
+**Status Values**: `PENDING`, `IN_PROGRESS`, `DONE`, `WAITING_APPROVAL`, `FAILED`
+
+```markdown
+# Launch Spec - {YYYYMMDD_HHMMSS}
+
+## State Machine
+| Intent | Status | Phase | Artifact/Log | Failed_Reason |
+|---|---|---|---|---|
+| Explore.Req | IN_PROGRESS | 1_Explorer | `explore_report.md` | - |
+| Propose.API | PENDING | - | - | - |
+| Implement.Code | PENDING | - | - | - |
+
+## Breakpoint Resume
+- If session interrupted/human delayed: First action is to read this file upon wake-up.
+- If `WAITING_APPROVAL` exists: Enter Approval checkpoint, read corresponding `openspec.md`, wait for human confirmation, then switch status to `IN_PROGRESS` and proceed to Implement.
+- If `FAILED` exists: Stop automatic progression, report `Failed_Reason` to human and request intervention.
+```
+
+**Critical Discipline**: The state machine table drives workflow progression. Only update `Status/Phase/Failed_Reason` fields to avoid checkbox matching failures and state confusion. After completing each Archive phase, the Agent must actively read back `launch_spec.md` to decide whether to execute the next intent or report completion to the user.
 
 ### 3.2 Context Funnel (Forward Retrieval + Reverse Write-back)
 
@@ -515,6 +580,10 @@ Contract template details: [OpenSpec Schema](.agents/llm_wiki/schema/openspec_sc
   Purpose: Master skill index entry, helping Agents quickly find suitable expert capabilities.\
   Usage Phase: Any phase (capability lookup).\
   Trigger: Uncertain which skill to use for current problem.
+- **[intent-gateway](.agents/skills/intent-gateway/SKILL.md)** (Read-Only Mode)\
+  Purpose: Supports `Audit.Codebase` (code audit), `QA.Doc` (doc Q&A), `QA.Doc.Actionize` (Q&A to action).\
+  Usage Phase: Gateway (read-only).\
+  Trigger: When read-only analysis or documentation Q&A is needed.
 
 ### 6.2 Lifecycle Phase → Recommended Skills
 
@@ -526,6 +595,7 @@ Contract template details: [OpenSpec Schema](.agents/llm_wiki/schema/openspec_sc
 | Implement | devops-feature-implementation, devops-bug-fix, utils-usage-standard, aliyun-oss |
 | QA | devops-testing-standard, code-review-checklist |
 | Archive | api-documentation-rules, database-documentation-sync |
+| Audit/QA.Doc | intent-gateway, devops-review-and-refactor |
 
 ---
 

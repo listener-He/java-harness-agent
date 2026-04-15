@@ -330,6 +330,83 @@ sequenceDiagram
 
 ---
 
+## 🔍 只读模式与问答模式
+
+### 审计模式（`Audit.Codebase`）
+
+**目标**：对代码库进行只读分析、评估，产出结构化审计报告
+
+**约束**：
+- ❌ 不修改代码
+- ❌ 不写入 Wiki
+- ❌ 不生成 launch spec
+- ❌ 不进入生命周期
+
+**允许操作**：
+- ✅ 只读检索与读取
+- ✅ 运行测试/构建（但不修改任何已跟踪文件）
+
+**产出要求**：每条结论必须附带证据（文件路径 + 行号范围）与影响/建议
+
+---
+
+### 文档问答模式（`QA.Doc` / `QA.Doc.Actionize`）
+
+#### QA.Doc（纯问答）
+- **目标**：基于 Wiki/需求文档回答问题
+- **方法**：按知识漏斗逐层下钻，输出带引用的答案
+- **引用**：Wiki/需求段落，必要时补充代码引用
+- **不触发生命周期**
+
+#### QA.Doc.Actionize（问答转行动）
+- **目标**：将问答结论转化为可执行意图队列
+- **关键步骤**：必须先询问用户是否"发车"
+- **确认后**：生成 launch spec 并进入生命周期
+- **未确认**：仅输出答案，不产生任何副作用
+
+---
+
+## 🚦 意图网关：从自然语言到可执行队列
+
+意图网关将自然语言需求转换为驱动整个生命周期的结构化意图队列。
+
+### 核心意图类型
+
+| 意图代码 | 触发场景 | 生命周期阶段 | 关键技能 | 并发规则 |
+|---|---|---|---|---|
+| `Explore.Req` | 需求分析与任务拆分 | Explorer | product-manager-expert, prd-task-splitter | 串行 |
+| `Audit.Codebase` | 代码体检 / 架构评审（只读） | Gateway | intent-gateway, devops-review-and-refactor | 串行 |
+| `QA.Doc` | Wiki/需求文档问答（只读） | Gateway | intent-gateway | 串行 |
+| `QA.Doc.Actionize` | 将问答转为可执行意图（需确认） | Gateway → Lifecycle | intent-gateway, devops-lifecycle-master | 串行 |
+| `Propose.API` | 新增/修改接口与架构 | Propose → Review | devops-system-design | 可与 Data 并行 |
+| `Propose.Data` | 新增/修改数据库表或索引 | Propose → Review | devops-system-design | 可与 API 并行 |
+| `Implement.Code` | 编写业务逻辑 / 修复 Bug | Implement → QA | devops-feature-implementation, devops-bug-fix | 等待 Propose 结束 |
+| `QA.Test` | 编写测试用例 / 代码审查 | QA | devops-testing-standard | 等待 Implement 结束 |
+
+### Launch Spec 模板（机器友好，支持断点续传）
+
+状态枚举：`PENDING`, `IN_PROGRESS`, `DONE`, `WAITING_APPROVAL`, `FAILED`
+
+```markdown
+# 启动计划 - {YYYYMMDD_HHMMSS}
+
+## 状态机
+| Intent | Status | Phase | Artifact/Log | Failed_Reason |
+|---|---|---|---|---|
+| Explore.Req | IN_PROGRESS | 1_Explorer | `explore_report.md` | - |
+| Propose.API | PENDING | - | - | - |
+| Implement.Code | PENDING | - | - | - |
+
+## 断点续传
+- 若会话中断/人类延迟回复：唤醒后第一动作先读本文件。
+- 若存在 `WAITING_APPROVAL`：进入 Approval 等待点，读取对应 `openspec.md`，等待人类确认后将状态切回 `IN_PROGRESS` 并进入 Implement。
+- 若存在 `FAILED`：停止自动推进，向人类报告 `Failed_Reason` 并请求介入。
+```
+
+**关键纪律**：状态机表格驱动工作流推进。只更新 `Status/Phase/Failed_Reason` 字段，避免 Checkbox 匹配失败与状态错乱。
+
+---
+
 ## 🛡️ 自我纠偏机制
 
 | 机制 | 触发点 | 触发条件 | 产生效果 | 评判方式 |
@@ -352,6 +429,9 @@ sequenceDiagram
 - **[devops-lifecycle-master](.agents/skills/devops-lifecycle-master/SKILL.md)** - 生命周期主控编排，强制执行阶段边界
 - **[skill-graph-manager](.agents/skills/skill-graph-manager/SKILL.md)** - 维护技能知识图谱双向链接
 - **[trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)** - 技能总索引，快速发现能力
+
+#### 只读与问答
+- **[intent-gateway](.agents/skills/intent-gateway/SKILL.md)** - 支持 `Audit.Codebase`（代码审计）、`QA.Doc`（文档问答）、`QA.Doc.Actionize`（问答转行动）
 
 #### 需求与设计
 - **[product-manager-expert](.agents/skills/product-manager-expert/SKILL.md)** - 需求澄清、范围界定、验收标准提炼
@@ -395,6 +475,7 @@ sequenceDiagram
 | **Implement** | devops-feature-implementation, devops-bug-fix, utils-usage-standard, aliyun-oss |
 | **QA** | devops-testing-standard, code-review-checklist |
 | **Archive** | api-documentation-rules, database-documentation-sync |
+| **Audit/QA.Doc** | intent-gateway, devops-review-and-refactor |
 
 ---
 
