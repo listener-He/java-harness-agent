@@ -40,7 +40,7 @@
 flowchart TB
     User[👤 User Requirements] --> IG[🎯 Intent Gateway]
     IG --> CF[🔍 Context Funnel]
-    CF --> Wiki[🧠 LLM Wiki<br/>Sitemap/Index/Docs]
+    CF --> Wiki[🧠 LLM Wiki<br/>KNOWLEDGE_GRAPH/Index/Docs]
     IG --> LS[📋 Launch Spec<br/>Intent Queue]
     LS --> LC[⚙️ Lifecycle Engine<br/>Explorer→Archive]
     LC --> HK[🛡️ Hooks System<br/>pre/guard/post/fail/loop]
@@ -61,13 +61,13 @@ flowchart TB
 
 | Component | Purpose | Location |
 |-----------|---------|----------|
-| **Intent Gateway** | Converts natural language to executable intent queues | [`intent/`](intent/) |
-| **Context Funnel** | Bidirectional knowledge retrieval & write-back system | [`intent/context-funnel.md`](intent/context-funnel.md) |
-| **Lifecycle Engine** | 6-phase state machine with automatic transitions | [`harness/lifecycle.md`](harness/lifecycle.md) |
-| **Hooks System** | Pre/post guards, failure recovery, loop control | [`harness/hooks.md`](harness/hooks.md) |
-| **LLM Wiki** | Hierarchical knowledge graph with sitemap root | [`llm_wiki/`](llm_wiki/) |
-| **Skills Matrix** | 25+ domain-specific expert capabilities | [`skills/`](skills/) |
-| **Scripts** | Deterministic quality checks & tooling | [`scripts/`](scripts/) |
+| **Intent Gateway** | Converts natural language to executable intent queues | [`.agents/router/ROUTER.md`](intent/) |
+| **Context Funnel** | Bidirectional knowledge retrieval & write-back system | [`.agents/router/CONTEXT_FUNNEL.md`](intent/context-funnel.md) |
+| **Lifecycle Engine** | 6-phase state machine with automatic transitions | [`.agents/workflow/LIFECYCLE.md`](harness/lifecycle.md) |
+| **Hooks System** | Pre/post guards, failure recovery, loop control | [`.agents/workflow/HOOKS.md`](harness/hooks.md) |
+| **LLM Wiki** | Hierarchical knowledge graph with sitemap root | [`.agents/llm_wiki/`](llm_wiki/) |
+| **Skills Matrix** | 25+ domain-specific expert capabilities | [`.agents/skills/`](skills/) |
+| **Scripts** | Deterministic quality checks & tooling | [`.agents/scripts/`](scripts/) |
 
 ---
 
@@ -331,7 +331,7 @@ sequenceDiagram
    - Data models → `wiki/data/index.md`
    - Domain terms → `wiki/domain/index.md`
    - Architecture decisions → `wiki/architecture/index.md`
-3. **Cold Storage**: Move original `openspec.md` to `llm_wiki/archive/`
+3. **Cold Storage**: Move original `openspec.md` to `.agents/llm_wiki/archive/`
 4. **Evolution**: Request human rating (1-10) for preference learning
 5. **Loop Check**: Read `launch_spec.md` → Next intent or complete
 
@@ -501,7 +501,7 @@ Cross-domain modifications require explicit authorization in `openspec.md` and c
 Failure rollback + max retry threshold (3 attempts). Stop and request human intervention when threshold reached.
 
 ### 🚫 No Knowledge Bloat
-- Specs must be archived after extraction to `llm_wiki/archive/`
+- Specs must be archived after extraction to `.agents/llm_wiki/archive/`
 - Stable knowledge must be extracted to domain indices
 - Indices exceeding 500 lines must be split into subdirectories
 
@@ -511,13 +511,13 @@ Failure rollback + max retry threshold (3 attempts). Stop and request human inte
 
 - **📘 Engineering Manual**: [ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md) - Comprehensive English guide with detailed workflows
 - **🇨🇳 Chinese README**: [README_zh.md](README_zh.md) - Complete Chinese version of this README
-- **📌 Project Rules**: [project-rules.md](project-rules.md) - Master rule entry point
-- **🗺️ Knowledge Graph**: [llm_wiki/sitemap.md](llm_wiki/sitemap.md) - Root navigation
-- **📝 Contract Template**: [llm_wiki/schema/openspec_schema.md](llm_wiki/schema/openspec_schema.md)
-- **🎯 Intent Gateway**: [intent/intent-gateway.md](intent/intent-gateway.md)
-- **🔍 Context Funnel**: [intent/context-funnel.md](intent/context-funnel.md)
-- **⚙️ Lifecycle**: [harness/lifecycle.md](harness/lifecycle.md)
-- **🛡️ Hooks**: [harness/hooks.md](harness/hooks.md)
+- **📌 Project Rules**: [AGENTS.md](AGENTS.md) - Master rule entry point
+- **🗺️ Knowledge Graph**: [.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) - Root navigation
+- **📝 Contract Template**: [.agents/llm_wiki/schema/openspec_schema.md](.agents/llm_wiki/schema/openspec_schema.md)
+- **🎯 Intent Gateway**: [.agents/router/ROUTER.md](.agents/router/ROUTER.md)
+- **🔍 Context Funnel**: [.agents/router/CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
+- **⚙️ Lifecycle**: [.agents/workflow/LIFECYCLE.md](.agents/workflow/LIFECYCLE.md)
+- **🛡️ Hooks**: [.agents/workflow/HOOKS.md](.agents/workflow/HOOKS.md)
 
 ---
 
@@ -525,7 +525,7 @@ Failure rollback + max retry threshold (3 attempts). Stop and request human inte
 
 Contributions are welcome! Please follow these guidelines:
 
-1. **Read First**: Study [ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md) and [project-rules.md](project-rules.md)
+1. **Read First**: Study [ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md) and [AGENTS.md](AGENTS.md)
 2. **Follow Lifecycle**: All changes must go through the 6-phase lifecycle
 3. **Update Knowledge**: Extract stable knowledge to appropriate domain indices
 4. **Run Diagnostics**: Execute optional scripts to verify graph health
