@@ -40,7 +40,7 @@
 flowchart TB
     User[👤 用户需求] --> IG[🎯 意图网关]
     IG --> CF[🔍 上下文漏斗]
-    CF --> Wiki[🧠 LLM Wiki<br/>Sitemap/Index/Docs]
+    CF --> Wiki[🧠 LLM Wiki<br/>KNOWLEDGE_GRAPH/Index/Docs]
     IG --> LS[📋 Launch Spec<br/>意图队列]
     LS --> LC[⚙️ 生命周期引擎<br/>Explorer→Archive]
     LC --> HK[🛡️ 钩子系统<br/>pre/guard/post/fail/loop]
@@ -61,13 +61,13 @@ flowchart TB
 
 | 组件 | 职责 | 位置 |
 |------|------|------|
-| **意图网关** | 将自然语言转换为可执行意图队列 | [`intent/`](intent/) |
-| **上下文漏斗** | 双向知识检索与写回系统 | [`intent/context-funnel.md`](intent/context-funnel.md) |
-| **生命周期引擎** | 6 阶段状态机，自动流转 | [`harness/lifecycle.md`](harness/lifecycle.md) |
-| **钩子系统** | 前置/后置守卫、失败恢复、循环控制 | [`harness/hooks.md`](harness/hooks.md) |
-| **LLM Wiki** | 以 sitemap 为根的分层知识图谱 | [`llm_wiki/`](llm_wiki/) |
-| **技能矩阵** | 25+ 领域专业专家能力 | [`skills/`](skills/) |
-| **脚本工具** | 确定性质量检查与辅助工具 | [`scripts/`](scripts/) |
+| **意图网关** | 将自然语言转换为可执行意图队列 | [`.agents/router/ROUTER.md`](.agents/router/ROUTER.md) |
+| **上下文漏斗** | 双向知识检索与写回系统 | [`.agents/router/CONTEXT_FUNNEL.md`](.agents/router/CONTEXT_FUNNEL.md) |
+| **生命周期引擎** | 6 阶段状态机，自动流转 | [`.agents/workflow/LIFECYCLE.md`](.agents/workflow/LIFECYCLE.md) |
+| **钩子系统** | 前置/后置守卫、失败恢复、循环控制 | [`.agents/workflow/HOOKS.md`](.agents/workflow/HOOKS.md) |
+| **LLM Wiki** | 以 sitemap 为根的分层知识图谱 | [`.agents/llm_wiki/`](.agents/llm_wiki/) |
+| **技能矩阵** | 25+ 领域专业专家能力 | [`.agents/skills/`](.agents/skills/) |
+| **脚本工具** | 确定性质量检查与辅助工具 | [`.agents/scripts/`](.agents/scripts/) |
 
 ---
 
@@ -83,19 +83,19 @@ flowchart TB
 
 #### 第一步：阅读项目规则 ⚡
 
-从 [项目规则](project-rules.md) 开始 - 这是定义执行纪律的主入口。
+从 [AGENTS.md](AGENTS.md) 开始 - 这是定义执行纪律的主入口。
 
 #### 第二步：导航知识图谱 🗺️
 
-从 [Sitemap 根节点](llm_wiki/sitemap.md) 开始，下钻到目标域：
-- **API 设计** → [`wiki/api/index.md`](llm_wiki/wiki/api/index.md)
-- **数据模型** → [`wiki/data/index.md`](llm_wiki/wiki/data/index.md)
-- **领域逻辑** → [`wiki/domain/index.md`](llm_wiki/wiki/domain/index.md)
-- **架构决策** → [`wiki/architecture/index.md`](llm_wiki/wiki/architecture/index.md)
+从 [Knowledge Graph Root](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) 开始，下钻到目标域：
+- **API 设计** → [`.agents/llm_wiki/wiki/api/index.md`](.agents/llm_wiki/wiki/api/index.md)
+- **数据模型** → [`.agents/llm_wiki/wiki/data/index.md`](.agents/llm_wiki/wiki/data/index.md)
+- **领域逻辑** → [`.agents/llm_wiki/wiki/domain/index.md`](.agents/llm_wiki/wiki/domain/index.md)
+- **架构决策** → [`.agents/llm_wiki/wiki/architecture/index.md`](.agents/llm_wiki/wiki/architecture/index.md)
 
 #### 第三步：运行第一个完整周期 🔄
 
-按照 [生命周期](harness/lifecycle.md) 完成一次任务：
+按照 [生命周期](.agents/workflow/LIFECYCLE.md) 完成一次任务：
 ```
 Explorer → Propose → Review → Approval → Implement → QA → Archive
 ```
@@ -402,49 +402,50 @@ sequenceDiagram
 
 ```
 java-harness-agent/
-├── intent/                  # 意图网关与上下文漏斗
-│   ├── catalog/             # Launch specs（意图队列）
-│   ├── intent-gateway.md    # 意图映射与队列组装
-│   └── context-funnel.md    # 双向知识导航
+├── .agents/
+│   ├── router/                  # 意图网关与上下文漏斗
+│   │   ├── catalog/             # Launch specs（意图队列）
+│   │   ├── ROUTER.md            # 意图映射与队列组装
+│   │   └── CONTEXT_FUNNEL.md    # 双向知识导航
+│   │
+│   ├── workflow/                # 生命周期状态机与钩子
+│   │   ├── LIFECYCLE.md         # 6 阶段状态机定义
+│   │   ├── HOOKS.md             # 拦截器规范
+│   │   └── ARCHIVE_WAL.md       # 知识压缩与并发写回规则
+│   │
+│   ├── llm_wiki/                # 知识图谱（sitemap/index/docs）
+│   │   ├── KNOWLEDGE_GRAPH.md   # 🗺️ 根节点（强制入口）
+│   │   ├── PURPOSE.md           # 系统哲学与设计原则
+│   │   ├── schema/              # 契约模板与模式
+│   │   │   ├── index.md
+│   │   │   └── openspec_schema.md
+│   │   ├── wiki/                # 活跃知识域
+│   │   │   ├── api/             # API 契约
+│   │   │   ├── data/            # 数据模型与模式
+│   │   │   ├── domain/          # 领域模型与业务字典
+│   │   │   ├── architecture/    # 架构决策（ADR）
+│   │   │   ├── specs/           # 活跃需求
+│   │   │   ├── testing/         # 测试策略
+│   │   │   └── preferences/     # 动态偏好与禁忌
+│   │   └── archive/             # 冷存储（已提取的规范）
+│   │
+│   ├── skills/                  # 专业能力（25+）
+│   │   ├── intent-gateway/
+│   │   ├── devops-lifecycle-master/
+│   │   ├── product-manager-expert/
+│   │   ├── java-backend-api-standard/
+│   │   ├── mybatis-sql-standard/
+│   │   └── ... (20+ 更多)
+│   │
+│   └── scripts/                 # 确定性工具（可选）
+│       ├── wiki/
+│       │   ├── wiki_linter.py       # 图谱健康检查（死链/孤岛）
+│       │   ├── schema_checker.py    # 契约结构验证
+│       │   └── pref_tag_checker.py  # 偏好标签规范检查
+│       └── harness/
+│           └── engine.py            # 队列状态辅助（可选）
 │
-├── harness/                 # 生命周期状态机与钩子
-│   ├── lifecycle.md         # 6 阶段状态机定义
-│   ├── hooks.md             # 拦截器规范
-│   └── compaction-rules.md  # 知识压缩规则
-│
-├── llm_wiki/                # 知识图谱（sitemap/index/docs）
-│   ├── sitemap.md           # 🗺️ 根节点（强制入口）
-│   ├── purpose.md           # 系统哲学与设计原则
-│   ├── schema/              # 契约模板与模式
-│   │   ├── index.md
-│   │   └── openspec_schema.md
-│   ├── wiki/                # 活跃知识域
-│   │   ├── api/             # API 契约
-│   │   ├── data/            # 数据模型与模式
-│   │   ├── domain/          # 领域模型与业务字典
-│   │   ├── architecture/    # 架构决策（ADR）
-│   │   ├── specs/           # 活跃需求
-│   │   ├── testing/         # 测试策略
-│   │   └── preferences/     # 动态偏好与禁忌
-│   └── archive/             # 冷存储（已提取的规范）
-│
-├── skills/                  # 专业能力（25+）
-│   ├── intent-gateway/
-│   ├── devops-lifecycle-master/
-│   ├── product-manager-expert/
-│   ├── java-backend-api-standard/
-│   ├── mybatis-sql-standard/
-│   └── ... (20+ 更多)
-│
-├── scripts/                 # 确定性工具（可选）
-│   ├── wiki/
-│   │   ├── wiki_linter.py       # 图谱健康检查（死链/孤岛）
-│   │   ├── schema_checker.py    # 契约结构验证
-│   │   └── pref_tag_checker.py  # 偏好标签规范检查
-│   └── harness/
-│       └── engine.py            # 队列状态辅助（可选）
-│
-├── project-rules.md         # 📌 项目级规则入口
+├── AGENTS.md                # 📌 项目级规则入口
 ├── ENGINEERING_MANUAL.md    # 详细工程手册（中文）
 └── README.md                # 项目概览（中文）
 ```
@@ -457,19 +458,19 @@ java-harness-agent/
 
 ### 图谱健康检查
 ```bash
-python scripts/wiki/wiki_linter.py
+python .agents/scripts/wiki/wiki_linter.py
 ```
 **检查项**：死链、孤立文件、索引长度警告
 
 ### 契约结构验证
 ```bash
-python scripts/wiki/schema_checker.py
+python .agents/scripts/wiki/schema_checker.py
 ```
 **检查项**：缺失关键段落、JSON 示例存在性
 
 ### 偏好标签检查
 ```bash
-python scripts/wiki/pref_tag_checker.py
+python .agents/scripts/wiki/pref_tag_checker.py
 ```
 **检查项**：规则标签规范，便于精准检索
 
@@ -478,7 +479,7 @@ python scripts/wiki/pref_tag_checker.py
 ## 🎯 工程红线
 
 ### 🚫 不盲搜
-始终从 [Sitemap](llm_wiki/sitemap.md) 开始 → 通过索引下钻。仅在索引失败时使用兜底搜索。
+始终从 [Knowledge Graph Root](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) 开始 → 通过索引下钻。仅在索引失败时使用兜底搜索。
 
 ### 🚫 不越权
 跨域修改需要在 `openspec.md` 中明确授权，并在 Review/HITL 阶段确认。
@@ -497,13 +498,13 @@ python scripts/wiki/pref_tag_checker.py
 
 - **📘 工程手册（英文版）**：[ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md) - 详细的英文工程指南与工作流
 - **🇺🇸 English README**: [README.md](README.md) - Complete English version of this README
-- **📌 项目规则**：[project-rules.md](project-rules.md) - 主规则入口
-- **🗺️ 知识图谱**：[llm_wiki/sitemap.md](llm_wiki/sitemap.md) - 根导航
-- **📝 契约模板**：[llm_wiki/schema/openspec_schema.md](llm_wiki/schema/openspec_schema.md)
-- **🎯 意图网关**：[intent/intent-gateway.md](intent/intent-gateway.md)
-- **🔍 上下文漏斗**：[intent/context-funnel.md](intent/context-funnel.md)
-- **⚙️ 生命周期**：[harness/lifecycle.md](harness/lifecycle.md)
-- **🛡️ 钩子**：[harness/hooks.md](harness/hooks.md)
+- **📌 项目规则**：[AGENTS.md](AGENTS.md) - 主规则入口
+- **🗺️ 知识图谱**：[.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) - 根导航
+- **📝 契约模板**：[.agents/llm_wiki/schema/openspec_schema.md](.agents/llm_wiki/schema/openspec_schema.md)
+- **🎯 意图网关**：[.agents/router/ROUTER.md](.agents/router/ROUTER.md)
+- **🔍 上下文漏斗**：[.agents/router/CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
+- **⚙️ 生命周期**：[.agents/workflow/LIFECYCLE.md](.agents/workflow/LIFECYCLE.md)
+- **🛡️ 钩子**：[.agents/workflow/HOOKS.md](.agents/workflow/HOOKS.md)
 
 ---
 
@@ -511,7 +512,7 @@ python scripts/wiki/pref_tag_checker.py
 
 欢迎贡献！请遵循以下准则：
 
-1. **先阅读**：学习 [ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md) 和 [project-rules.md](project-rules.md)
+1. **先阅读**：学习 [ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md) 和 [AGENTS.md](AGENTS.md)
 2. **遵循生命周期**：所有变更必须经过 6 阶段生命周期
 3. **更新知识**：将稳定知识提取到适当的域索引
 4. **运行诊断**：执行可选脚本验证图谱健康
