@@ -1,18 +1,20 @@
-# 业务愿景与核心设计哲学 (Purpose)
+# Purpose (Design Philosophy)
 
-## 🎯 存在的意义
-本知识库不是为了给人看（记录流水账），而是为了**支撑 AI Agent 进行高质量、无幻觉、精准上下文的代码工程推演**。
+This wiki exists to help an AI agent produce correct engineering outcomes with minimal hallucination and maximal traceability.
 
-## ⚖️ 设计哲学 (Philosophy)
+## Core Principles
 
-1. **如无必要，勿增实体 (YAGNI)**
-   - Agent 在提出设计方案时，禁止过度设计。如果一个功能当前用不到，就不要在设计中画蛇添足。
-2. **高内聚，低耦合的网状结构**
-   - 所有的 API、Data、Domain 知识必须严格按照模块（如 `trade`, `user`）在各域的 `index.md` 中隔离。
-   - `index.md` 必须保持精简，只做**路由导航**和**高度摘要**，不要在 index 里面写具体的字段。
-3. **知识的生命周期管理**
-   - 知识是活的。Specs（需求文档）在完成代码后会迅速衰老，所以**必须在 Archive 阶段被提取**为稳定的 API/Data 规则。
-   - Specs 本身提取后必须被打入冷宫 (Archive)。
-   - **不允许存在游离于图谱（KNOWLEDGE_GRAPH.md）之外的孤岛文件**。
-4. **自主检索，杜绝填鸭**
-   - 大模型必须从 Sitemap 起步，通过自己的逻辑链（CoT）和知识漏斗寻找信息。禁止系统进行硬塞式 RAG。
+1. YAGNI (Do Not Over-Design)
+   - If a feature is not required now, do not introduce it "for future use".
+
+2. High Cohesion, Low Coupling (Indexed by domain)
+   - API/Data/Domain knowledge MUST be separated by module (example: `trade`, `user`) via per-domain `index.md`.
+   - Each `index.md` MUST stay small: navigation + short summaries only. Do not write full field lists in an index.
+
+3. Knowledge Lifecycle Management
+   - Specs decay quickly after code lands. Stable knowledge MUST be extracted during `Archive`.
+   - After extraction, the original spec MUST move to the archive area.
+   - No orphan docs: every active document MUST be reachable from [KNOWLEDGE_GRAPH.md](KNOWLEDGE_GRAPH.md).
+
+4. Agent-Driven Navigation (No forced RAG dumps)
+   - The agent MUST start from the root index and drill down. Do not dump large context blobs into the prompt.

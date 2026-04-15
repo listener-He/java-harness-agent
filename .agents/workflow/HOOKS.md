@@ -1,68 +1,81 @@
-# Harness 生命周期拦截器 (Hooks)
+# Hooks (Guards, Rollbacks, Loop)
 
-## 🎯 钩子规范
+This document defines when and how to enforce constraints throughout the lifecycle.
 
-所有的生命周期状态流转前后，都可能触发对应的 Hook 脚本或 Skill，用于拦截、修正或日志记录。这里我们将现有的细粒度规范技能深度绑定到各个 Hook 中。
+## Resume & Memory Anchors
+- First action on resume (MUST): read `router/runs/launch_spec_*.md` and restore from `Status/Phase`.
+- Second action (SHOULD): if `explore_report.md` exists, read its "core context anchors" section before doing any heavy navigation again.
 
-## 🧭 会话恢复与防失忆 (Resume & Memory Anchor)
-
-- **第一动作（断点续传）**：当 Agent 被人类回复重新唤醒，或会话疑似被上下文窗口冲刷时，第一动作先读取 `router/runs/launch_spec_*.md`，确认当前 `Status/Phase` 并恢复到对应生命周期阶段。
-- **第二动作（记忆锚点）**：若存在 `explore_report.md`，后续阶段优先读取其中的“核心上下文锚点”，避免重复爬 Sitemap 且防止 Token 溢出导致的失忆。
-
-### 1. `pre_hook` (前置拦截)
-- **触发时机**：进入新阶段前。
-- **绑定技能**：
+### 1. `pre_hook` (Pre-Phase Gate)
+- Trigger: before entering a new phase.
+- Bound skills:
   - `[global-backend-standards](../skills/global-backend-standards/SKILL.md)`
   - `[java-backend-guidelines](../skills/java-backend-guidelines/SKILL.md)`
-- **主要用途**：装载特定的规则集。例如进入 `Implement` 阶段前，加载团队的防守型编程规范和偏好记忆。
+- Purpose: load the relevant rule sets. Example: before `Implement`, load defensive programming standards and project preferences.
 
-### 2. `guard_hook` (执行守卫)
-- **触发时机**：执行核心动作时（如生成代码、写 SQL）。
-- **绑定技能**：
+### 2. `guard_hook` (Execution Guard)
+- Trigger: while performing core actions (generating code, writing SQL).
+- Bound skills:
   - `[checkstyle](../skills/checkstyle/SKILL.md)`
   - `[java-javadoc-standard](../skills/java-javadoc-standard/SKILL.md)`
   - `[java-data-permissions](../skills/java-data-permissions/SKILL.md)`
-- **主要用途**：
-  - **规范守卫**：在代码输出时，确保强制符合 Google/Sun 混合标准、数据权限过滤逻辑。
-  - **领域边界守卫 (Domain Boundary Guard)**：严禁越权修改！如果当前意图属于 `trade` 域，Agent 在修改 `user` 域的文件前，必须主动抛出警告并确认该跨域修改在 `openspec.md` 中被明确授权，否则禁止操作。
+- Purpose:
+  - Standards guard: enforce style and required patterns.
+  - Domain boundary guard: DO NOT modify cross-domain files unless explicitly authorized in `openspec.md`.
 
-### 3. `post_hook` (后置清理与审计)
-- **触发时机**：阶段执行完毕准备流转前。
-- **绑定技能**：
+### 3. `post_hook` (Post-Phase Audit)
+- Trigger: after completing a phase, before transitioning.
+- Bound skills:
   - `[api-documentation-rules](../skills/api-documentation-rules/SKILL.md)`
   - `[database-documentation-sync](../skills/database-documentation-sync/SKILL.md)`
-- **主要用途**：确保代码变更后，关联的 API 文档和 DB 文档已同步更新，并在 `workflow/runs/` 下追加执行日志（如需）。
+- Purpose: ensure API/DB documentation stays in sync with code changes. Optionally append logs into `workflow/runs/`.
 
-#### 文档一致性门禁（Doc Consistency Gate）
-- **目标**：降低“Wiki 幻觉”与契约腐败风险，保证知识图谱与需求契约具备最小可用性与可追溯性。
-- **只读校验（不修改文件）**：
-  - OpenSpec 结构体检：`python .agents/scripts/wiki/schema_checker.py <path_to_openspec.md>`
-  - Wiki 图谱体检：`python .agents/scripts/wiki/wiki_linter.py`
-- **严重等级**：按 `[linter-severity-standard](../skills/linter-severity-standard/SKILL.md)` 执行。
-- **失败策略（触发 fail_hook）**：以脚本 exit code 为准：存在 FAIL（非 0）则必须停止推进并回退修复；WARN 允许推进但必须解释与给出后续动作。
-- **可选证据**（允许写入报告文件）：`python .agents/scripts/wiki/zero_residue_audit.py`（默认输出到 `.agents/workflow/runs/`）
+#### Doc Consistency Gate
+Goal: reduce wiki drift and contract corruption risk with deterministic checks.
 
-#### Explorer 阶段补丁：explore_report.md 的“核心上下文锚点”
+Read-only checks (DO NOT modify files):
+- OpenSpec checker: `python .agents/scripts/wiki/schema_checker.py <path_to_openspec.md>`
+- Wiki graph linter: `python .agents/scripts/wiki/wiki_linter.py`
 
-- **约束**：Explorer 的 `post_hook` 产出的 `explore_report.md` 必须包含一个名为 `## 核心上下文锚点` 的区块。
-- **内容要求**：
-  - 本轮从 Sitemap/Index 下钻得到的“关键链接清单”（domain/api/data/architecture/preferences/security_rules 等）。
-  - 关键业务词汇与口径（术语、枚举、状态机摘要）。
-  - 明确的工程红线（禁止模式、权限策略、幂等策略、回滚动作占位）。
-- **后续使用**：在 Propose/Implement 阶段，如果上下文不稳或隔了较久再继续，优先只读该锚点区块恢复最小必要上下文。
+Severity:
+- Follow `[linter-severity-standard](../skills/linter-severity-standard/SKILL.md)`.
+- The gate MUST use script exit codes: any FAIL (non-zero) stops the workflow and triggers `fail_hook`.
+- WARN is allowed to proceed, but the Agent MUST explain and state a follow-up action.
 
-### 4. `fail_hook` (失败回退)
-- **触发时机**：任何测试、审查或编译失败时。
-- **绑定技能**：
+Optional evidence (writes a report file):
+- `python .agents/scripts/wiki/zero_residue_audit.py` (default output: `.agents/workflow/runs/`)
+
+#### Explorer Patch: Core Context Anchors in `explore_report.md`
+
+Hard rule:
+- The Explorer `post_hook` output `explore_report.md` MUST include a section named `## Core Context Anchors`.
+
+Required contents:
+- Key links collected via drill-down (domain/api/data/architecture/preferences/security_rules, etc.).
+- Business vocabulary and invariants (terms, enums, state notes).
+- Explicit engineering red lines (forbidden patterns, permission strategy, idempotency strategy, rollback placeholder).
+
+Usage:
+- In Propose/Implement, if context is unstable or time has passed, read this anchor section first before doing heavy navigation again.
+
+### 4. `fail_hook` (Failure Rollback)
+- Trigger: any test, review, or compile failure.
+- Bound skills:
   - `[code-review-checklist](../skills/code-review-checklist/SKILL.md)`
-- **主要用途**：
-  - **状态降级**：自动将状态机降级回上一阶段，并在原 `openspec.md` 或相关任务单中追加失败原因。必须修复 checklist 中的所有 fail 项。
-  - **最大重试防线 (Max Retries = 3)**：为了防止大模型陷入“修复失败->再次尝试->代码越写越乱”的无限死循环，如果同一阶段（如单元测试）连续失败 3 次，Agent **必须强制终止操作**，并向人类报告：“已达到最大重试次数，请介入排查问题。”
-  - **状态持久化**：当失败导致停止或需要人类介入时，必须将 `launch_spec.md` 对应行更新为 `FAILED` 并写入 `Failed_Reason`。
+- Purpose:
+  - State downgrade: move back to the previous phase, and append the failure reason to `openspec.md` (or the relevant task artifact). Fix all failed checklist items.
+  - Max retries (3): if the same phase fails 3 times, the Agent MUST stop and ask for human intervention.
+  - Persistence: update `launch_spec.md` row to `FAILED` and write `Failed_Reason`.
 
-### 5. 🔄 `loop_hook` (循环与并发守卫)
-- **触发时机**：处于 `Phase 6: Archive` 结束时，或意图网关初始发车时。
-- **主要用途**：
-  - **队列消费**：读取 `launch_spec_{timestamp}.md` 的状态机表格（`Status/Phase`），定位下一个 `PENDING` 或 `IN_PROGRESS` 的意图并恢复执行。
-  - **并发控制**：判断队列中的下一个意图是否可以并行执行（如 `Propose.API` 与 `Propose.Data` 可并行）。
-  - **闭环重启**：提取下一个意图，调用相应的 `devops-*` 技能，重新进入对应的 Lifecycle Phase 进行下一轮工作，直至队列为空。
+### 5. `loop_hook` (Queue Loop + Concurrency Guard)
+- Trigger: after Phase 6 (`Archive`) completes, or right after launching a queue.
+- Purpose:
+  - Queue consumption: read `launch_spec_{timestamp}.md` and resume the next `PENDING` / `IN_PROGRESS` intent.
+  - Concurrency: decide what can run in parallel (example: `Propose.API` with `Propose.Data`).
+  - Loop restart: dispatch the next intent into the correct lifecycle phase until the queue is empty.
+
+## Non-Convergence Fallback (MUST)
+If the workflow gets stuck repeating the same action without converging (for example: a doc rewrite or a linter failure loop), the Agent MUST:
+1. Stop repeating the same change.
+2. Run deterministic verification and identify the exact failing evidence (file path + minimal excerpt).
+3. Report the mismatch and request human intervention.

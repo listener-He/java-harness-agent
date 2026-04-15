@@ -1,25 +1,28 @@
-# 活跃需求契约区 (Active Specs)
+# Active Specs (OpenSpec)
 
-> **⚠️ Agent 纪律**：本索引挂载【当前正在开发】或【近期刚上线且可能频繁参考】的 `openspec.md`。当需求通过 `Archive` 阶段完成知识提取后，该条目应该被移动到下方的“已归档区”或彻底转移到 `archive/index.md`。
+This index lists `openspec.md` documents that are currently in progress or recently finished and still frequently referenced.
 
-## 1. 活跃需求 (In Progress / Recent)
+## Hard Rules (MUST)
+- When a spec reaches `Archive` and its stable knowledge has been extracted, you MUST move it out of the active list.
+- After extraction, long-term knowledge lives in `api/`, `data/`, and `domain/` indexes. The spec remains only for traceability.
 
-| 特性 (Feature) | 状态 (Status) | 链接 (Link) |
+## In Progress / Recent
+
+| Feature | Status | Link |
 |---|---|---|
-| *(示例) 新增用户登录* | `[Phase 4: Implement]` | `[20260414_user_login.md]` |
+| (Example) Add user login | `Phase 4: Implement` | `[20260414_user_login.md]` |
 
 ---
 
-## 2. 归档与写回规则 (Lifecycle SOP)
+## Lifecycle SOP
+- After `Propose`: add a new row with status `Phase 3: Review`.
+- After `Archive`: remove it from the active list, and move it to "Recently Archived" (or fully transfer to `archive/index.md`).
 
-- **在 `Propose` 阶段结束时**：在此处插入一条新纪录，状态为 `[Phase 3: Review]`。
-- **在 `Archive` 阶段结束时**：将其从活跃区移出，移到下方的“近期归档”或直接删除，由各个子域的 Index 接管知识。
-
-### 插入块模板 (Append Template)
+### Append Template
 ```markdown
-| {业务动作或特性名} | `[{当前生命周期阶段}]` | `[{文件名.md}]` |
+| {feature name} | `{current phase}` | `[{file_name.md}]` |
 ```
 
-## 3. 近期归档 (Recently Archived)
-*(知识已被拆解提取到 api/data/domain，此处的文档仅供只读追溯)*
-- 暂无记录
+## Recently Archived
+(Knowledge extracted into api/data/domain. This section is read-only traceability.)
+- No entries
