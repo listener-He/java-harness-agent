@@ -24,7 +24,7 @@
 - 状态机与阶段：[.agents/workflow/LIFECYCLE.md](.agents/workflow/LIFECYCLE.md)
 - 钩子与纠偏：[.agents/workflow/HOOKS.md](.agents/workflow/HOOKS.md)
 - Propose 阶段必须产出 `openspec.md`（模板）：[.agents/llm\_wiki/schema/openspec\_schema.md](.agents/llm_wiki/schema/openspec_schema.md)
-- 未经过 Approval 等待点：禁止进入实现（Implement）
+- 变更敏感度为 MEDIUM/HIGH 且未经过 Approval 等待点：禁止进入实现（Implement）；LOW 可跳过但需写明理由
 
 ## 4) 归档：WAL（防膨胀、可断点续传）
 
@@ -35,11 +35,15 @@
 
 - 技能索引：[.agents/skills/trae-skill-index/SKILL.md](.agents/skills/trae-skill-index/SKILL.md)
 
+## 团队协作约定（强制）
+
+- 默认不提交运行态文件：`.agents/router/runs/` 与 `.agents/workflow/runs/`
+- 团队只共享稳定产物：规范/模板/Wiki 索引与内容、必要的契约与交付文档；运行态与个人进度不作为团队事实源
+
 ## 硬纪律（最小集合）
 
 - 禁止越级猜文件路径；必须从 Knowledge Graph 根节点逐层下钻
 - 禁止上来全文盲搜；先 Funnel，再搜索
-- 禁止跳过契约与 Approval 直接实现
+- 禁止在变更敏感度为 MEDIUM/HIGH 时跳过契约与 Approval 直接实现
 - 失败必须回退修复；触发最大重试防线就停止并请求人类介入
 - 完成必须归档：证据落盘 + WAL 写回
-
