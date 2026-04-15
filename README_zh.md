@@ -10,7 +10,7 @@
 [![Agent-Ready](https://img.shields.io/badge/Agent-Ready-brightgreen.svg)](README.md)
 [![Lifecycle](https://img.shields.io/badge/Lifecycle-Stable-success.svg)](.agents/workflow/LIFECYCLE.md)
 
-**Java Harness Agent是一个由Agent驱动的后端开发流程，专为可持续软件开发而设计。它集成了Intent Gateway、6阶段生命周期状态机、契约优先的OpenSpec设计和深入的LLM Wiki（知识图），以防止上下文膨胀，使AI代理能够自主构建、测试和自我纠正生产就绪代码。**
+**Java Harness Agent：后端 Agent 驱动研发体系（工程规范手册 + Onboarding） Java Harness Agent 是一套专为可持续软件演进打造的后端开发流程。它将“契约优先”的 OpenSpec 设计理念与五大核心组件——意图网关 (Intent Gateway)、6 阶段生命周期状态机、知识图谱 (LLM Wiki)、专业技能 (Skills) 以及钩子纠偏 (Hooks)——深度融合。通过支持层级下钻的 LLM Wiki 机制，它从根本上防止了上下文膨胀，全面赋能 AI Agent 实现从需求理解到生产级代码交付的自主构建、自动化测试与自我修复闭环。**
 
  [工程手册](ENGINEERING_MANUAL_zh.md) | [快速开始](#-快速上手)
 
