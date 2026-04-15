@@ -11,6 +11,9 @@ This is the root node of the Skill Knowledge Graph. Use this index to navigate t
 
 ## 🗺️ Skill Categories (技能分类)
 
+### 0. 🚪 Entry & Routing (入口与路由)
+- **[intent-gateway](../intent-gateway/SKILL.md)**: 意图网关技能：接收自然语言需求，执行上下文检索漏斗，并发分发到对应意图的生命周期中。
+
 ### 1. 🎯 Business & Product (业务与产品)
 - **[product-manager-expert](../product-manager-expert/SKILL.md)**: Expert PM skill for requirements research, validation, PRD generation, and prototyping.
 - **[prd-task-splitter](../prd-task-splitter/SKILL.md)**: Analyzes PRDs to automatically generate structured development task lists, time estimates, dependencies, and PRD health checks.
@@ -31,6 +34,7 @@ This is the root node of the Skill Knowledge Graph. Use this index to navigate t
 - **[java-backend-api-standard](../java-backend-api-standard/SKILL.md)**: Enforces backend API design standards.
 - **[java-backend-guidelines](../java-backend-guidelines/SKILL.md)**: Comprehensive Java guidelines (defensive programming, etc.).
 - **[java-data-permissions](../java-data-permissions/SKILL.md)**: Guides data permissions.
+- **[utils-usage-standard](../utils-usage-standard/SKILL.md)**: Utilities Usage Standard (核心工具类使用规范)。
 - **[error-code-standard](../error-code-standard/SKILL.md)**: Guides the usage of system error codes.
 - **[mybatis-sql-standard](../mybatis-sql-standard/SKILL.md)**: Enforces strict MyBatis SQL writing standards.
 - **[java-javadoc-standard](../java-javadoc-standard/SKILL.md)**: Enforces the project's strict Javadoc commenting style.

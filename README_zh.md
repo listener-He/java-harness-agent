@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://www.oracle.com/java/)
 [![Agent-Ready](https://img.shields.io/badge/Agent-Ready-brightgreen.svg)](README.md)
-[![Lifecycle](https://img.shields.io/badge/Lifecycle-Stable-success.svg)](harness/lifecycle.md)
+[![Lifecycle](https://img.shields.io/badge/Lifecycle-Stable-success.svg)](.agents/workflow/LIFECYCLE.md)
 
 **通过意图驱动架构，将自然语言需求转化为生产级代码**
 
@@ -250,7 +250,7 @@ sequenceDiagram
 - 验收标准
 - JSON 请求/响应示例
 
-**模板**：[OpenSpec Schema](llm_wiki/schema/openspec_schema.md)
+**模板**：[OpenSpec Schema](.agents/llm_wiki/schema/openspec_schema.md)
 
 ---
 
@@ -319,7 +319,7 @@ sequenceDiagram
 **动作**：
 1. **文档同步**：自动触发 API 与 DB 文档更新
 2. **知识提取**：将稳定规范合并到域索引
-3. **冷存储**：将原始 `openspec.md` 移至 `archive/`
+3. **冷存储**：将原始 `openspec.md` 移至 `.agents/llm_wiki/archive/`
 4. **进化**：请求人类评分（1-10）用于偏好学习
 5. **循环检查**：读取 `launch_spec.md` → 下一个意图或完成
 
@@ -348,42 +348,42 @@ sequenceDiagram
 ### 可用技能（25+）
 
 #### 意图与生命周期
-- **[intent-gateway](skills/intent-gateway/SKILL.md)** - 意图入口能力，启动"先读图谱再下钻"工作流
-- **[devops-lifecycle-master](skills/devops-lifecycle-master/SKILL.md)** - 生命周期主控编排，强制执行阶段边界
-- **[skill-graph-manager](skills/skill-graph-manager/SKILL.md)** - 维护技能知识图谱双向链接
-- **[trae-skill-index](skills/trae-skill-index/SKILL.md)** - 技能总索引，快速发现能力
+- **[intent-gateway](.agents/skills/intent-gateway/SKILL.md)** - 意图入口能力，启动"先读图谱再下钻"工作流
+- **[devops-lifecycle-master](.agents/skills/devops-lifecycle-master/SKILL.md)** - 生命周期主控编排，强制执行阶段边界
+- **[skill-graph-manager](.agents/skills/skill-graph-manager/SKILL.md)** - 维护技能知识图谱双向链接
+- **[trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)** - 技能总索引，快速发现能力
 
 #### 需求与设计
-- **[product-manager-expert](skills/product-manager-expert/SKILL.md)** - 需求澄清、范围界定、验收标准提炼
-- **[prd-task-splitter](skills/prd-task-splitter/SKILL.md)** - PRD 分解为结构化开发任务
-- **[devops-requirements-analysis](skills/devops-requirements-analysis/SKILL.md)** - PDD/SDD 边界梳理，可执行需求规格
-- **[devops-system-design](skills/devops-system-design/SKILL.md)** - 系统设计与数据建模（FDD/SDD）
-- **[devops-task-planning](skills/devops-task-planning/SKILL.md)** - 设计分解为实现任务清单
+- **[product-manager-expert](.agents/skills/product-manager-expert/SKILL.md)** - 需求澄清、范围界定、验收标准提炼
+- **[prd-task-splitter](.agents/skills/prd-task-splitter/SKILL.md)** - PRD 分解为结构化开发任务
+- **[devops-requirements-analysis](.agents/skills/devops-requirements-analysis/SKILL.md)** - PDD/SDD 边界梳理，可执行需求规格
+- **[devops-system-design](.agents/skills/devops-system-design/SKILL.md)** - 系统设计与数据建模（FDD/SDD）
+- **[devops-task-planning](.agents/skills/devops-task-planning/SKILL.md)** - 设计分解为实现任务清单
 
 #### 实现
-- **[devops-feature-implementation](skills/devops-feature-implementation/SKILL.md)** - 功能编码，强调 TDD
-- **[devops-bug-fix](skills/devops-bug-fix/SKILL.md)** - 缺陷定位、复现、修复与回归
-- **[utils-usage-standard](skills/utils-usage-standard/SKILL.md)** - 统一工具类/框架用法模式
-- **[aliyun-oss](skills/aliyun-oss/SKILL.md)** - 对象存储（多桶/环境隔离/预签名 URL）
+- **[devops-feature-implementation](.agents/skills/devops-feature-implementation/SKILL.md)** - 功能编码，强调 TDD
+- **[devops-bug-fix](.agents/skills/devops-bug-fix/SKILL.md)** - 缺陷定位、复现、修复与回归
+- **[utils-usage-standard](.agents/skills/utils-usage-standard/SKILL.md)** - 统一工具类/框架用法模式
+- **[aliyun-oss](.agents/skills/aliyun-oss/SKILL.md)** - 对象存储（多桶/环境隔离/预签名 URL）
 
 #### 代码标准
-- **[global-backend-standards](skills/global-backend-standards/SKILL.md)** - 全局后端标准索引入口
-- **[java-engineering-standards](skills/java-engineering-standards/SKILL.md)** - Java 分层与包结构规范
-- **[java-backend-guidelines](skills/java-backend-guidelines/SKILL.md)** - 防御性编程、完整装配、分页
-- **[java-backend-api-standard](skills/java-backend-api-standard/SKILL.md)** - API 设计模式（动词/路径/响应结构）
-- **[java-javadoc-standard](skills/java-javadoc-standard/SKILL.md)** - 统一 Javadoc 风格与注释规范
-- **[java-data-permissions](skills/java-data-permissions/SKILL.md)** - 数据权限约束（查询过滤/动作校验）
-- **[mybatis-sql-standard](skills/mybatis-sql-standard/SKILL.md)** - MyBatis SQL 性能与安全守卫
-- **[error-code-standard](skills/error-code-standard/SKILL.md)** - 统一错误码与异常表达
-- **[checkstyle](skills/checkstyle/SKILL.md)** - Java 代码风格强制（Google/Sun 混合）
+- **[global-backend-standards](.agents/skills/global-backend-standards/SKILL.md)** - 全局后端标准索引入口
+- **[java-engineering-standards](.agents/skills/java-engineering-standards/SKILL.md)** - Java 分层与包结构规范
+- **[java-backend-guidelines](.agents/skills/java-backend-guidelines/SKILL.md)** - 防御性编程、完整装配、分页
+- **[java-backend-api-standard](.agents/skills/java-backend-api-standard/SKILL.md)** - API 设计模式（动词/路径/响应结构）
+- **[java-javadoc-standard](.agents/skills/java-javadoc-standard/SKILL.md)** - 统一 Javadoc 风格与注释规范
+- **[java-data-permissions](.agents/skills/java-data-permissions/SKILL.md)** - 数据权限约束（查询过滤/动作校验）
+- **[mybatis-sql-standard](.agents/skills/mybatis-sql-standard/SKILL.md)** - MyBatis SQL 性能与安全守卫
+- **[error-code-standard](.agents/skills/error-code-standard/SKILL.md)** - 统一错误码与异常表达
+- **[checkstyle](.agents/skills/checkstyle/SKILL.md)** - Java 代码风格强制（Google/Sun 混合）
 
 #### 测试与评审
-- **[devops-testing-standard](skills/devops-testing-standard/SKILL.md)** - 测试规范与 TDD 阶段指导
-- **[code-review-checklist](skills/code-review-checklist/SKILL.md)** - 强制评审清单（安全/性能/规范/可维护性）
+- **[devops-testing-standard](.agents/skills/devops-testing-standard/SKILL.md)** - 测试规范与 TDD 阶段指导
+- **[code-review-checklist](.agents/skills/code-review-checklist/SKILL.md)** - 强制评审清单（安全/性能/规范/可维护性）
 
 #### 文档
-- **[api-documentation-rules](skills/api-documentation-rules/SKILL.md)** - 强制 API 文档生成与归档
-- **[database-documentation-sync](skills/database-documentation-sync/SKILL.md)** - DB 结构变更同步（表/清单/ER 图）
+- **[api-documentation-rules](.agents/skills/api-documentation-rules/SKILL.md)** - 强制 API 文档生成与归档
+- **[database-documentation-sync](.agents/skills/database-documentation-sync/SKILL.md)** - DB 结构变更同步（表/清单/ER 图）
 
 ### 阶段 → 技能映射
 
@@ -404,7 +404,7 @@ sequenceDiagram
 java-harness-agent/
 ├── .agents/
 │   ├── router/                  # 意图网关与上下文漏斗
-│   │   ├── catalog/             # Launch specs（意图队列）
+│   │   ├── runs/                # Launch specs（意图队列）
 │   │   ├── ROUTER.md            # 意图映射与队列组装
 │   │   └── CONTEXT_FUNNEL.md    # 双向知识导航
 │   │
@@ -415,7 +415,7 @@ java-harness-agent/
 │   │
 │   ├── llm_wiki/                # 知识图谱（sitemap/index/docs）
 │   │   ├── KNOWLEDGE_GRAPH.md   # 🗺️ 根节点（强制入口）
-│   │   ├── PURPOSE.md           # 系统哲学与设计原则
+│   │   ├── purpose.md           # 系统哲学与设计原则
 │   │   ├── schema/              # 契约模板与模式
 │   │   │   ├── index.md
 │   │   │   └── openspec_schema.md

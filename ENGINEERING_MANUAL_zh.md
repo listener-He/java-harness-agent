@@ -27,17 +27,17 @@
 ## 0. 新人 3 分钟上手
 
 **第一步（必读规则入口）**\
-阅读：[项目级规则入口](project-rules.md)。
+阅读：[项目级规则入口](AGENTS.md)。
 
 **第二步（从知识图谱下钻，不盲搜）**\
-阅读：[知识图谱根节点](llm_wiki/sitemap.md)，然后按索引逐层下钻到你要的域（API / Data / Domain / Architecture / Specs / Preferences）。
+阅读：[知识图谱根节点](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)，然后按索引逐层下钻到你要的域（API / Data / Domain / Architecture / Specs / Preferences）。
 
 **第三步（跑一次最小闭环）**\
-按：[生命周期状态机](harness/lifecycle.md) 完成一次任务：Explorer → Propose → Review → Approval → Implement → QA → Archive。
+按：[生命周期状态机](.agents/workflow/LIFECYCLE.md) 完成一次任务：Explorer → Propose → Review → Approval → Implement → QA → Archive。
 
 ## 0.1 如何使用（多场景示例）
 
-本节给出“照着跑”的典型剧本。规则保持一致：先从 [知识图谱根节点](llm_wiki/sitemap.md) 下钻到域索引，再产出契约与阶段性工件，最后在 Archive 阶段反向写回索引并归档 Spec。
+本节给出“照着跑”的典型剧本。规则保持一致：先从 [知识图谱根节点](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) 下钻到域索引，再产出契约与阶段性工件，最后在 Archive 阶段反向写回索引并归档 Spec。
 
 ### 场景 A：新增查询类接口（不改表）
 
@@ -115,9 +115,9 @@
 
 - 目标：当你不确定是否破坏了图谱或契约结构时，做一次确定性体检。
 - 可选工具（仅输出报告，不改文件）：
-    - 图谱体检：[wiki\_linter.py](scripts/wiki/wiki_linter.py)（死链/孤岛/超长预警）
-    - 契约体检：[schema\_checker.py](scripts/wiki/schema_checker.py)（关键结构缺失检查）
-    - 偏好体检：[pref\_tag\_checker.py](scripts/wiki/pref_tag_checker.py)（规则标签规范检查）
+    - 图谱体检：[wiki\_linter.py](.agents/scripts/wiki/wiki_linter.py)（死链/孤岛/超长预警）
+    - 契约体检：[schema\_checker.py](.agents/scripts/wiki/schema_checker.py)（关键结构缺失检查）
+    - 偏好体检：[pref\_tag\_checker.py](.agents/scripts/wiki/pref_tag_checker.py)（规则标签规范检查）
 
 ***
 
@@ -154,16 +154,16 @@ flowchart TB
 
 ```text
 .
-├── intent/                  # 意图网关与上下文漏斗（入口与导航规则）
-├── harness/                 # 生命周期状态机与钩子（拦截/纠偏/闭环）
-├── llm_wiki/                # 知识库（sitemap/index/域知识/归档）
-├── skills/                  # 专有技能（以 SKILL.md 为单位）
-└── scripts/                 # 确定性脚本（图谱检查、辅助工具）
+├── .agents/router/          # 意图网关与上下文漏斗（入口与导航规则）
+├── .agents/workflow/        # 生命周期状态机与钩子（拦截/纠偏/闭环）
+├── .agents/llm_wiki/        # 知识库（knowledge graph/index/域知识/归档）
+├── .agents/skills/          # 专有技能（以 SKILL.md 为单位）
+└── .agents/scripts/         # 确定性脚本（图谱检查、辅助工具）
 ```
 
 推荐把“读什么、怎么做、做完写回哪里”都视为工程的一部分，统一写进索引与契约，而不是存在对话记忆里。
 
-### 2.1 project-rules.md（项目级规则入口）
+### 2.1 AGENTS.md（项目级规则入口）
 
 - **定位**：本体系的“总入口规则”。用于把 Agent 的自由发挥限制在可控边界内（不盲搜、不越权、不暴走、不膨胀）。
 - **输入/输出**：输入=任何任务；输出=统一的执行纪律（检索、生命周期、纠偏、归档、可选交接物）。
@@ -175,10 +175,10 @@ flowchart TB
 本层解决“用户一句话 → 我到底要做哪些事、先做什么、后做什么”的问题。
 
 - **关键文件**
-    - [intent-gateway.md](intent/intent-gateway.md)
+    - [intent-gateway.md](.agents/router/ROUTER.md)
         - **做什么**：把自然语言需求拆成意图队列（例如 `Propose.API -> Implement.Code -> QA.Test`），并定义“并发语义=顺序无关性”。
-        - **输出**：`intent/catalog/launch_spec_*.md`（意图队列持久化 + 断点续传）。
-    - [context-funnel.md](intent/context-funnel.md)
+        - **输出**：`.agents/router/runs/launch_spec_*.md`（意图队列持久化 + 断点续传）。
+    - [context-funnel.md](.agents/router/CONTEXT_FUNNEL.md)
         - **做什么**：定义 Agent 的“正向检索（下钻）”与“反向写回（归档提取）”。
         - **红线**：只有索引树找不到时才允许兜底搜索；写回必须先找挂载点，索引超过阈值必须拆分。
 - **典型场景**
@@ -191,10 +191,10 @@ flowchart TB
 本层解决“怎么确保任务可回退、可审查、可闭环”的问题。
 
 - **关键文件**
-    - [lifecycle.md](harness/lifecycle.md)
+    - [lifecycle.md](.agents/workflow/LIFECYCLE.md)
         - **做什么**：定义 Explorer→Archive 的单向状态机；规定冻结点（Phase 3.5）、闭环点（Phase 6）。
         - **输出**：阶段性产物（explore\_report/openspec/测试证据/归档提取）。
-    - [hooks.md](harness/hooks.md)
+    - [hooks.md](.agents/workflow/HOOKS.md)
         - **做什么**：把工程红线“写进流程里”，形成 guard/fail/loop 的纠偏系统。
         - **输出**：阻断/降级/回退/停止并请求人类介入。
 - **典型场景**
@@ -208,11 +208,11 @@ flowchart TB
 本层解决“知识如何组织、如何检索、如何防膨胀”的问题。
 
 - **关键文件**
-    - [sitemap.md](llm_wiki/sitemap.md)
+    - [sitemap.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
         - **做什么**：知识图谱根节点，只挂载顶级域入口；是 Agent 的强制检索起点。
     - schema/
-        - [schema/index.md](llm_wiki/schema/index.md)：规范域索引（路由器），告诉你“该读哪份契约/该跳到哪份流程”。
-        - [openspec\_schema.md](llm_wiki/schema/openspec_schema.md)：OpenSpec 契约模板（后端主交付物；可选携带前端/QA交接字段）。
+        - [schema/index.md](.agents/llm_wiki/schema/index.md)：规范域索引（路由器），告诉你“该读哪份契约/该跳到哪份流程”。
+        - [openspec\_schema.md](.agents/llm_wiki/schema/openspec_schema.md)：OpenSpec 契约模板（后端主交付物；可选携带前端/QA交接字段）。
     - wiki/
         - **做什么**：活跃知识域（domain/api/data/architecture/specs/testing/preferences），按域隔离，索引必须可下钻。
     - archive/
@@ -225,7 +225,7 @@ flowchart TB
 
 本层解决“当任务进入专业领域时，如何快速调用专业能力并保持一致标准”的问题。
 
-- **基本约定**：每个技能一个目录，入口文件为 `skills/<skill-name>/SKILL.md`。
+- **基本约定**：每个技能一个目录，入口文件为 `.agents/skills/<skill-name>/SKILL.md`。
 - **典型场景**：实现前必须过 Java/API/SQL/权限等规范审查；归档阶段必须同步 API/DB 文档。
 
 ### 2.6 scripts/（工具层：确定性增强，不替代 Agent）
@@ -236,7 +236,7 @@ flowchart TB
     - `wiki_linter.py`：图谱体检（死链/孤岛/超长预警）。
     - `schema_checker.py`：契约结构体检（关键段落与 JSON 示例存在性检查）。
     - `pref_tag_checker.py`：偏好规则标签体检（便于精准检索）。
-    - 其他可选脚本以 `scripts/wiki/` 目录为准（例如 `graph_checker.py`、`compaction.py` 等，未必纳入当前流程引用）。
+    - 其他可选脚本以 `.agents/scripts/wiki/` 目录为准（例如 `graph_checker.py`、`compaction.py` 等，未必纳入当前流程引用）。
 - harness/
     - `engine.py`：队列状态辅助（可选；用于复杂任务时帮助记录当前意图/阶段/重试次数）。
 
@@ -244,7 +244,7 @@ flowchart TB
 
 intent/
 
-- 典型路径：用户需求 → 读取 llm\_wiki/sitemap.md → 触发意图映射 → 写入 intent/catalog/launch\_spec\_\*.md
+- 典型路径：用户需求 → 读取 llm\_wiki/sitemap.md → 触发意图映射 → 写入 .agents/router/runs/launch\_spec\_\*.md
 - 场景示例：新增接口 → 生成 Propose.API -> Implement.Code -> QA.Test 队列
 - 结果：队列成为后续 Lifecycle 的“唯一调度依据”
   harness/
@@ -271,7 +271,7 @@ intent/
 ### 3.1 Intent Gateway（意图网关）
 
 **目的**：把自然语言需求拆成可流转的意图队列（例如：Propose.API → Implement.Code → QA.Test），并规定“并发语义=顺序无关性”。\
-**规范文件**：[意图网关](intent/intent-gateway.md)
+**规范文件**：[意图网关](.agents/router/ROUTER.md)
 
 ```mermaid
 flowchart LR
@@ -285,7 +285,7 @@ flowchart LR
 ### 3.2 Context Funnel（知识漏斗：正向检索 + 反向写回）
 
 **目的**：解决“上下文怎么取、怎么保证不膨胀”的问题。\
-**规范文件**：[知识漏斗](intent/context-funnel.md)
+**规范文件**：[知识漏斗](.agents/router/CONTEXT_FUNNEL.md)
 
 - 正向检索：Sitemap → 域 index → 具体文档 → 必要时兜底关键词搜索
 - 反向写回：根据 Sitemap 找挂载点，把新知识写回域 index；超过阈值拆分子索引
@@ -304,7 +304,7 @@ flowchart TB
 ### 3.3 Lifecycle（生命周期状态机）
 
 **目的**：把“分析→设计→评审→实现→测试→归档”固化为可回退、可闭环的状态机。\
-**规范文件**：[生命周期](harness/lifecycle.md)
+**规范文件**：[生命周期](.agents/workflow/LIFECYCLE.md)
 
 ```mermaid
 stateDiagram-v2
@@ -325,7 +325,7 @@ stateDiagram-v2
 ### 3.4 Hooks（钩子纠偏系统）
 
 **目的**：把工程红线“卡在流程里”，做到自动纠偏与防失控。\
-**规范文件**：[Hooks](harness/hooks.md)
+**规范文件**：[Hooks](.agents/workflow/HOOKS.md)
 
 ```mermaid
 flowchart TB
@@ -366,7 +366,7 @@ flowchart TB
 | QA             | 单测/必要的集成测试证据               | 可选：接口自测脚本、E2E 要点                                                  |
 | Archive        | 提取稳定知识到索引、归档 Spec          | 可选：变更摘要、迁移说明                                                      |
 
-契约模板详见：[OpenSpec Schema](llm_wiki/schema/openspec_schema.md)。
+契约模板详见：[OpenSpec Schema](.agents/llm_wiki/schema/openspec_schema.md)。
 
 ***
 
@@ -376,111 +376,111 @@ flowchart TB
 
 > 规则：技能不等于流程；技能用于在流程的某些阶段提供“专业能力与一致标准”。
 
-- [intent-gateway](skills/intent-gateway/SKILL.md)\
+- [intent-gateway](.agents/skills/intent-gateway/SKILL.md)\
   用途：意图入口能力，协助理解需求并启动“先读图谱再下钻”的工作姿势。\
   使用阶段：任务开始/Explorer 入口。\
   触发：任何自然语言需求进入系统时。
-- [devops-lifecycle-master](skills/devops-lifecycle-master/SKILL.md)\
+- [devops-lifecycle-master](.agents/skills/devops-lifecycle-master/SKILL.md)\
   用途：生命周期主控编排，确保严格遵循 Phase 边界（Propose 之前不写代码等）。\
   使用阶段：全程（编排器）。\
   触发：复杂任务、多意图队列或需要强制遵循流程时。
-- [product-manager-expert](skills/product-manager-expert/SKILL.md)\
+- [product-manager-expert](.agents/skills/product-manager-expert/SKILL.md)\
   用途：需求澄清、范围界定、业务目标与验收口径提炼。\
   使用阶段：Explorer（PDD）。\
   触发：需求模糊、口径不一致、需要补充用户故事/验收项时。
-- [prd-task-splitter](skills/prd-task-splitter/SKILL.md)\
+- [prd-task-splitter](.agents/skills/prd-task-splitter/SKILL.md)\
   用途：将 PRD 拆分为结构化开发任务、依赖关系与执行顺序。\
   使用阶段：Explorer → Propose 前的任务拆解。\
   触发：需求跨度大、存在多模块并行时。
-- [devops-requirements-analysis](skills/devops-requirements-analysis/SKILL.md)\
+- [devops-requirements-analysis](.agents/skills/devops-requirements-analysis/SKILL.md)\
   用途：PDD/SDD 边界梳理，输出可执行的需求规格与影响面。\
   使用阶段：Explorer。\
   触发：需要形成规范化需求文档或明确范围/非目标时。
-- [devops-system-design](skills/devops-system-design/SKILL.md)\
+- [devops-system-design](.agents/skills/devops-system-design/SKILL.md)\
   用途：系统设计与数据建模（FDD/SDD），包括表结构、索引、扩展性方案。\
   使用阶段：Propose。\
   触发：新增/修改接口或数据结构、涉及架构决策时。
-- [devops-task-planning](skills/devops-task-planning/SKILL.md)\
+- [devops-task-planning](.agents/skills/devops-task-planning/SKILL.md)\
   用途：将设计拆成实现任务清单，明确实现顺序与验证点。\
   使用阶段：Propose → Review 之间。\
   触发：准备进入实现前，需要把工作拆成可执行步骤时。
-- [devops-review-and-refactor](skills/devops-review-and-refactor/SKILL.md)\
+- [devops-review-and-refactor](.agents/skills/devops-review-and-refactor/SKILL.md)\
   用途：对设计与实现进行评审与重构建议，降低性能/维护风险。\
   使用阶段：Review。\
   触发：方案存在争议、质量门禁需要加强时。
-- [global-backend-standards](skills/global-backend-standards/SKILL.md)\
+- [global-backend-standards](.agents/skills/global-backend-standards/SKILL.md)\
   用途：全局后端标准索引入口，用于统一工程规范/分层/依赖规则。\
   使用阶段：pre\_hook / Review。\
   触发：任何后端改动进入评审与实现前。
-- [java-engineering-standards](skills/java-engineering-standards/SKILL.md)\
+- [java-engineering-standards](.agents/skills/java-engineering-standards/SKILL.md)\
   用途：Java 工程分层与包结构规范，保证职责边界与可维护性。\
   使用阶段：Review / Implement。\
   触发：新增模块、重构、跨层调用等风险场景。
-- [java-backend-guidelines](skills/java-backend-guidelines/SKILL.md)\
+- [java-backend-guidelines](.agents/skills/java-backend-guidelines/SKILL.md)\
   用途：Java 防御性编程、Complete assembly、分页等通用编码准则。\
   使用阶段：pre\_hook / Implement。\
   触发：写业务代码、涉及参数校验/异常处理时。
-- [java-backend-api-standard](skills/java-backend-api-standard/SKILL.md)\
+- [java-backend-api-standard](.agents/skills/java-backend-api-standard/SKILL.md)\
   用途：接口设计规范（动词/路径/返回结构等），避免 API 演进失控。\
   使用阶段：Review。\
   触发：新增/修改 Controller、DTO、对外 API 契约时。
-- [java-javadoc-standard](skills/java-javadoc-standard/SKILL.md)\
+- [java-javadoc-standard](.agents/skills/java-javadoc-standard/SKILL.md)\
   用途：统一 Javadoc 风格与注释规范，保证可读性与一致性。\
   使用阶段：guard\_hook / Implement。\
   触发：新增重要类/公共方法、需要补齐注释时。
-- [java-data-permissions](skills/java-data-permissions/SKILL.md)\
+- [java-data-permissions](.agents/skills/java-data-permissions/SKILL.md)\
   用途：数据权限约束（查询过滤/动作校验），避免越权。\
   使用阶段：guard\_hook / Review。\
   触发：涉及用户/组织数据读取、跨租户风险点时。
-- [mybatis-sql-standard](skills/mybatis-sql-standard/SKILL.md)\
+- [mybatis-sql-standard](.agents/skills/mybatis-sql-standard/SKILL.md)\
   用途：MyBatis SQL 性能与规范守卫（避免隐式转换、JOIN 风险、索引利用）。\
   使用阶段：Review / Implement。\
   触发：写 Mapper XML、复杂查询、性能敏感接口时。
-- [error-code-standard](skills/error-code-standard/SKILL.md)\
+- [error-code-standard](.agents/skills/error-code-standard/SKILL.md)\
   用途：统一错误码与异常表达方式，避免随意抛错导致前后端割裂。\
   使用阶段：Review / Implement。\
   触发：新增 BusinessException/ApiResponse.failed 等分支时。
-- [checkstyle](skills/checkstyle/SKILL.md)\
+- [checkstyle](.agents/skills/checkstyle/SKILL.md)\
   用途：Java 代码风格强制门禁（Google/Sun 混合规则）。\
   使用阶段：guard\_hook / QA。\
   触发：提交前、评审前、格式不一致风险高时。
-- [devops-feature-implementation](skills/devops-feature-implementation/SKILL.md)\
+- [devops-feature-implementation](.agents/skills/devops-feature-implementation/SKILL.md)\
   用途：按规格实现功能代码（强调 TDD 与工程标准）。\
   使用阶段：Implement。\
   触发：进入编码阶段实现需求时。
-- [devops-bug-fix](skills/devops-bug-fix/SKILL.md)\
+- [devops-bug-fix](.agents/skills/devops-bug-fix/SKILL.md)\
   用途：缺陷定位、复现、修复并补回归测试。\
   使用阶段：Implement / QA。\
   触发：线上/测试缺陷、回归失败、异常难定位时。
-- [devops-testing-standard](skills/devops-testing-standard/SKILL.md)\
+- [devops-testing-standard](.agents/skills/devops-testing-standard/SKILL.md)\
   用途：测试规范与 TDD 阶段指导（先写失败测试再实现）。\
   使用阶段：QA（也可前置到 Implement 前）。\
   触发：新增功能、修复缺陷必须补测试时。
-- [code-review-checklist](skills/code-review-checklist/SKILL.md)\
+- [code-review-checklist](.agents/skills/code-review-checklist/SKILL.md)\
   用途：强制评审清单门禁，覆盖安全/性能/规范/可维护性。\
   使用阶段：QA / fail\_hook。\
   触发：进入提交/合并前，或失败回退需要逐项排查时。
-- [api-documentation-rules](skills/api-documentation-rules/SKILL.md)\
+- [api-documentation-rules](.agents/skills/api-documentation-rules/SKILL.md)\
   用途：强制接口文档生成与归档规则，避免“代码更新但文档缺失”。\
   使用阶段：post\_hook / Archive。\
   触发：新增/修改 Controller 接口时。
-- [database-documentation-sync](skills/database-documentation-sync/SKILL.md)\
+- [database-documentation-sync](.agents/skills/database-documentation-sync/SKILL.md)\
   用途：数据库结构变更时同步表文档、清单与 ER 图。\
   使用阶段：post\_hook / Archive。\
   触发：改表/改索引/新增实体或 SQL 迁移时。
-- [utils-usage-standard](skills/utils-usage-standard/SKILL.md)\
+- [utils-usage-standard](.agents/skills/utils-usage-standard/SKILL.md)\
   用途：统一工具类/框架用法，避免各写各的导致风格碎片化。\
   使用阶段：Implement。\
   触发：准备引入/复用工具类、写通用逻辑时。
-- [aliyun-oss](skills/aliyun-oss/SKILL.md)\
+- [aliyun-oss](.agents/skills/aliyun-oss/SKILL.md)\
   用途：对象存储（多桶/环境隔离/预签名/上传下载）相关能力规范。\
   使用阶段：Implement / Propose。\
   触发：涉及文件上传下载或存储方案时。
-- [skill-graph-manager](skills/skill-graph-manager/SKILL.md)\
+- [skill-graph-manager](.agents/skills/skill-graph-manager/SKILL.md)\
   用途：维护技能知识图谱的双向链接与中心索引一致性。\
   使用阶段：技能创建/修改后。\
   触发：新增技能或调整技能关系时。
-- [trae-skill-index](skills/trae-skill-index/SKILL.md)\
+- [trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)\
   用途：技能总索引入口，帮助 Agent 快速找到合适的专家能力。\
   使用阶段：任何阶段（查能力）。\
   触发：不确定用哪个技能解决当前问题时。
@@ -509,11 +509,11 @@ flowchart TB
 
 ## 8. 可选辅助脚本（不替代 Agent，只做确定性增强）
 
-- 图谱体检（死链/孤岛/超长预警）：[wiki\_linter.py](scripts/wiki/wiki_linter.py)
-- 契约结构体检（关键结构缺失检查）：[schema\_checker.py](scripts/wiki/schema_checker.py)
-- 偏好标签体检（规则标签规范检查）：[pref\_tag\_checker.py](scripts/wiki/pref_tag_checker.py)
-- 生命周期队列辅助（可选）：[engine.py](scripts/harness/engine.py)
-- 其他脚本以 `scripts/wiki/` 目录为准（不强制纳入流程）。
+- 图谱体检（死链/孤岛/超长预警）：[wiki\_linter.py](.agents/scripts/wiki/wiki_linter.py)
+- 契约结构体检（关键结构缺失检查）：[schema\_checker.py](.agents/scripts/wiki/schema_checker.py)
+- 偏好标签体检（规则标签规范检查）：[pref\_tag\_checker.py](.agents/scripts/wiki/pref_tag_checker.py)
+- 生命周期队列辅助（可选）：[engine.py](.agents/scripts/harness/engine.py)
+- 其他脚本以 `.agents/scripts/wiki/` 目录为准（不强制纳入流程）。
 
 ***
 
@@ -521,14 +521,14 @@ flowchart TB
 
 | 思想/组件             | 我们的理解                                             | 在哪里落地                                                                       |
 | ----------------- | ------------------------------------------------- | --------------------------------------------------------------------------- |
-| OpenSpec（契约先行）    | 先用结构化契约冻结需求与设计，再允许进入实现与测试                         | `llm_wiki/schema/openspec_schema.md` + Phase 2 Propose + Phase 3.5 Approval |
-| Harness（生命周期/状态机） | 流程不是口头约定，而是可回退、可拦截、可闭环的状态机                        | `harness/lifecycle.md`                                                      |
-| Hooks（纠偏系统）       | 用 guard/fail/loop 把“越权、暴走、膨胀”锁死在流程里               | `harness/hooks.md`                                                          |
-| LLM Wiki（可演进知识库）  | 用 sitemap + 多级 index 让 Agent 自主游走检索；用 archive 防膨胀 | `llm_wiki/sitemap.md` + `llm_wiki/wiki/*/index.md` + `llm_wiki/archive/`    |
-| 知识图谱（连通性）         | 所有知识必须可从根溯源；孤岛/死链视为“垃圾”                           | sitemap 挂载纪律 + scripts/wiki/wiki\_linter.py（可选）                             |
-| Skills（专家能力矩阵）    | 专业问题交给专业技能，流程阶段内按需调用，保证一致标准                       | `skills/*/SKILL.md` + Phase 映射表                                             |
-| Engine（可选辅助）      | 不替代 Agent，只在复杂任务时提供“队列/阶段/重试计数”的确定性托管             | `scripts/harness/engine.py`（可选）                                             |
-| 脚本工具（确定性增强）       | 需要确定性的检查与辅助（图谱体检、索引拆分建议）交给脚本                      | `scripts/wiki/*`                                                            |
+| OpenSpec（契约先行）    | 先用结构化契约冻结需求与设计，再允许进入实现与测试                         | `.agents/llm_wiki/schema/openspec_schema.md` + Phase 2 Propose + Phase 3.5 Approval |
+| Harness（生命周期/状态机） | 流程不是口头约定，而是可回退、可拦截、可闭环的状态机                        | `.agents/workflow/LIFECYCLE.md`                                                      |
+| Hooks（纠偏系统）       | 用 guard/fail/loop 把“越权、暴走、膨胀”锁死在流程里               | `.agents/workflow/HOOKS.md`                                                          |
+| LLM Wiki（可演进知识库）  | 用 sitemap + 多级 index 让 Agent 自主游走检索；用 archive 防膨胀 | `.agents/llm_wiki/KNOWLEDGE_GRAPH.md` + `llm_wiki/wiki/*/index.md` + `llm_wiki/archive/`    |
+| 知识图谱（连通性）         | 所有知识必须可从根溯源；孤岛/死链视为“垃圾”                           | sitemap 挂载纪律 + .agents/scripts/wiki/wiki\_linter.py（可选）                             |
+| Skills（专家能力矩阵）    | 专业问题交给专业技能，流程阶段内按需调用，保证一致标准                       | `.agents/skills/*/SKILL.md` + Phase 映射表                                             |
+| Engine（可选辅助）      | 不替代 Agent，只在复杂任务时提供“队列/阶段/重试计数”的确定性托管             | `.agents/scripts/harness/engine.py`（可选）                                             |
+| 脚本工具（确定性增强）       | 需要确定性的检查与辅助（图谱体检、索引拆分建议）交给脚本                      | `.agents/scripts/wiki/*`                                                            |
 
 ### 9.1 与 PDD / FDD / SDD / TDD 的对应关系
 
@@ -541,13 +541,13 @@ flowchart TB
 
 ## 10. 入口索引（建议收藏）
 
-- 规则入口：[project-rules.md](project-rules.md)
-- 知识图谱根入口：[llm\_wiki/sitemap.md](llm_wiki/sitemap.md)
-- 契约模板：[llm\_wiki/schema/openspec\_schema.md](llm_wiki/schema/openspec_schema.md)
-- 意图网关：[intent/intent-gateway.md](intent/intent-gateway.md)
-- 知识漏斗：[intent/context-funnel.md](intent/context-funnel.md)
-- 生命周期：[harness/lifecycle.md](harness/lifecycle.md)
-- Hooks：[harness/hooks.md](harness/hooks.md)
+- 规则入口：[AGENTS.md](AGENTS.md)
+- 知识图谱根入口：[llm\_wiki/sitemap.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
+- 契约模板：[llm\_wiki/schema/openspec\_schema.md](.agents/llm_wiki/schema/openspec_schema.md)
+- 意图网关：[.agents/router/ROUTER.md](.agents/router/ROUTER.md)
+- 知识漏斗：[.agents/router/CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
+- 生命周期：[.agents/workflow/LIFECYCLE.md](.agents/workflow/LIFECYCLE.md)
+- Hooks：[.agents/workflow/HOOKS.md](.agents/workflow/HOOKS.md)
 
 ---
 
