@@ -34,6 +34,7 @@
 ### 流程 2：Doc QA（`QA.Doc` / `QA.Doc.Actionize`）
 - `QA.Doc`：按知识漏斗逐层下钻，输出带引用的答案（引用到 Wiki/需求段落，必要时补充代码引用）
 - `QA.Doc.Actionize`：将问答结论转成“可执行意图队列”，必须先问一次是否发车；同意后才生成 launch spec 并进入生命周期
+- 约束：在写回/发车前，必须通过 `[HOOKS.md](../workflow/HOOKS.md)` 的“文档一致性门禁”
 
 ## 🚀 第三动作：生成启动计划 (Launch Spec) 与发车
 > **⚠️ 引擎 SOP 纪律 (Standard Engine)**：大模型（Agent）是整个流程的“智能主控引擎”。在生成任务队列并发车时，你有充分的灵活性：

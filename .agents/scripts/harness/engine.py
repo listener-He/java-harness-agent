@@ -117,7 +117,7 @@ def get_status():
     print(f"- 当前阶段: {current_phase}")
     print(f"- 当前阶段重试次数: {retries}/3")
     if current_phase == "3.5_Approval":
-        print("⚠️ 强拦截点：请等待人类确认后，再执行 `python .agents/scripts/workflow/engine.py next` 进入 Implement 阶段！")
+        print("⚠️ 强拦截点：请等待人类确认后，再执行 `python .agents/scripts/harness/engine.py next` 进入 Implement 阶段！")
 
 def next_phase():
     state = load_state()

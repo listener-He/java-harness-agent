@@ -15,8 +15,8 @@
 - 新增或修改的名词解释。
 - 状态机的变迁图或枚举值变更。
 
-## 3. API 契约 (API Contract) - 【前端 Agent 交接物】
-*(如果无变更，请写“无”。此部分必须高度结构化，确保前端 Agent 可直接解析生成 TS Interface 或 Mock 数据)*
+## 3. API 契约 (API Contract) - 【前端/调用方交接物】
+*(如果无变更，请写“无”。此部分必须高度结构化，确保调用方可直接生成 Interface 或 Mock 数据)*
 - **接口路径**：`POST /api/v1/...`
 - **Header/Auth**：是否需要 Token，是否有特殊请求头。
 - **入参 (Request)**：
@@ -40,8 +40,8 @@
 - **禁止模式 (Forbidden Patterns)**：在实现时绝对不能做什么（例如：禁止在 for 循环中 RPC/DB 查询、禁止连表查询、禁止抛出宽泛异常等）。
 - **回滚动作 (Rollback Steps)**：如果发生部分失败，需要执行哪些回滚动作（补偿事务/状态回退）。
 
-## 7. 测试验收标准 (Acceptance Criteria) - 【QA Agent 交接物】
-*(此部分必须使用结构化语言，供 QA Agent 编写自动化 E2E 或接口测试脚本)*
+## 7. 测试验收标准 (Acceptance Criteria) - 【测试交接物】
+*(此部分必须使用结构化语言，供测试编写自动化 E2E 或接口测试脚本)*
 - **核心正常流 (Happy Path)**：Given / When / Then 格式描述。
 - **异常边界流 (Edge Cases)**：如参数越界、并发超卖、权限不足时的预期阻断行为。
 - **单元测试要求**：后端代码需要覆盖的核心分支与 Assert 校验点。

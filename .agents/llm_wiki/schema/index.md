@@ -14,7 +14,7 @@
 本域不重复写流程正文，但提供“从契约到执行”的关键挂载点：
 - **[路由与队列 (Router)](../../router/ROUTER.md)**：把需求拆成意图队列（launch_spec），定义交接与并发语义（顺序无关性）。
 - **[知识漏斗 (Context Funnel)](../../router/CONTEXT_FUNNEL.md)**：契约的正向读取与反向写回（Archive 写回索引的打法）。
-- **[生命周期 (Lifecycle)](../../workflow/LIFECYCLE.md)**：Phase 3.5 为“契约冻结与广播”发令枪；冻结后前端/QA Agent 可启动并行工作。
+- **[生命周期 (Lifecycle)](../../workflow/LIFECYCLE.md)**：Approval Gate 为“契约冻结点”；单用户本地由人类确认推进；如需并行协作，前端/测试角色可据此开始准备。
 - **[钩子守卫 (Hooks)](../../workflow/HOOKS.md)**：guard/fail/loop 等纠偏机制（Max Retries、领域边界、HITL）。
 
 ## 链接规范（统一标准）

@@ -33,6 +33,17 @@
   - `[database-documentation-sync](../skills/database-documentation-sync/SKILL.md)`
 - **主要用途**：确保代码变更后，关联的 API 文档和 DB 文档已同步更新，并在 `workflow/runs/` 下追加执行日志（如需）。
 
+#### 文档一致性门禁（Doc Consistency Gate）
+- **目标**：降低“Wiki 幻觉”与契约腐败风险，保证知识图谱与需求契约具备最小可用性与可追溯性。
+- **只读校验（不修改文件）**：
+  - OpenSpec 结构体检：`python .agents/scripts/wiki/schema_checker.py <path_to_openspec.md>`
+  - Wiki 图谱体检：`python .agents/scripts/wiki/wiki_linter.py`
+- **失败策略（触发 fail_hook）**：
+  - 发现死链：必须修复或移除引用后再流转
+  - OpenSpec 缺失关键模块（API/数据模型/BDD）：必须补齐后再流转
+  - 超长预警（>500 行）：允许作为 WARNING，但必须给出拆分计划或明确理由
+- **可选证据**（允许写入报告文件）：`python .agents/scripts/wiki/zero_residue_audit.py`（默认输出到 `.agents/workflow/runs/`）
+
 #### Explorer 阶段补丁：explore_report.md 的“核心上下文锚点”
 
 - **约束**：Explorer 的 `post_hook` 产出的 `explore_report.md` 必须包含一个名为 `## 核心上下文锚点` 的区块。
