@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://www.oracle.com/java/)
 [![Agent-Ready](https://img.shields.io/badge/Agent-Ready-brightgreen.svg)](README.md)
-[![Lifecycle](https://img.shields.io/badge/Lifecycle-Stable-success.svg)](harness/lifecycle.md)
+[![Lifecycle](https://img.shields.io/badge/Lifecycle-Stable-success.svg)](.agents/workflow/LIFECYCLE.md)
 
 **Transforming Natural Language Requirements into Production-Ready Code through Intent-Driven Architecture**
 
@@ -61,13 +61,13 @@ flowchart TB
 
 | Component | Purpose | Location |
 |-----------|---------|----------|
-| **Intent Gateway** | Converts natural language to executable intent queues | [`.agents/router/ROUTER.md`](intent/) |
-| **Context Funnel** | Bidirectional knowledge retrieval & write-back system | [`.agents/router/CONTEXT_FUNNEL.md`](intent/context-funnel.md) |
-| **Lifecycle Engine** | 6-phase state machine with automatic transitions | [`.agents/workflow/LIFECYCLE.md`](harness/lifecycle.md) |
-| **Hooks System** | Pre/post guards, failure recovery, loop control | [`.agents/workflow/HOOKS.md`](harness/hooks.md) |
-| **LLM Wiki** | Hierarchical knowledge graph with sitemap root | [`.agents/llm_wiki/`](llm_wiki/) |
-| **Skills Matrix** | 25+ domain-specific expert capabilities | [`.agents/skills/`](skills/) |
-| **Scripts** | Deterministic quality checks & tooling | [`.agents/scripts/`](scripts/) |
+| **Intent Gateway** | Converts natural language to executable intent queues | [`.agents/router/ROUTER.md`](.agents/router/) |
+| **Context Funnel** | Bidirectional knowledge retrieval & write-back system | [`.agents/router/CONTEXT_FUNNEL.md`](.agents/router/CONTEXT_FUNNEL.md) |
+| **Lifecycle Engine** | 6-phase state machine with automatic transitions | [`.agents/workflow/LIFECYCLE.md`](.agents/workflow/LIFECYCLE.md) |
+| **Hooks System** | Pre/post guards, failure recovery, loop control | [`.agents/workflow/HOOKS.md`](.agents/workflow/HOOKS.md) |
+| **LLM Wiki** | Hierarchical knowledge graph with sitemap root | [`.agents/llm_wiki/`](.agents/llm_wiki/) |
+| **Skills Matrix** | 25+ domain-specific expert capabilities | [`.agents/skills/`](.agents/skills/) |
+| **Scripts** | Deterministic quality checks & tooling | [`.agents/scripts/`](.agents/scripts/) |
 
 ---
 
@@ -83,21 +83,21 @@ flowchart TB
 
 #### Step 1: Read Project Rules ⚡
 
-Start with the [Project Rules](project-rules.md) - the master entry point that defines execution discipline.
+Start with the [Project Rules](AGENTS.md) - the master entry point that defines execution discipline.
 
 #### Step 2: Navigate Knowledge Graph 🗺️
 
-Begin at the [Sitemap Root](llm_wiki/sitemap.md) and drill down to your target domain:
-- **API Design** → [`wiki/api/index.md`](llm_wiki/wiki/api/index.md)
-- **Data Models** → [`wiki/data/index.md`](llm_wiki/wiki/data/index.md)
-- **Domain Logic** → [`wiki/domain/index.md`](llm_wiki/wiki/domain/index.md)
-- **Architecture** → [`wiki/architecture/index.md`](llm_wiki/wiki/architecture/index.md)
-- **Active Specs** → [`wiki/specs/index.md`](llm_wiki/wiki/specs/index.md)
-- **Testing Strategy** → [`wiki/testing/index.md`](llm_wiki/wiki/testing/index.md)
+Begin at the [Knowledge Graph Root](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) and drill down to your target domain:
+- **API Design** → [`.agents/llm_wiki/wiki/api/index.md`](.agents/llm_wiki/wiki/api/index.md)
+- **Data Models** → [`.agents/llm_wiki/wiki/data/index.md`](.agents/llm_wiki/wiki/data/index.md)
+- **Domain Logic** → [`.agents/llm_wiki/wiki/domain/index.md`](.agents/llm_wiki/wiki/domain/index.md)
+- **Architecture** → [`.agents/llm_wiki/wiki/architecture/index.md`](.agents/llm_wiki/wiki/architecture/index.md)
+- **Active Specs** → [`.agents/llm_wiki/wiki/specs/index.md`](.agents/llm_wiki/wiki/specs/index.md)
+- **Testing Strategy** → [`.agents/llm_wiki/wiki/testing/index.md`](.agents/llm_wiki/wiki/testing/index.md)
 
 #### Step 3: Run Your First Cycle 🔄
 
-Follow the [Lifecycle](harness/lifecycle.md) to complete a full task:
+Follow the [Lifecycle](.agents/workflow/LIFECYCLE.md) to complete a full task:
 ```
 Explorer → Propose → Review → Approval → Implement → QA → Archive
 ```
@@ -252,7 +252,7 @@ sequenceDiagram
 - Acceptance criteria
 - JSON request/response examples
 
-**Template**: [OpenSpec Schema](llm_wiki/schema/openspec_schema.md)
+**Template**: [OpenSpec Schema](.agents/llm_wiki/schema/openspec_schema.md)
 
 ---
 
@@ -360,42 +360,42 @@ sequenceDiagram
 ### Available Skills (25+)
 
 #### Intent & Lifecycle
-- **[intent-gateway](skills/intent-gateway/SKILL.md)** - Intent entry capability, starts "read graph first" workflow
-- **[devops-lifecycle-master](skills/devops-lifecycle-master/SKILL.md)** - Lifecycle orchestration, enforces phase boundaries
-- **[skill-graph-manager](skills/skill-graph-manager/SKILL.md)** - Maintains skill knowledge graph bidirectional links
-- **[trae-skill-index](skills/trae-skill-index/SKILL.md)** - Master skill index for quick capability discovery
+- **[intent-gateway](.agents/skills/intent-gateway/SKILL.md)** - Intent entry capability, starts "read graph first" workflow
+- **[devops-lifecycle-master](.agents/skills/devops-lifecycle-master/SKILL.md)** - Lifecycle orchestration, enforces phase boundaries
+- **[skill-graph-manager](.agents/skills/skill-graph-manager/SKILL.md)** - Maintains skill knowledge graph bidirectional links
+- **[trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)** - Master skill index for quick capability discovery
 
 #### Requirements & Design
-- **[product-manager-expert](skills/product-manager-expert/SKILL.md)** - Requirement clarification, scope definition, acceptance criteria
-- **[prd-task-splitter](skills/prd-task-splitter/SKILL.md)** - PRD decomposition into structured development tasks
-- **[devops-requirements-analysis](skills/devops-requirements-analysis/SKILL.md)** - PDD/SDD boundary梳理, executable requirement specs
-- **[devops-system-design](skills/devops-system-design/SKILL.md)** - System design & data modeling (FDD/SDD)
-- **[devops-task-planning](skills/devops-task-planning/SKILL.md)** - Design decomposition into implementation task lists
+- **[product-manager-expert](.agents/skills/product-manager-expert/SKILL.md)** - Requirement clarification, scope definition, acceptance criteria
+- **[prd-task-splitter](.agents/skills/prd-task-splitter/SKILL.md)** - PRD decomposition into structured development tasks
+- **[devops-requirements-analysis](.agents/skills/devops-requirements-analysis/SKILL.md)** - PDD/SDD boundary梳理, executable requirement specs
+- **[devops-system-design](.agents/skills/devops-system-design/SKILL.md)** - System design & data modeling (FDD/SDD)
+- **[devops-task-planning](.agents/skills/devops-task-planning/SKILL.md)** - Design decomposition into implementation task lists
 
 #### Implementation
-- **[devops-feature-implementation](skills/devops-feature-implementation/SKILL.md)** - Feature coding with TDD emphasis
-- **[devops-bug-fix](skills/devops-bug-fix/SKILL.md)** - Defect localization, reproduction, fix & regression
-- **[utils-usage-standard](skills/utils-usage-standard/SKILL.md)** - Unified utility class/framework usage patterns
-- **[aliyun-oss](skills/aliyun-oss/SKILL.md)** - Object storage (multi-bucket/env isolation/presigned URLs)
+- **[devops-feature-implementation](.agents/skills/devops-feature-implementation/SKILL.md)** - Feature coding with TDD emphasis
+- **[devops-bug-fix](.agents/skills/devops-bug-fix/SKILL.md)** - Defect localization, reproduction, fix & regression
+- **[utils-usage-standard](.agents/skills/utils-usage-standard/SKILL.md)** - Unified utility class/framework usage patterns
+- **[aliyun-oss](.agents/skills/aliyun-oss/SKILL.md)** - Object storage (multi-bucket/env isolation/presigned URLs)
 
 #### Code Standards
-- **[global-backend-standards](skills/global-backend-standards/SKILL.md)** - Global backend standards index entry
-- **[java-engineering-standards](skills/java-engineering-standards/SKILL.md)** - Java layering & package structure norms
-- **[java-backend-guidelines](skills/java-backend-guidelines/SKILL.md)** - Defensive programming, complete assembly, pagination
-- **[java-backend-api-standard](skills/java-backend-api-standard/SKILL.md)** - API design patterns (verbs/paths/response structures)
-- **[java-javadoc-standard](skills/java-javadoc-standard/SKILL.md)** - Unified Javadoc style & annotation norms
-- **[java-data-permissions](skills/java-data-permissions/SKILL.md)** - Data permission constraints (query filtering/action validation)
-- **[mybatis-sql-standard](skills/mybatis-sql-standard/SKILL.md)** - MyBatis SQL performance & safety guards
-- **[error-code-standard](skills/error-code-standard/SKILL.md)** - Unified error codes & exception expression
-- **[checkstyle](skills/checkstyle/SKILL.md)** - Java code style enforcement (Google/Sun hybrid)
+- **[global-backend-standards](.agents/skills/global-backend-standards/SKILL.md)** - Global backend standards index entry
+- **[java-engineering-standards](.agents/skills/java-engineering-standards/SKILL.md)** - Java layering & package structure norms
+- **[java-backend-guidelines](.agents/skills/java-backend-guidelines/SKILL.md)** - Defensive programming, complete assembly, pagination
+- **[java-backend-api-standard](.agents/skills/java-backend-api-standard/SKILL.md)** - API design patterns (verbs/paths/response structures)
+- **[java-javadoc-standard](.agents/skills/java-javadoc-standard/SKILL.md)** - Unified Javadoc style & annotation norms
+- **[java-data-permissions](.agents/skills/java-data-permissions/SKILL.md)** - Data permission constraints (query filtering/action validation)
+- **[mybatis-sql-standard](.agents/skills/mybatis-sql-standard/SKILL.md)** - MyBatis SQL performance & safety guards
+- **[error-code-standard](.agents/skills/error-code-standard/SKILL.md)** - Unified error codes & exception expression
+- **[checkstyle](.agents/skills/checkstyle/SKILL.md)** - Java code style enforcement (Google/Sun hybrid)
 
 #### Testing & Review
-- **[devops-testing-standard](skills/devops-testing-standard/SKILL.md)** - Testing norms & TDD phase guidance
-- **[code-review-checklist](skills/code-review-checklist/SKILL.md)** - Mandatory review checklist (security/performance/maintainability)
+- **[devops-testing-standard](.agents/skills/devops-testing-standard/SKILL.md)** - Testing norms & TDD phase guidance
+- **[code-review-checklist](.agents/skills/code-review-checklist/SKILL.md)** - Mandatory review checklist (security/performance/maintainability)
 
 #### Documentation
-- **[api-documentation-rules](skills/api-documentation-rules/SKILL.md)** - Mandatory API doc generation & archival
-- **[database-documentation-sync](skills/database-documentation-sync/SKILL.md)** - DB structure change sync (tables/lists/ER diagrams)
+- **[api-documentation-rules](.agents/skills/api-documentation-rules/SKILL.md)** - Mandatory API doc generation & archival
+- **[database-documentation-sync](.agents/skills/database-documentation-sync/SKILL.md)** - DB structure change sync (tables/lists/ER diagrams)
 
 ### Phase → Skills Mapping
 
@@ -414,50 +414,50 @@ sequenceDiagram
 
 ```
 java-harness-agent/
-├── intent/                  # Intent gateway & context funnel
-│   ├── catalog/             # Launch specs (intent queues)
-│   ├── intent-gateway.md    # Intent mapping & queue assembly
-│   └── context-funnel.md    # Bidirectional knowledge navigation
+├── .agents/                 # Agent workspace (New Standard)
+│   ├── router/              # Intent gateway & context funnel
+│   │   ├── runs/            # Intent queues
+│   │   ├── ROUTER.md        # Intent mapping & queue assembly
+│   │   └── CONTEXT_FUNNEL.md# Bidirectional knowledge navigation
+│   │
+│   ├── workflow/            # Lifecycle state machine & hooks
+│   │   ├── LIFECYCLE.md     # 6-phase state machine definition
+│   │   ├── HOOKS.md         # Interceptor specifications
+│   │   └── ARCHIVE_WAL.md   # Knowledge compaction rules & WAL
+│   │
+│   ├── llm_wiki/            # Knowledge graph (sitemap/index/docs)
+│   │   ├── KNOWLEDGE_GRAPH.md # 🗺️ Root node (mandatory entry point)
+│   │   ├── purpose.md       # System philosophy & design principles
+│   │   ├── schema/          # Contract templates & schemas
+│   │   │   └── openspec_schema.md
+│   │   ├── wiki/            # Active knowledge domains
+│   │   │   ├── api/         # API contracts & endpoint signatures
+│   │   │   ├── data/        # Data models, schemas & indexes
+│   │   │   ├── domain/      # Domain models & business dictionary
+│   │   │   ├── architecture/# Architecture decisions (ADR)
+│   │   │   ├── specs/       # Active requirements (openspec files)
+│   │   │   ├── testing/     # Testing strategies & evidence standards
+│   │   │   └── preferences/ # Dynamic preferences & taboos
+│   │   └── archive/         # Cold storage (extracted specs)
+│   │       └── wal/         # Write-ahead log fragments
+│   │
+│   ├── skills/              # Specialized capabilities (25+)
+│   │   ├── intent-gateway/
+│   │   ├── devops-lifecycle-master/
+│   │   ├── product-manager-expert/
+│   │   ├── java-backend-api-standard/
+│   │   ├── mybatis-sql-standard/
+│   │   └── ... (20+ more)
+│   │
+│   └── scripts/             # Deterministic tools (optional)
+│       ├── wiki/
+│       │   ├── wiki_linter.py       # Graph health check
+│       │   ├── schema_checker.py    # Contract structure validation
+│       │   └── pref_tag_checker.py  # Preference tag rule check
+│       └── harness/
+│           └── engine.py            # Queue state helper
 │
-├── harness/                 # Lifecycle state machine & hooks
-│   ├── lifecycle.md         # 6-phase state machine definition
-│   ├── hooks.md             # Interceptor specifications
-│   └── compaction-rules.md  # Knowledge compaction rules
-│
-├── llm_wiki/                # Knowledge graph (sitemap/index/docs)
-│   ├── sitemap.md           # 🗺️ Root node (mandatory entry point)
-│   ├── purpose.md           # System philosophy & design principles
-│   ├── schema/              # Contract templates & schemas
-│   │   ├── index.md
-│   │   └── openspec_schema.md
-│   ├── wiki/                # Active knowledge domains
-│   │   ├── api/             # API contracts & endpoint signatures
-│   │   ├── data/            # Data models, schemas & indexes
-│   │   ├── domain/          # Domain models & business dictionary
-│   │   ├── architecture/    # Architecture decisions (ADR)
-│   │   ├── specs/           # Active requirements (openspec files)
-│   │   ├── testing/         # Testing strategies & evidence standards
-│   │   └── preferences/     # Dynamic preferences & taboos
-│   └── archive/             # Cold storage (extracted specs)
-│       └── *.md             # Archived openspec documents
-│
-├── skills/                  # Specialized capabilities (25+)
-│   ├── intent-gateway/
-│   ├── devops-lifecycle-master/
-│   ├── product-manager-expert/
-│   ├── java-backend-api-standard/
-│   ├── mybatis-sql-standard/
-│   └── ... (20+ more)
-│
-├── scripts/                 # Deterministic tools (optional)
-│   ├── wiki/
-│   │   ├── wiki_linter.py       # Graph health check (dead links/islands)
-│   │   ├── schema_checker.py    # Contract structure validation
-│   │   └── pref_tag_checker.py  # Preference tag规范检查
-│   └── harness/
-│       └── engine.py            # Queue state辅助 (optional)
-│
-├── project-rules.md         # 📌 Project-level rule entry point
+├── AGENTS.md                # 📌 Project-level rule entry point
 ├── README.md                # This file - English overview
 ├── README_zh.md             # Chinese version of this README
 └── ENGINEERING_MANUAL.md    # Detailed engineering manual (English)
@@ -471,19 +471,19 @@ These scripts provide deterministic quality checks (they report but don't modify
 
 ### Graph Health Check
 ```bash
-python scripts/wiki/wiki_linter.py
+python .agents/scripts/wiki/wiki_linter.py
 ```
 **Checks**: Dead links, orphaned files, index length warnings
 
 ### Contract Structure Validation
 ```bash
-python scripts/wiki/schema_checker.py
+python .agents/scripts/wiki/schema_checker.py
 ```
 **Checks**: Missing key sections, JSON example presence
 
 ### Preference Tag Inspection
 ```bash
-python scripts/wiki/pref_tag_checker.py
+python .agents/scripts/wiki/pref_tag_checker.py
 ```
 **Checks**: Rule tag规范 for precise retrieval
 
@@ -492,7 +492,7 @@ python scripts/wiki/pref_tag_checker.py
 ## 🎯 Engineering Red Lines
 
 ### 🚫 No Blind Search
-Always start from [Sitemap](llm_wiki/sitemap.md) → drill down through indices. Fallback search only when indices fail.
+Always start from [Knowledge Graph Root](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) → drill down through indices. Fallback search only when indices fail.
 
 ### 🚫 No Unauthorized Cross-Domain Changes
 Cross-domain modifications require explicit authorization in `openspec.md` and confirmation during Review/HITL phases.
