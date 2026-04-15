@@ -442,7 +442,7 @@ java-harness-agent/
 │       │   ├── wiki_linter.py       # 图谱健康检查（死链/孤岛）
 │       │   ├── schema_checker.py    # 契约结构验证
 │       │   └── pref_tag_checker.py  # 偏好标签规范检查
-│       └── harness/
+│       └── workflow/
 │           └── engine.py            # 队列状态辅助（可选）
 │
 ├── AGENTS.md                # 📌 项目级规则入口

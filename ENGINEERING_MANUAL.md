@@ -173,7 +173,7 @@ Recommend treating "what to read, how to do, where to write back after completio
 - **Trigger Points**: Must read at the start of every task; return here when disputes arise (paths, whether to parallelize, whether handoffs are needed).
 - **Typical Scenarios**: Newcomer onboarding; external Agent integration; task interruption recovery; adjudication when "should I continue implementing / should I make cross-domain changes" arises.
 
-### 2.2 intent/ (Intent Layer: Transforming Requirements into Executable Queues)
+### 2.2 .agents/router/ (Intent Layer: Transforming Requirements into Executable Queues)
 
 This layer solves the problem of "user says one sentence → what exactly do I need to do, what first, what next".
 
@@ -189,7 +189,7 @@ This layer solves the problem of "user says one sentence → what exactly do I n
   - Schema changes: Split into `Propose.Data -> Review -> Approval -> Implement.Code -> QA.Test -> Archive`.
   - Bug fix: Split into `Explore.Req -> Implement.Code -> QA.Test -> Archive`.
 
-### 2.3 harness/ (Process Layer: Lifecycle State Machine + Hook Correction)
+### 2.3 .agents/workflow/ (Process Layer: Lifecycle State Machine + Hook Correction)
 
 This layer solves "how to ensure tasks are rollbackable, reviewable, and closed-loop".
 
@@ -206,12 +206,12 @@ This layer solves "how to ensure tasks are rollbackable, reviewable, and closed-
   - Cross-domain modification: guard_hook triggers domain boundary guard → requires explicit authorization or stop.
   - Multi-intent queue: loop_hook consumes queue → automatically starts next Explorer round.
 
-### 2.4 llm_wiki/ (Knowledge Layer: Evolvable Fractal Graph)
+### 2.4 .agents/llm_wiki/ (Knowledge Layer: Evolvable Fractal Graph)
 
 This layer solves "how to organize knowledge, how to retrieve it, how to prevent bloat".
 
 - **Key Files**
-  - [sitemap.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
+  - [.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
     - **What it does**: Knowledge graph root node, only mounts top-level domain entries; mandatory retrieval starting point for Agents.
   - schema/
     - [schema/index.md](.agents/llm_wiki/schema/index.md): Specification domain index (router), telling you "which contract to read / which process to jump to".
@@ -224,14 +224,14 @@ This layer solves "how to organize knowledge, how to retrieve it, how to prevent
   - New knowledge write-back: Extract unstable specs into stable API/Data/Domain indices during Archive phase.
   - Anti-bloat splitting: When an index exceeds threshold → split into subdirectory index and update parent mount.
 
-### 2.5 skills/ (Capability Layer: Specialized Expert Capability Plugins)
+### 2.5 .agents/skills/ (Capability Layer: Specialized Expert Capability Plugins)
 
 This layer solves "when tasks enter specialized domains, how to quickly invoke professional capabilities while maintaining consistent standards".
 
 - **Basic Convention**: One directory per skill, entry file is `.agents/skills/<skill-name>/SKILL.md`.
 - **Typical Scenarios**: Must pass Java/API/SQL/permission standard reviews before implementation; must synchronize API/DB documentation during archive phase.
 
-### 2.6 scripts/ (Tool Layer: Deterministic Enhancement, Does Not Replace Agent)
+### 2.6 .agents/scripts/ (Tool Layer: Deterministic Enhancement, Does Not Replace Agent)
 
 This layer solves "which things must be completed deterministically, cannot rely on LLM guessing".
 
@@ -239,32 +239,32 @@ This layer solves "which things must be completed deterministically, cannot rely
   - `wiki_linter.py`: Graph health check (dead links/orphans/length warnings).
   - `schema_checker.py`: Contract structure health check (critical paragraph and JSON example existence checks).
   - `pref_tag_checker.py`: Preference rule tag health check (for precise retrieval).
-- harness/
-  - `engine.py`: Queue state auxiliary (optional; helps record current intent/phase/retry count for complex tasks).
+- .agents/workflow/
+  - `engine.py`: Queue state auxiliary (optional; helps record current .agents/router/phase/retry count for complex tasks).
 
 ### 2.7 Typical Execution Path Examples for Each Directory
 
-**intent/**
+**.agents/router/**
 - Typical path: User requirements → read .agents/llm_wiki/KNOWLEDGE_GRAPH.md → trigger intent mapping → write to .agents/router/runs/launch_spec_*.md
 - Scenario example: New endpoint → generate Propose.API -> Implement.Code -> QA.Test queue
 - Result: Queue becomes the "sole scheduling basis" for subsequent Lifecycle
 
-**harness/**
+**.agents/workflow/**
 - Typical path: Read launch_spec → enter Phase 1 → Propose/Review → Approval (HITL) → Implement → QA → Archive
 - Scenario example: Review not passed → trigger fail_hook → rollback to Propose for rewrite
 - Result: State machine ensures rollbackability, correctability, and closed-loop
 
-**llm_wiki/**
-- Typical path: Drill down from sitemap.md → enter domain index → read specific documents → reverse write-back to index during archive
+**.agents/llm_wiki/**
+- Typical path: Drill down from .agents/llm_wiki/KNOWLEDGE_GRAPH.md → enter domain index → read specific documents → reverse write-back to index during archive
 - Scenario example: New API → append entry to wiki/api/index.md → split into subdirectory if threshold exceeded
 - Result: Knowledge is retrievable, extensible, and non-bloated
 
-**skills/**
+**.agents/skills/**
 - Typical path: Enter Review/Implement/QA → invoke corresponding skills based on task → output standardized suggestions/check results
 - Scenario example: New Controller → trigger java-backend-api-standard and api-documentation-rules
 - Result: Professional rules前置, reducing implementation deviation
 
-**scripts/**
+**.agents/scripts/**
 - Typical path: Enter Archive → optionally run wiki_linter/schema_checker/pref_tag_checker → output health report or format suggestions
 - Scenario example: Discover orphaned files →提示 mount to sitemap/index
 - Result: Graph connectivity and structural quality controllable
@@ -543,7 +543,7 @@ Contract template details: [OpenSpec Schema](.agents/llm_wiki/schema/openspec_sc
 - Graph health check (dead links/orphans/length warnings): [wiki_linter.py](.agents/scripts/wiki/wiki_linter.py)
 - Contract structure health check (critical structure missing checks): [schema_checker.py](.agents/scripts/wiki/schema_checker.py)
 - Preference tag health check (rule tag规范 checks): [pref_tag_checker.py](.agents/scripts/wiki/pref_tag_checker.py)
-- Lifecycle queue auxiliary (optional): [engine.py](.agents/scripts/harness/engine.py)
+- Lifecycle queue auxiliary (optional): [engine.py](.agents/scripts/.agents/workflow/engine.py)
 
 ---
 
@@ -554,10 +554,10 @@ Contract template details: [OpenSpec Schema](.agents/llm_wiki/schema/openspec_sc
 | OpenSpec (Contract-First) | Freeze requirements and design with structured contracts first, then allow implementation and testing | `.agents/llm_wiki/schema/openspec_schema.md` + Phase 2 Propose + Phase 3.5 Approval |
 | Harness (Lifecycle/State Machine) | Processes are not verbal agreements, but rollbackable, interceptable, closed-loop state machines | `.agents/workflow/LIFECYCLE.md` |
 | Hooks (Correction System) | Use guard/fail/loop to lock "unauthorized access, runaway, bloat" into the process | `.agents/workflow/HOOKS.md` |
-| LLM Wiki (Evolvable Knowledge Base) | Use sitemap + multi-level indices to let Agents autonomously roam for retrieval; use archive to prevent bloat | `.agents/llm_wiki/KNOWLEDGE_GRAPH.md` + `llm_wiki/wiki/*/index.md` + `llm_wiki/archive/` |
+| LLM Wiki (Evolvable Knowledge Base) | Use sitemap + multi-level indices to let Agents autonomously roam for retrieval; use archive to prevent bloat | `.agents/llm_wiki/KNOWLEDGE_GRAPH.md` + `.agents/llm_wiki/wiki/*/index.md` + `.agents/llm_wiki/archive/` |
 | Knowledge Graph (Connectivity) | All knowledge must be traceable from root; orphans/dead links considered "garbage" | sitemap mounting discipline + .agents/scripts/wiki/wiki_linter.py (optional) |
 | Skills (Expert Capability Matrix) | Delegate professional problems to specialized skills, invoked on-demand within process phases, ensuring consistent standards | `.agents/skills/*/SKILL.md` + Phase mapping table |
-| Engine (Optional Auxiliary) | Does not replace Agent, only provides deterministic hosting of "queue/phase/retry count" for complex tasks | `.agents/scripts/harness/engine.py` (optional) |
+| Engine (Optional Auxiliary) | Does not replace Agent, only provides deterministic hosting of "queue/phase/retry count" for complex tasks | `.agents/scripts/.agents/workflow/engine.py` (optional) |
 | Script Tools (Deterministic Enhancement) | Deterministic checks and auxiliaries (graph health checks, index splitting suggestions) delegated to scripts | `.agents/scripts/wiki/*` |
 
 ### 9.1 Correspondence with PDD / FDD / SDD / TDD

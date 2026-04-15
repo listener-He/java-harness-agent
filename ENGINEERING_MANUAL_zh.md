@@ -170,14 +170,14 @@ flowchart TB
 - **触发点**：每次任务开始时必须先读；当出现争议（路径、是否并行、是否需要交接物）时回到此处。
 - **典型场景**：新人 onboarding；外部 Agent 接入；任务中断恢复；出现“该不该继续实现/该不该跨域改动”时的裁决。
 
-### 2.2 intent/（意图层：把需求变成可执行队列）
+### 2.2 .agents/router/（意图层：把需求变成可执行队列）
 
 本层解决“用户一句话 → 我到底要做哪些事、先做什么、后做什么”的问题。
 
 - **关键文件**
     - [intent-gateway.md](.agents/router/ROUTER.md)
         - **做什么**：把自然语言需求拆成意图队列（例如 `Propose.API -> Implement.Code -> QA.Test`），并定义“并发语义=顺序无关性”。
-        - **输出**：`.agents/router/runs/launch_spec_*.md`（意图队列持久化 + 断点续传）。
+        - **输出**：`router/runs/launch_spec_*.md`（意图队列持久化 + 断点续传）。
     - [context-funnel.md](.agents/router/CONTEXT_FUNNEL.md)
         - **做什么**：定义 Agent 的“正向检索（下钻）”与“反向写回（归档提取）”。
         - **红线**：只有索引树找不到时才允许兜底搜索；写回必须先找挂载点，索引超过阈值必须拆分。
@@ -186,7 +186,7 @@ flowchart TB
     - 改表结构：拆成 `Propose.Data -> Review -> Approval -> Implement.Code -> QA.Test -> Archive`。
     - Bug 修复：拆成 `Explore.Req -> Implement.Code -> QA.Test -> Archive`。
 
-### 2.3 harness/（流程层：生命周期状态机 + 钩子纠偏）
+### 2.3 .agents/workflow/（流程层：生命周期状态机 + 钩子纠偏）
 
 本层解决“怎么确保任务可回退、可审查、可闭环”的问题。
 
@@ -208,7 +208,7 @@ flowchart TB
 本层解决“知识如何组织、如何检索、如何防膨胀”的问题。
 
 - **关键文件**
-    - [sitemap.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
+    - [.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
         - **做什么**：知识图谱根节点，只挂载顶级域入口；是 Agent 的强制检索起点。
     - schema/
         - [schema/index.md](.agents/llm_wiki/schema/index.md)：规范域索引（路由器），告诉你“该读哪份契约/该跳到哪份流程”。
@@ -221,14 +221,14 @@ flowchart TB
     - 新知识写回：Archive 阶段把不稳定 spec 提取成稳定 API/Data/Domain 索引。
     - 防膨胀拆分：某个 index 超过阈值 → 拆分子目录 index 并更新上级挂载。
 
-### 2.5 skills/（能力层：专有专家能力插件）
+### 2.5 .agents/skills/（能力层：专有专家能力插件）
 
 本层解决“当任务进入专业领域时，如何快速调用专业能力并保持一致标准”的问题。
 
-- **基本约定**：每个技能一个目录，入口文件为 `.agents/skills/<skill-name>/SKILL.md`。
+- **基本约定**：每个技能一个目录，入口文件为 `skills/<skill-name>/SKILL.md`。
 - **典型场景**：实现前必须过 Java/API/SQL/权限等规范审查；归档阶段必须同步 API/DB 文档。
 
-### 2.6 scripts/（工具层：确定性增强，不替代 Agent）
+### 2.6 .agents/scripts/（工具层：确定性增强，不替代 Agent）
 
 本层解决“哪些事情必须确定性完成，不能靠大模型猜”的问题。
 
@@ -236,30 +236,38 @@ flowchart TB
     - `wiki_linter.py`：图谱体检（死链/孤岛/超长预警）。
     - `schema_checker.py`：契约结构体检（关键段落与 JSON 示例存在性检查）。
     - `pref_tag_checker.py`：偏好规则标签体检（便于精准检索）。
-    - 其他可选脚本以 `.agents/scripts/wiki/` 目录为准（例如 `graph_checker.py`、`compaction.py` 等，未必纳入当前流程引用）。
-- harness/
+    - 其他可选脚本以 `scripts/wiki/` 目录为准（例如 `graph_checker.py`、`compaction.py` 等，未必纳入当前流程引用）。
+- workflow/
     - `engine.py`：队列状态辅助（可选；用于复杂任务时帮助记录当前意图/阶段/重试次数）。
 
 ### 2.7 每个目录的典型运行路径示例
 
-intent/
+**router/**
 
-- 典型路径：用户需求 → 读取 llm\_wiki/sitemap.md → 触发意图映射 → 写入 .agents/router/runs/launch\_spec\_\*.md
+- 典型路径：用户需求 → 读取 llm\_wiki/.agents/llm_wiki/KNOWLEDGE_GRAPH.md → 触发意图映射 → 写入 .agents/router/runs/launch\_spec\_\*.md
 - 场景示例：新增接口 → 生成 Propose.API -> Implement.Code -> QA.Test 队列
 - 结果：队列成为后续 Lifecycle 的“唯一调度依据”
-  harness/
+
+**workflow/**
+
 - 典型路径：读取 launch\_spec → 进入 Phase 1 → Propose/Review → Approval（HITL）→ Implement → QA → Archive
 - 场景示例：Review 未通过 → 触发 fail\_hook → 退回 Propose 重写
 - 结果：状态机保证可回退、可纠偏、可闭环
-  llm\_wiki/
-- 典型路径：从 sitemap.md 下钻 → 进入域 index → 读取具体文档 → 归档时反向写回 index
+
+**llm_wiki/**
+- 
+- 典型路径：从 .agents/llm_wiki/KNOWLEDGE_GRAPH.md 下钻 → 进入域 index → 读取具体文档 → 归档时反向写回 index
 - 场景示例：新增 API → wiki/api/index.md 追加条目 → 超过阈值则拆分子目录
 - 结果：知识可检索、可扩展、不膨胀
-  skills/
+
+**skills/**
+- 
 - 典型路径：进入 Review/Implement/QA → 根据任务调用对应技能 → 输出规范化建议/检查结果
 - 场景示例：新增 Controller → 触发 java-backend-api-standard 与 api-documentation-rules
 - 结果：专业规则前置，降低实现偏差
-  scripts/
+
+**scripts/**
+- 
 - 典型路径：进入 Archive → 可选运行 wiki\_linter/schema\_checker/pref\_tag\_checker → 输出体检报告或格式建议
 - 场景示例：发现孤岛文件 → 提示挂载到 sitemap/index
 - 结果：图谱连通性与结构质量可控
@@ -512,8 +520,8 @@ flowchart TB
 - 图谱体检（死链/孤岛/超长预警）：[wiki\_linter.py](.agents/scripts/wiki/wiki_linter.py)
 - 契约结构体检（关键结构缺失检查）：[schema\_checker.py](.agents/scripts/wiki/schema_checker.py)
 - 偏好标签体检（规则标签规范检查）：[pref\_tag\_checker.py](.agents/scripts/wiki/pref_tag_checker.py)
-- 生命周期队列辅助（可选）：[engine.py](.agents/scripts/harness/engine.py)
-- 其他脚本以 `.agents/scripts/wiki/` 目录为准（不强制纳入流程）。
+- 生命周期队列辅助（可选）：[engine.py](.agents/scripts/.agents/workflow/engine.py)
+- 其他脚本以 `scripts/wiki/` 目录为准（不强制纳入流程）。
 
 ***
 
@@ -524,10 +532,10 @@ flowchart TB
 | OpenSpec（契约先行）    | 先用结构化契约冻结需求与设计，再允许进入实现与测试                         | `.agents/llm_wiki/schema/openspec_schema.md` + Phase 2 Propose + Phase 3.5 Approval |
 | Harness（生命周期/状态机） | 流程不是口头约定，而是可回退、可拦截、可闭环的状态机                        | `.agents/workflow/LIFECYCLE.md`                                                      |
 | Hooks（纠偏系统）       | 用 guard/fail/loop 把“越权、暴走、膨胀”锁死在流程里               | `.agents/workflow/HOOKS.md`                                                          |
-| LLM Wiki（可演进知识库）  | 用 sitemap + 多级 index 让 Agent 自主游走检索；用 archive 防膨胀 | `.agents/llm_wiki/KNOWLEDGE_GRAPH.md` + `llm_wiki/wiki/*/index.md` + `llm_wiki/archive/`    |
+| LLM Wiki（可演进知识库）  | 用 sitemap + 多级 index 让 Agent 自主游走检索；用 archive 防膨胀 | `.agents/llm_wiki/KNOWLEDGE_GRAPH.md` + `.agents/llm_wiki/wiki/*/index.md` + `.agents/llm_wiki/archive/`    |
 | 知识图谱（连通性）         | 所有知识必须可从根溯源；孤岛/死链视为“垃圾”                           | sitemap 挂载纪律 + .agents/scripts/wiki/wiki\_linter.py（可选）                             |
 | Skills（专家能力矩阵）    | 专业问题交给专业技能，流程阶段内按需调用，保证一致标准                       | `.agents/skills/*/SKILL.md` + Phase 映射表                                             |
-| Engine（可选辅助）      | 不替代 Agent，只在复杂任务时提供“队列/阶段/重试计数”的确定性托管             | `.agents/scripts/harness/engine.py`（可选）                                             |
+| Engine（可选辅助）      | 不替代 Agent，只在复杂任务时提供“队列/阶段/重试计数”的确定性托管             | `.agents/scripts/.agents/workflow/engine.py`（可选）                                             |
 | 脚本工具（确定性增强）       | 需要确定性的检查与辅助（图谱体检、索引拆分建议）交给脚本                      | `.agents/scripts/wiki/*`                                                            |
 
 ### 9.1 与 PDD / FDD / SDD / TDD 的对应关系
@@ -542,7 +550,7 @@ flowchart TB
 ## 10. 入口索引（建议收藏）
 
 - 规则入口：[AGENTS.md](AGENTS.md)
-- 知识图谱根入口：[llm\_wiki/sitemap.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
+- 知识图谱根入口：[llm\_wiki/.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
 - 契约模板：[llm\_wiki/schema/openspec\_schema.md](.agents/llm_wiki/schema/openspec_schema.md)
 - 意图网关：[.agents/router/ROUTER.md](.agents/router/ROUTER.md)
 - 知识漏斗：[.agents/router/CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
