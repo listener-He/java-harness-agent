@@ -101,9 +101,9 @@ This section provides typical "follow-along" playbooks. The rules remain consist
 
 - **Goal**: Backend-led delivery allowing frontend and QA to proceed in parallel after contract freeze.
 - **Drill-down Reading**: sitemap → schema/openspec_schema (confirm handoff fields) → wiki/api/index.
-- **Lifecycle Path**: Explorer → Propose → Review → Approval (freeze contract) → Implement → QA → Archive.
+- **Lifecycle Path**: Explorer → Propose → Review → Approval Gate (freeze contract) → Implement → QA → Archive.
 - **Collaboration Key Points**:
-  - Freeze OpenSpec during Approval phase, making it the single source of truth for parallel frontend/QA work.
+  - Freeze OpenSpec during Approval Gate phase, making it the single source of truth for parallel frontend/QA work.
   - Minimum backend handoff comes from OpenSpec (example JSON, acceptance criteria, error codes); other content remains backend-cohesive, not forced outward.
 
 ### Scenario G: Knowledge Write-back and Anti-Bloat (Archive Maintenance)
@@ -209,7 +209,7 @@ This layer solves "how to ensure tasks are rollbackable, reviewable, and closed-
 
 - **Key Files**
   - [lifecycle.md](.agents/workflow/LIFECYCLE.md)
-    - **What it does**: Defines unidirectional state machine from Explorer→Archive; specifies freeze points (Phase 3.5) and closed-loop points (Phase 6).
+    - **What it does**: Defines unidirectional state machine from Explorer→Archive; specifies freeze points (Approval Gate) and closed-loop points (Phase 6).
     - **Output**: Phased deliverables (explore_report/openspec/test evidence/archive extraction).
   - [hooks.md](.agents/workflow/HOOKS.md)
     - **What it does**: Writes engineering red lines "into the process", forming guard/fail/loop correction systems.
@@ -264,7 +264,7 @@ This layer solves "which things must be completed deterministically, cannot rely
 - Result: Queue becomes the "sole scheduling basis" for subsequent Lifecycle
 
 **.agents/workflow/**
-- Typical path: Read launch_spec → enter Phase 1 → Propose/Review → Approval (HITL) → Implement → QA → Archive
+- Typical path: Read launch_spec → enter Phase 1 → Propose/Review → Approval Gate (HITL) → Implement → QA → Archive
 - Scenario example: Review not passed → trigger fail_hook → rollback to Propose for rewrite
 - Result: State machine ensures rollbackability, correctability, and closed-loop
 
@@ -613,7 +613,7 @@ Contract template details: [OpenSpec Schema](.agents/llm_wiki/schema/openspec_sc
 - Graph health check (dead links/orphans/length warnings): [wiki_linter.py](.agents/scripts/wiki/wiki_linter.py)
 - Contract structure health check (critical structure missing checks): [schema_checker.py](.agents/scripts/wiki/schema_checker.py)
 - Preference tag health check (rule tag规范 checks): [pref_tag_checker.py](.agents/scripts/wiki/pref_tag_checker.py)
-- Lifecycle queue auxiliary (optional): [engine.py](.agents/scripts/.agents/workflow/engine.py)
+- Lifecycle queue auxiliary (optional): [engine.py](.agents/scripts/harness/engine.py)
 
 ---
 
@@ -621,13 +621,13 @@ Contract template details: [OpenSpec Schema](.agents/llm_wiki/schema/openspec_sc
 
 | Idea/Component | Our Understanding | Where Implemented |
 |----------------|-------------------|-------------------|
-| OpenSpec (Contract-First) | Freeze requirements and design with structured contracts first, then allow implementation and testing | `.agents/llm_wiki/schema/openspec_schema.md` + Phase 2 Propose + Phase 3.5 Approval |
+| OpenSpec (Contract-First) | Freeze requirements and design with structured contracts first, then allow implementation and testing | `.agents/llm_wiki/schema/openspec_schema.md` + Phase 2 Propose + Approval Gate |
 | Harness (Lifecycle/State Machine) | Processes are not verbal agreements, but rollbackable, interceptable, closed-loop state machines | `.agents/workflow/LIFECYCLE.md` |
 | Hooks (Correction System) | Use guard/fail/loop to lock "unauthorized access, runaway, bloat" into the process | `.agents/workflow/HOOKS.md` |
 | LLM Wiki (Evolvable Knowledge Base) | Use sitemap + multi-level indices to let Agents autonomously roam for retrieval; use archive to prevent bloat | `.agents/llm_wiki/KNOWLEDGE_GRAPH.md` + `.agents/llm_wiki/wiki/*/index.md` + `.agents/llm_wiki/archive/` |
 | Knowledge Graph (Connectivity) | All knowledge must be traceable from root; orphans/dead links considered "garbage" | sitemap mounting discipline + .agents/scripts/wiki/wiki_linter.py (optional) |
 | Skills (Expert Capability Matrix) | Delegate professional problems to specialized skills, invoked on-demand within process phases, ensuring consistent standards | `.agents/skills/*/SKILL.md` + Phase mapping table |
-| Engine (Optional Auxiliary) | Does not replace Agent, only provides deterministic hosting of "queue/phase/retry count" for complex tasks | `.agents/scripts/.agents/workflow/engine.py` (optional) |
+| Engine (Optional Auxiliary) | Does not replace Agent, only provides deterministic hosting of "queue/phase/retry count" for complex tasks | `.agents/scripts/harness/engine.py` (optional) |
 | Script Tools (Deterministic Enhancement) | Deterministic checks and auxiliaries (graph health checks, index splitting suggestions) delegated to scripts | `.agents/scripts/wiki/*` |
 
 ### 9.1 Correspondence with PDD / FDD / SDD / TDD

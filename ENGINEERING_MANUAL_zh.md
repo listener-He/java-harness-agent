@@ -97,9 +97,9 @@
 
 - 目标：后端主导交付，但允许前端与 QA 在契约冻结后并行推进。
 - 下钻阅读：sitemap → schema/openspec\_schema（确认交接字段）→ wiki/api/index。
-- 生命周期路径：Explorer → Propose → Review → Approval（冻结契约）→ Implement → QA → Archive。
+- 生命周期路径：Explorer → Propose → Review → Approval Gate（冻结契约）→ Implement → QA → Archive。
 - 协作关键点：
-    - 在 Approval 阶段冻结 OpenSpec，使其可被前端/QA 作为并行工作的唯一依据。
+    - 在 Approval Gate 阶段冻结 OpenSpec，使其可被前端/QA 作为并行工作的唯一依据。
     - 后端对外最小交接物来自 OpenSpec（示例 JSON、验收标准、错误码）；其余内容保持后端内聚，不强制外扩。
 
 ### 场景 G：知识写回与防膨胀（归档维护）
@@ -206,7 +206,7 @@ flowchart TB
 
 - **关键文件**
     - [lifecycle.md](.agents/workflow/LIFECYCLE.md)
-        - **做什么**：定义 Explorer→Archive 的单向状态机；规定冻结点（Phase 3.5）、闭环点（Phase 6）。
+        - **做什么**：定义 Explorer→Archive 的单向状态机；规定冻结点（Approval Gate）、闭环点（Phase 6）。
         - **输出**：阶段性产物（explore\_report/openspec/测试证据/归档提取）。
     - [hooks.md](.agents/workflow/HOOKS.md)
         - **做什么**：把工程红线“写进流程里”，形成 guard/fail/loop 的纠偏系统。
@@ -264,7 +264,7 @@ flowchart TB
 
 **workflow/**
 
-- 典型路径：读取 launch\_spec → 进入 Phase 1 → Propose/Review → Approval（HITL）→ Implement → QA → Archive
+- 典型路径：读取 launch\_spec → 进入 Phase 1 → Propose/Review → Approval Gate（HITL）→ Implement → QA → Archive
 - 场景示例：Review 未通过 → 触发 fail\_hook → 退回 Propose 重写
 - 结果：状态机保证可回退、可纠偏、可闭环
 
@@ -590,7 +590,7 @@ flowchart TB
 - 图谱体检（死链/孤岛/超长预警）：[wiki\_linter.py](.agents/scripts/wiki/wiki_linter.py)
 - 契约结构体检（关键结构缺失检查）：[schema\_checker.py](.agents/scripts/wiki/schema_checker.py)
 - 偏好标签体检（规则标签规范检查）：[pref\_tag\_checker.py](.agents/scripts/wiki/pref_tag_checker.py)
-- 生命周期队列辅助（可选）：[engine.py](.agents/scripts/.agents/workflow/engine.py)
+- 生命周期队列辅助（可选）：[engine.py](.agents/scripts/harness/engine.py)
 - 其他脚本以 `scripts/wiki/` 目录为准（不强制纳入流程）。
 
 ***
@@ -599,13 +599,13 @@ flowchart TB
 
 | 思想/组件             | 我们的理解                                             | 在哪里落地                                                                       |
 | ----------------- | ------------------------------------------------- | --------------------------------------------------------------------------- |
-| OpenSpec（契约先行）    | 先用结构化契约冻结需求与设计，再允许进入实现与测试                         | `.agents/llm_wiki/schema/openspec_schema.md` + Phase 2 Propose + Phase 3.5 Approval |
+| OpenSpec（契约先行）    | 先用结构化契约冻结需求与设计，再允许进入实现与测试                         | `.agents/llm_wiki/schema/openspec_schema.md` + Phase 2 Propose + Approval Gate |
 | Harness（生命周期/状态机） | 流程不是口头约定，而是可回退、可拦截、可闭环的状态机                        | `.agents/workflow/LIFECYCLE.md`                                                      |
-| Hooks（纠偏系统）       | 用 guard/fail/loop 把“越权、暴走、膨胀”锁死在流程里               | `.agents/workflow/HOOKS.md`                                                          |
+| Hooks（纠偏系统）       | 用 guard/fail/loop 把"越权、暴走、膨胀"锁死在流程里               | `.agents/workflow/HOOKS.md`                                                          |
 | LLM Wiki（可演进知识库）  | 用 sitemap + 多级 index 让 Agent 自主游走检索；用 archive 防膨胀 | `.agents/llm_wiki/KNOWLEDGE_GRAPH.md` + `.agents/llm_wiki/wiki/*/index.md` + `.agents/llm_wiki/archive/`    |
-| 知识图谱（连通性）         | 所有知识必须可从根溯源；孤岛/死链视为“垃圾”                           | sitemap 挂载纪律 + .agents/scripts/wiki/wiki\_linter.py（可选）                             |
+| 知识图谱（连通性）         | 所有知识必须可从根溯源；孤岛/死链视为"垃圾"                           | sitemap 挂载纪律 + .agents/scripts/wiki/wiki\_linter.py（可选）                             |
 | Skills（专家能力矩阵）    | 专业问题交给专业技能，流程阶段内按需调用，保证一致标准                       | `.agents/skills/*/SKILL.md` + Phase 映射表                                             |
-| Engine（可选辅助）      | 不替代 Agent，只在复杂任务时提供“队列/阶段/重试计数”的确定性托管             | `.agents/scripts/.agents/workflow/engine.py`（可选）                                             |
+| Engine（可选辅助）      | 不替代 Agent，只在复杂任务时提供"队列/阶段/重试计数"的确定性托管             | `.agents/scripts/harness/engine.py`（可选）                                             |
 | 脚本工具（确定性增强）       | 需要确定性的检查与辅助（图谱体检、索引拆分建议）交给脚本                      | `.agents/scripts/wiki/*`                                                            |
 
 ### 9.1 与 PDD / FDD / SDD / TDD 的对应关系

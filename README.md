@@ -220,7 +220,7 @@ sequenceDiagram
 ```
 
 **Key Handoff Points**:
-- **Approval Phase**: Frozen OpenSpec becomes single source of truth
+- **Approval Gate Phase**: Frozen OpenSpec becomes single source of truth
 - **Minimal Handoff**: API Contract (JSON examples), Acceptance Criteria (Given/When/Then), Error Codes
 - **Backend Cohesion**: Other details remain backend-internal (not forced outward)
 
@@ -272,8 +272,8 @@ sequenceDiagram
 
 ---
 
-### Phase 3.5: Approval (HITL) 👥
-**Purpose**: Human checkpoint before implementation
+### Phase 3.5: Approval Gate (HITL) 👥
+**Purpose**: Human checkpoint before implementation with contract freeze
 
 **Action**: Present OpenSpec summary to human reviewer
 
@@ -284,6 +284,13 @@ sequenceDiagram
 - ❌ **NO + Feedback** → Return to Propose for revision
 
 **Parallel Trigger**: Frozen contract enables frontend/QA agents to start work
+
+**Change Sensitivity Grading (Risk Level)**:
+- **HIGH (Must Approval)**: Database table/index changes, permission/auth strategies, error code system, cross-domain modifications, base components/utilities, unclear impact scope or large modification surface
+- **MEDIUM (Must Approval)**: New/modified external endpoints, core business chain adjustments without DB/permission foundation changes
+- **LOW (Can Skip Approval)**: Documentation adjustments, pure renaming/formatting, small-scope bugfixes with clear impact
+
+**Rule**: When Risk Level is MEDIUM/HIGH, must enter `WAITING_APPROVAL`; when LOW, can skip but must provide one-sentence justification for "why skippable" in user delivery.
 
 ---
 
@@ -426,7 +433,8 @@ Status values: `PENDING`, `IN_PROGRESS`, `DONE`, `WAITING_APPROVAL`, `FAILED`
 | **guard_hook** | During implementation | Style violations, permission breaches, cross-domain pollution | Immediate block, require rewrite or authorization | Standard skill review |
 | **fail_hook** | Any phase failure | Compilation/test/review failures | State downgrade, log reason, retry counter | Objective logs |
 | **Max Retries** | Inside fail_hook | Same phase fails 3 times consecutively | Force stop, request human intervention | Retry count threshold |
-| **Approval (HITL)** | After Review | Before entering Implement | Freeze contract, human authorizes proceed | Human YES/NO + feedback |
+| **Approval Gate (HITL)** | After Review | Before entering Implement | Freeze contract, human authorizes proceed | Human YES/NO + feedback |
+| **Doc Consistency Gate** | post_hook / Archive | Wiki hallucination & contract corruption risk | Read-only validation (schema_checker + wiki_linter), trigger fail_hook on dead links or missing key modules | Rule validation, connectivity check |
 | **Archive Write-back** | Task completion | New/changed knowledge needs persistence | Extract stable knowledge, archive hot docs, update indices | Rule validation, connectivity check |
 | **Preferences Memory** | Before/after Archive | Representative human ratings/feedback |沉淀经验为偏好/禁忌，下一轮 pre_hook 生效 | Human rating + reasoning |
 

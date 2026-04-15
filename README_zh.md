@@ -218,7 +218,7 @@ sequenceDiagram
 ```
 
 **关键交接点**：
-- **Approval 阶段**：冻结的 OpenSpec 成为唯一事实来源
+- **Approval Gate 阶段**：冻结的 OpenSpec 成为唯一事实来源
 - **最小交接物**：API 契约（JSON 示例）、验收标准（Given/When/Then）、错误码
 - **后端内聚**：其他细节保持后端内部（不强制外扩）
 
@@ -270,8 +270,8 @@ sequenceDiagram
 
 ---
 
-### Phase 3.5: Approval (HITL) 👥
-**目的**：实现前的人类检查点
+### Phase 3.5: Approval Gate (HITL) 👥
+**目的**：实现前的人类检查点与契约冻结
 
 **动作**：向人类评审者展示 OpenSpec 摘要
 
@@ -282,6 +282,13 @@ sequenceDiagram
 - ❌ **否 + 反馈** → 返回 Propose 进行修订
 
 **并行触发**：冻结契约使前端/QA agent 可以开始工作
+
+**变更敏感度分级 (Risk Level)**：
+- **HIGH（必须 Approval）**：改动数据库表结构/索引、权限与鉴权策略、错误码体系、跨域修改、基础组件与通用工具、影响范围不清或改动面过大
+- **MEDIUM（必须 Approval）**：新增/修改对外接口、调整核心业务链路但不涉及 DB/权限底座
+- **LOW（可跳过 Approval）**：文档调整、纯重命名/格式化、小范围 Bugfix 且影响面明确
+
+**规则**：当 Risk Level 为 MEDIUM/HIGH 时，必须进入 `WAITING_APPROVAL`；当为 LOW 时允许跳过，但必须在对用户交付中写明"为何可跳过"的一句话理由。
 
 ---
 
@@ -414,7 +421,8 @@ sequenceDiagram
 | **guard_hook** | 实现/改动过程中 | 风格不合规、权限/越权、跨域污染 | 立即阻断、要求重写或授权 | 规范技能审查、规则核对 |
 | **fail_hook** | 任意阶段失败 | 编译/测试/审查失败 | 状态降级回退；记录失败原因；触发重试计数 | 客观日志（编译/测试输出） |
 | **Max Retries** | fail_hook 内 | 同一阶段连续失败达到阈值（3次） | 强制停止并请求人类介入 | 失败计数达到阈值 |
-| **Approval (HITL)** | Review 通过后 | 需要进入 Implement | "冻结契约"，由人类授权是否进入实现 | 人类确认（YES/NO + 修改意见） |
+| **Approval Gate (HITL)** | Review 通过后 | 需要进入 Implement | "冻结契约"，由人类授权是否进入实现 | 人类确认（YES/NO + 修改意见） |
+| **文档一致性门禁** | post_hook / Archive | Wiki 幻觉与契约腐败风险 | 只读校验（schema_checker + wiki_linter），发现死链或缺失关键模块时触发 fail_hook | 规则校验、连通性检查 |
 | **Archive 写回** | 任务结束 | 新增/变更知识需要沉淀 | 从 Spec 提取稳定知识、归档热文档、更新索引 | 规则校验、连通性检查 |
 | **Preferences 记忆** | Archive 前后 | 人类评分/反馈有代表性 | 将经验沉淀为偏好/禁忌，下一轮 pre_hook 生效 | 人类评分 + 文字原因 |
 
@@ -523,7 +531,7 @@ java-harness-agent/
 │       │   ├── wiki_linter.py       # 图谱健康检查（死链/孤岛）
 │       │   ├── schema_checker.py    # 契约结构验证
 │       │   └── pref_tag_checker.py  # 偏好标签规范检查
-│       └── workflow/
+│       └── harness/
 │           └── engine.py            # 队列状态辅助（可选）
 │
 ├── AGENTS.md                # 📌 项目级规则入口
