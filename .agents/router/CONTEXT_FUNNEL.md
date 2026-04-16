@@ -6,6 +6,12 @@ This document defines two symmetric rules:
 
 ## Forward Funnel (Navigation Rules)
 
+### Rule 0: Direct Read when scope is explicit (MUST)
+If the user provides an explicit scope (file path, directory, class/method name, or pasted snippet) and the goal is learning/explanation:
+- Do a direct read of the target scope first.
+- Use the wiki funnel only if additional background context is needed after the first read.
+- DO NOT start by drilling down the Knowledge Graph for this scenario.
+
 ### Rule 1: Always start at the root (MUST)
 Context collection MUST start by reading:
 - [KNOWLEDGE_GRAPH.md](../llm_wiki/KNOWLEDGE_GRAPH.md)
@@ -20,7 +26,9 @@ Only when the index tree cannot locate the concept, the Agent MAY use keyword se
 - `llm_wiki/wiki/`
 
 ## Reverse Funnel (Write-back Rules)
-During `Archive`, the Agent MUST apply the reverse funnel to write stable knowledge back without breaking concurrency safety.
+This section defines the method for writing back knowledge when write-back is enabled.
+
+Whether write-back is enabled (defaults, switches, and conflicts) is defined in [ROUTER.md](ROUTER.md).
 
 1. Find the mount point by reading [KNOWLEDGE_GRAPH.md](../llm_wiki/KNOWLEDGE_GRAPH.md).
 2. DO NOT edit shared `index.md` directly. Write a WAL fragment into the target domain `wal/` directory (example: `../llm_wiki/wiki/api/wal/YYYYMMDD_feature_x_api_append.md`).
