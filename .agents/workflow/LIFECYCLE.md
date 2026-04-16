@@ -13,6 +13,13 @@ This lifecycle is orchestrated by `[devops-lifecycle-master](../skills/devops-li
 
 Approval is a human gate. It is NOT counted as a phase.
 
+## Profiles (Execution Modes)
+Not every request needs the full lifecycle.
+
+- Profile `LEARN`: read-only explanation (no launch spec, no lifecycle, no write-back).
+- Profile `PATCH`: small change / bugfix (minimal artifacts; hooks still apply; archive is optional).
+- Profile `STANDARD`: full lifecycle (this document).
+
 ### Phase 1: Explorer
 - Skills: `[product-manager-expert](../skills/product-manager-expert/SKILL.md)`, `[devops-requirements-analysis](../skills/devops-requirements-analysis/SKILL.md)`, `[prd-task-splitter](../skills/prd-task-splitter/SKILL.md)`
 - Actions:
