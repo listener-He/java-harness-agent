@@ -12,6 +12,17 @@ If the user provides an explicit scope (file path, directory, class/method name,
 - Use the wiki funnel only if additional background context is needed after the first read.
 - DO NOT start by drilling down the Knowledge Graph for this scenario.
 
+### Rule 0.1: Decision-First Preflight (MUST)
+Before any heavy navigation (wiki drill-down, broad search, or reading multiple files), the Agent MUST produce a Preflight block:
+- Goal: one sentence
+- Deliverables: list (tables/APIs/internal methods/flows)
+- Default assumptions: up to 3 bullets
+- Open uncertainties: up to 2 bullets
+- Read strategy: `Needle | Obvious | Exploration`
+- Budgets (defaults): `wiki=3 docs`, `code=8 files` (same-file pagination reads do NOT count)
+- Stop conditions: saturation criteria + stop rules below
+- Escalation plan: what to request from human if budgets are hit
+
 ### Rule 1: Always start at the root (MUST)
 Context collection MUST start by reading:
 - [KNOWLEDGE_GRAPH.md](../llm_wiki/KNOWLEDGE_GRAPH.md)
@@ -24,6 +35,52 @@ Context collection MUST start by reading:
 ### Rule 3: Fallback search is last resort (MAY)
 Only when the index tree cannot locate the concept, the Agent MAY use keyword search within:
 - `llm_wiki/wiki/`
+
+### Rule 4: Budgeted Navigation (MUST)
+This rule prevents runaway context collection.
+
+#### 4.1 Counting Rules
+- Wiki budget counts per distinct wiki document read (each markdown file).
+- Code budget counts per distinct workspace file read.
+- Reading a different line range (pagination) of the same file does NOT consume additional budget.
+
+#### 4.2 Example-First (Code Read Default)
+For `Change` intent, the Agent MUST first attempt to locate a correct in-repo example before broad reading.
+- The first 2 code reads SHOULD be used to capture one end-to-end example (typically `Controller + Service` or `Entity + Mapper/XML`).
+- Only if the example is missing, conflicting, or insufficient, the Agent MAY enter escalation within the remaining budget.
+
+#### 4.3 Saturation Gate (Stop Reading When Enough)
+Stop reading and move to decision/implementation when ANY is met:
+- Template acquired: any 2 of (route shape, DTO validation style, service entry pattern, mapper/sql pattern, table field pattern)
+- Integration point acquired: a concrete example of the dependency usage (e.g., `Provide/Template` call shape)
+- Executable chain acquired: a known good call chain exists and the remaining work is a mechanical extension
+
+#### 4.4 Stop-Wiki (MUST)
+Definition (wiki “no-gain”): reading did NOT add constraints that affect DB/API/permissions/flow and did NOT reduce rework risk.
+- If 3 consecutive wiki reads are “no-gain”, the Agent MUST stop wiki navigation and proceed with a minimal, standards-compliant decision.
+
+#### 4.5 Stop-Code (MUST)
+Code reading must monotonically shrink scope.
+- After each code read, the Agent MUST update the scope (target file/class/method list) and it MUST be smaller or more precise.
+- If scope does not shrink for 2 consecutive code reads, the Agent MUST stop reading and trigger Escalation Protocol below.
+
+### Rule 5: Escalation Protocol (MUST)
+If budgets are exhausted OR stop rules trigger and success criteria are not met, the Agent MUST request human help instead of continuing to read.
+
+#### 5.1 Escalation Card (Required Format)
+- Consumed: `wiki X/3`, `code Y/8`
+- Confirmed facts (<= 5 bullets)
+- Missing info (<= 2 bullets, must be specific)
+- Why it is blocking (one sentence)
+- Proposed next targets (<= 5 file paths / keywords)
+- Request: `wiki +1` or `code +2` (small step)
+- Fallback if still missing: pick one of:
+  - ask 1 critical question
+  - request a concrete anchor (class/table/entrypoint) from human
+  - deliver a minimal viable plan with explicit risks
+
+#### 5.2 Lifecycle Persistence
+When escalation blocks the workflow, set the intent row in `launch_spec_*.md` to `WAITING_APPROVAL` and include a link to the relevant artifact (e.g., `openspec.md` or the escalation note).
 
 ## Reverse Funnel (Write-back Rules)
 This section defines the method for writing back knowledge when write-back is enabled.

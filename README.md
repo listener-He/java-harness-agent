@@ -247,6 +247,7 @@ sequenceDiagram
 - Requirement boundaries & non-goals
 - Impact analysis across domains
 - Exception branches & edge cases
+- **Core Context Anchors** (MUST): Key links, business vocabulary, engineering red lines
 
 ---
 
@@ -414,6 +415,52 @@ Users can override automatic routing with explicit shortcuts:
 - `@patch` / `@quickfix`: Force Profile `PATCH` (small change mode)
 - `@standard`: Force Profile `STANDARD` (full lifecycle)
 
+#### Shortcut DSL (Composable)
+
+Shortcuts can be composed with flags to express common workflows as a small DSL.
+
+Syntax:
+```text
+@<profile> <flags...> -- <natural language request or question>
+```
+
+Flags (order-independent):
+- Scope / read:
+    - `--scope <path|glob|symbol>`: explicit scope (file/dir/symbol)
+    - `--direct`: force direct reads (do not start with Knowledge Graph drill-down)
+    - `--funnel`: force the funnel even if scope is explicit
+    - `--depth shallow|normal|deep`: explanation depth (LEARN only)
+- Risk / artifacts:
+    - `--risk low|medium|high`: explicit risk override
+    - `--slim`: force Slim Spec (PATCH only, or STANDARD with `--risk low`)
+    - `--changelog`: use Change Log only (PATCH only)
+    - `--evidence required|optional|none`: evidence requirement (default: PATCH=required)
+- Launch / write-back:
+    - `--launch`: force lifecycle launch (STANDARD only)
+    - `--no-launch`: force no launch
+    - `--writeback`: allow wiki/WAL write-back (not allowed for LEARN)
+    - `--no-writeback`: forbid write-back (default)
+- Verification:
+    - `--test "<cmd>"`: required verification command + evidence
+    - `--no-test`: skip tests (LEARN only; PATCH requires an explicit justification)
+- DocQA actionize:
+    - `--actionize`: convert DocQA into an executable STANDARD queue (requires confirmation)
+    - `--yes`: auto-confirm `--actionize` / `--launch` (team use with caution)
+
+Conflict rules (MUST enforce):
+- `@learn` MUST NOT be combined with `--launch` or `--writeback`.
+- `--launch` MUST be used with `@standard` only.
+- `--slim` requires `--risk low` (or implied low risk in PATCH).
+- `--actionize` MUST ask for confirmation unless `--yes` is present.
+
+Examples:
+```text
+@learn --scope src/foo/bar.ts --direct --depth deep -- explain this file
+@patch --risk low --slim --test "mvn test -Dtest=OrderServiceTest" -- fix NPE in createOrder
+@standard --risk high --launch -- implement tenant permission checks for order list API
+@learn --funnel -- what is the API design standard? --actionize
+```
+
 ### Core Intent Types (Simplified)
 
 The gateway maps requests to a small set of top-level intents:
@@ -433,10 +480,60 @@ The gateway maps requests to a small set of top-level intents:
   - ❌ Do NOT start with Knowledge Graph drill-down
   - Use funnel only if background context needed after first read
 
+**Rule 0.1: Decision-First Preflight (MUST)**
+Before any heavy navigation (wiki drill-down, broad search, or reading multiple files), the Agent MUST produce a Preflight block:
+- Goal: one sentence
+- Deliverables: list (tables/APIs/internal methods/flows)
+- Default assumptions: up to 3 bullets
+- Open uncertainties: up to 2 bullets
+- Read strategy: `Needle | Obvious | Exploration`
+- Budgets (defaults): `wiki=3 docs`, `code=8 files` (same-file pagination reads do NOT count)
+- Stop conditions: saturation criteria + stop rules
+- Escalation plan: what to request from human if budgets are hit
+
 **Rule 1: Otherwise, use Context Funnel (MUST)**
 1. Read root: [KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
 2. Drill down via: [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
 3. Consult skill index if unsure: [trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)
+
+### Budgeted Navigation & Escalation (NEW)
+
+**Budgeted Navigation (MUST)**
+For `Change` and `Audit` intents, uncontrolled exploration is forbidden.
+
+Default budgets:
+- Wiki budget: 3 documents
+- Code budget: 8 files
+- Pagination reads within the same file do NOT count as additional file reads
+
+**Saturation Gate (Stop Reading When Enough)**
+Stop reading and move to decision/implementation when ANY is met:
+- Template acquired: any 2 of (route shape, DTO validation style, service entry pattern, mapper/sql pattern, table field pattern)
+- Integration point acquired: a concrete example of the dependency usage
+- Executable chain acquired: a known good call chain exists and the remaining work is a mechanical extension
+
+**Stop-Wiki (MUST)**
+If 3 consecutive wiki reads are "no-gain", the Agent MUST stop wiki navigation and proceed with a minimal, standards-compliant decision.
+
+**Stop-Code (MUST)**
+Code reading must monotonically shrink scope. If scope does not shrink for 2 consecutive code reads, the Agent MUST stop reading and trigger Escalation Protocol.
+
+**Escalation Protocol (MUST)**
+If budgets are exhausted OR stop rules trigger and success criteria are not met, the Agent MUST request human help instead of continuing to read.
+
+Escalation Card format:
+- Consumed: `wiki X/3`, `code Y/8`
+- Confirmed facts (<= 5 bullets)
+- Missing info (<= 2 bullets, must be specific)
+- Why it is blocking (one sentence)
+- Proposed next targets (<= 5 file paths / keywords)
+- Request: `wiki +1` or `code +2` (small step)
+- Fallback if still missing: pick one of:
+  - ask 1 critical question
+  - request a concrete anchor (class/table/entrypoint) from human
+  - deliver a minimal viable plan with explicit risks
+
+When escalation blocks the workflow, set the intent row in `launch_spec_*.md` to `WAITING_APPROVAL` and include a link to the relevant artifact.
 
 ### Internal Lifecycle Queue Codes (STANDARD Profile Only)
 
@@ -478,13 +575,15 @@ Status values: `PENDING`, `IN_PROGRESS`, `DONE`, `WAITING_APPROVAL`, `FAILED`
 
 | Mechanism | Trigger | Condition | Effect | Evaluation |
 |-----------|---------|-----------|--------|------------|
-| **guard_hook** | During implementation | Style violations, permission breaches, cross-domain pollution | Immediate block, require rewrite or authorization | Standard skill review |
+| **pre_hook** | Before entering a new phase | Phase transition | Load relevant rule sets + output Decision-First Preflight + budgets | Required output format |
+| **guard_hook** | During implementation | Style violations, permission breaches, cross-domain pollution, budget exhaustion | Immediate block, require rewrite or authorization; enforce Anti-runaway guard | Standard skill review + Budget rules |
 | **fail_hook** | Any phase failure | Compilation/test/review failures | State downgrade, log reason to `openspec.md`, retry counter | Objective logs |
 | **Max Retries** | Inside fail_hook | Same phase fails 3 times consecutively | Force stop, request human intervention | Retry count threshold |
 | **Approval Gate (HITL)** | After Review | Before entering Implement | Freeze contract, human authorizes proceed | Human YES/NO + feedback |
 | **Doc Consistency Gate** | post_hook / Archive | Wiki hallucination & contract corruption risk | Read-only validation (`schema_checker.py` + `wiki_linter.py`), trigger `fail_hook` on FAIL | Script exit codes (non-zero = FAIL) |
 | **Archive Write-back** | Task completion | New/changed knowledge needs persistence | Extract stable knowledge, archive hot docs, update indices (WAL mechanism) | Rule validation, connectivity check |
 | **Preferences Memory** | Before/after Archive | Representative human ratings/feedback |沉淀经验为偏好/禁忌到 `wiki/preferences/index.md`, effective in next pre_hook | Human rating + reasoning |
+| **Non-Convergence Fallback** | Workflow stuck repeating same action | Doc rewrite or linter failure loop | Stop repeating, run deterministic verification, report mismatch, request human intervention | Evidence-based mismatch detection |
 
 ---
 

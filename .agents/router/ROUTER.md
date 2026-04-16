@@ -119,6 +119,15 @@ The Agent MUST:
 - LOW -> Profile `PATCH` (Slim Spec allowed)
 - MEDIUM/HIGH -> Profile `STANDARD` (full schema + Approval Gate)
 
+### Rule 3.1: Budgeted Navigation (MUST)
+For `Change` and `Audit` intents, uncontrolled exploration is forbidden.
+- The Agent MUST apply the forward constraints defined in [CONTEXT_FUNNEL.md](CONTEXT_FUNNEL.md) before any heavy wiki/code exploration.
+- Default budgets:
+  - Wiki budget: 3 documents
+  - Code budget: 8 files
+  - Pagination reads within the same file do NOT count as additional file reads.
+- If budgets are exhausted and success criteria are not met, the Agent MUST stop and file an Escalation Request (see `Escalation Protocol` in [CONTEXT_FUNNEL.md](CONTEXT_FUNNEL.md)).
+
 ### Rule 4: Actionize DocQA into STANDARD is an explicit opt-in
 DocQA is read-only by default.
 The Agent MUST NOT launch a lifecycle queue unless:

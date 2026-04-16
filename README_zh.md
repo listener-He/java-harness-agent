@@ -245,6 +245,7 @@ sequenceDiagram
 - 需求边界与非目标
 - 跨域影响面分析
 - 异常分支与边界情况
+- **核心上下文锚点**（MUST）：关键链接、业务词汇、工程红线
 
 ---
 
@@ -406,6 +407,52 @@ sequenceDiagram
 - `@patch` / `@quickfix`: 强制 Profile `PATCH`（小改动模式）
 - `@standard`: 强制 Profile `STANDARD`（完整生命周期）
 
+#### Shortcut DSL（可组合）
+
+快捷方式可以与标志组合，以小型DSL的形式表达常见工作流。
+
+语法：
+```text
+@<profile> <flags...> -- <自然语言请求或问题>
+```
+
+标志（顺序无关）：
+- Scope / read:
+    - `--scope <path|glob|symbol>`: 明确scope（文件/目录/符号）
+    - `--direct`: 强制直接读取（不从知识图谱下钻开始）
+    - `--funnel`: 即使有scope也强制使用漏斗
+    - `--depth shallow|normal|deep`: 解释深度（仅LEARN）
+- Risk / artifacts:
+    - `--risk low|medium|high`: 明确风险覆盖
+    - `--slim`: 强制Slim Spec（仅PATCH，或STANDARD配合`--risk low`）
+    - `--changelog`: 仅使用Change Log（仅PATCH）
+    - `--evidence required|optional|none`: 证据要求（默认：PATCH=required）
+- Launch / write-back:
+    - `--launch`: 强制启动生命周期（仅STANDARD）
+    - `--no-launch`: 强制不启动
+    - `--writeback`: 允许wiki/WAL写回（不允许用于LEARN）
+    - `--no-writeback`: 禁止写回（默认）
+- Verification:
+    - `--test "<cmd>"`: 必需的验证命令 + 证据
+    - `--no-test`: 跳过测试（仅LEARN；PATCH需要明确理由）
+- DocQA actionize:
+    - `--actionize`: 将DocQA转换为可执行的STANDARD队列（需要确认）
+    - `--yes`: 自动确认 `--actionize` / `--launch`（团队谨慎使用）
+
+冲突规则（MUST强制执行）：
+- `@learn` 不能与 `--launch` 或 `--writeback` 组合。
+- `--launch` 必须与 `@standard` 一起使用。
+- `--slim` 需要 `--risk low`（或PATCH中隐含的低风险）。
+- `--actionize` 必须询问确认，除非存在 `--yes`。
+
+示例：
+```text
+@learn --scope src/foo/bar.ts --direct --depth deep -- explain this file
+@patch --risk low --slim --test "mvn test -Dtest=OrderServiceTest" -- fix NPE in createOrder
+@standard --risk high --launch -- implement tenant permission checks for order list API
+@learn --funnel -- what is the API design standard? --actionize
+```
+
 ### 核心意图类型（简化）
 
 网关将请求映射到少量顶层意图：
@@ -425,10 +472,60 @@ sequenceDiagram
   - ❌ 不要从知识图谱下钻开始
   - 仅在第一次读取后需要背景上下文时才使用漏斗
 
+**Rule 0.1: Decision-First Preflight（MUST）**
+在任何重度导航（wiki下钻、广泛搜索或读取多个文件）之前，Agent MUST输出Preflight块：
+- Goal: 一句话
+- Deliverables: 列表（表/APIs/内部方法/流程）
+- Default assumptions: 最多3条
+- Open uncertainties: 最多2条
+- Read strategy: `Needle | Obvious | Exploration`
+- Budgets (默认): `wiki=3 docs`, `code=8 files`（同文件分页读取不计入）
+- Stop conditions: 饱和度标准 + 停止规则
+- Escalation plan: 如果预算耗尽，向人类请求什么
+
 **Rule 1: 否则，使用知识漏斗（MUST）**
 1. 读取根节点：[KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
 2. 通过索引下钻：[CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
 3. 如果不确定用哪个技能，查阅：[trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)
+
+### 预算化导航与升级（新增）
+
+**Budgeted Navigation（MUST）**
+对于 `Change` 和 `Audit` 意图，禁止无控制的探索。
+
+默认预算：
+- Wiki预算：3个文档
+- Code预算：8个文件
+- 同文件内的分页读取不计为额外文件读取
+
+**Saturation Gate（足够时停止阅读）**
+当满足以下任一条件时，停止阅读并进入决策/实现阶段：
+- Template acquired: 获取任意2个（路由形状、DTO验证风格、服务入口模式、mapper/sql模式、表字段模式）
+- Integration point acquired: 获取依赖用法的具体示例
+- Executable chain acquired: 存在已知良好的调用链，剩余工作是机械扩展
+
+**Stop-Wiki（MUST）**
+如果连续3次wiki读取都是“no-gain”，Agent MUST停止wiki导航，并以符合标准的最小决策继续。
+
+**Stop-Code（MUST）**
+代码读取必须单调缩小范围。如果连续2次代码读取范围没有缩小，Agent MUST停止阅读并触发Escalation Protocol。
+
+**Escalation Protocol（MUST）**
+如果预算耗尽或停止规则触发且成功标准未满足，Agent MUST请求人类帮助而不是继续阅读。
+
+Escalation Card格式：
+- Consumed: `wiki X/3`, `code Y/8`
+- Confirmed facts（<= 5条）
+- Missing info（<= 2条，必须具体）
+- Why it is blocking（一句话）
+- Proposed next targets（<= 5个文件路径/关键词）
+- Request: `wiki +1` 或 `code +2`（小步）
+- Fallback if still missing: 选择以下之一：
+  - 问1个关键问题
+  - 向人类请求具体锚点（类/表/入口点）
+  - 交付带有明确风险的最小可行计划
+
+当升级阻塞工作流时，将 `launch_spec_*.md` 中的意图行状态设置为 `WAITING_APPROVAL`，并包含相关工件的链接。
 
 ### 内部生命周期队列代码（仅STANDARD Profile）
 
@@ -470,13 +567,15 @@ sequenceDiagram
 
 | 机制 | 触发点 | 触发条件 | 产生效果 | 评判方式 |
 |------|--------|----------|----------|----------|
-| **guard_hook** | 实现/改动过程中 | 风格不合规、权限/越权、跨域污染 | 立即阻断、要求重写或授权 | 规范技能审查、规则核对 |
+| **pre_hook** | 进入新阶段前 | 阶段转换 | 加载相关规则集 + 输出Decision-First Preflight + budgets | 必需的输出格式 |
+| **guard_hook** | 实现/改动过程中 | 风格不合规、权限/越权、跨域污染、预算耗尽 | 立即阻断、要求重写或授权；执行Anti-runaway guard | 规范技能审查 + 预算规则 |
 | **fail_hook** | 任意阶段失败 | 编译/测试/审查失败 | 状态降级回退；记录失败原因到 `openspec.md`；触发重试计数 | 客观日志（编译/测试输出） |
 | **Max Retries** | fail_hook 内 | 同一阶段连续失败达到阈值（3次） | 强制停止并请求人类介入 | 失败计数达到阈值 |
 | **Approval Gate (HITL)** | Review 通过后 | 需要进入 Implement | "冻结契约"，由人类授权是否进入实现 | 人类确认（YES/NO + 修改意见） |
 | **文档一致性门禁** | post_hook / Archive | Wiki 幻觉与契约腐败风险 | 只读校验（`schema_checker.py` + `wiki_linter.py`），发现 FAIL 时触发 `fail_hook` | 脚本退出码（非零即 FAIL） |
 | **Archive 写回** | 任务结束 | 新增/变更知识需要沉淀 | 从 Spec 提取稳定知识、归档热文档、更新索引（WAL 机制） | 规则校验、连通性检查 |
 | **Preferences 记忆** | Archive 前后 | 人类评分/反馈有代表性 | 将经验沉淀为偏好/禁忌到 `wiki/preferences/index.md`，下一轮 pre_hook 生效 | 人类评分 + 文字原因 |
+| **Non-Convergence Fallback** | 工作流卡住重复相同动作 | 文档重写或linter失败循环 | 停止重复，运行确定性验证，报告不匹配，请求人类介入 | 基于证据的不匹配检测 |
 
 ---
 

@@ -12,6 +12,7 @@ This document defines when and how to enforce constraints throughout the lifecyc
   - `[global-backend-standards](../skills/global-backend-standards/SKILL.md)`
   - `[java-backend-guidelines](../skills/java-backend-guidelines/SKILL.md)`
 - Purpose: load the relevant rule sets. Example: before `Implement`, load defensive programming standards and project preferences.
+- Required output (MUST): Decision-First Preflight + budgets (see `Rule 0.1` and `Rule 4/5` in `../router/CONTEXT_FUNNEL.md`).
 
 ### 2. `guard_hook` (Execution Guard)
 - Trigger: while performing core actions (generating code, writing SQL).
@@ -22,6 +23,7 @@ This document defines when and how to enforce constraints throughout the lifecyc
 - Purpose:
   - Standards guard: enforce style and required patterns.
   - Domain boundary guard: DO NOT modify cross-domain files unless explicitly authorized in `openspec.md`.
+- Anti-runaway guard (MUST): enforce budgeted navigation + stop rules + escalation protocol (see `../router/CONTEXT_FUNNEL.md`).
 
 ### 3. `post_hook` (Post-Phase Audit)
 - Trigger: after completing a phase, before transitioning.
@@ -79,3 +81,4 @@ If the workflow gets stuck repeating the same action without converging (for exa
 1. Stop repeating the same change.
 2. Run deterministic verification and identify the exact failing evidence (file path + minimal excerpt).
 3. Report the mismatch and request human intervention.
+4. If the root cause is missing context or ambiguous scope, use the Escalation Card format in `../router/CONTEXT_FUNNEL.md` and set `launch_spec` row to `WAITING_APPROVAL`.
