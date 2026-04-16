@@ -1,97 +1,72 @@
 ---
 name: "api-documentation-rules"
-description: "API接口文档规范。创建Controller接口时必须生成对应文档，文档路径为 .agents/docs/module_description/{模块名}/{ControllerName}-{方法名}.md，并关联到模块描述文档。"
+description: "API documentation capture: treat LLM Wiki as the source of truth, write via WAL fragments (do not edit index directly), and use openspec.md as the detailed source."
 ---
 
-# API接口文档规范
+# API Documentation Capture (LLM Wiki + WAL)
 
-当创建或修改Controller接口时，必须遵循以下文档规范：
+Use this skill when an externally exposed API changes. Capture stable API contract facts into the LLM Wiki so future agents can drill down to the source.
 
-## 1. 文档路径规范
+## 0) Single Source of Truth (SSOT)
 
-接口文档必须存放在以下路径：
+- Routing / profiles / shortcuts / write-back switches: `.agents/router/ROUTER.md`
+- Navigation + write-back methodology (reverse funnel + WAL): `.agents/router/CONTEXT_FUNNEL.md`
+- WAL + compaction policy: `.agents/workflow/ARCHIVE_WAL.md`
+- API index entry: `.agents/llm_wiki/wiki/api/index.md`
+
+This skill defines how to write back API knowledge when write-back is enabled. Defaults and conflict rules are defined by the Router.
+
+## 1) When to capture (Triggers)
+
+Capture is required when any of the following changes:
+- New/changed external endpoint (method/path)
+- Request/response schema changes (fields, types, required flags, error structure)
+- Auth changes (permissions, data scope, tenant isolation)
+
+If it is an internal refactor with no contract change, you may skip capture (subject to Router write-back switches).
+
+## 2) Write-back rules (MUST)
+
+- Do not edit `api/index.md` directly: write WAL fragments and merge later in a low-conflict window.
+- Use `openspec.md` as the detailed source: every index entry must cite the source spec.
+- Every entry must be traceable: at minimum method + path + one-line summary + spec reference.
+- Anti-bloat: when indexes grow large, split by ARCHIVE_WAL rules.
+
+## 3) Output location and naming
+
+WAL output directory:
 ```
-../../docs/module_description/{模块名}/{方法名}.md
+.agents/llm_wiki/wiki/api/wal/
 ```
 
-### 命名规则
-- `{模块名}`: 模块的英文名称，如 `performance`、`rbac`、`org`
-- `{ControllerName}`: Controller类名（不含包名），如 `LiveVideoController`
-- `{方法名}`: 接口方法名，如 `pushVideo`、`list`、`create`
+Filename:
+```
+YYYYMMDD_<feature_or_change>_api_append.md
+```
 
-### 示例
-- 业绩模块视频接收接口: `../..//docs/module_description/performance/LiveVideoController-receiveVideo.md`
-- RBAC模块菜单列表接口: `../..//docs/module_description/rbac/MenuController-list.md`
-- 组织模块部门创建接口: `../..//docs/module_description/org/DeptController-create.md`
+## 4) WAL template (Append Block)
 
-## 2. 文档内容规范
-
-每个接口文档必须包含以下章节：
+Append (or create) a WAL fragment file using this template:
 
 ```markdown
-# {接口名称}
+# API WAL Append - {YYYY-MM-DD} - {feature_or_change}
 
-## 接口信息
+Source spec:
+- `{relative_path_to_openspec.md}`
 
-| 项目 | 说明 |
-|-----|------|
-| 接口路径 | `{HTTP方法} {完整路径}` |
-| 控制器 | {ControllerName} |
-| 方法 | {方法名} |
-| 认证方式 | {认证注解} |
-
-## 接口描述
-
-{简要描述接口功能}
-
-## 请求参数
-
-### {请求对象名}
-
-| 字段 | 类型 | 必填 | 说明 |
-|-----|------|-----|------|
-| {字段名} | {类型} | 是/否 | {说明} |
-
-## 业务逻辑
-
-{详细描述业务处理逻辑，可用流程图}
-
-## 响应
-
-{响应示例}
-
-## 关联表
-
-| 表名 | 说明 |
-|-----|------|
-| {表名} | {说明} |
-
-## 请求示例
-
-{JSON请求示例}
+Append rows for api/index.md:
+| API (Method + Path) | Summary | Doc Link | Write-back Date |
+|---|---|---|---|
+| {METHOD} {PATH} | {one-line summary} | `[{spec_doc_name}]` | {YYYY-MM-DD} |
 ```
 
-## 3. 关联模块描述
+Notes:
+- `{spec_doc_name}` should be the file name under the specs directory (or the consistent spec reference in your workflow).
+- `Doc Link` is the source of truth. Do not generate a separate per-endpoint detail page here.
 
-创建接口文档后，必须在对应的模块描述文档中添加引用。
+## 5) Merge policy (Out of scope)
 
-模块描述文档路径：`../../docs/module_description/{模块名}.md`
+Rules and timing for merging WAL -> index:
+- `.agents/workflow/ARCHIVE_WAL.md`
 
-在模块描述文档中添加「接口文档」章节（如果不存在则新建）：
-
-```markdown
-## N. 接口文档
-
-| 接口 | 说明 | 详细文档 |
-|-----|------|----------|
-| {HTTP方法} {路径} | {接口说明} | [{文档文件名}](./{模块名}/{文档文件名}) |
-```
-
-## 4. 触发条件
-
-以下操作必须同步更新接口文档：
-- 创建新的Controller接口
-- 修改接口的请求参数
-- 修改接口的业务逻辑
-- 修改接口的响应结构
-- 修改接口的路径或认证方式
+This skill does not auto-merge to avoid index conflicts in team collaboration.
