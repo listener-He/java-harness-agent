@@ -10,6 +10,16 @@
 
 **Sustainable • Interruptible • Self-Correcting • Anti-Bloat**
 
+## ⚠️ Critical Positioning Statement
+
+> **This is NOT a traditional development framework or human-facing tool.**
+>
+> **It is a pure LLM-native specification harness designed exclusively for autonomous execution by large language models.**
+>
+> From day one, this system was architected to be **driven entirely by AI agents**, not humans. Every component—from the Intent Gateway to the Lifecycle State Machine, from the Knowledge Graph to the Skills Matrix—is engineered as executable protocol for LLMs to self-navigate, self-correct, and self-evolve.
+>
+> **If you're evaluating this with "human developer tool" standards, you will fundamentally misunderstand its design philosophy.** This is infrastructure for machine-to-machine coordination in software engineering workflows.
+
 [Quick Start](#0-quick-start-3-minutes) | [Architecture](#1-architecture-overview) | [Usage Scenarios](#01-how-to-use-multi-scenario-examples)
 
 ---
@@ -24,6 +34,8 @@ This directory defines an **Agent-driven engineering workflow** for **backend de
 
 This document serves as both an engineering specification manual and a quick onboarding guide for newcomers.
 
+**Target Audience**: Large Language Models (LLMs) and AI Agents executing backend engineering tasks autonomously. Human readers should understand this as an executable protocol specification, not a traditional user manual.
+
 ---
 
 ## 0. Quick Start (3 Minutes)
@@ -35,7 +47,7 @@ Read: [Project-Level Rules](AGENTS.md).
 Read: [Knowledge Graph Root](.agents/llm_wiki/KNOWLEDGE_GRAPH.md), then drill down layer by layer through indices to your target domain (API / Data / Domain / Architecture / Specs / Preferences).
 
 **Step 3 (Run One Minimal Closed-Loop)**\
-Follow: [Lifecycle State Machine](.agents/workflow/LIFECYCLE.md) to complete one task: Explorer → Propose → Review → Approval → Implement → QA → Archive.
+Follow: [Lifecycle State Machine](.agents/workflow/LIFECYCLE.md) to complete one task: Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive.
 
 ---
 
@@ -47,7 +59,7 @@ This section provides typical "follow-along" playbooks. The rules remain consist
 
 - **Goal**: Add a read-only endpoint (new DTO/Controller/Service) without table structure changes.
 - **Drill-down Reading**: sitemap → schema/openspec_schema → wiki/api/index (optionally read domain/index and preferences/index if needed).
-- **Lifecycle Path**: Explorer → Propose → Review → Approval → Implement → QA → Archive.
+- **Lifecycle Path**: Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive.
 - **Key Deliverables**:
   - Explorer: Scope/impact/exception branch list (including non-goals).
   - Propose: OpenSpec (endpoint signature, input/output parameters, error codes, example JSON, acceptance criteria).
@@ -59,7 +71,7 @@ This section provides typical "follow-along" playbooks. The rules remain consist
 
 - **Goal**: Add new endpoint while creating/modifying table structures and indexes.
 - **Drill-down Reading**: sitemap → schema/openspec_schema → wiki/data/index + wiki/api/index (optionally read domain/index if needed).
-- **Lifecycle Path**: Explorer → Propose → Review → Approval → Implement → QA → Archive.
+- **Lifecycle Path**: Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive.
 - **Key Deliverables**:
   - Propose: OpenSpec freezes both API and Data contracts simultaneously (field semantics, constraints, index design, compatibility strategy).
   - Review: Focus on automated SQL risk checks, index utilization, implicit conversion, and authorization risks.
@@ -80,7 +92,7 @@ This section provides typical "follow-along" playbooks. The rules remain consist
 
 - **Goal**: Optimize performance or rewrite SQL without changing external behavior.
 - **Drill-down Reading**: sitemap → wiki/api/index (external behavior) → wiki/data/index (index and query constraints) → preferences/index.
-- **Lifecycle Path**: Explorer → Propose → Review → Approval → Implement → QA → Archive.
+- **Lifecycle Path**: Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive.
 - **Key Deliverables**:
   - Propose: Document "behavior unchanged" constraints, performance bottlenecks, candidate solutions, and rollback strategies.
   - Review: Prioritize SQL standards and index utilization; reduce solution complexity if necessary.
@@ -91,7 +103,7 @@ This section provides typical "follow-along" playbooks. The rules remain consist
 
 - **Goal**: Improve maintainability or split responsibilities without introducing requirement drift.
 - **Drill-down Reading**: sitemap → wiki/architecture/index (if available) → preferences/index → domain/index (boundaries and terminology).
-- **Lifecycle Path**: Explorer → Propose → Review → Approval → Implement → QA → Archive.
+- **Lifecycle Path**: Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive.
 - **Key Deliverables**:
   - Explorer: Clarify "what to do / what not to do", list potential cross-domain points.
   - Review/Approval: Cross-domain modifications require explicit authorization; otherwise considered unauthorized and rolled back directly.
@@ -199,8 +211,8 @@ This layer solves the problem of "user says one sentence → what exactly do I n
     - **What it does**: Defines Agent's "forward retrieval (drill-down)" and "reverse write-back (archive extraction)".
     - **Red Lines**: Fallback search allowed only when index tree fails; write-back must find mount points first, indices exceeding threshold must split.
 - **Typical Scenarios**
-  - New endpoint: Split into `Propose.API -> Review -> Approval -> Implement.Code -> QA.Test -> Archive`.
-  - Schema changes: Split into `Propose.Data -> Review -> Approval -> Implement.Code -> QA.Test -> Archive`.
+  - New endpoint: Split into `Propose.API -> Review -> Approval Gate -> Implement.Code -> QA.Test -> Archive`.
+  - Schema changes: Split into `Propose.Data -> Review -> Approval Gate -> Implement.Code -> QA.Test -> Archive`.
   - Bug fix: Split into `Explore.Req -> Implement.Code -> QA.Test -> Archive`.
 
 ### 2.3 .agents/workflow/ (Process Layer: Lifecycle State Machine + Hook Correction)
@@ -289,30 +301,77 @@ This layer solves "which things must be completed deterministically, cannot rely
 
 ### 3.1 Intent Gateway
 
-**Purpose**: Split natural language requirements into flowable intent queues (e.g., Propose.API → Implement.Code → QA.Test) and define "concurrency semantics = order independence".\
+**Purpose**: Route requests into execution profiles, then optionally launch lifecycle queues.
 **Specification File**: [Intent Gateway](.agents/router/ROUTER.md)
+
+#### Execution Profiles (NEW - Critical Concept)
+
+Not every request needs the full lifecycle. The gateway selects an execution profile:
+
+| Profile | When to Use | Lifecycle Entry | Artifacts |
+|---------|-------------|-----------------|-----------|
+| **LEARN** | Read-only explanation, code understanding | No | None |
+| **PATCH** | Small changes, bug fixes (LOW risk) | Minimal | Slim Spec or Change Log |
+| **STANDARD** | MEDIUM/HIGH risk, wide blast radius | Full 6-phase | Full OpenSpec + Approval Gate |
+
+#### Shortcuts (Explicit Routing)
+
+Users can override automatic routing with explicit shortcuts:
+
+- `@read` / `@learn`: Force Profile `LEARN` (read-only, no write-back)
+- `@patch` / `@quickfix`: Force Profile `PATCH` (small change mode)
+- `@standard`: Force Profile `STANDARD` (full lifecycle)
 
 ```mermaid
 flowchart LR
-  A[Requirement Input] --> B[Read Sitemap]
-  B --> C[Drill-down Index for Context]
-  C --> D[Intent Mapping\nGenerate Queue]
-  D --> E[Write launch_spec]
-  E --> F[Enter Lifecycle]
+  A[Requirement Input] --> B{Shortcut?}
+  B -->|Yes| C[Force Profile]
+  B -->|No| D[Auto-Select Profile]
+  C --> E{Profile?}
+  D --> E
+  E -->|LEARN| F[Direct Read / Q&A]
+  E -->|PATCH| G[Minimal Artifacts]
+  E -->|STANDARD| H[Full Lifecycle]
+  F --> I[Deliver Answer]
+  G --> J[Archive Optional]
+  H --> K[Write launch_spec]
 ```
 
-#### Core Intent Types & Concurrency Rules
+#### Core Intent Types (Simplified - 4 Top-Level Intents)
 
-| Intent Code | Trigger Scenario | Lifecycle Phase | Key Skills | Concurrency |
-|---|---|---|---|---|
-| `Explore.Req` | Requirement analysis & task splitting | Explorer | product-manager-expert, prd-task-splitter | Sequential |
-| `Audit.Codebase` | Code audit / architecture review (read-only) | Gateway | intent-gateway, devops-review-and-refactor | Sequential |
-| `QA.Doc` | Wiki/requirements Q&A (read-only) | Gateway | intent-gateway | Sequential |
-| `QA.Doc.Actionize` | Convert Q&A to executable intents (needs confirmation) | Gateway → Lifecycle | intent-gateway, devops-lifecycle-master | Sequential |
-| `Propose.API` | Add/modify interfaces & architecture | Propose → Review | devops-system-design | Parallel with Data |
-| `Propose.Data` | Add/modify database tables or indexes | Propose → Review | devops-system-design | Parallel with API |
-| `Implement.Code` | Write business logic / fix bugs | Implement → QA | devops-feature-implementation, devops-bug-fix | Wait for Propose |
-| `QA.Test` | Write test cases / code review | QA | devops-testing-standard | Wait for Implement |
+The gateway maps requests to a small set of top-level intents:
+
+| Intent | When to Use | Default Profile | Launch Spec | Write-back |
+|--------|-------------|-----------------|-------------|------------|
+| `Learn` | "Explain/read/understand this code" with explicit scope | LEARN | No | No |
+| `Change` | "Modify code" (feature, refactor, bugfix) | PATCH or STANDARD | Yes (STANDARD only) | Optional (Archive) |
+| `DocQA` | "What is the rule/process/template?" | LEARN | No | No (unless actionized) |
+| `Audit` | "Assess the codebase" (read-only review/risk scan) | LEARN | No | No |
+
+#### Context Collection Rules (UPDATED)
+
+**Rule 0: Direct Read when scope is explicit (MUST)**
+- If user provides explicit scope (file path, class/method name, pasted snippet) AND goal is learning:
+  - ✅ Do direct read first
+  - ❌ Do NOT start with Knowledge Graph drill-down
+  - Use funnel only if background context needed after first read
+
+**Rule 1: Otherwise, use Context Funnel (MUST)**
+1. Read root: [KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
+2. Drill down via: [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
+3. Consult skill index if unsure: [trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)
+
+#### Internal Lifecycle Queue Codes (STANDARD Profile Only)
+
+When Profile is `STANDARD`, the `Change` intent expands into:
+
+| Code | Phase | Notes |
+|------|-------|-------|
+| `Explore.Req` | Explorer | Clarify requirements + scope anchors |
+| `Propose.API` | Propose → Review | API contract and design |
+| `Propose.Data` | Propose → Review | Database schema changes |
+| `Implement.Code` | Implement → QA | Code changes |
+| `QA.Test` | QA | Tests + evidence |
 
 #### Read-Only Audit Flow (`Audit.Codebase`)
 
@@ -392,6 +451,10 @@ stateDiagram-v2
   QA --> Implement : fail_hook(test failed)
 ```
 
+**Note**: Approval is NOT an independent phase, but a human gate (HITL Gate). It exists as a checkpoint in the state machine.
+
+**Note**: Approval is NOT an independent phase, but a human gate (HITL Gate). It exists as a checkpoint in the state machine.
+
 ### 3.4 Hooks (Correction System)
 
 **Purpose**: "Lock engineering red lines into the process", achieving automatic correction and anti-runaway.\
@@ -414,11 +477,12 @@ flowchart TB
 | Mechanism | Trigger Point | Trigger Condition | Effect | Evaluation Method |
 |-----------|--------------|-------------------|--------|-------------------|
 | **guard_hook** | During implementation/modification | Style violations, permission/unauthorized access, cross-domain pollution | Immediate block, require rewrite or authorization | Standard skill review, rule verification |
-| **fail_hook** | Any phase failure | Compilation/test/review failures | State downgrade rollback; log failure reason; trigger retry count | Objective logs (compilation/test output) |
+| **fail_hook** | Any phase failure | Compilation/test/review failures | State downgrade rollback; log failure reason to `openspec.md`; trigger retry count | Objective logs (compilation/test output) |
 | **Max Retries** | Inside fail_hook | Same phase consecutive failures reach threshold | Force stop and request human intervention | Failure count reaches threshold |
-| **Approval (HITL)** | After Review passes | Need to enter Implement | "Freeze contract", human authorizes whether to proceed to implementation | Human confirmation (YES/NO + modification feedback) |
-| **Archive Write-back** | Task completion | New/changed knowledge needs沉淀 | Extract stable knowledge from Spec, archive hot documents, update indices | Rule validation, connectivity check (optional scripts) |
-| **Preferences Memory** | Before/after Archive | Representative human ratings/feedback |沉淀 experience as preferences/taboos, effective in next pre_hook | Human rating + textual reasoning |
+| **Approval Gate (HITL)** | After Review passes | Need to enter Implement | "Freeze contract", human authorizes whether to proceed; persist to `WAITING_APPROVAL` | Human confirmation (YES/NO + modification feedback) |
+| **Doc Consistency Gate** | post_hook / Archive | Wiki hallucination & contract corruption risk | Read-only validation (`schema_checker.py` + `wiki_linter.py`), trigger `fail_hook` on FAIL | Script exit codes (non-zero = FAIL) |
+| **Archive Write-back** | Task completion | New/changed knowledge needs沉淀 | Extract stable knowledge from Spec, archive hot documents, update indices (WAL mechanism) | Rule validation, connectivity check |
+| **Preferences Memory** | Before/after Archive | Representative human ratings/feedback |沉淀 experience as preferences/taboos to `wiki/preferences/index.md`, effective in next pre_hook | Human rating + textual reasoning |
 
 ---
 
@@ -431,7 +495,7 @@ flowchart TB
 | Explorer | explore_report (scope/impact/risks) | None |
 | Propose | openspec (strictly per Schema) | API Contract (with JSON Example); Acceptance Criteria (Given/When/Then) |
 | Review | Automated review conclusions and modification records | None |
-| Approval (HITL) | Human confirmation (freeze contract) | Acts as "starting gun" for parallel collaboration |
+| Approval Gate (HITL) | Human confirmation (freeze contract) | Acts as "starting gun" for parallel collaboration |
 | Implement | Code changes (minimal viable implementation) | Optional: Integration notes, Mock/examples |
 | QA | Unit tests/necessary integration test evidence | Optional: Endpoint self-test scripts, E2E highlights |
 | Archive | Extract stable knowledge to indices, archive Spec | Optional: Change summary, migration notes |

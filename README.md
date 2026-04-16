@@ -35,7 +35,7 @@
 ### ✨ Key Features
 
 - 🎯 **Intent-Driven**: Natural language → Structured intent queues → Executable tasks
-- 🔄 **Lifecycle State Machine**: Explorer → Propose → Review → Approval → Implement → QA → Archive
+- 🔄 **Lifecycle State Machine**: Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive
 - 🧠 **Knowledge Graph**: Hierarchical wiki system with bidirectional navigation
 - 🛡️ **Self-Correcting**: Automatic guard hooks, failure recovery, and human-in-the-loop checkpoints
 - 📊 **Contract-First**: OpenSpec-based design before implementation
@@ -109,7 +109,7 @@ Begin at the [Knowledge Graph Root](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) and dri
 
 Follow the [Lifecycle](.agents/workflow/LIFECYCLE.md) to complete a full task:
 ```
-Explorer → Propose → Review → Approval → Implement → QA → Archive
+Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive
 ```
 
 ---
@@ -177,10 +177,10 @@ stateDiagram-v2
 ```
 
 **Workflow**:
-1. **Explorer**: Minimal reproduction path + root cause hypothesis
+1. **Explorer**: Minimal reproduction path + root cause hypothesis + impact analysis (whether Propose/contract update needed)
 2. **QA**: Write failing test BEFORE fix (TDD approach)
 3. **Implement**: Fix implementation to pass test
-4. **Archive**: Record pattern in `wiki/testing/` or `reviews/`
+4. **Archive**: Record pattern in `wiki/testing/` or `reviews/`, update related API/Domain indices if necessary
 
 ---
 
@@ -230,7 +230,7 @@ sequenceDiagram
 ```
 
 **Key Handoff Points**:
-- **Approval Gate Phase**: Frozen OpenSpec becomes single source of truth
+- **Approval Gate Phase**: Frozen OpenSpec becomes single source of truth, acts as "starting gun" for parallel collaboration
 - **Minimal Handoff**: API Contract (JSON examples), Acceptance Criteria (Given/When/Then), Error Codes
 - **Backend Cohesion**: Other details remain backend-internal (not forced outward)
 
@@ -269,29 +269,30 @@ sequenceDiagram
 ### Phase 3: Review 🔬
 **Purpose**: Automated technical review against standards
 
-**Skills**: `devops-review-and-refactor`, `global-backend-standards`, `java-*`, `mybatis-sql-standard`
+**Skills**: `devops-review-and-refactor`, `global-backend-standards`, `java-*`, `mybatis-sql-standard`, `error-code-standard`, `java-data-permissions`
 
 **Review Matrix**:
-- ✅ Architecture & engineering standards
-- ✅ API design patterns
-- ✅ SQL performance & safety
-- ✅ Security & data permissions
-- ✅ Error handling consistency
+- ✅ Architecture & engineering standards (`java-engineering-standards`, `java-backend-guidelines`)
+- ✅ API design patterns (`java-backend-api-standard`)
+- ✅ SQL performance & safety (`mybatis-sql-standard`)
+- ✅ Security & data permissions (`error-code-standard`, `java-data-permissions`)
 
 **Failure**: Triggers `fail_hook` → Return to Propose
 
 ---
 
 ### Phase 3.5: Approval Gate (HITL) 👥
-**Purpose**: Human checkpoint before implementation with contract freeze
+**Purpose**: Human checkpoint before implementation with contract freeze (Approval is NOT a phase, but a human gate)
 
-**Action**: Present OpenSpec summary to human reviewer
+**Action**: Present OpenSpec summary to human reviewer, request explicit approval to enter implementation
 
 **Question**: *"Design passed automated review. Proceed to implementation?"*
 
 **Outcomes**:
-- ✅ **YES** → Enter Implement phase (contract frozen)
+- ✅ **YES** → Update launch_spec status to `WAITING_APPROVAL`, wait for confirmation then switch to `IN_PROGRESS` and proceed to Implement
 - ❌ **NO + Feedback** → Return to Propose for revision
+
+**Persistence**: Update intent row in `launch_spec.md` to `WAITING_APPROVAL` with `openspec.md` link
 
 **Parallel Trigger**: Frozen contract enables frontend/QA agents to start work
 
@@ -300,7 +301,7 @@ sequenceDiagram
 - **MEDIUM (Must Approval)**: New/modified external endpoints, core business chain adjustments without DB/permission foundation changes
 - **LOW (Can Skip Approval)**: Documentation adjustments, pure renaming/formatting, small-scope bugfixes with clear impact
 
-**Rule**: When Risk Level is MEDIUM/HIGH, must enter `WAITING_APPROVAL`; when LOW, can skip but must provide one-sentence justification for "why skippable" in user delivery.
+**Rule**: When Risk Level is MEDIUM/HIGH, must stop at `WAITING_APPROVAL`; when LOW, can skip but Agent MUST state why in delivery note.
 
 ---
 
@@ -310,7 +311,7 @@ sequenceDiagram
 **Skills**: `devops-feature-implementation`, `utils-usage-standard`, `aliyun-oss`
 
 **Discipline**:
-- No over-engineering beyond spec
+- Implement strictly according to approved contract, no uncontrolled improvisation
 - Must pass Checkstyle validation
 - Apply defensive programming guidelines
 - Respect domain boundaries (`guard_hook`)
@@ -342,15 +343,11 @@ sequenceDiagram
 **Purpose**: Knowledge extraction & cleanup
 
 **Actions**:
-1. **Document Sync**: Auto-trigger API & DB documentation updates
-2. **Knowledge Extraction**: Merge stable specs into domain indices
-   - API contracts → `wiki/api/index.md`
-   - Data models → `wiki/data/index.md`
-   - Domain terms → `wiki/domain/index.md`
-   - Architecture decisions → `wiki/architecture/index.md`
+1. **Document Sync**: Sync API/DB docs via `api-documentation-rules` and `database-documentation-sync`
+2. **Knowledge Extraction**: Extract stable knowledge into wiki indexes via reverse funnel (`CONTEXT_FUNNEL.md`)
 3. **Cold Storage**: Move original `openspec.md` to `.agents/llm_wiki/archive/`
-4. **Evolution**: Request human rating (1-10) for preference learning
-5. **Loop Check**: Read `launch_spec.md` → Next intent or complete
+4. **Evolution**: Request human rating (1-10), extract preferences/anti-patterns to `wiki/preferences/index.md`
+5. **Loop Check**: Re-read `launch_spec.md`, continue next intent until queue is empty
 
 **Anti-Bloat Rules**:
 - Index files > 500 lines → Split into subdirectories
@@ -399,18 +396,59 @@ sequenceDiagram
 
 The Intent Gateway transforms natural language requirements into structured intent queues that drive the entire lifecycle.
 
-### Core Intent Types
+### Execution Profiles (NEW)
 
-| Intent Code | Trigger Scenario | Lifecycle Phase | Key Skills | Concurrency |
-|---|---|---|---|---|
-| `Explore.Req` | Requirement analysis & task splitting | Explorer | product-manager-expert, prd-task-splitter | Sequential |
-| `Audit.Codebase` | Code audit / architecture review (read-only) | Gateway | intent-gateway, devops-review-and-refactor | Sequential |
-| `QA.Doc` | Wiki/requirements Q&A (read-only) | Gateway | intent-gateway | Sequential |
-| `QA.Doc.Actionize` | Convert Q&A to executable intents (needs confirmation) | Gateway → Lifecycle | intent-gateway, devops-lifecycle-master | Sequential |
-| `Propose.API` | Add/modify interfaces & architecture | Propose → Review | devops-system-design | Parallel with Data |
-| `Propose.Data` | Add/modify database tables or indexes | Propose → Review | devops-system-design | Parallel with API |
-| `Implement.Code` | Write business logic / fix bugs | Implement → QA | devops-feature-implementation, devops-bug-fix | Wait for Propose |
-| `QA.Test` | Write test cases / code review | QA | devops-testing-standard | Wait for Implement |
+Not every request needs the full lifecycle. The gateway selects an execution profile:
+
+| Profile | When to Use | Lifecycle Entry | Artifacts |
+|---------|-------------|-----------------|-----------|
+| **LEARN** | Read-only explanation, code understanding | No | None |
+| **PATCH** | Small changes, bug fixes (LOW risk) | Minimal | Slim Spec or Change Log |
+| **STANDARD** | MEDIUM/HIGH risk, wide blast radius | Full 6-phase | Full OpenSpec + Approval Gate |
+
+### Shortcuts (Explicit Routing)
+
+Users can override automatic routing with explicit shortcuts:
+
+- `@read` / `@learn`: Force Profile `LEARN` (read-only, no write-back)
+- `@patch` / `@quickfix`: Force Profile `PATCH` (small change mode)
+- `@standard`: Force Profile `STANDARD` (full lifecycle)
+
+### Core Intent Types (Simplified)
+
+The gateway maps requests to a small set of top-level intents:
+
+| Intent | When to Use | Default Profile | Launch Spec | Write-back |
+|--------|-------------|-----------------|-------------|------------|
+| `Learn` | "Explain/read/understand this code" with explicit scope | LEARN | No | No |
+| `Change` | "Modify code" (feature, refactor, bugfix) | PATCH or STANDARD | Yes (STANDARD only) | Optional (Archive) |
+| `DocQA` | "What is the rule/process/template?" | LEARN | No | No (unless actionized) |
+| `Audit` | "Assess the codebase" (read-only review/risk scan) | LEARN | No | No |
+
+### Context Collection Rules (UPDATED)
+
+**Rule 0: Direct Read when scope is explicit (MUST)**
+- If user provides explicit scope (file path, class/method name, pasted snippet) AND goal is learning:
+  - ✅ Do direct read first
+  - ❌ Do NOT start with Knowledge Graph drill-down
+  - Use funnel only if background context needed after first read
+
+**Rule 1: Otherwise, use Context Funnel (MUST)**
+1. Read root: [KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
+2. Drill down via: [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
+3. Consult skill index if unsure: [trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)
+
+### Internal Lifecycle Queue Codes (STANDARD Profile Only)
+
+When Profile is `STANDARD`, the `Change` intent expands into:
+
+| Code | Phase | Notes |
+|------|-------|-------|
+| `Explore.Req` | Explorer | Clarify requirements + scope anchors |
+| `Propose.API` | Propose → Review | API contract and design |
+| `Propose.Data` | Propose → Review | Database schema changes |
+| `Implement.Code` | Implement → QA | Code changes |
+| `QA.Test` | QA | Tests + evidence |
 
 ### Launch Spec Template (Machine-Friendly, Supports Breakpoint Resume)
 
@@ -441,12 +479,12 @@ Status values: `PENDING`, `IN_PROGRESS`, `DONE`, `WAITING_APPROVAL`, `FAILED`
 | Mechanism | Trigger | Condition | Effect | Evaluation |
 |-----------|---------|-----------|--------|------------|
 | **guard_hook** | During implementation | Style violations, permission breaches, cross-domain pollution | Immediate block, require rewrite or authorization | Standard skill review |
-| **fail_hook** | Any phase failure | Compilation/test/review failures | State downgrade, log reason, retry counter | Objective logs |
+| **fail_hook** | Any phase failure | Compilation/test/review failures | State downgrade, log reason to `openspec.md`, retry counter | Objective logs |
 | **Max Retries** | Inside fail_hook | Same phase fails 3 times consecutively | Force stop, request human intervention | Retry count threshold |
 | **Approval Gate (HITL)** | After Review | Before entering Implement | Freeze contract, human authorizes proceed | Human YES/NO + feedback |
-| **Doc Consistency Gate** | post_hook / Archive | Wiki hallucination & contract corruption risk | Read-only validation (schema_checker + wiki_linter), trigger fail_hook on dead links or missing key modules | Rule validation, connectivity check |
-| **Archive Write-back** | Task completion | New/changed knowledge needs persistence | Extract stable knowledge, archive hot docs, update indices | Rule validation, connectivity check |
-| **Preferences Memory** | Before/after Archive | Representative human ratings/feedback |沉淀经验为偏好/禁忌，下一轮 pre_hook 生效 | Human rating + reasoning |
+| **Doc Consistency Gate** | post_hook / Archive | Wiki hallucination & contract corruption risk | Read-only validation (`schema_checker.py` + `wiki_linter.py`), trigger `fail_hook` on FAIL | Script exit codes (non-zero = FAIL) |
+| **Archive Write-back** | Task completion | New/changed knowledge needs persistence | Extract stable knowledge, archive hot docs, update indices (WAL mechanism) | Rule validation, connectivity check |
+| **Preferences Memory** | Before/after Archive | Representative human ratings/feedback |沉淀经验为偏好/禁忌到 `wiki/preferences/index.md`, effective in next pre_hook | Human rating + reasoning |
 
 ---
 

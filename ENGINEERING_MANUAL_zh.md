@@ -10,6 +10,16 @@
 
 **可持续 • 可中断 • 自我纠偏 • 防膨胀**
 
+## ⚠️ 核心定位声明
+
+> **本项目不是传统的开发框架或面向人类的工具。**
+>
+> **它是一个纯 LLM 原生的规约线束，专为大语言模型的自主执行而设计。**
+>
+> 从第一天起，这个系统就被架构为**完全由 AI Agent 驱动**，而非人类。每一个组件——从意图网关到生命周期状态机，从知识图谱到技能矩阵——都被工程化为 LLM 可执行的协议，用于自我导航、自我纠偏和自我演进。
+>
+> **如果你用「人类开发者工具」的标准来评估这个项目，你将从根本上误解其设计哲学。** 这是软件工程中机器对机器协调的基础设施。
+
 [快速上手](#0-新人-3-分钟上手) | [架构总览](#1-架构总览) | [使用场景](#01-如何使用多场景示例)
 
 ---
@@ -24,6 +34,8 @@
 
 本文档既是工程规范手册，也是新人快速上手指南。
 
+**目标读者**: 大型语言模型（LLMs）和 AI Agents，用于自主执行后端工程任务。人类读者应将其理解为可执行协议规范，而非传统用户手册。
+
 ## 0. 新人 3 分钟上手
 
 **第一步（必读规则入口）**\
@@ -32,8 +44,8 @@
 **第二步（从知识图谱下钻，不盲搜）**\
 阅读：[知识图谱根节点](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)，然后按索引逐层下钻到你要的域（API / Data / Domain / Architecture / Specs / Preferences）。
 
-**第三步（跑一次最小闭环）**\
-按：[生命周期状态机](.agents/workflow/LIFECYCLE.md) 完成一次任务：Explorer → Propose → Review → Approval → Implement → QA → Archive。
+**第三步（跑一次最小闭环）**
+按：[生命周期状态机](.agents/workflow/LIFECYCLE.md) 完成一次任务：Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive。
 
 ## 0.1 如何使用（多场景示例）
 
@@ -43,7 +55,7 @@
 
 - 目标：新增一个只读接口（新增 DTO/Controller/Service），不涉及表结构变更。
 - 下钻阅读：sitemap → schema/openspec\_schema → wiki/api/index（必要时再读 domain/index 与 preferences/index）。
-- 生命周期路径：Explorer → Propose → Review → Approval → Implement → QA → Archive。
+- 生命周期路径：Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive。
 - 关键产出：
     - Explorer：范围/影响面/异常分支清单（含非目标）。
     - Propose：OpenSpec（接口签名、入参出参、错误码、示例 JSON、验收标准）。
@@ -55,7 +67,7 @@
 
 - 目标：新增接口同时新增/调整表结构与索引。
 - 下钻阅读：sitemap → schema/openspec\_schema → wiki/data/index + wiki/api/index（必要时读 domain/index）。
-- 生命周期路径：Explorer → Propose → Review → Approval → Implement → QA → Archive。
+- 生命周期路径：Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive。
 - 关键产出：
     - Propose：OpenSpec 同时冻结 API 与 Data 契约（字段语义、约束、索引设计、兼容性策略）。
     - Review：重点机审 SQL 风险、索引利用、隐式转换与越权风险。
@@ -76,7 +88,7 @@
 
 - 目标：在不改变对外行为的前提下做性能优化或 SQL 改写。
 - 下钻阅读：sitemap → wiki/api/index（对外行为）→ wiki/data/index（索引与查询约束）→ preferences/index。
-- 生命周期路径：Explorer → Propose → Review → Approval → Implement → QA → Archive。
+- 生命周期路径：Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive。
 - 关键产出：
     - Propose：说明“保持行为不变”的约束、性能瓶颈点、候选方案与回退策略。
     - Review：以 SQL 规范与索引利用为第一优先级；必要时降低方案复杂度。
@@ -87,7 +99,7 @@
 
 - 目标：提升可维护性或拆分职责，但不引入需求漂移。
 - 下钻阅读：sitemap → wiki/architecture/index（如有）→ preferences/index → domain/index（边界与术语）。
-- 生命周期路径：Explorer → Propose → Review → Approval → Implement → QA → Archive。
+- 生命周期路径：Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive。
 - 关键产出：
     - Explorer：明确“做什么/不做什么”，列出潜在跨域点。
     - Review/Approval：跨域修改必须显式授权；否则视为越权，直接回退。
@@ -196,8 +208,8 @@ flowchart TB
         - **做什么**：定义 Agent 的“正向检索（下钻）”与“反向写回（归档提取）”。
         - **红线**：只有索引树找不到时才允许兜底搜索；写回必须先找挂载点，索引超过阈值必须拆分。
 - **典型场景**
-    - 新增接口：拆成 `Propose.API -> Review -> Approval -> Implement.Code -> QA.Test -> Archive`。
-    - 改表结构：拆成 `Propose.Data -> Review -> Approval -> Implement.Code -> QA.Test -> Archive`。
+    - 新增接口：拆成 `Propose.API -> Review -> Approval Gate -> Implement.Code -> QA.Test -> Archive`。
+    - 改表结构：拆成 `Propose.Data -> Review -> Approval Gate -> Implement.Code -> QA.Test -> Archive`。
     - Bug 修复：拆成 `Explore.Req -> Implement.Code -> QA.Test -> Archive`。
 
 ### 2.3 .agents/workflow/（流程层：生命周期状态机 + 钩子纠偏）
@@ -292,30 +304,77 @@ flowchart TB
 
 ### 3.1 Intent Gateway（意图网关）
 
-**目的**：把自然语言需求拆成可流转的意图队列（例如：Propose.API → Implement.Code → QA.Test），并规定“并发语义=顺序无关性”。\
+**目的**：将请求路由到执行模式(Profiles)，然后可选地启动生命周期队列。
 **规范文件**：[意图网关](.agents/router/ROUTER.md)
+
+#### 执行模式 Profiles（NEW - 核心概念）
+
+不是每个请求都需要完整生命周期。网关会选择一个执行模式：
+
+| Profile | 使用场景 | 是否进入生命周期 | 产出物 |
+|---------|---------|-----------------|--------|
+| **LEARN** | 只读解释、代码理解 | 否 | 无 |
+| **PATCH** | 小改动、Bug修复（LOW风险） | 最小化 | Slim Spec 或 Change Log |
+| **STANDARD** | MEDIUM/HIGH风险、影响面大 | 完整6阶段 | 完整 OpenSpec + Approval Gate |
+
+#### Shortcuts（显式路由）
+
+用户可以使用显式快捷方式覆盖自动路由：
+
+- `@read` / `@learn`: 强制 Profile `LEARN`（只读，不写回）
+- `@patch` / `@quickfix`: 强制 Profile `PATCH`（小改动模式）
+- `@standard`: 强制 Profile `STANDARD`（完整生命周期）
 
 ```mermaid
 flowchart LR
-  A[需求输入] --> B[读取 Sitemap]
-  B --> C[下钻索引获取上下文]
-  C --> D[意图映射\n生成队列]
-  D --> E[写入 launch_spec]
-  E --> F[进入 Lifecycle]
+  A[需求输入] --> B{有Shortcut?}
+  B -->|是| C[强制Profile]
+  B -->|否| D[自动选择Profile]
+  C --> E{哪个Profile?}
+  D --> E
+  E -->|LEARN| F[直接读取/Q&A]
+  E -->|PATCH| G[最小化产出]
+  E -->|STANDARD| H[完整生命周期]
+  F --> I[交付答案]
+  G --> J[可选归档]
+  H --> K[写入launch_spec]
 ```
 
-#### 核心意图类型与并发规则
+#### 核心意图类型（简化 - 4个顶层意图）
 
-| 意图代码 | 触发场景 | 生命周期阶段 | 关键技能 | 并发规则 |
-|---|---|---|---|---|
-| `Explore.Req` | 需求分析与任务拆分 | Explorer | product-manager-expert, prd-task-splitter | 串行 |
-| `Audit.Codebase` | 代码体检 / 架构评审（只读） | Gateway | intent-gateway, devops-review-and-refactor | 串行 |
-| `QA.Doc` | Wiki/需求文档问答（只读） | Gateway | intent-gateway | 串行 |
-| `QA.Doc.Actionize` | 将问答转为可执行意图（需确认） | Gateway → Lifecycle | intent-gateway, devops-lifecycle-master | 串行 |
-| `Propose.API` | 新增/修改接口与架构 | Propose → Review | devops-system-design | 可与 Data 并行 |
-| `Propose.Data` | 新增/修改数据库表或索引 | Propose → Review | devops-system-design | 可与 API 并行 |
-| `Implement.Code` | 编写业务逻辑 / 修复 Bug | Implement → QA | devops-feature-implementation, devops-bug-fix | 等待 Propose 结束 |
-| `QA.Test` | 编写测试用例 / 代码审查 | QA | devops-testing-standard | 等待 Implement 结束 |
+网关将请求映射到少量顶层意图：
+
+| 意图 | 使用场景 | 默认Profile | Launch Spec | 写回 |
+|------|---------|-------------|-------------|------|
+| `Learn` | “解释/阅读/理解这段代码”，有明确scope | LEARN | 否 | 否 |
+| `Change` | “修改代码”（功能、重构、bugfix） | PATCH 或 STANDARD | 是（仅STANDARD） | 可选（Archive） |
+| `DocQA` | “规则/流程/模板是什么？” | LEARN | 否 | 否（除非actionize） |
+| `Audit` | “评估代码库”（只读评审/风险扫描） | LEARN | 否 | 否 |
+
+#### 上下文收集规则（UPDATED）
+
+**Rule 0: 明确scope时直接读取（MUST）**
+- 如果用户提供了明确的scope（文件路径、类/方法名、粘贴的代码片段）且目标是学习：
+  - ✅ 先直接读取
+  - ❌ 不要从知识图谱下钻开始
+  - 仅在第一次读取后需要背景上下文时才使用漏斗
+
+**Rule 1: 否则，使用知识漏斗（MUST）**
+1. 读取根节点：[KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
+2. 通过索引下钻：[CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
+3. 如果不确定用哪个技能，查阅：[trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)
+
+#### 内部生命周期队列代码（仅STANDARD Profile）
+
+当 Profile 为 `STANDARD` 时，`Change` 意图展开为：
+
+| 代码 | 阶段 | 说明 |
+|------|-------|-------|
+| `Explore.Req` | Explorer | 澄清需求 + scope锚点 |
+| `Propose.API` | Propose → Review | API契约与设计 |
+| `Propose.Data` | Propose → Review | 数据库模式变更 |
+| `Implement.Code` | Implement → QA | 代码变更 |
+| `QA.Test` | QA | 测试 + 证据 |
 
 #### 只读审计流程（`Audit.Codebase`）
 
@@ -395,6 +454,8 @@ stateDiagram-v2
   QA --> Implement : fail_hook(测试失败)
 ```
 
+**说明**：Approval 不是独立阶段，而是人类闸门（HITL Gate）。在状态机中作为检查点存在。
+
 ### 3.4 Hooks（钩子纠偏系统）
 
 **目的**：把工程红线“卡在流程里”，做到自动纠偏与防失控。\
@@ -417,11 +478,12 @@ flowchart TB
 | 机制             | 触发点          | 触发条件             | 产生效果                         | 评判方式                |
 | -------------- | ------------ | ---------------- | ---------------------------- | ------------------- |
 | guard\_hook    | 实现/改动过程中     | 风格不合规、权限/越权、跨域污染 | 立即阻断、要求重写或要求授权               | 规范技能审查、规则核对         |
-| fail\_hook     | 任意阶段失败       | 编译/测试/审查失败       | 状态降级回退；记录失败原因；触发重试计数         | 客观日志（编译/测试输出）       |
+| fail\_hook     | 任意阶段失败       | 编译/测试/审查失败       | 状态降级回退；记录失败原因到 `openspec.md`；触发重试计数         | 客观日志（编译/测试输出）       |
 | Max Retries    | fail\_hook 内 | 同一阶段连续失败达到阈值     | 强制停止并请求人类介入                  | 失败计数达到阈值            |
-| Approval(HITL) | Review 通过后   | 需要进入 Implement   | “冻结契约”，由人类授权是否进入实现           | 人类确认（YES/NO + 修改意见） |
-| Archive 写回     | 任务结束         | 新增/变更知识需要沉淀      | 从 Spec 提取稳定知识、归档热文档、更新索引     | 规则校验、连通性检查（可选脚本）    |
-| Preferences 记忆 | Archive 前后   | 人类评分/反馈有代表性      | 将经验沉淀为偏好/禁忌，下一轮 pre\_hook 生效 | 人类评分 + 文字原因         |
+| Approval Gate (HITL) | Review 通过后   | 需要进入 Implement   | “冻结契约”，由人类授权是否进入实现；持久化到 `WAITING_APPROVAL`           | 人类确认（YES/NO + 修改意见） |
+| 文档一致性门禁 | post_hook / Archive | Wiki 幻觉与契约腐败风险 | 只读校验（`schema_checker.py` + `wiki_linter.py`），发现 FAIL 时触发 `fail_hook` | 脚本退出码（非零即 FAIL） |
+| Archive 写回     | 任务结束         | 新增/变更知识需要沉淀      | 从 Spec 提取稳定知识、归档热文档、更新索引（WAL 机制）     | 规则校验、连通性检查    |
+| Preferences 记忆 | Archive 前后   | 人类评分/反馈有代表性      | 将经验沉淀为偏好/禁忌到 `wiki/preferences/index.md`，下一轮 pre\_hook 生效 | 人类评分 + 文字原因         |
 
 ***
 

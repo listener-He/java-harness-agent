@@ -35,7 +35,7 @@
 ### ✨ 核心特性
 
 - 🎯 **意图驱动**：自然语言 → 结构化意图队列 → 可执行任务
-- 🔄 **生命周期状态机**：Explorer → Propose → Review → Approval → Implement → QA → Archive
+- 🔄 **生命周期状态机**：Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive
 - 🧠 **知识图谱**：分层 Wiki 系统，支持双向导航
 - 🛡️ **自我纠偏**：自动守卫钩子、失败恢复、人类介入检查点
 - 📊 **契约先行**：基于 OpenSpec 的设计优先于实现
@@ -107,7 +107,7 @@ flowchart TB
 
 按照 [生命周期](.agents/workflow/LIFECYCLE.md) 完成一次任务：
 ```
-Explorer → Propose → Review → Approval → Implement → QA → Archive
+Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive
 ```
 
 ---
@@ -168,17 +168,17 @@ stateDiagram-v2
     [*] --> Explorer
     Explorer --> Implement: 识别根本原因
     Implement --> QA: 先写失败测试
-    QA --> Fix: 使测试通过
-    Fix --> QA: 回归测试套件
-    QA --> Archive: 记录修复模式
+    QA --> Implement: fail_hook (测试失败)
+    Implement --> QA: 修复使测试通过
+    QA --> Archive: 回归测试套件
     Archive --> [*]
 ```
 
 **工作流**：
-1. **Explorer**：最小复现路径 + 根因假设
+1. **Explorer**：最小复现路径 + 根因假设 + 影响分析（是否需要 Propose/契约更新）
 2. **QA**：修复前先写失败测试（TDD 方法）
 3. **Implement**：修复实现使测试通过
-4. **Archive**：在 `wiki/testing/` 或 `reviews/` 中记录模式
+4. **Archive**：在 `wiki/testing/` 或 `reviews/` 中记录模式，必要时更新相关 API/Domain 索引
 
 ---
 
@@ -228,7 +228,7 @@ sequenceDiagram
 ```
 
 **关键交接点**：
-- **Approval Gate 阶段**：冻结的 OpenSpec 成为唯一事实来源
+- **Approval Gate 阶段**：冻结的 OpenSpec 成为唯一事实来源，作为并行协作的"发令枪"
 - **最小交接物**：API 契约（JSON 示例）、验收标准（Given/When/Then）、错误码
 - **后端内聚**：其他细节保持后端内部（不强制外扩）
 
@@ -267,29 +267,30 @@ sequenceDiagram
 ### Phase 3: Review 🔬
 **目的**：针对标准的自动化技术评审
 
-**技能**：`devops-review-and-refactor`, `global-backend-standards`, `java-*`, `mybatis-sql-standard`
+**技能**：`devops-review-and-refactor`, `global-backend-standards`, `java-*`, `mybatis-sql-standard`, `error-code-standard`, `java-data-permissions`
 
 **评审矩阵**：
-- ✅ 架构与工程标准
-- ✅ API 设计模式
-- ✅ SQL 性能与安全
-- ✅ 安全与数据权限
-- ✅ 错误处理一致性
+- ✅ 架构与工程标准 (`java-engineering-standards`, `java-backend-guidelines`)
+- ✅ API 设计模式 (`java-backend-api-standard`)
+- ✅ SQL 性能与安全 (`mybatis-sql-standard`)
+- ✅ 安全与数据权限 (`error-code-standard`, `java-data-permissions`)
 
 **失败**：触发 `fail_hook` → 返回 Propose
 
 ---
 
 ### Phase 3.5: Approval Gate (HITL) 👥
-**目的**：实现前的人类检查点与契约冻结
+**目的**：实现前的人类检查点与契约冻结（Approval 不是独立阶段，而是人类闸门）
 
-**动作**：向人类评审者展示 OpenSpec 摘要
+**动作**：向人类评审者展示 OpenSpec 摘要，请求明确批准进入实现阶段
 
 **问题**：*"设计已通过自动审查。是否进入实现阶段？"*
 
 **结果**：
-- ✅ **是** → 进入 Implement 阶段（契约冻结）
+- ✅ **是** → 将 launch_spec 状态更新为 `WAITING_APPROVAL`，等待确认后切换为 `IN_PROGRESS` 并进入 Implement
 - ❌ **否 + 反馈** → 返回 Propose 进行修订
+
+**持久化**：在 `launch_spec.md` 中将意图行状态更新为 `WAITING_APPROVAL`，包含 `openspec.md` 链接
 
 **并行触发**：冻结契约使前端/QA agent 可以开始工作
 
@@ -298,7 +299,7 @@ sequenceDiagram
 - **MEDIUM（必须 Approval）**：新增/修改对外接口、调整核心业务链路但不涉及 DB/权限底座
 - **LOW（可跳过 Approval）**：文档调整、纯重命名/格式化、小范围 Bugfix 且影响面明确
 
-**规则**：当 Risk Level 为 MEDIUM/HIGH 时，必须进入 `WAITING_APPROVAL`；当为 LOW 时允许跳过，但必须在对用户交付中写明"为何可跳过"的一句话理由。
+**规则**：当 Risk Level 为 MEDIUM/HIGH 时，必须在 `WAITING_APPROVAL` 停止；当为 LOW 时可跳过，但 Agent 必须在交付说明中写明"为何可跳过"的一句话理由。
 
 ---
 
@@ -308,10 +309,10 @@ sequenceDiagram
 **技能**：`devops-feature-implementation`, `utils-usage-standard`, `aliyun-oss`
 
 **纪律**：
-- 不超过规范的过度设计
+- 严格按照批准的契约实现，无控制的即兴发挥
 - 必须通过 Checkstyle 验证
 - 应用防御性编程指南
-- 尊重领域边界（`guard_hook`）
+- 尊重领域边界（`guard_hook` 守卫）
 
 ---
 
@@ -334,11 +335,11 @@ sequenceDiagram
 **目的**：知识提取与清理
 
 **动作**：
-1. **文档同步**：自动触发 API 与 DB 文档更新
-2. **知识提取**：将稳定规范合并到域索引
+1. **文档同步**：通过 `api-documentation-rules` 和 `database-documentation-sync` 同步 API/DB 文档
+2. **知识提取**：通过反向漏斗（`CONTEXT_FUNNEL.md`）将稳定规范合并到域索引
 3. **冷存储**：将原始 `openspec.md` 移至 `.agents/llm_wiki/archive/`
-4. **进化**：请求人类评分（1-10）用于偏好学习
-5. **循环检查**：读取 `launch_spec.md` → 下一个意图或完成
+4. **进化**：请求人类评分（1-10），将经验/反模式提取到 `wiki/preferences/index.md`
+5. **循环检查**：重新读取 `launch_spec.md`，继续下一个意图直到队列为空
 
 **防膨胀规则**：
 - 索引文件 > 500 行 → 拆分为子目录
@@ -387,18 +388,59 @@ sequenceDiagram
 
 意图网关将自然语言需求转换为驱动整个生命周期的结构化意图队列。
 
-### 核心意图类型
+### 执行模式 Profiles（新增）
 
-| 意图代码 | 触发场景 | 生命周期阶段 | 关键技能 | 并发规则 |
-|---|---|---|---|---|
-| `Explore.Req` | 需求分析与任务拆分 | Explorer | product-manager-expert, prd-task-splitter | 串行 |
-| `Audit.Codebase` | 代码体检 / 架构评审（只读） | Gateway | intent-gateway, devops-review-and-refactor | 串行 |
-| `QA.Doc` | Wiki/需求文档问答（只读） | Gateway | intent-gateway | 串行 |
-| `QA.Doc.Actionize` | 将问答转为可执行意图（需确认） | Gateway → Lifecycle | intent-gateway, devops-lifecycle-master | 串行 |
-| `Propose.API` | 新增/修改接口与架构 | Propose → Review | devops-system-design | 可与 Data 并行 |
-| `Propose.Data` | 新增/修改数据库表或索引 | Propose → Review | devops-system-design | 可与 API 并行 |
-| `Implement.Code` | 编写业务逻辑 / 修复 Bug | Implement → QA | devops-feature-implementation, devops-bug-fix | 等待 Propose 结束 |
-| `QA.Test` | 编写测试用例 / 代码审查 | QA | devops-testing-standard | 等待 Implement 结束 |
+不是每个请求都需要完整生命周期。网关会选择一个执行模式：
+
+| Profile | 使用场景 | 是否进入生命周期 | 产出物 |
+|---------|---------|-----------------|--------|
+| **LEARN** | 只读解释、代码理解 | 否 | 无 |
+| **PATCH** | 小改动、Bug修复（LOW风险） | 最小化 | Slim Spec 或 Change Log |
+| **STANDARD** | MEDIUM/HIGH风险、影响面大 | 完整6阶段 | 完整 OpenSpec + Approval Gate |
+
+### Shortcuts（显式路由）
+
+用户可以使用显式快捷方式覆盖自动路由：
+
+- `@read` / `@learn`: 强制 Profile `LEARN`（只读，不写回）
+- `@patch` / `@quickfix`: 强制 Profile `PATCH`（小改动模式）
+- `@standard`: 强制 Profile `STANDARD`（完整生命周期）
+
+### 核心意图类型（简化）
+
+网关将请求映射到少量顶层意图：
+
+| 意图 | 使用场景 | 默认Profile | Launch Spec | 写回 |
+|------|---------|-------------|-------------|------|
+| `Learn` | “解释/阅读/理解这段代码”，有明确scope | LEARN | 否 | 否 |
+| `Change` | “修改代码”（功能、重构、bugfix） | PATCH 或 STANDARD | 是（仅STANDARD） | 可选（Archive） |
+| `DocQA` | “规则/流程/模板是什么？” | LEARN | 否 | 否（除非actionize） |
+| `Audit` | “评估代码库”（只读评审/风险扫描） | LEARN | 否 | 否 |
+
+### 上下文收集规则（更新）
+
+**Rule 0: 明确scope时直接读取（MUST）**
+- 如果用户提供了明确的scope（文件路径、类/方法名、粘贴的代码片段）且目标是学习：
+  - ✅ 先直接读取
+  - ❌ 不要从知识图谱下钻开始
+  - 仅在第一次读取后需要背景上下文时才使用漏斗
+
+**Rule 1: 否则，使用知识漏斗（MUST）**
+1. 读取根节点：[KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
+2. 通过索引下钻：[CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
+3. 如果不确定用哪个技能，查阅：[trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)
+
+### 内部生命周期队列代码（仅STANDARD Profile）
+
+当 Profile 为 `STANDARD` 时，`Change` 意图展开为：
+
+| 代码 | 阶段 | 说明 |
+|------|-------|-------|
+| `Explore.Req` | Explorer | 澄清需求 + scope锚点 |
+| `Propose.API` | Propose → Review | API契约与设计 |
+| `Propose.Data` | Propose → Review | 数据库模式变更 |
+| `Implement.Code` | Implement → QA | 代码变更 |
+| `QA.Test` | QA | 测试 + 证据 |
 
 ### Launch Spec 模板（机器友好，支持断点续传）
 
@@ -429,12 +471,12 @@ sequenceDiagram
 | 机制 | 触发点 | 触发条件 | 产生效果 | 评判方式 |
 |------|--------|----------|----------|----------|
 | **guard_hook** | 实现/改动过程中 | 风格不合规、权限/越权、跨域污染 | 立即阻断、要求重写或授权 | 规范技能审查、规则核对 |
-| **fail_hook** | 任意阶段失败 | 编译/测试/审查失败 | 状态降级回退；记录失败原因；触发重试计数 | 客观日志（编译/测试输出） |
+| **fail_hook** | 任意阶段失败 | 编译/测试/审查失败 | 状态降级回退；记录失败原因到 `openspec.md`；触发重试计数 | 客观日志（编译/测试输出） |
 | **Max Retries** | fail_hook 内 | 同一阶段连续失败达到阈值（3次） | 强制停止并请求人类介入 | 失败计数达到阈值 |
 | **Approval Gate (HITL)** | Review 通过后 | 需要进入 Implement | "冻结契约"，由人类授权是否进入实现 | 人类确认（YES/NO + 修改意见） |
-| **文档一致性门禁** | post_hook / Archive | Wiki 幻觉与契约腐败风险 | 只读校验（schema_checker + wiki_linter），发现死链或缺失关键模块时触发 fail_hook | 规则校验、连通性检查 |
-| **Archive 写回** | 任务结束 | 新增/变更知识需要沉淀 | 从 Spec 提取稳定知识、归档热文档、更新索引 | 规则校验、连通性检查 |
-| **Preferences 记忆** | Archive 前后 | 人类评分/反馈有代表性 | 将经验沉淀为偏好/禁忌，下一轮 pre_hook 生效 | 人类评分 + 文字原因 |
+| **文档一致性门禁** | post_hook / Archive | Wiki 幻觉与契约腐败风险 | 只读校验（`schema_checker.py` + `wiki_linter.py`），发现 FAIL 时触发 `fail_hook` | 脚本退出码（非零即 FAIL） |
+| **Archive 写回** | 任务结束 | 新增/变更知识需要沉淀 | 从 Spec 提取稳定知识、归档热文档、更新索引（WAL 机制） | 规则校验、连通性检查 |
+| **Preferences 记忆** | Archive 前后 | 人类评分/反馈有代表性 | 将经验沉淀为偏好/禁忌到 `wiki/preferences/index.md`，下一轮 pre_hook 生效 | 人类评分 + 文字原因 |
 
 ---
 
