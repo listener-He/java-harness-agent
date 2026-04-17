@@ -25,8 +25,8 @@
 [Engineering Manual](ENGINEERING_MANUAL.md) | [Quick Start](#-quick-start)
 
 </div>
-
 ---
+![./static/image.jpg](./static/image.jpg)
 
 ## 📖 Overview
 

@@ -27,6 +27,7 @@
 </div>
 
 ---
+![./static/image.jpg](./static/image.jpg)
 
 ## 📖 项目简介
 
