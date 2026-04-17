@@ -1,22 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-WAL 碎片合并器 (WAL -> Index)
-可选工具：把 llm_wiki/wiki/*/wal 下的碎片文件合并进对应域 index.md。
+WAL Compactor (WAL -> Index)
+Tool to merge fragmented markdown files in llm_wiki/wiki/*/wal into the corresponding domain's index.md.
 """
 
 import os
 import glob
+import sys
 from datetime import datetime
 
 
 WIKI_ROOT = ".agents/llm_wiki/wiki"
-DOMAINS = ["api", "data", "domain", "architecture"]
+DOMAINS = ["api", "data", "domain", "architecture", "rules", "specs", "preferences"]
+REFACTOR_THRESHOLD_LINES = 400
 
 
 def _read_text(path):
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
+
+
+def _get_line_count(path):
+    if not os.path.exists(path):
+        return 0
+    with open(path, "r", encoding="utf-8") as f:
+        return sum(1 for _ in f)
 
 
 def _append_to_file(path, text):
@@ -36,20 +45,27 @@ def _merge_domain(domain):
     index_file = os.path.join(domain_dir, "index.md")
 
     if not os.path.exists(wal_dir):
-        return []
+        return [], False
     if not os.path.exists(index_file):
-        raise FileNotFoundError(index_file)
+        return [], False # Skip if index doesn't exist
 
     fragments = sorted(glob.glob(os.path.join(wal_dir, "*.md")))
     if not fragments:
-        return []
+        return [], False
+
+    # Check capacity threshold before compaction
+    current_lines = _get_line_count(index_file)
+    if current_lines >= REFACTOR_THRESHOLD_LINES:
+        print(f"⚠️  [NEEDS_REFACTOR] {index_file} has {current_lines} lines (>= {REFACTOR_THRESHOLD_LINES}).")
+        print(f"    Compaction aborted for domain '{domain}'. Please mount the 'Knowledge Architect' role to refactor and split the index.")
+        return [], True
 
     applied_dir = os.path.join(wal_dir, "applied")
     os.makedirs(applied_dir, exist_ok=True)
 
     merged = []
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    header = f"\n\n---\n\n## WAL 合并记录 - {domain} - {stamp}\n"
+    header = f"\n\n---\n\n## WAL Compaction - {domain} - {stamp}\n"
     _append_to_file(index_file, header)
 
     for frag in fragments:
@@ -62,17 +78,28 @@ def _merge_domain(domain):
         os.rename(frag, os.path.join(applied_dir, os.path.basename(frag)))
         merged.append(frag)
 
-    return merged
+    return merged, False
 
 
 def main():
     merged_all = []
+    needs_refactor = False
+    
     for d in DOMAINS:
-        merged_all.extend(_merge_domain(d))
+        merged, refactor_flag = _merge_domain(d)
+        merged_all.extend(merged)
+        if refactor_flag:
+            needs_refactor = True
+            
+    if needs_refactor:
+        print("\n❌ Compaction halted due to capacity limits. Triggering Auto-Refactoring Flow.")
+        sys.exit(2)  # Exit code 2 signals the Runner to trigger Knowledge Architect
+        
     if not merged_all:
-        print("ℹ️ 没有可合并的 WAL 碎片。")
+        print("ℹ️ No WAL fragments found to compact.")
         return
-    print("✅ 已合并碎片文件：")
+        
+    print("✅ Compacted the following WAL fragments:")
     for f in merged_all:
         print(f"- {f}")
 

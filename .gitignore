@@ -32,5 +32,11 @@ build/
 ### Mac OS ###
 .DS_Store
 
+###  Agents 运行时记忆 ###
 .agents/router/runs/
 .agents/workflow/runs/
+.agents/events/drift_queue/
+
+### Python ###
+__pycache__/
+*.pyc

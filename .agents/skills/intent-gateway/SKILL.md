@@ -23,6 +23,7 @@ The gateway MUST execute the following in order:
 1. Apply explicit shortcut DSL if present (SSOT: `.agents/router/ROUTER.md`).
 2. Otherwise, route automatically using the rules in `.agents/router/ROUTER.md`.
 3. Collect context using `.agents/router/CONTEXT_FUNNEL.md`.
+    - **Crucial Attention Shift Rule**: While collecting context, always remember that the Wiki might be outdated (Knowledge Drift). If you notice contradictions, missing details, or if 3 consecutive Wiki reads yield no actionable constraints, you MUST stop reading the Wiki and immediately shift your attention to reading the actual workspace code. The code is the ultimate source of truth.
 4. If the selected profile is `STANDARD`, launch via `.agents/router/ROUTER.md` launch spec rules.
 
 ## Handoff

@@ -5,7 +5,7 @@ This document defines the execution lifecycle as a one-way state machine with ha
 ## Agent as the Engine (MUST)
 - The Agent MUST determine the current phase from context and execute the correct next action.
 - Before moving to the next phase, the Agent MUST apply the constraints in [HOOKS.md](HOOKS.md).
-- The Agent MUST maintain `launch_spec_{timestamp}.md` (`Status/Phase/Failed_Reason`) for resumability. Optional helper: `python ../scripts/harness/engine.py`.
+- The Agent MUST maintain `launch_spec_{timestamp}.md` (`Status/Phase/Failed_Reason`) for resumability. Optional helper: `python3 ../scripts/harness/engine.py`.
 - Non-negotiable: one-way flow, hard gates, and anti-runaway rules MUST NOT be broken.
 
 ## Phases (6) + Approval Gate
@@ -17,8 +17,11 @@ Approval is a human gate. It is NOT counted as a phase.
 Not every request needs the full lifecycle.
 
 - Profile `LEARN`: read-only explanation (no launch spec, no lifecycle, no write-back).
-- Profile `PATCH`: small change / bugfix (minimal artifacts; hooks still apply; archive is optional).
-- Profile `STANDARD`: full lifecycle (this document).
+- Profile `PATCH`: small change / bugfix (minimal artifacts; hooks still apply; archive write-back is REQUIRED).
+  - PATCH flow is short-circuited: `1_Explorer` -> `4_Implement` -> `5_QA` -> `6_Archive`.
+  - It skips `2_Propose` and `3_Review` and the `Approval Gate` completely.
+  - Requires a `slim_spec.md` during `4_Implement` which just contains a Change Log and QA Evidence.
+- Profile `STANDARD`: full lifecycle (Phase 1 to 6).
 
 ### Phase 1: Explorer
 - Skills: `[product-manager-expert](../skills/product-manager-expert/SKILL.md)`, `[devops-requirements-analysis](../skills/devops-requirements-analysis/SKILL.md)`, `[prd-task-splitter](../skills/prd-task-splitter/SKILL.md)`
@@ -72,5 +75,9 @@ This phase closes the loop and prevents bloat.
 1. Sync docs via `[api-documentation-rules](../skills/api-documentation-rules/SKILL.md)` and `[database-documentation-sync](../skills/database-documentation-sync/SKILL.md)`.
 2. Extract stable knowledge into wiki indexes via the reverse funnel in `../router/CONTEXT_FUNNEL.md`.
 3. Move the original spec into `../llm_wiki/archive/`.
-4. Ask the human for a 1–10 rating and extract preferences/anti-patterns into `../llm_wiki/wiki/preferences/index.md`.
-5. Trigger loop: re-read the launch spec and continue until the queue is empty.
+4. Trigger WAL Compaction: execute `python3 .agents/scripts/wiki/compactor.py`. 
+   - **Smart Compaction**: The compactor checks the target `index.md` line count. If it is safely under the threshold (< 400 lines), it appends/merges the WAL fragments.
+   - **Auto-Refactoring Trigger**: If the file exceeds 400 lines, the compactor aborts physical append and flags `NEEDS_REFACTOR`. The Agent MUST temporarily mount the `Knowledge Architect` role to read the bloated index and the pending WALs, split the knowledge into sub-documents, update the routing links, and pass the `wiki_linter.py` gate before continuing.
+5. Process Drift Events: The Agent reads `.agents/events/drift_queue/` (if any events exist), quickly validates the discrepancy, and generates the necessary WAL append fragments to heal the wiki without losing focus on the original task.
+6. Ask the human for a 1–10 rating and extract preferences/anti-patterns into `../llm_wiki/wiki/preferences/index.md`.
+7. Trigger loop: re-read the launch spec and continue until the queue is empty.

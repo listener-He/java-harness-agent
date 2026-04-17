@@ -47,7 +47,7 @@ Flags (order-independent):
     - `--launch`: force lifecycle launch (STANDARD only)
     - `--no-launch`: force no launch
     - `--writeback`: allow wiki/WAL write-back (not allowed for LEARN)
-    - `--no-writeback`: forbid write-back (default)
+    - `--no-writeback`: forbid write-back (LEARN only; PATCH/STANDARD require write-back)
 - Verification:
     - `--test "<cmd>"`: required verification command + evidence
     - `--no-test`: skip tests (LEARN only; PATCH requires an explicit justification)
@@ -83,7 +83,7 @@ Use when the change is small and risk is LOW.
 - Minimal artifacts: Slim Spec or Change Log + objective verification evidence.
 - No full `Propose -> Review -> Approval` chain by default.
 - Hooks still apply (guard/fail/max retries).
-- Archive write-back is optional and only when stable knowledge changed.
+- Archive write-back is REQUIRED (Domain/API/Rules WAL at minimum).
 
 ### Profile: STANDARD (Full delivery)
 Use for MEDIUM/HIGH risk changes and any change with wide blast radius.
@@ -95,7 +95,7 @@ Use for MEDIUM/HIGH risk changes and any change with wide blast radius.
 | Intent | When to use | Default Profile | Launch spec | Write-back |
 |---|---|---|---|---|
 | `Learn` | “Explain/read/understand this code” with explicit scope | LEARN | No | No |
-| `Change` | “Modify code” (feature, refactor, bugfix) | PATCH or STANDARD | Yes (STANDARD only) | Optional (Archive) |
+| `Change` | “Modify code” (feature, refactor, bugfix) | PATCH or STANDARD | Yes (STANDARD only) | Required (Archive via WAL) |
 | `DocQA` | “What is the rule/process/template?” | LEARN | No | No (unless actionized) |
 | `Audit` | “Assess the codebase” (read-only review/risk scan) | LEARN | No | No |
 
@@ -149,7 +149,7 @@ When Profile is `STANDARD`, the `Change` intent is expanded into a lifecycle que
 When launching a lifecycle queue:
 1. Persist to `router/runs/launch_spec_{timestamp}.md`
 2. Drive transitions by updating only `Status/Phase/Failed_Reason`
-3. Optional helper: `python ../scripts/harness/engine.py init "..."` can create and maintain the file
+3. Optional helper: `python3 ../scripts/harness/engine.py init "..."` can create and maintain the file
 
 After each `Archive` phase, the Agent MUST re-read the launch spec to decide whether to continue with the next intent.
 

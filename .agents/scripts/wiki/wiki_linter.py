@@ -61,9 +61,12 @@ def check_wiki():
             referenced_files.add(target_path)
 
     # Check orphans (没有被其他文件引用，且不是核心索引文件的 md)
+    # WAL fragments are intentionally append-only and may be unreferenced until compaction.
     orphans = []
     core_files = ["KNOWLEDGE_GRAPH.md", "purpose.md", "index.md"]
     for f in all_md_files:
+        if os.path.sep + "wal" + os.path.sep in f:
+            continue
         is_core = any(f.endswith(core) for core in core_files)
         if not is_core and f not in referenced_files:
             orphans.append(f)

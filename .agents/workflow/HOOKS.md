@@ -24,6 +24,7 @@ This document defines when and how to enforce constraints throughout the lifecyc
   - Standards guard: enforce style and required patterns.
   - Domain boundary guard: DO NOT modify cross-domain files unless explicitly authorized in `openspec.md`.
 - Anti-runaway guard (MUST): enforce budgeted navigation + stop rules + escalation protocol (see `../router/CONTEXT_FUNNEL.md`).
+- Anti-drift guard (MUST): maintain a `Focus Card` and enforce scope via `scope_guard.py` (see `../workflow/ROLE_MATRIX.md`).
 
 ### 3. `post_hook` (Post-Phase Audit)
 - Trigger: after completing a phase, before transitioning.
@@ -36,13 +37,26 @@ This document defines when and how to enforce constraints throughout the lifecyc
 Goal: reduce wiki drift and contract corruption risk with deterministic checks.
 
 Read-only checks (DO NOT modify files):
-- OpenSpec checker: `python .agents/scripts/wiki/schema_checker.py <path_to_openspec.md>`
-- Wiki graph linter: `python .agents/scripts/wiki/wiki_linter.py`
+- OpenSpec checker: `python3 .agents/scripts/wiki/schema_checker.py <path_to_openspec.md>`
+- Wiki graph linter: `python3 .agents/scripts/wiki/wiki_linter.py`
+- Ambiguity gate: `python3 .agents/scripts/gates/ambiguity_gate.py --intent "<intent>" [--anchors-file <file>]`
+- Write-back gate: `python3 .agents/scripts/gates/writeback_gate.py --topic "<topic>" --date YYYYMMDD [--require-data]`
+- Delivery capsule gate: `python3 .agents/scripts/gates/delivery_capsule_gate.py --file <delivery_capsule.md>`
+- Secrets gate: `python3 .agents/scripts/gates/secrets_linter.py --paths "<glob...>"`
+- Java comment gate: `python3 .agents/scripts/gates/comment_linter_java.py --path <dir> [--fail-on-missing]`
+- Unified runner (recommended): `python3 .agents/scripts/gates/run.py --intent <...> --profile <...> --phase <...> --topic <...> --date <YYYYMMDD> [--verify-level quick|standard|strict] [--artifact-tags ...]`
 
-Severity:
+Severity & Justification Bypass (Flexible Constraints):
 - Follow `[linter-severity-standard](../skills/linter-severity-standard/SKILL.md)`.
-- The gate MUST use script exit codes: any FAIL (non-zero) stops the workflow and triggers `fail_hook`.
-- WARN is allowed to proceed, but the Agent MUST explain and state a follow-up action.
+- **Justification Bypass**: If a gate script returns a FAIL (non-zero) due to a rule violation (e.g., missing Javadoc on a trivial private method, or a legacy code pattern), the Agent is NOT forced into an infinite loop. The Agent MAY generate a `bypass_justification.md` explaining why the rule should be waived in this specific context.
+- When a `bypass_justification.md` is present for a specific gate failure, the runner WILL downgrade the FAIL to a WARN, allowing the workflow to proceed.
+- WARN is allowed to proceed, but the Agent MUST explain and state a follow-up action. This justification will be presented to the human during the `Approval Gate`.
+
+Write-back policy (MUST):
+- For Profile `PATCH` and `STANDARD`, write-back is REQUIRED:
+  - Domain WAL + API WAL + Rules WAL are mandatory.
+  - Data WAL is mandatory when schema/DDL changes.
+- The Agent MUST NOT end a change as “done” if write-back gates fail.
 
 Optional evidence (writes a report file):
 - `python .agents/scripts/wiki/zero_residue_audit.py` (default output: `.agents/workflow/runs/`)
@@ -67,6 +81,8 @@ Usage:
 - Purpose:
   - State downgrade: move back to the previous phase, and append the failure reason to `openspec.md` (or the relevant task artifact). Fix all failed checklist items.
   - Max retries (3): if the same phase fails 3 times, the Agent MUST stop and ask for human intervention.
+  - Script retries cap (3): in one task, each gate script can fail at most 3 times; when failures exceed 3, the Agent MUST stop and request human intervention.
+  - Task-state reset: retry state is auto-cleared when task ends (`Archive`) or process receives interruption signals; optional explicit reset via `run.py --end-task`.
   - Persistence: update `launch_spec.md` row to `FAILED` and write `Failed_Reason`.
 
 ### 5. `loop_hook` (Queue Loop + Concurrency Guard)

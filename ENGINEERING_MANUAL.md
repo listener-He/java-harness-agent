@@ -6,7 +6,7 @@
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](ENGINEERING_MANUAL.md)
 [![Language](https://img.shields.io/badge/language-English-green.svg)](README.md)
-[![中文版](https://img.shields.io/badge/中文版-available-red.svg)](README_zh.md)
+[![中文版](https://img.shields.io/badge/中文版-available-red.svg)](ENGINEERING_MANUAL_zh.md)
 
 **Sustainable • Interruptible • Self-Correcting • Anti-Bloat**
 
@@ -30,13 +30,11 @@
 
 ---
 
-This directory defines an **Agent-driven engineering workflow** for **backend development**: achieving a sustainable, interruptible, self-correcting, and anti-bloat development closed-loop through "Intent Gateway + Lifecycle State Machine + Knowledge Graph (LLM Wiki) + Skills + Hook Correction".
+This directory defines an **Agent-driven engineering workflow** for **backend development**: achieving a sustainable, interruptible, self-correcting, and anti-bloat development closed-loop through "Intent Gateway + Lifecycle State Machine + Knowledge Graph (LLM Wiki) + Skills + Hook Correction + Role Matrix".
 
 This document serves as both an engineering specification manual and a quick onboarding guide for newcomers.
 
 **Target Audience**: Large Language Models (LLMs) and AI Agents executing backend engineering tasks autonomously. Human readers should understand this as an executable protocol specification, not a traditional user manual.
-
----
 
 ## 0. Quick Start (3 Minutes)
 
@@ -48,8 +46,6 @@ Read: [Knowledge Graph Root](.agents/llm_wiki/KNOWLEDGE_GRAPH.md), then drill do
 
 **Step 3 (Run One Minimal Closed-Loop)**\
 Follow: [Lifecycle State Machine](.agents/workflow/LIFECYCLE.md) to complete one task: Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive.
-
----
 
 ## 0.1 How to Use (Multi-Scenario Examples)
 
@@ -67,469 +63,672 @@ This section provides typical "follow-along" playbooks. The rules remain consist
   - QA: Unit tests and key use case evidence.
 - **Archive Write-back**: Extract stable API fragments into corresponding wiki/api/ index; move Spec to archive.
 
-### Scenario B: New API + Schema Changes (Including Indexes)
+```mermaid
+graph LR
+  A[Explorer<br/>Clarify Requirements] --> B[Propose<br/>OpenSpec]
+  B --> C[Review<br/>Technical Review]
+  C --> D[Approval<br/>HITL Gate]
+  D --> E[Implement<br/>Per Contract]
+  E --> F[QA<br/>Test Validation]
+  F --> G[Archive<br/>Update Index]
+
+  style A fill:#e1f5ff
+  style B fill:#fff4e6
+  style D fill:#ffe6e6
+  style G fill:#e6ffe6
+```
+
+### Scenario B: New API + Schema Changes
 
 - **Goal**: Add new endpoint while creating/modifying table structures and indexes.
-- **Drill-down Reading**: sitemap → schema/openspec_schema → wiki/data/index + wiki/api/index (optionally read domain/index if needed).
+- **Drill-down Reading**: sitemap → schema/openspec_schema → wiki/data/index + wiki/api/index.
 - **Lifecycle Path**: Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive.
 - **Key Deliverables**:
-  - Propose: OpenSpec freezes both API and Data contracts simultaneously (field semantics, constraints, index design, compatibility strategy).
-  - Review: Focus on automated SQL risk checks, index utilization, implicit conversion, and authorization risks.
+  - Propose: OpenSpec freezes both API and Data contracts simultaneously.
+  - Review: Focus on SQL risk checks, index utilization, authorization risks.
   - QA: Add regression tests covering core queries and boundary conditions.
-- **Archive Write-back**: Extract table structure and index highlights to wiki/data/; endpoint highlights to wiki/api/; synchronize database documentation and ER diagrams (if applicable).
+- **Archive Write-back**: Extract table structure to wiki/data/; endpoints to wiki/api/.
 
 ### Scenario C: Bug Fix (Reproduce First, Then Add Tests)
 
 - **Goal**: Fix defects ensuring reproducibility, regressability, and traceability.
-- **Drill-down Reading**: sitemap → wiki/testing/index (strategy and evidence writing) → preferences/index (historical taboos).
+- **Drill-down Reading**: sitemap → wiki/testing/index → preferences/index.
 - **Lifecycle Path**: Explorer → Implement → QA → Archive.
 - **Key Deliverables**:
-  - Explorer: Minimal reproduction path, root cause hypothesis, impact analysis (whether Propose/contract update is needed).
-  - QA: First add failing test case, then fix implementation, finally add regression evidence.
-- **Archive Write-back**: Record reproduction and fix summary in wiki/testing/ or reviews/; update related API/Domain indices if necessary.
+  - Explorer: Minimal reproduction path, root cause hypothesis.
+  - QA: First add failing test, then fix, finally add regression evidence.
 
-### Scenario D: Performance/SQL Optimization (Review as Primary Gate)
+```mermaid
+stateDiagram-v2
+  [*] --> Explorer
+  Explorer --> Implement
+  Implement --> QA
+  QA --> Implement: fail_hook
+  Implement --> QA
+  QA --> Archive
+  Archive --> [*]
+```
 
-- **Goal**: Optimize performance or rewrite SQL without changing external behavior.
-- **Drill-down Reading**: sitemap → wiki/api/index (external behavior) → wiki/data/index (index and query constraints) → preferences/index.
-- **Lifecycle Path**: Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive.
-- **Key Deliverables**:
-  - Propose: Document "behavior unchanged" constraints, performance bottlenecks, candidate solutions, and rollback strategies.
-  - Review: Prioritize SQL standards and index utilization; reduce solution complexity if necessary.
-  - QA: Add comparative evidence (key use case performance and correctness).
-- **Archive Write-back**:沉淀 reusable performance rules and counterexamples to preferences/ or data/ indices.
+### Scenario D: Performance/SQL Optimization
 
-### Scenario E: Refactoring (With Boundary Guards and Non-Goals)
+- **Goal**: Optimize performance without changing external behavior.
+- **Lifecycle Path**: Explorer → Propose → Review → Approval Gate → Implement → QA → Archive.
+- **Key Deliverables**: Document constraints, bottlenecks, solutions, rollback strategies.
 
-- **Goal**: Improve maintainability or split responsibilities without introducing requirement drift.
-- **Drill-down Reading**: sitemap → wiki/architecture/index (if available) → preferences/index → domain/index (boundaries and terminology).
-- **Lifecycle Path**: Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive.
-- **Key Deliverables**:
-  - Explorer: Clarify "what to do / what not to do", list potential cross-domain points.
-  - Review/Approval: Cross-domain modifications require explicit authorization; otherwise considered unauthorized and rolled back directly.
-- **Archive Write-back**: Write architectural decisions and boundary rules back to architecture/ and preferences/ for future guard_hook effectiveness.
+### Scenario E: Refactoring
 
-### Scenario F: Parallel Collaboration (Backend-Led Delivery, Optional Frontend/QA Parallel Work)
+- **Goal**: Improve maintainability without requirement drift.
+- **Lifecycle Path**: Explorer → Propose → Review → Approval Gate → Implement → QA → Archive.
+- **Key Point**: Cross-domain modifications require explicit authorization.
 
-- **Goal**: Backend-led delivery allowing frontend and QA to proceed in parallel after contract freeze.
-- **Drill-down Reading**: sitemap → schema/openspec_schema (confirm handoff fields) → wiki/api/index.
-- **Lifecycle Path**: Explorer → Propose → Review → Approval Gate (freeze contract) → Implement → QA → Archive.
-- **Collaboration Key Points**:
-  - Freeze OpenSpec during Approval Gate phase, making it the single source of truth for parallel frontend/QA work.
-  - Minimum backend handoff comes from OpenSpec (example JSON, acceptance criteria, error codes); other content remains backend-cohesive, not forced outward.
+### Scenario F: Parallel Collaboration
 
-### Scenario G: Knowledge Write-back and Anti-Bloat (Archive Maintenance)
+- **Goal**: Backend-led delivery with frontend/QA parallel work after contract freeze.
+- **Key Point**: Freeze OpenSpec at Approval Gate for parallel frontend/QA work.
 
-- **Goal**: Extract "short-lived Specs" into "stable indices" and control index size.
-- **Drill-down Reading**: sitemap → target domain index (api/data/domain/testing/preferences).
-- **Lifecycle Path**: Archive (as independent maintenance action) or follow regular task Phase 6.
-- **Write-back Principles**:
-  - New knowledge must find a mount point to write back to domain indices; unmountable content should be archived rather than left in active zones.
-  - Any index exceeding threshold (e.g., 500 lines) must split into subdirectory indices and update parent mounts.
+```mermaid
+sequenceDiagram
+  participant B as Backend Agent
+  participant H as Human (HITL)
+  participant F as Frontend Agent
+  participant Q as QA Agent
 
-### Scenario H: Optional Health Check Toolbox (Does Not Replace Agent)
+  B->>B: Explorer → Propose
+  B->>H: Request Approval
+  H->>B: ✅ Approved
+  par Parallel Execution
+    B->>B: Implement
+    F->>F: Build UI
+    Q->>Q: Write Tests
+  end
+  B->>B: QA → Archive
+```
 
-- **Goal**: Perform deterministic health checks when uncertain about graph or contract structure integrity.
-- **Optional Tools (report only, no file modification)**:
-  - Graph health check: [wiki_linter.py](.agents/scripts/wiki/wiki_linter.py) (dead links/orphans/length warnings)
-  - Contract health check: [schema_checker.py](.agents/scripts/wiki/schema_checker.py) (critical structure missing checks)
-  - Preference health check: [pref_tag_checker.py](.agents/scripts/wiki/pref_tag_checker.py) (rule tag规范 checks)
+### Scenario G: Knowledge Write-back & Anti-Bloat
+
+- **Goal**: Extract specs into stable indices, control index size.
+- **Principle**: New knowledge must find mount point; unmountable content archived.
+- **Rule**: Index > 500 lines → split into subdirectory indices.
+
+### Scenario H: Optional Health Check Toolbox
+
+- **Tools**: wiki_linter.py, schema_checker.py, pref_tag_checker.py (read-only checks).
 
 ### Scenario I: Read-Only Audit (`Audit.Codebase`)
 
-- **Goal**: Perform read-only analysis and assessment of the codebase, producing structured audit reports with evidence citations.
-- **Read-Only Constraints**: No code modifications, no Wiki writes, no launch spec generation, no lifecycle entry.
-- **Allowed Operations**: Read-only retrieval and reading; allowed to run tests/builds but must not modify any tracked files.
-- **Output Requirements**: Each conclusion must include evidence (file path + line range) and impact/recommendations.
-- **Typical Scenarios**: Architecture review, code quality scanning, technical debt assessment.
+- **Constraints**: No code mods, no Wiki writes, no lifecycle entry.
+- **Output**: Structured audit report with evidence (file path + line range).
 
 ### Scenario J: Documentation Q&A (`QA.Doc` / `QA.Doc.Actionize`)
 
-- **QA.Doc**: Drill down through knowledge funnel, output answers with citations (cite Wiki/requirement paragraphs, supplement with code references when needed).
-- **QA.Doc.Actionize**: Convert Q&A conclusions into "executable intent queues"; must ask user whether to "launch" first; only generate launch spec and enter lifecycle after confirmation.
-- **Typical Scenarios**: Query business rules, understand API usage, confirm architecture decisions.
+- **QA.Doc**: Q&A with citations, no lifecycle.
+- **QA.Doc.Actionize**: Convert to executable queue after confirmation.
 
----
+***
 
 ## 1. Architecture Overview
 
-### 1.1 Component Architecture Diagram
+### 1.1 Core Philosophy
+
+#### Three Fundamental Problems Solved
+
+**Problem 1: Context Bloat Out of Control**
+
+LLMs blindly searching leads to Token waste and attention dispersion.
+
+**Solution: Knowledge Graph + Budgeted Navigation**
+- Sitemap→Index→Doc hierarchical drill-down
+- Hard budget: Wiki≤3 docs, Code≤8 files
+- Saturation Gate, Stop-Wiki/Stop-Code rules
+
+**Problem 2: Requirement Drift & Unauthorized Modifications**
+
+Agent free play leads to cross-domain contamination and contract corruption.
+
+**Solution: Intent Gateway + Role Matrix Guards**
+- Intent classification→Profile selection→Launch Spec
+- Dynamic Role mounting (Ambiguity Gatekeeper, Focus Guard, etc.)
+- Gate checks (ambiguity_gate.py, scope_guard.py)
+- Approval Gate HITL
+
+**Problem 3: Knowledge Fragmentation & Unsustainability**
+
+Conversation memory loss, documentation desynchronization, index bloat.
+
+**Solution: WAL Write-back + Auto-Refactoring**
+- WAL fragments for low-conflict write-back
+- Compaction for intelligent merging
+- Drift Queue for inconsistency capture
+- Archive cold storage
+
+#### Design Philosophy
+
+**Encode Engineering Discipline as LLM-Executable Protocols**
+
+- **Machine-to-Machine Coordination**: Communication protocol between Agents
+- **Self-Navigation**: Autonomously acquire context via Knowledge Graph
+- **Self-Correction**: Automatically intercept violations via Hooks
+- **Self-Evolution**: Continuous improvement via Preferences memory
+
+**Core Principles:**
+- Contract-First: Freeze OpenSpec before implementation
+- Anti-Bloat: WAL + Compaction + Archive
+- Sustainability: Breakpoint resume + Knowledge extraction
+- Determinism: Script tools assistance
+
+### 1.2 System Architecture Diagram
 
 ```mermaid
 flowchart TB
-  User[User Requirements] --> IG[Intent Gateway]
-  IG --> CF[Context Funnel]
-  CF --> Wiki[LLM Wiki\nSitemap/Index/Docs]
-  IG --> LS[Launch Spec\nIntent Queue]
-  LS --> LC[Lifecycle\nExplorer→Archive]
-  LC --> HK[Hooks\npre/guard/post/fail/loop]
-  LC --> Skills[Skills\nSpecialized Capability Matrix]
-  HK --> Scripts[Scripts\nDeterministic Checks/Auxiliary]
-  LC --> Archive[Archive\nExtract/Archive/Update Index]
-  Archive --> Wiki
-  Wiki --> CF
+subgraph Input["📥 Input Layer"]
+User[👤 User Requirements]
+Shortcut[⚡ Shortcuts<br/>@read/@patch/@standard]
+end
+
+subgraph Gateway["🎯 Intent Gateway (ROUTER)"]
+IG[Intent Gateway]
+Profile{Profile Selection}
+LEARN[LEARN]
+PATCH[PATCH]
+STANDARD[STANDARD]
+end
+
+subgraph Context["🔍 Context Collection (FUNNEL)"]
+DirectRead[Direct Read]
+Funnel[Knowledge Funnel]
+Budget[Budget Control]
+Escalation[Escalation Protocol]
+end
+
+subgraph Knowledge["🧠 Knowledge Graph (LLM Wiki)"]
+KG[KNOWLEDGE_GRAPH.md]
+DomainIndex[Domain Indices]
+Docs[Documents]
+Archive[Archive]
+end
+
+subgraph Lifecycle["⚙️ Lifecycle Engine (WORKFLOW)"]
+LaunchSpec[Launch Spec]
+Phase1[1_Explorer]
+Phase2[2_Propose]
+Phase3[3_Review]
+ApprovalGate[Approval Gate]
+Phase4[4_Implement]
+Phase5[5_QA]
+Phase6[6_Archive]
+end
+
+subgraph Roles["🎭 Role Matrix"]
+Ambiguity[Ambiguity Gatekeeper]
+FocusGuard[Focus Guard]
+DomainAnalyst[Domain Analyst]
+InterfaceSteward[Interface Steward]
+SecuritySentinel[Security Sentinel]
+DocCurator[Documentation Curator]
+KnowledgeArch[Knowledge Architect]
+end
+
+subgraph Hooks["🛡️ Hooks System"]
+PreHook[pre_hook]
+GuardHook[guard_hook]
+PostHook[post_hook]
+FailHook[fail_hook]
+LoopHook[loop_hook]
+end
+
+subgraph Skills["🔧 Skills Matrix"]
+SkillIndex[trae-skill-index]
+BackendSkills[Backend Skills 25+]
+end
+
+subgraph Scripts["📜 Scripts Tools"]
+Gates[Gate Scripts]
+WikiTools[Wiki Tools]
+Engine[Engine Auxiliary]
+end
+
+User --> IG
+Shortcut --> IG
+IG --> Profile
+Profile -->|LEARN| DirectRead
+Profile -->|PATCH| LaunchSpec
+Profile -->|STANDARD| LaunchSpec
+
+DirectRead --> Funnel
+Funnel --> Budget
+Budget --> Escalation
+
+KG --> DomainIndex
+DomainIndex --> Docs
+Docs --> Archive
+
+LaunchSpec --> Phase1
+Phase1 --> Phase2
+Phase2 --> Phase3
+Phase3 --> ApprovalGate
+ApprovalGate --> Phase4
+Phase4 --> Phase5
+Phase5 --> Phase6
+Phase6 --> LaunchSpec
+
+Phase1 -.->|Mount| Ambiguity
+Phase1 -.->|Mount| FocusGuard
+Phase2 -.->|Mount| DomainAnalyst
+Phase2 -.->|Mount| InterfaceSteward
+Phase4 -.->|Mount| SecuritySentinel
+Phase5 -.->|Mount| DocCurator
+Phase6 -.->|Mount| KnowledgeArch
+
+Phase1 -.->|Trigger| PreHook
+Phase4 -.->|Trigger| GuardHook
+Phase5 -.->|Trigger| PostHook
+Phase3 -.->|Trigger| FailHook
+Phase5 -.->|Trigger| FailHook
+Phase6 -.->|Trigger| LoopHook
+
+Ambiguity -.->|Call| Gates
+GuardHook -.->|Call| Gates
+PostHook -.->|Call| WikiTools
+KnowledgeArch -.->|Call| WikiTools
+
+Phase1 -.->|Query| SkillIndex
+Phase4 -.->|Query| BackendSkills
+
+style Input fill:#e1f5ff
+style Gateway fill:#fff4e6
+style Context fill:#f0e6ff
+style Knowledge fill:#e6ffe6
+style Lifecycle fill:#ffe6f0
+style Roles fill:#fff9e6
+style Hooks fill:#ffe6e6
+style Skills fill:#e6f0ff
+style Scripts fill:#f5f5f5
 ```
 
-### 1.2 Core Philosophy (One-Liners)
+### 1.3 Core Components Details
 
-- **No RAG Feeding to LLM**: Only provide "graph entry + navigation rules + fallback search rights", letting Agents autonomously roam to acquire context.
-- **Contract-First**: Write OpenSpec before code; give reviews and parallel collaboration something to grip.
-- **Closed-Loop & Correction**: Failure rollback, max retries, anti-unauthorized-access, HITL, human rating沉淀 preferences, forming long-term evolution.
-- **Anti-Bloat**: Specs are "hot, short-lived" and must be extracted into stable indices during Archive phase, with Index size controlled.
+| Layer | Component | Responsibility | Key Files | Problem Solved |
+|-------|-----------|----------------|-----------|----------------|
+| **Input** | Intent Gateway | Natural language → Structured intent | [ROUTER.md](.agents/router/ROUTER.md) | Requirements to executable queue |
+| **Context** | Knowledge Funnel | Bidirectional navigation | [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md) | Context acquisition & anti-bloat |
+| **Knowledge** | LLM Wiki | Fractal knowledge graph | [KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) | Knowledge organization |
+| **Workflow** | Lifecycle Engine | 6-phase state machine | [LIFECYCLE.md](.agents/workflow/LIFECYCLE.md) | Process standardization |
+| **Roles** | Role Matrix | Dynamic role mounting | [ROLE_MATRIX.md](.agents/workflow/ROLE_MATRIX.md) | Quality gates & anti-drift |
+| **Correction** | Hooks System | Pre/guard/post/fail/loop interception | [HOOKS.md](.agents/workflow/HOOKS.md) | Automatic correction |
+| **Capabilities** | Skills Matrix | 25+ professional capabilities | [trae-skill-index](.agents/skills/trae-skill-index/SKILL.md) | Capability standardization |
+| **Tools** | Scripts Tools | Deterministic checks | [scripts/](.agents/scripts/) | Determinism enhancement |
+
+### 1.4 Data Flow & Control Flow
+
+**Forward Data Flow:**
+```
+User Requirements → Intent Gateway → Context Funnel → Launch Spec → Lifecycle Engine → Archive → Wiki Update
+```
+
+**Reverse Control Flow:**
+```
+Hooks System ← pre_hook/guard_hook/post_hook/fail_hook/loop_hook
+Role Matrix ← Ambiguity/Focus/Domain/Knowledge Architect roles
+Budget Control ← Wiki≤3, Code≤8, Saturation Gate, Escalation
+```
 
 ---
 
-## 2. Directory Structure & Responsibilities (Package-Level)
+## 2. Directory Structure & Responsibilities
+
+### 2.1 Overall Directory Tree (Document Level)
 
 ```text
-.
-├── .agents/router/          # Intent gateway & context funnel (entry & navigation rules)
-├── .agents/workflow/        # Lifecycle state machine & hooks (interception/correction/closed-loop)
-├── .agents/llm_wiki/        # Knowledge base (knowledge graph/index/domain knowledge/archive)
-├── .agents/skills/          # Specialized skills (SKILL.md as unit)
-└── .agents/scripts/         # Deterministic scripts (graph checks, auxiliary tools)
+java-harness-agent/
+│
+├── AGENTS.md                              # 📌 Project-level rule entry
+├── README.md                              # Project overview (English)
+├── README_zh.md                           # Project overview (Chinese)
+├── ENGINEERING_MANUAL.md                  # Engineering manual (English, this file)
+├── ENGINEERING_MANUAL_zh.md               # Engineering manual (Chinese)
+│
+└── .agents/
+    ├── router/                            # Intent layer
+    │   ├── ROUTER.md                      # Intent gateway spec
+    │   ├── CONTEXT_FUNNEL.md              # Knowledge funnel spec
+    │   └── runs/                          # Launch Specs (not committed)
+    │
+    ├── workflow/                          # Workflow layer
+    │   ├── LIFECYCLE.md                   # Lifecycle spec
+    │   ├── HOOKS.md                       # Hooks spec
+    │   ├── ROLE_MATRIX.md                 # Role matrix spec
+    │   └── runs/                          # Runtime state (not committed)
+    │
+    ├── llm_wiki/                          # Knowledge layer
+    │   ├── KNOWLEDGE_GRAPH.md             # 🗺️ Knowledge graph root
+    │   ├── purpose.md                     # System philosophy
+    │   ├── schema/                        # Contract templates
+    │   │   ├── index.md
+    │   │   └── openspec_schema.md
+    │   ├── wiki/                          # Active knowledge domains
+    │   │   ├── api/
+    │   │   │   ├── index.md
+    │   │   │   └── wal/
+    │   │   ├── data/
+    │   │   │   ├── index.md
+    │   │   │   └── wal/
+    │   │   ├── domain/
+    │   │   │   ├── index.md
+    │   │   │   └── wal/
+    │   │   ├── architecture/
+    │   │   │   ├── index.md
+    │   │   │   └── wal/
+    │   │   ├── specs/
+    │   │   │   └── index.md
+    │   │   ├── testing/
+    │   │   │   ├── index.md
+    │   │   │   └── wal/
+    │   │   └── preferences/
+    │   │       └── index.md
+    │   └── archive/                       # Cold storage
+    │
+    ├── skills/                            # Capability layer (25+ skills)
+    │   ├── intent-gateway/SKILL.md
+    │   ├── devops-lifecycle-master/SKILL.md
+    │   ├── product-manager-expert/SKILL.md
+    │   ├── prd-task-splitter/SKILL.md
+    │   ├── devops-requirements-analysis/SKILL.md
+    │   ├── devops-system-design/SKILL.md
+    │   ├── devops-task-planning/SKILL.md
+    │   ├── devops-review-and-refactor/SKILL.md
+    │   ├── global-backend-standards/SKILL.md
+    │   ├── java-engineering-standards/SKILL.md
+    │   ├── java-backend-guidelines/SKILL.md
+    │   ├── java-backend-api-standard/SKILL.md
+    │   ├── java-javadoc-standard/SKILL.md
+    │   ├── java-data-permissions/SKILL.md
+    │   ├── mybatis-sql-standard/SKILL.md
+    │   ├── error-code-standard/SKILL.md
+    │   ├── checkstyle/SKILL.md
+    │   ├── devops-feature-implementation/SKILL.md
+    │   ├── devops-bug-fix/SKILL.md
+    │   ├── devops-testing-standard/SKILL.md
+    │   ├── code-review-checklist/SKILL.md
+    │   ├── api-documentation-rules/SKILL.md
+    │   ├── database-documentation-sync/SKILL.md
+    │   ├── utils-usage-standard/SKILL.md
+    │   ├── aliyun-oss/SKILL.md
+    │   ├── skill-graph-manager/SKILL.md
+    │   ├── trae-skill-index/SKILL.md
+    │   └── linter-severity-standard/SKILL.md
+    │
+    └── scripts/                           # Tools layer
+        ├── gates/                         # Gate scripts
+        │   ├── ambiguity_gate.py
+        │   ├── focus_card_gate.py
+        │   ├── schema_checker.py
+        │   ├── wiki_linter.py
+        │   ├── pref_tag_checker.py
+        │   ├── writeback_gate.py
+        │   ├── delivery_capsule_gate.py
+        │   ├── secrets_linter.py
+        │   ├── comment_linter_java.py
+        │   ├── scope_guard.py
+        │   ├── skill_index_linter.py
+        │   └── run.py
+        ├── wiki/                          # Wiki tools
+        │   ├── compactor.py
+        │   ├── wiki_linter.py
+        │   ├── schema_checker.py
+        │   ├── pref_tag_checker.py
+        │   └── zero_residue_audit.py
+        └── harness/                       # Engine auxiliary
+            └── engine.py
 ```
 
-Recommend treating "what to read, how to do, where to write back after completion" as part of engineering, uniformly written into indices and contracts rather than stored in conversation memory.
+### 2.2 Key Files Responsibilities
 
-### 2.1 AGENTS.md (Project-Level Rule Entry)
+**AGENTS.md**: Project-level rule entry with hard constraints (Budget Limits, Approval Gate, Anti-Looping, Scope Guard).
 
-- **Positioning**: The "master entry rule" of this system. Used to constrain Agent's free play within controllable boundaries (no blind search, no unauthorized access, no runaway, no bloat).
-- **Input/Output**: Input = any task; Output = unified execution discipline (retrieval, lifecycle, correction, archiving, optional handoffs).
-- **Trigger Points**: Must read at the start of every task; return here when disputes arise (paths, whether to parallelize, whether handoffs are needed).
-- **Typical Scenarios**: Newcomer onboarding; external Agent integration; task interruption recovery; adjudication when "should I continue implementing / should I make cross-domain changes" arises.
+**.agents/router/**:
+- **ROUTER.md**: Intent mapping, Profiles, Shortcuts, DSL, intent types, context collection rules, budgeted navigation
+- **CONTEXT_FUNNEL.md**: Forward retrieval, backward write-back, budget control, stopping rules, escalation protocol
 
-### 2.2 .agents/router/ (Intent Layer: Transforming Requirements into Executable Queues)
+**.agents/workflow/**:
+- **LIFECYCLE.md**: 6-phase state machine, Approval Gate, Launch Spec template, breakpoint resume
+- **HOOKS.md**: 5 hooks (pre/guard/post/fail/loop), Non-Convergence Fallback, Justification Bypass
+- **ROLE_MATRIX.md**: 9 virtual roles, mounting rules, automation contract
 
-This layer solves the problem of "user says one sentence → what exactly do I need to do, what first, what next".
+**.agents/llm_wiki/**:
+- **KNOWLEDGE_GRAPH.md**: Knowledge graph root node (mandatory entry point)
+- **wiki/{domain}/**: Active knowledge domains (api/data/domain/architecture/specs/testing/preferences)
+- **archive/**: Cold storage for extracted specs
 
-- **Key Files**
-  - [intent-gateway.md](.agents/router/ROUTER.md)
-    - **What it does**: Splits natural language requirements into intent queues (e.g., `Propose.API -> Implement.Code -> QA.Test`) and defines "concurrency semantics = order independence".
-    - **Output**: `.agents/router/runs/launch_spec_*.md` (intent queue persistence + breakpoint resumption).
-  - [context-funnel.md](.agents/router/CONTEXT_FUNNEL.md)
-    - **What it does**: Defines Agent's "forward retrieval (drill-down)" and "reverse write-back (archive extraction)".
-    - **Red Lines**: Fallback search allowed only when index tree fails; write-back must find mount points first, indices exceeding threshold must split.
-- **Typical Scenarios**
-  - New endpoint: Split into `Propose.API -> Review -> Approval Gate -> Implement.Code -> QA.Test -> Archive`.
-  - Schema changes: Split into `Propose.Data -> Review -> Approval Gate -> Implement.Code -> QA.Test -> Archive`.
-  - Bug fix: Split into `Explore.Req -> Implement.Code -> QA.Test -> Archive`.
+**.agents/skills/**: 26 specialized skills organized by category (Intent/Lifecycle, Requirements/Design, Implementation, Code Standards, Testing/Review, Documentation).
 
-### 2.3 .agents/workflow/ (Process Layer: Lifecycle State Machine + Hook Correction)
-
-This layer solves "how to ensure tasks are rollbackable, reviewable, and closed-loop".
-
-- **Key Files**
-  - [lifecycle.md](.agents/workflow/LIFECYCLE.md)
-    - **What it does**: Defines unidirectional state machine from Explorer→Archive; specifies freeze points (Approval Gate) and closed-loop points (Phase 6).
-    - **Output**: Phased deliverables (explore_report/openspec/test evidence/archive extraction).
-  - [hooks.md](.agents/workflow/HOOKS.md)
-    - **What it does**: Writes engineering red lines "into the process", forming guard/fail/loop correction systems.
-    - **Output**: Block/downgrade/rollback/stop and request human intervention.
-- **Typical Scenarios**
-  - Design failed automated review: Review failure → fail_hook → rollback to Propose for rewrite.
-  - Test failure: QA failure → fail_hook → rollback to Implement for fix.
-  - Cross-domain modification: guard_hook triggers domain boundary guard → requires explicit authorization or stop.
-  - Multi-intent queue: loop_hook consumes queue → automatically starts next Explorer round.
-
-### 2.4 .agents/llm_wiki/ (Knowledge Layer: Evolvable Fractal Graph)
-
-This layer solves "how to organize knowledge, how to retrieve it, how to prevent bloat".
-
-- **Key Files**
-  - [.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
-    - **What it does**: Knowledge graph root node, only mounts top-level domain entries; mandatory retrieval starting point for Agents.
-  - schema/
-    - [schema/index.md](.agents/llm_wiki/schema/index.md): Specification domain index (router), telling you "which contract to read / which process to jump to".
-    - [openspec_schema.md](.agents/llm_wiki/schema/openspec_schema.md): OpenSpec contract template (primary backend deliverable; optionally carries frontend/QA handoff fields).
-  - wiki/
-    - **What it does**: Active knowledge domains (domain/api/data/architecture/specs/testing/preferences), isolated by domain, indices must be drill-downable.
-  - archive/
-    - **What it does**: Cold data; Specs enter archive after extraction completion, retaining traceability without polluting active zones.
-- **Typical Scenarios**
-  - New knowledge write-back: Extract unstable specs into stable API/Data/Domain indices during Archive phase.
-  - Anti-bloat splitting: When an index exceeds threshold → split into subdirectory index and update parent mount.
-
-### 2.5 .agents/skills/ (Capability Layer: Specialized Expert Capability Plugins)
-
-This layer solves "when tasks enter specialized domains, how to quickly invoke professional capabilities while maintaining consistent standards".
-
-- **Basic Convention**: One directory per skill, entry file is `.agents/skills/<skill-name>/SKILL.md`.
-- **Typical Scenarios**: Must pass Java/API/SQL/permission standard reviews before implementation; must synchronize API/DB documentation during archive phase.
-
-### 2.6 .agents/scripts/ (Tool Layer: Deterministic Enhancement, Does Not Replace Agent)
-
-This layer solves "which things must be completed deterministically, cannot rely on LLM guessing".
-
-- wiki/
-  - `wiki_linter.py`: Graph health check (dead links/orphans/length warnings).
-  - `schema_checker.py`: Contract structure health check (critical paragraph and JSON example existence checks).
-  - `pref_tag_checker.py`: Preference rule tag health check (for precise retrieval).
-- .agents/workflow/
-  - `engine.py`: Queue state auxiliary (optional; helps record current .agents/router/phase/retry count for complex tasks).
-
-### 2.7 Typical Execution Path Examples for Each Directory
-
-**.agents/router/**
-- Typical path: User requirements → read .agents/llm_wiki/KNOWLEDGE_GRAPH.md → trigger intent mapping → write to .agents/router/runs/launch_spec_*.md
-- Scenario example: New endpoint → generate Propose.API -> Implement.Code -> QA.Test queue
-- Result: Queue becomes the "sole scheduling basis" for subsequent Lifecycle
-
-**.agents/workflow/**
-- Typical path: Read launch_spec → enter Phase 1 → Propose/Review → Approval Gate (HITL) → Implement → QA → Archive
-- Scenario example: Review not passed → trigger fail_hook → rollback to Propose for rewrite
-- Result: State machine ensures rollbackability, correctability, and closed-loop
-
-**.agents/llm_wiki/**
-- Typical path: Drill down from .agents/llm_wiki/KNOWLEDGE_GRAPH.md → enter domain index → read specific documents → reverse write-back to index during archive
-- Scenario example: New API → append entry to wiki/api/index.md → split into subdirectory if threshold exceeded
-- Result: Knowledge is retrievable, extensible, and non-bloated
-
-**.agents/skills/**
-- Typical path: Enter Review/Implement/QA → invoke corresponding skills based on task → output standardized suggestions/check results
-- Scenario example: New Controller → trigger java-backend-api-standard and api-documentation-rules
-- Result: Professional rules前置, reducing implementation deviation
-
-**.agents/scripts/**
-- Typical path: Enter Archive → optionally run wiki_linter/schema_checker/pref_tag_checker → output health report or format suggestions
-- Scenario example: Discover orphaned files →提示 mount to sitemap/index
-- Result: Graph connectivity and structural quality controllable
+**.agents/scripts/**:
+- **gates/**: 12 gate scripts for deterministic quality checks
+- **wiki/**: 5 Wiki maintenance tools
+- **harness/**: Optional engine auxiliary
 
 ---
 
-## 3. Engine & Process (Detailed Explanation + Flowcharts)
+## 3. Engine & Processes
 
 ### 3.1 Intent Gateway
 
-**Purpose**: Route requests into execution profiles, then optionally launch lifecycle queues.
-**Specification File**: [Intent Gateway](.agents/router/ROUTER.md)
+#### 3.1.1 Execution Mode Profiles
 
-#### Execution Profiles (NEW - Critical Concept)
-
-Not every request needs the full lifecycle. The gateway selects an execution profile:
-
-| Profile | When to Use | Lifecycle Entry | Artifacts |
-|---------|-------------|-----------------|-----------|
-| **LEARN** | Read-only explanation, code understanding | No | None |
-| **PATCH** | Small changes, bug fixes (LOW risk) | Minimal | Slim Spec or Change Log |
-| **STANDARD** | MEDIUM/HIGH risk, wide blast radius | Full 6-phase | Full OpenSpec + Approval Gate |
-
-#### Shortcuts (Explicit Routing)
-
-Users can override automatic routing with explicit shortcuts:
-
-- `@read` / `@learn`: Force Profile `LEARN` (read-only, no write-back)
-- `@patch` / `@quickfix`: Force Profile `PATCH` (small change mode)
-- `@standard`: Force Profile `STANDARD` (full lifecycle)
-
-#### Shortcut DSL (Composable)
-
-Shortcuts can be composed with flags to express common workflows as a small DSL.
-
-Syntax:
-```text
-@<profile> <flags...> -- <natural language request or question>
-```
-
-Flags (order-independent):
-- Scope / read:
-    - `--scope <path|glob|symbol>`: explicit scope (file/dir/symbol)
-    - `--direct`: force direct reads (do not start with Knowledge Graph drill-down)
-    - `--funnel`: force the funnel even if scope is explicit
-    - `--depth shallow|normal|deep`: explanation depth (LEARN only)
-- Risk / artifacts:
-    - `--risk low|medium|high`: explicit risk override
-    - `--slim`: force Slim Spec (PATCH only, or STANDARD with `--risk low`)
-    - `--changelog`: use Change Log only (PATCH only)
-    - `--evidence required|optional|none`: evidence requirement (default: PATCH=required)
-- Launch / write-back:
-    - `--launch`: force lifecycle launch (STANDARD only)
-    - `--no-launch`: force no launch
-    - `--writeback`: allow wiki/WAL write-back (not allowed for LEARN)
-    - `--no-writeback`: forbid write-back (default)
-- Verification:
-    - `--test "<cmd>"`: required verification command + evidence
-    - `--no-test`: skip tests (LEARN only; PATCH requires an explicit justification)
-- DocQA actionize:
-    - `--actionize`: convert DocQA into an executable STANDARD queue (requires confirmation)
-    - `--yes`: auto-confirm `--actionize` / `--launch` (team use with caution)
-
-Conflict rules (MUST enforce):
-- `@learn` MUST NOT be combined with `--launch` or `--writeback`.
-- `--launch` MUST be used with `@standard` only.
-- `--slim` requires `--risk low` (or implied low risk in PATCH).
-- `--actionize` MUST ask for confirmation unless `--yes` is present.
-
-Examples:
-```text
-@learn --scope src/foo/bar.ts --direct --depth deep -- explain this file
-@patch --risk low --slim --test "mvn test -Dtest=OrderServiceTest" -- fix NPE in createOrder
-@standard --risk high --launch -- implement tenant permission checks for order list API
-@learn --funnel -- what is the API design standard? --actionize
-```
+| Profile | Use Cases | Lifecycle? | Deliverables | Risk Level |
+|---------|-----------|------------|--------------|------------|
+| **LEARN** | Read-only, Q&A | ❌ No | Answer only | - |
+| **PATCH** | Small changes, bug fixes | ⚠️ Minimal | Slim Spec/Change Log | LOW |
+| **STANDARD** | New features, MEDIUM/HIGH risk | ✅ Full 6 phases | Complete OpenSpec + Approval | MEDIUM/HIGH |
 
 ```mermaid
 flowchart LR
-  A[Requirement Input] --> B{Shortcut?}
+  A[Input] --> B{Shortcut?}
   B -->|Yes| C[Force Profile]
-  B -->|No| D[Auto-Select Profile]
-  C --> E{Profile?}
+  B -->|No| D[Auto-select]
+  C --> E{Which?}
   D --> E
-  E -->|LEARN| F[Direct Read / Q&A]
-  E -->|PATCH| G[Minimal Artifacts]
+  E -->|LEARN| F[Direct Read]
+  E -->|PATCH| G[Minimal Output]
   E -->|STANDARD| H[Full Lifecycle]
-  F --> I[Deliver Answer]
-  G --> J[Archive Optional]
-  H --> K[Write launch_spec]
+
+  style F fill:#e1f5ff
+  style G fill:#fff4e6
+  style H fill:#ffe6e6
 ```
 
-#### Core Intent Types (Simplified - 4 Top-Level Intents)
+#### 3.1.2 Shortcut DSL
 
-The gateway maps requests to a small set of top-level intents:
+**Syntax**: `@<profile> <flags...> -- <request>`
 
-| Intent | When to Use | Default Profile | Launch Spec | Write-back |
-|--------|-------------|-----------------|-------------|------------|
-| `Learn` | "Explain/read/understand this code" with explicit scope | LEARN | No | No |
-| `Change` | "Modify code" (feature, refactor, bugfix) | PATCH or STANDARD | Yes (STANDARD only) | Optional (Archive) |
-| `DocQA` | "What is the rule/process/template?" | LEARN | No | No (unless actionized) |
-| `Audit` | "Assess the codebase" (read-only review/risk scan) | LEARN | No | No |
+**Key Flags**:
+- Scope: `--scope`, `--direct`, `--funnel`, `--depth`
+- Risk: `--risk`, `--slim`, `--changelog`, `--evidence`
+- Launch: `--launch`, `--no-launch`, `--writeback`
+- Test: `--test`, `--no-test`
+- Actionize: `--actionize`, `--yes`
 
-#### Context Collection Rules (UPDATED)
+**Conflict Rules**:
+- ❌ `@learn` + `--launch` or `--writeback`
+- ❌ `--launch` without `@standard`
+- ❌ `--slim` without `--risk low`
 
-**Rule 0: Direct Read when scope is explicit (MUST)**
-- If user provides explicit scope (file path, class/method name, pasted snippet) AND goal is learning:
-  - ✅ Do direct read first
-  - ❌ Do NOT start with Knowledge Graph drill-down
-  - Use funnel only if background context needed after first read
+**Examples**:
+```text
+@learn --scope src/foo.ts --direct --depth deep -- explain architecture
+@patch --risk low --slim --test "mvn test" -- fix NPE
+@standard --risk high --launch -- implement permissions
+```
+
+#### 3.1.3 Core Intent Types
+
+| Intent | Default Profile | Launch Spec? | Write-back? |
+|--------|----------------|--------------|-------------|
+| Learn | LEARN | ❌ | ❌ |
+| Change | PATCH/STANDARD | ✅ (STANDARD) | Optional |
+| DocQA | LEARN | ❌ | ❌ (unless actionize) |
+| Audit | LEARN | ❌ | ❌ |
+
+#### 3.1.4 Context Collection Rules
+
+**Rule 0: Direct Read When Scope Clear (MUST)**
+- If user provides explicit scope and goal is learning → directly read files
+- Do not start from knowledge graph
 
 **Rule 0.1: Decision-First Preflight (MUST)**
-Before any heavy navigation (wiki drill-down, broad search, or reading multiple files), the Agent MUST produce a Preflight block:
-- Goal: one sentence
-- Deliverables: list (tables/APIs/internal methods/flows)
-- Default assumptions: up to 3 bullets
-- Open uncertainties: up to 2 bullets
-- Read strategy: `Needle | Obvious | Exploration`
-- Budgets (defaults): `wiki=3 docs`, `code=8 files` (same-file pagination reads do NOT count)
-- Stop conditions: saturation criteria + stop rules
-- Escalation plan: what to request from human if budgets are hit
+Before heavy navigation, output Preflight block with:
+- Goal, Deliverables, Assumptions (≤3), Uncertainties (≤2)
+- Read strategy (Needle/Obvious/Exploration)
+- Budgets (wiki=3, code=8)
+- Stop conditions, Escalation plan
 
-**Rule 1: Otherwise, use Context Funnel (MUST)**
-1. Read root: [KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
-2. Drill down via: [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
-3. Consult skill index if unsure: [trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)
+**Rule 1: Otherwise Use Knowledge Funnel (MUST)**
+1. Read KNOWLEDGE_GRAPH.md
+2. Drill down through domain indices
+3. Consult trae-skill-index if unsure
 
-#### Budgeted Navigation & Escalation (NEW)
+#### 3.1.5 Budgeted Navigation & Escalation
 
-**Budgeted Navigation (MUST)**
-For `Change` and `Audit` intents, uncontrolled exploration is forbidden.
+**Budgets**: Wiki ≤ 3 docs, Code ≤ 8 files
 
-Default budgets:
-- Wiki budget: 3 documents
-- Code budget: 8 files
-- Pagination reads within the same file do NOT count as additional file reads
+**Saturation Gate** (stop when any met):
+- Template acquired: 2 templates (routing, DTO validation, service pattern, mapper/SQL, table fields)
+- Integration point acquired: dependency usage examples
+- Executable chain acquired: known-good call chain
 
-**Saturation Gate (Stop Reading When Enough)**
-Stop reading and move to decision/implementation when ANY is met:
-- Template acquired: any 2 of (route shape, DTO validation style, service entry pattern, mapper/sql pattern, table field pattern)
-- Integration point acquired: a concrete example of the dependency usage
-- Executable chain acquired: a known good call chain exists and the remaining work is a mechanical extension
+**Stop-Wiki (MUST)**: 3 consecutive no-gain wiki reads → stop
+**Stop-Code (MUST)**: 2 consecutive reads without scope narrowing → stop
 
-**Stop-Wiki (MUST)**
-If 3 consecutive wiki reads are "no-gain", the Agent MUST stop wiki navigation and proceed with a minimal, standards-compliant decision.
+**Elastic Extension**: Use `<Confidence_Assessment>` to request +2 wiki or +3 code budget
 
-**Stop-Code (MUST)**
-Code reading must monotonically shrink scope. If scope does not shrink for 2 consecutive code reads, the Agent MUST stop reading and trigger Escalation Protocol.
+**Escalation Protocol (MUST)**:
+When budget exhausted or stop rules triggered:
+- Generate Escalation Card with: Consumed budgets, Confirmed facts (≤5), Missing info (≤2), Why blocking, Proposed targets (≤5), Request, Fallback plan
+- Set launch_spec status to WAITING_APPROVAL
 
-**Escalation Protocol (MUST)**
-If budgets are exhausted OR stop rules trigger and success criteria are not met, the Agent MUST request human help instead of continuing to read.
+#### 3.1.6 Launch Spec & Breakpoint Resume
 
-Escalation Card format:
-- Consumed: `wiki X/3`, `code Y/8`
-- Confirmed facts (<= 5 bullets)
-- Missing info (<= 2 bullets, must be specific)
-- Why it is blocking (one sentence)
-- Proposed next targets (<= 5 file paths / keywords)
-- Request: `wiki +1` or `code +2` (small step)
-- Fallback if still missing: pick one of:
-  - ask 1 critical question
-  - request a concrete anchor (class/table/entrypoint) from human
-  - deliver a minimal viable plan with explicit risks
+**Location**: `.agents/router/runs/launch_spec_{YYYYMMDD_HHMMSS}.md`
 
-When escalation blocks the workflow, set the intent row in `launch_spec_*.md` to `WAITING_APPROVAL` and include a link to the relevant artifact.
+**Status Enum**: PENDING, IN_PROGRESS, DONE, WAITING_APPROVAL, FAILED
 
-#### Internal Lifecycle Queue Codes (STANDARD Profile Only)
-
-When Profile is `STANDARD`, the `Change` intent expands into:
-
-| Code | Phase | Notes |
-|------|-------|-------|
-| `Explore.Req` | Explorer | Clarify requirements + scope anchors |
-| `Propose.API` | Propose → Review | API contract and design |
-| `Propose.Data` | Propose → Review | Database schema changes |
-| `Implement.Code` | Implement → QA | Code changes |
-| `QA.Test` | QA | Tests + evidence |
-
-#### Read-Only Audit Flow (`Audit.Codebase`)
-
-- **Goal**: Perform read-only analysis and assessment of the codebase, producing structured audit reports with evidence citations
-- **Constraints**: No code modifications, no Wiki writes, no launch spec generation, no lifecycle entry
-- **Allowed Operations**: Read-only retrieval and reading; allowed to run tests/builds but must not modify any tracked files
-- **Output Requirements**: Each conclusion must include evidence (file path + line range) and impact/recommendations
-- **Typical Scenarios**: Architecture review, code quality scanning, technical debt assessment
-
-#### Documentation Q&A Flow (`QA.Doc` / `QA.Doc.Actionize`)
-
-- **QA.Doc**: Drill down through knowledge funnel, output answers with citations (cite Wiki/requirement paragraphs, supplement with code references when needed). Does NOT trigger lifecycle.
-- **QA.Doc.Actionize**: Convert Q&A conclusions into "executable intent queues"; must ask user whether to "launch" first; only generate launch spec and enter lifecycle after confirmation. Without confirmation: output answer only, no side effects.
-- **Typical Scenarios**: Query business rules, understand API usage, confirm architecture decisions
-
-#### Launch Spec Template & Breakpoint Resume Mechanism
-
-The Agent must generate `launch_spec_{timestamp}.md` under `router/runs/` to persist the intent queue and track state.
-
-**Status Values**: `PENDING`, `IN_PROGRESS`, `DONE`, `WAITING_APPROVAL`, `FAILED`
-
+**Template**:
 ```markdown
-# Launch Spec - {YYYYMMDD_HHMMSS}
+# Launch Spec - {timestamp}
 
 ## State Machine
-| Intent | Status | Phase | Artifact/Log | Failed_Reason |
+| Intent | Status | Phase | Artifact | Failed_Reason |
 |---|---|---|---|---|
-| Explore.Req | IN_PROGRESS | 1_Explorer | `explore_report.md` | - |
+| Explore.Req | IN_PROGRESS | 1_Explorer | explore_report.md | - |
 | Propose.API | PENDING | - | - | - |
-| Implement.Code | PENDING | - | - | - |
 
 ## Breakpoint Resume
-- If session interrupted/human delayed: First action is to read this file upon wake-up.
-- If `WAITING_APPROVAL` exists: Enter Approval checkpoint, read corresponding `openspec.md`, wait for human confirmation, then switch status to `IN_PROGRESS` and proceed to Implement.
-- If `FAILED` exists: Stop automatic progression, report `Failed_Reason` to human and request intervention.
+- Read this file first upon wake
+- If WAITING_APPROVAL: wait for human confirmation
+- If FAILED: stop and request intervention
 ```
 
-**Critical Discipline**: The state machine table drives workflow progression. Only update `Status/Phase/Failed_Reason` fields to avoid checkbox matching failures and state confusion. After completing each Archive phase, the Agent must actively read back `launch_spec.md` to decide whether to execute the next intent or report completion to the user.
+**Queue Items (STANDARD only)**:
+- `Explore.Req` → Explorer
+- `Propose.API` → Propose → Review
+- `Propose.Data` → Propose → Review
+- `Implement.Code` → Implement → QA
+- `QA.Test` → QA
 
-### 3.2 Context Funnel (Forward Retrieval + Reverse Write-back)
+**Concurrency**: Propose.API and Propose.Data can run in parallel.
 
-**Purpose**: Solve "how to get context, how to ensure no bloat".\
-**Specification File**: [Context Funnel](.agents/router/CONTEXT_FUNNEL.md)
+---
 
-- Forward retrieval: Sitemap → domain index → specific documents → fallback keyword search if necessary
-- Reverse write-back: Find mount points based on Sitemap, write new knowledge back to domain indices; split into sub-indices when exceeding threshold
+### 3.2 Context Funnel
+
+#### 3.2.1 Forward Retrieval
 
 ```mermaid
 flowchart TB
-  S[Sitemap] --> I1[Domain Index]
-  I1 --> Doc[Specific Document]
-  Doc -->|Insufficient| Search[Fallback Search]
-  Doc -->|Sufficient| Work[Working Context]
-  Work -->|Archive| BackS[Sitemap]
-  BackS --> BackI[Target Index]
-  BackI --> Update[Write-back/Split/Mount]
+  Start[Start] --> ReadKG[Read KNOWLEDGE_GRAPH.md]
+  ReadKG --> SelectDomain{Select Domain}
+  SelectDomain --> ReadIndex[Read Domain Index]
+  ReadIndex --> FindDoc[Find Document Links]
+  FindDoc --> ReadDoc[Read Documents]
+  ReadDoc --> Enough{Enough?}
+  Enough -->|Yes| Use[Use Context]
+  Enough -->|No| CheckBudget{Budget OK?}
+  CheckBudget -->|Yes| Continue[Continue Reading]
+  CheckBudget -->|No| Escalate[Escalate]
+  Continue --> ReadDoc
 ```
 
-### 3.3 Lifecycle (State Machine)
+**Steps**:
+1. Start from KNOWLEDGE_GRAPH.md
+2. Select domain index (api/data/domain/architecture/preferences)
+3. Read index.md to find document links
+4. Read specific documents
+5. Fallback search only if index tree fails
 
-**Purpose**: Solidify "analysis→design→review→implement→test→archive" into a rollbackable, closed-loop state machine.\
-**Specification File**: [Lifecycle](.agents/workflow/LIFECYCLE.md)
+#### 3.2.2 Backward Write-back
+
+```mermaid
+flowchart TB
+  Work[Work Complete] --> Extract[Extract Stable Knowledge]
+  Extract --> FindMount[Find Mount Point]
+  FindMount --> WriteWAL[Write WAL Fragment]
+  WriteWAL --> Compact[Run compactor.py]
+  Compact --> CheckLines{Index Lines}
+  CheckLines -->|< 400| Append[Append Fragments]
+  CheckLines -->|>= 400| Refactor[Trigger Knowledge Architect]
+  Refactor --> Split[Split into Sub-docs]
+  Split --> Update[Update Links]
+  Update --> Lint[Run wiki_linter.py]
+  Lint --> Done[Done]
+  Append --> Done
+```
+
+**WAL Fragment Format**:
+```markdown
+# WAL Fragment - {YYYYMMDD}_{feature_name}
+## Type: append | update | delete
+## Domain: api | data | domain | architecture | preferences
+## Timestamp: {ISO8601}
+
+### Content
+[New knowledge]
+
+### Source
+- openspec.md: [link]
+- launch_spec: [link]
+```
+
+**Compaction Logic**:
+- If index < 400 lines: merge WAL fragments directly
+- If index ≥ 400 lines:
+  - Flag NEEDS_REFACTOR
+  - Mount Knowledge Architect role
+  - Split into focused sub-documents
+  - Update routing links
+  - Pass wiki_linter.py before continuing
+
+#### 3.2.3 Drift Queue
+
+**Purpose**: Capture Wiki-code inconsistencies
+
+**Trigger**: Code changed but Wiki not synced, or vice versa
+
+**Format**:
+```markdown
+# Drift Event - {timestamp}
+## Type: code_changed | wiki_outdated | contract_mismatch
+## Severity: HIGH | MEDIUM | LOW
+## Affected: [file paths]
+## Description: [difference]
+## Suggested Action: [WAL operation]
+```
+
+**Handling**: In Archive phase Step 5, read drift_queue/, validate differences, generate WAL fragments to fix Wiki.
+
+---
+
+### 3.3 Lifecycle State Machine
+
+#### 3.3.1 6-Phase State Machine
 
 ```mermaid
 stateDiagram-v2
@@ -540,220 +739,516 @@ stateDiagram-v2
   Approval --> Implement
   Implement --> QA
   QA --> Archive
-  Archive --> Explorer : loop_hook(queue incomplete)
-  Archive --> [*] : queue complete
+  Archive --> [*]
 
-  Review --> Propose : fail_hook(automated review failed)
-  QA --> Implement : fail_hook(test failed)
+  Review --> Propose: fail_hook
+  QA --> Implement: fail_hook
+
+  note right of Approval
+    HITL Gate
+    MEDIUM/HIGH must wait
+  end note
 ```
 
-**Note**: Approval is NOT an independent phase, but a human gate (HITL Gate). It exists as a checkpoint in the state machine.
+**Important**: Approval is not a separate phase, but a HITL Gate checkpoint.
 
-**Note**: Approval is NOT an independent phase, but a human gate (HITL Gate). It exists as a checkpoint in the state machine.
+#### 3.3.2 Phase 1: Explorer
 
-### 3.4 Hooks (Correction System)
+**Purpose**: Clarify requirements, define scope, identify risks
 
-**Purpose**: "Lock engineering red lines into the process", achieving automatic correction and anti-runaway.\
-**Specification File**: [Hooks](.agents/workflow/HOOKS.md)
+**Mounted Roles**: Ambiguity Gatekeeper, Focus Guard
+
+**Skills**: product-manager-expert, devops-requirements-analysis, prd-task-splitter
+
+**Output**: `explore_report.md` with:
+- Scope and non-goals
+- Impact analysis
+- Edge cases and boundaries
+- **Core Context Anchors** (MUST):
+  - Key links (domain/api/data/architecture/preferences)
+  - Business vocabulary and invariants
+  - Engineering red lines
+
+**Focus Card**: Generated by Ambiguity Gatekeeper with goal/non-goals/allowed scope/stop rules.
+
+#### 3.3.3 Phase 2: Propose
+
+**Purpose**: Design solution and freeze contract
+
+**Mounted Roles**: Domain Analyst, Interface Steward, Rules Lawyer
+
+**Skills**: devops-system-design, devops-task-planning
+
+**Output**: `openspec.md` with:
+- API signatures and data models
+- Database schemas and indexes
+- Business logic
+- Acceptance criteria
+- JSON request/response examples
+
+**Template**: [.agents/llm_wiki/schema/openspec_schema.md](.agents/llm_wiki/schema/openspec_schema.md)
+
+**Risk Levels**:
+- LOW: Can use Slim Spec
+- MEDIUM/HIGH: MUST use full schema
+
+#### 3.3.4 Phase 3: Review
+
+**Purpose**: Automated technical review against standards
+
+**Skills**: devops-review-and-refactor, global-backend-standards, java-engineering-standards, java-backend-guidelines, java-backend-api-standard, mybatis-sql-standard, error-code-standard, java-data-permissions
+
+**Review Dimensions**:
+1. Architecture & engineering standards
+2. API design patterns
+3. SQL performance & security
+4. Security & data permissions
+
+**Failure Handling**:
+- Trigger fail_hook
+- Record failure reason in openspec.md
+- Rollback to Phase 2 (Propose)
+
+#### 3.3.5 Phase 3.5: Approval Gate (HITL)
+
+**Purpose**: Human checkpoint before implementation
+
+**Risk Grading**:
+
+**HIGH (Must Approve)**:
+- Database schema/index changes
+- Permission/auth strategy changes
+- Error code system changes
+- Cross-domain modifications
+- Infrastructure components
+- Unclear impact or large scope
+
+**MEDIUM (Must Approve)**:
+- New/modify external interfaces
+- Core business logic adjustments (not DB/permissions)
+
+**LOW (Can Skip)**:
+- Documentation changes
+- Pure renaming/formatting
+- Small bugfixes with clear impact
+
+**Rules**:
+- MEDIUM/HIGH: MUST stop at WAITING_APPROVAL
+- LOW: Can skip, but Agent must explain why in delivery notes
 
 ```mermaid
-flowchart TB
-  P[Phase Start] --> Pre[pre_hook\nLoad Standards/Preferences]
-  Pre --> Exec[Execute Core Action]
-  Exec --> Guard[guard_hook\n规范/Unauthorized Guard]
-  Guard -->|Pass| Post[post_hook\nSync Docs/Log]
-  Guard -->|Fail| Fail[fail_hook\nDowngrade/Rollback/Retry Count]
-  Post --> Loop[loop_hook\nConsume Queue/Closed-loop]
+sequenceDiagram
+  participant Agent
+  participant Human
+  participant Spec
+
+  Agent->>Human: Show openspec.md summary
+  Note over Agent,Human: "Design passed auto-review.<br/>Proceed to implementation?"
+
+  alt YES
+    Human->>Agent: ✅ Approved
+    Agent->>Spec: Update to IN_PROGRESS
+    Agent->>Agent: Enter Implement
+  else NO + Feedback
+    Human->>Agent: ❌ Rejected + feedback
+    Agent->>Spec: Update to PENDING
+    Agent->>Agent: Return to Propose
+  end
 ```
 
+**Parallel Trigger**: Frozen contract enables frontend/QA agents to start work.
+
+#### 3.3.6 Phase 4: Implement
+
+**Purpose**: Implement code within contract boundaries
+
+**Mounted Roles**: Focus Guard, Security Sentinel
+
+**Skills**: devops-feature-implementation, devops-bug-fix, utils-usage-standard, aliyun-oss
+
+**Discipline**:
+- Strictly follow approved contract
+- Must pass Checkstyle
+- Apply defensive programming
+- Respect domain boundaries (guard_hook)
+- Must not modify files outside focus_card.md scope
+
+**Focus Card Enforcement**: scope_guard.py checks if modified files are within allowed scope.
+
+#### 3.3.7 Phase 5: QA Test
+
+**Purpose**: Quality assurance following TDD principles
+
+**Mounted Roles**: Documentation Curator
+
+**Skills**: devops-testing-standard, code-review-checklist
+
+**Requirements**:
+- Critical path test coverage ≥ 100%
+- All checklist items GREEN
+- Regression tests for bug fixes
+- Performance benchmarks for optimizations
+
+**Test Evidence**: Generate `test_evidence_{feature}.md` with:
+- Execution environment and commands
+- Objective log snippets
+- Covered scenarios ([Pass]/[Fail])
+- Coverage metrics
+
+**Failure Handling**: Trigger fail_hook, rollback to Phase 4 (Implement).
+
+#### 3.3.8 Phase 6: Archive
+
+**Purpose**: Knowledge extraction and cleanup, prevent bloat
+
+**Mounted Roles**: Domain Analyst, Interface Steward, Rules Lawyer, Documentation Curator, Skill Graph Curator, Knowledge Architect (if refactoring needed)
+
+**Skills**: api-documentation-rules, database-documentation-sync
+
+**7 Steps**:
+
+1. **Documentation Sync**: Sync API docs via api-documentation-rules, sync DB docs via database-documentation-sync
+
+2. **Knowledge Extraction**: Extract stable knowledge from openspec.md to domain indices via reverse funnel, write WAL fragments
+
+3. **Cold Storage**: Move original openspec.md to `.agents/llm_wiki/archive/`
+
+4. **WAL Compaction**: Run `python3 .agents/scripts/wiki/compactor.py`
+  - If index < 400 lines: append/merge WAL fragments
+  - If index ≥ 400 lines: trigger Knowledge Architect refactoring
+
+5. **Handle Drift Events**: Read `.agents/events/drift_queue/`, validate differences, generate WAL fragments to fix Wiki
+
+6. **Preferences Memory**: Request human rating (1-10), extract experiences/anti-patterns to `wiki/preferences/index.md`
+
+7. **Loop Check**: Re-read launch_spec.md, continue next intent until queue empty
+
+**Anti-Bloat Rules**:
+- Index > 500 lines → split into subdirectories
+- Unmountable content → archive instead of active zone
+- All knowledge must have mount point in sitemap tree
+
 ---
 
-## 4. Self-Correction Mechanisms (Trigger Points / Conditions / Effects / Evaluation)
+### 3.4 Hooks System
 
-| Mechanism | Trigger Point | Trigger Condition | Effect | Evaluation Method |
-|-----------|--------------|-------------------|--------|-------------------|
-| **pre_hook** | Before entering a new phase | Phase transition | Load relevant rule sets + output Decision-First Preflight + budgets | Required output format |
-| **guard_hook** | During implementation/modification | Style violations, permission/unauthorized access, cross-domain pollution, budget exhaustion | Immediate block, require rewrite or authorization; enforce Anti-runaway guard | Standard skill review, rule verification + Budget rules |
-| **fail_hook** | Any phase failure | Compilation/test/review failures | State downgrade rollback; log failure reason to `openspec.md`; trigger retry count | Objective logs (compilation/test output) |
-| **Max Retries** | Inside fail_hook | Same phase consecutive failures reach threshold | Force stop and request human intervention | Failure count reaches threshold |
-| **Approval Gate (HITL)** | After Review passes | Need to enter Implement | "Freeze contract", human authorizes whether to proceed; persist to `WAITING_APPROVAL` | Human confirmation (YES/NO + modification feedback) |
-| **Doc Consistency Gate** | post_hook / Archive | Wiki hallucination & contract corruption risk | Read-only validation (`schema_checker.py` + `wiki_linter.py`), trigger `fail_hook` on FAIL | Script exit codes (non-zero = FAIL) |
-| **Archive Write-back** | Task completion | New/changed knowledge needs沉淀 | Extract stable knowledge from Spec, archive hot documents, update indices (WAL mechanism) | Rule validation, connectivity check |
-| **Preferences Memory** | Before/after Archive | Representative human ratings/feedback |沉淀 experience as preferences/taboos to `wiki/preferences/index.md`, effective in next pre_hook | Human rating + textual reasoning |
-| **Non-Convergence Fallback** | Workflow stuck repeating same action | Doc rewrite or linter failure loop | Stop repeating, run deterministic verification, report mismatch, request human intervention | Evidence-based mismatch detection |
+#### 3.4.1 5 Types of Hooks
+
+| Hook | Trigger Point | Purpose | Effect |
+|------|--------------|---------|--------|
+| **pre_hook** | Before entering new phase | Load rule sets | Output Preflight |
+| **guard_hook** | During core actions (code gen, SQL) | Enforce standards, boundaries, budgets | Block if violation |
+| **post_hook** | After completing phase | Ensure docs sync with code | Append logs |
+| **fail_hook** | Test/review/compile failure | Rollback to previous phase | Decrement retry count |
+| **loop_hook** | After Archive completes | Consume next intent from queue | Continue or finish |
+
+#### 3.4.2 pre_hook
+
+**Bound Skills**: global-backend-standards, java-backend-guidelines
+
+**Required Output**: Decision-First Preflight with budgets (wiki=3, code=8)
+
+#### 3.4.3 guard_hook
+
+**Bound Skills**: checkstyle, java-javadoc-standard, java-data-permissions
+
+**Purposes**:
+1. Standard enforcement
+2. Domain boundary guard (no cross-domain without authorization)
+3. Anti-runaway guard (enforce budgeted navigation + stop rules + escalation)
+4. Anti-drift guard (maintain Focus Card, enforce via scope_guard.py)
+
+**Triggers**: Style violations, permission breaches, cross-domain pollution, budget exhaustion
+
+**Effect**: Immediate block, require rewrite or authorization
+
+#### 3.4.4 post_hook
+
+**Bound Skills**: api-documentation-rules, database-documentation-sync
+
+**Purpose**: Ensure API/DB docs sync with code changes
+
+**Gates**:
+- schema_checker.py, wiki_linter.py, ambiguity_gate.py
+- writeback_gate.py, delivery_capsule_gate.py
+- secrets_linter.py, comment_linter_java.py
+- Unified runner: `run.py --intent --profile --phase`
+
+**Justification Bypass**: If gate FAILs due to trivial violations, Agent can generate bypass_justification.md to downgrade to WARN and continue.
+
+**Write-back Policy (MUST)**:
+- For PATCH and STANDARD profiles, write-back is REQUIRED:
+  - Domain WAL + API WAL + Rules WAL mandatory
+  - Data WAL mandatory when schema/DDL changes
+- If writeback gate fails, Agent must not mark change as "done"
+
+#### 3.4.5 fail_hook
+
+**Bound Skills**: code-review-checklist
+
+**Purposes**:
+1. **State Degradation**: Rollback to previous phase, append failure reason to openspec.md
+2. **Max Retries (3)**: If same phase fails 3 times, Agent MUST stop and request human intervention
+3. **Script Retry Limit (3)**: Each gate script can fail max 3 times per task
+4. **Task State Reset**: Retry state clears on task completion (Archive) or interrupt signal; can explicitly reset via `run.py --end-task`
+5. **Persistence**: Update launch_spec.md to FAILED with Failed_Reason
+
+**Failed_Reason Format**:
+```markdown
+## Failed_Reason
+**Phase**: Review
+**Timestamp**: 2026-04-17T14:30:22Z
+**Error Type**: Schema validation failure
+**Details**: Missing "Acceptance Criteria" section
+**Retry Count**: 2/3
+**Next Action**: Fix schema issues and re-submit
+```
+
+#### 3.4.6 loop_hook
+
+**Purpose**:
+1. **Queue Consumption**: Read launch_spec and resume next PENDING/IN_PROGRESS intent
+2. **Concurrency**: Decide what can run in parallel (e.g., Propose.API with Propose.Data)
+3. **Loop Restart**: Dispatch next intent to correct lifecycle phase until queue empty
+
+#### 3.4.7 Non-Convergence Fallback (MUST)
+
+**Trigger**: Workflow stuck repeating same actions without convergence (e.g., doc rewrite or linter failure loops)
+
+**Agent MUST**:
+1. Stop making same changes
+2. Run deterministic verification and identify exact failure evidence (file path + minimal edit)
+3. Report mismatch and request human intervention
+4. If root cause is missing context or vague scope, use Escalation Card format and set launch_spec to WAITING_APPROVAL
 
 ---
 
-## 5. Phase Deliverables (Primary Backend Deliverables + Optional External Handoffs)
+## 4. Role Matrix
 
-> This system focuses on **backend delivery**. Frontend/QA handoffs are optional deliverables附带 provided by backend contracts "when parallel collaboration is needed".
+### 4.1 Core Concept
 
-| Phase | Required Backend Output | Optional Handoffs to Frontend/QA |
-|-------|------------------------|----------------------------------|
+**Purpose**: Define virtual roles (review personas) and how to dynamically mount based on (Intent, Profile, Phase).
+
+**Specification**: [ROLE_MATRIX.md](.agents/workflow/ROLE_MATRIX.md)
+
+**Hard Rules**:
+- For PATCH and STANDARD, roles MUST produce their required artifacts
+- "Role outputs" enforced by deterministic gate scripts (exit codes)
+- Machine config in role_matrix.json (automated SSOT)
+
+### 4.2 9 Virtual Roles
+
+#### 1. Ambiguity Gatekeeper
+**Purpose**: Prevent starting work on vague inputs, stop runaway exploration early
+
+**Output**: focus_card.md or escalation card
+
+**Gates**: ambiguity_gate.py + focus_card_gate.py (FAIL blocks progress)
+
+---
+
+#### 2. Domain Analyst
+**Purpose**: Capture business domain vocabulary, invariants, boundaries
+
+**Output**: Domain WAL fragments
+
+**Gates**: writeback_gate.py (Domain WAL required)
+
+---
+
+#### 3. Interface Steward
+**Purpose**: Capture API contract facts (endpoint/auth/error semantics) and link to spec
+
+**Output**: API WAL fragments
+
+**Gates**: writeback_gate.py (API WAL required)
+
+---
+
+#### 4. Rules Lawyer
+**Purpose**: Capture rules domain (permission/data scope/cache/exception)
+
+**Output**: Rules WAL fragments
+
+**Gates**: writeback_gate.py (Rules WAL required)
+
+---
+
+#### 5. Security Sentinel
+**Purpose**: Prevent secret leaks and obvious authZ bypass risks
+
+**Output**: Delivery capsule "Security notes" (or explicit "N/A")
+
+**Gates**: secrets_linter.py (FAIL on high-confidence hits)
+
+---
+
+#### 6. Documentation Curator
+**Purpose**: Ensure complete, handoff-ready capsule + WAL references at work end
+
+**Output**: Delivery capsule
+
+**Gates**: delivery_capsule_gate.py + wiki_linter.py
+
+---
+
+#### 7. Focus Guard
+**Purpose**: Prevent attention drift and unauthorized cross-domain edits
+
+**Output**: Scope constraints in focus_card.md
+
+**Gates**: scope_guard.py (FAIL if modified files exceed allowed scope)
+
+---
+
+#### 8. Skill Graph Curator
+**Purpose**: Ensure new/changed skills are indexed and graph remains consistent
+
+**Output**: Skill index updates or explicit follow-up entries
+
+**Gates**: skill_index_linter.py (default WARN, may escalate to FAIL later)
+
+---
+
+#### 9. Knowledge Architect (Wiki Auto-Refactoring)
+**Purpose**: Dynamically trigger during WAL compaction when wiki indices become bloated (>400 lines). Reorganize, deduplicate, and split large index.md files into focused sub-documents while maintaining clean routing graph
+
+**Output**: Refactored smaller index.md (as router) and new specialized sub-documents
+
+**Gates**: wiki_linter.py (FAIL if dead links exist or any file still >500 lines)
+
+**Refactoring Flow**:
+```mermaid
+flowchart TB
+  Start[Index >= 400 lines] --> Analyze[Analyze Structure]
+  Analyze --> Cluster[Identify Topic Clusters]
+  Cluster --> CreateSubDocs[Create Sub-docs]
+  CreateSubDocs --> Migrate[Migrate Content]
+  Migrate --> RewriteIndex[Rewrite Index as Router]
+  RewriteIndex --> UpdateLinks[Update Parent Links]
+  UpdateLinks --> Lint[Run wiki_linter.py]
+  Lint -->|PASS| Done[Done]
+  Lint -->|FAIL| Fix[Fix Issues]
+  Fix --> Lint
+```
+
+### 4.3 Mounting Rules (by Intent/Profile/Phase)
+
+#### Change / PATCH
+- **Explorer**: Ambiguity Gatekeeper + Focus Guard
+- **Implement**: Focus Guard + Security Sentinel
+- **QA**: Documentation Curator
+- **Archive**: Domain Analyst + Interface Steward + Rules Lawyer + Documentation Curator + Skill Graph Curator
+
+#### Change / STANDARD
+- **Explorer**: Ambiguity Gatekeeper + Focus Guard
+- **Propose/Review**: Domain Analyst + Interface Steward + Rules Lawyer
+- **Implement**: Focus Guard + Security Sentinel
+- **QA**: Documentation Curator
+- **Archive**: Domain Analyst + Interface Steward + Rules Lawyer + Documentation Curator + Skill Graph Curator
+
+### 4.4 Automation Contract
+
+**runner reads role_matrix.json and decides**:
+- Which roles needed for current phase
+- Which gate scripts must run
+- Which artifacts must exist
+
+**Execution Intensity & Artifact-Aware Verification**:
+```bash
+# quick: skip heavy gates for fast local iteration
+python3 .agents/scripts/gates/run.py --verify-level quick
+
+# standard: normal mounted gates (default)
+python3 .agents/scripts/gates/run.py --verify-level standard
+
+# strict: same mounted gates with full severity handling (recommended before completion)
+python3 .agents/scripts/gates/run.py --verify-level strict
+
+# selective artifact-related gates
+python3 .agents/scripts/gates/run.py --artifact-tags domain,api,rules,data,architecture,skill,workflow
+```
+
+**Artifact Tags**:
+- `domain`: Run Domain WAL checks
+- `api`: Run API WAL checks
+- `rules`: Run Rules WAL checks
+- `data`: Run Data WAL checks (when schema/DDL changes)
+- `architecture`: Run architecture decision checks
+- `skill`: Run skill graph consistency checks
+- `workflow`: Run workflow integrity checks
+
+---
+
+## 5. Phase Deliverables
+
+> This system focuses on **backend delivery**. Frontend/QA handoffs are optional deliverables attached to backend contracts "when parallel collaboration is needed".
+
+| Phase | Backend Must Produce | Optional Frontend/QA Handoffs |
+|-------|---------------------|-------------------------------|
 | Explorer | explore_report (scope/impact/risks) | None |
 | Propose | openspec (strictly per Schema) | API Contract (with JSON Example); Acceptance Criteria (Given/When/Then) |
-| Review | Automated review conclusions and modification records | None |
-| Approval Gate (HITL) | Human confirmation (freeze contract) | Acts as "starting gun" for parallel collaboration |
-| Implement | Code changes (minimal viable implementation) | Optional: Integration notes, Mock/examples |
-| QA | Unit tests/necessary integration test evidence | Optional: Endpoint self-test scripts, E2E highlights |
-| Archive | Extract stable knowledge to indices, archive Spec | Optional: Change summary, migration notes |
+| Review | Machine review conclusions & modification records | None |
+| Approval (HITL) | Human confirmation (freeze contract) | As "starting gun" for parallel collaboration |
+| Implement | Code changes (minimum viable implementation) | Optional: integration notes, mocks/examples |
+| QA | Unit tests/necessary integration test evidence | Optional: interface self-test scripts, E2E highlights |
+| Archive | Extract stable knowledge to indices, archive Spec | Optional: change summary, migration notes |
 
-Contract template details: [OpenSpec Schema](.agents/llm_wiki/schema/openspec_schema.md).
+**Contract Template**: [OpenSpec Schema](.agents/llm_wiki/schema/openspec_schema.md)
 
 ---
 
-## 6. Skills (Skill List + Phase Mapping)
+## 6. Skills Inventory
 
-### 6.1 Skill Dictionary (3–5 Lines Description + Usage Phase per Skill)
+### 6.1 Skills Dictionary
 
-> Rule: Skills are not processes; skills provide "professional capabilities and consistent standards" at certain process phases.
+> Rule: Skills ≠ processes; skills provide "professional capabilities and consistent standards" at certain process phases
 
-- **[intent-gateway](.agents/skills/intent-gateway/SKILL.md)**\
-  Purpose: Intent entry capability, assists in understanding requirements and initiating "read graph first then drill-down" work posture.\
-  Usage Phase: Task start/Explorer entry.\
-  Trigger: When any natural language requirement enters the system.
+#### Intent & Lifecycle (4)
+1. **intent-gateway**: Route requests to execution modes
+2. **devops-lifecycle-master**: Master orchestration for DevOps Lifecycle
+3. **skill-graph-manager**: Manage bidirectional Skill Knowledge Graph
+4. **trae-skill-index**: Central Knowledge Graph Index for all workspace skills
 
-- **[devops-lifecycle-master](.agents/skills/devops-lifecycle-master/SKILL.md)**\
-  Purpose: Lifecycle master orchestration, ensures strict adherence to Phase boundaries (no code before Propose, etc.).\
-  Usage Phase: Entire process (orchestrator).\
-  Trigger: Complex tasks, multi-intent queues, or when strict process adherence is required.
+#### Requirements & Design (5)
+5. **product-manager-expert**: Requirements research, validation, PRD generation
+6. **prd-task-splitter**: Analyze PRDs to generate task lists, time estimates, dependencies
+7. **devops-requirements-analysis**: PDD & SDD phase, clarify business boundaries
+8. **devops-system-design**: System Architecture & Data Modeling (FDD & SDD)
+9. **devops-task-planning**: Task Planning after system design, before coding
 
-- **[product-manager-expert](.agents/skills/product-manager-expert/SKILL.md)**\
-  Purpose: Requirement clarification, scope definition, business goals and acceptance criteria refinement.\
-  Usage Phase: Explorer (PDD).\
-  Trigger: Vague requirements, inconsistent口径, need to supplement user stories/acceptance items.
+#### Implementation (4)
+10. **devops-feature-implementation**: Feature code implementation (FDD)
+11. **devops-bug-fix**: Bug fixing, diagnosis, reproduction, repair
+12. **utils-usage-standard**: Utilities usage standards
+13. **aliyun-oss**: OSS object storage module
 
-- **[prd-task-splitter](.agents/skills/prd-task-splitter/SKILL.md)**\
-  Purpose: Split PRD into structured development tasks, dependencies, and execution order.\
-  Usage Phase: Task decomposition before Explorer → Propose.\
-  Trigger: Large requirement span, multiple modules in parallel.
+#### Code Standards (9)
+14. **global-backend-standards**: MASTER index for all backend development
+15. **java-engineering-standards**: Strict layer architecture, pojo sub-packages, business design rules
+16. **java-backend-guidelines**: Defensive programming, Complete assembly, CustomPage pagination, Hutool usage
+17. **java-backend-api-standard**: Backend API design standards (no path variables, standard verbs, ApiResponse formats)
+18. **java-javadoc-standard**: Strict Javadoc commenting style
+19. **java-data-permissions**: Data permissions (Query filtering vs Action validation via @BeforePermission)
+20. **mybatis-sql-standard**: Strict MyBatis SQL writing standards (performance, anti-JOIN, index utilization)
+21. **error-code-standard**: System error codes usage
+22. **checkstyle**: Strict Java checkstyle rules (Google + Sun standards)
 
-- **[devops-requirements-analysis](.agents/skills/devops-requirements-analysis/SKILL.md)**\
-  Purpose: PDD/SDD boundary梳理, output executable requirement specifications and impact analysis.\
-  Usage Phase: Explorer.\
-  Trigger: Need to form standardized requirement documents or clarify scope/non-goals.
+#### Testing & Review (2)
+23. **devops-testing-standard**: TDD phase, write failing unit tests based on Specifications
+24. **code-review-checklist**: MANDATORY Code Review Checklist
 
-- **[devops-system-design](.agents/skills/devops-system-design/SKILL.md)**\
-  Purpose: System design and data modeling (FDD/SDD), including table structures, indexes, scalability solutions.\
-  Usage Phase: Propose.\
-  Trigger: New/modified endpoints or data structures, involving architectural decisions.
+#### Documentation (2)
+25. **api-documentation-rules**: API documentation capture via WAL fragments
+26. **database-documentation-sync**: Database documentation capture via WAL fragments
 
-- **[devops-task-planning](.agents/skills/devops-task-planning/SKILL.md)**\
-  Purpose: Decompose design into implementation task lists, clarify implementation order and verification points.\
-  Usage Phase: Between Propose → Review.\
-  Trigger: Before entering implementation, need to break work into executable steps.
-
-- **[devops-review-and-refactor](.agents/skills/devops-review-and-refactor/SKILL.md)**\
-  Purpose: Review and refactor suggestions for design and implementation, reduce performance/maintenance risks.\
-  Usage Phase: Review.\
-  Trigger: Controversial solutions, quality gates need strengthening.
-
-- **[global-backend-standards](.agents/skills/global-backend-standards/SKILL.md)**\
-  Purpose: Global backend standards index entry, used to unify engineering norms/layering/dependency rules.\
-  Usage Phase: pre_hook / Review.\
-  Trigger: Any backend modification entering review and implementation.
-
-- **[java-engineering-standards](.agents/skills/java-engineering-standards/SKILL.md)**\
-  Purpose: Java engineering layering and package structure norms, ensure responsibility boundaries and maintainability.\
-  Usage Phase: Review / Implement.\
-  Trigger: New modules, refactoring, cross-layer calls and other risk scenarios.
-
-- **[java-backend-guidelines](.agents/skills/java-backend-guidelines/SKILL.md)**\
-  Purpose: Java defensive programming, Complete assembly, pagination and other general coding guidelines.\
-  Usage Phase: pre_hook / Implement.\
-  Trigger: Writing business code, involving parameter validation/exception handling.
-
-- **[java-backend-api-standard](.agents/skills/java-backend-api-standard/SKILL.md)**\
-  Purpose: Endpoint design norms (verbs/paths/response structures), prevent API evolution out of control.\
-  Usage Phase: Review.\
-  Trigger: New/modified Controllers, DTOs, external API contracts.
-
-- **[java-javadoc-standard](.agents/skills/java-javadoc-standard/SKILL.md)**\
-  Purpose: Unified Javadoc style and annotation norms, ensure readability and consistency.\
-  Usage Phase: guard_hook / Implement.\
-  Trigger: New important classes/public methods, need to complete annotations.
-
-- **[java-data-permissions](.agents/skills/java-data-permissions/SKILL.md)**\
-  Purpose: Data permission constraints (query filtering/action validation), prevent unauthorized access.\
-  Usage Phase: guard_hook / Review.\
-  Trigger: Involving user/organization data reading, cross-tenant risk points.
-
-- **[mybatis-sql-standard](.agents/skills/mybatis-sql-standard/SKILL.md)**\
-  Purpose: MyBatis SQL performance and规范 guards (avoid implicit conversions, JOIN risks, index utilization).\
-  Usage Phase: Review / Implement.\
-  Trigger: Writing Mapper XML, complex queries, performance-sensitive endpoints.
-
-- **[error-code-standard](.agents/skills/error-code-standard/SKILL.md)**\
-  Purpose: Unified error codes and exception expression, prevent arbitrary throwing causing frontend-backend disconnect.\
-  Usage Phase: Review / Implement.\
-  Trigger: New BusinessException/ApiResponse.failed branches, etc.
-
-- **[checkstyle](.agents/skills/checkstyle/SKILL.md)**\
-  Purpose: Java code style mandatory gate (Google/Sun hybrid rules).\
-  Usage Phase: guard_hook / QA.\
-  Trigger: Before commit, before review, high risk of inconsistent formatting.
-
-- **[devops-feature-implementation](.agents/skills/devops-feature-implementation/SKILL.md)**\
-  Purpose: Implement feature code per specifications (emphasizing TDD and engineering standards).\
-  Usage Phase: Implement.\
-  Trigger: Entering coding phase to implement requirements.
-
-- **[devops-bug-fix](.agents/skills/devops-bug-fix/SKILL.md)**\
-  Purpose: Defect localization, reproduction, fix and add regression tests.\
-  Usage Phase: Implement / QA.\
-  Trigger: Production/test defects, regression failures, difficult-to-localize exceptions.
-
-- **[devops-testing-standard](.agents/skills/devops-testing-standard/SKILL.md)**\
-  Purpose: Testing norms and TDD phase guidance (write failing tests first then implement).\
-  Usage Phase: QA (can also前置 to before Implement).\
-  Trigger: New features, bug fixes must add tests.
-
-- **[code-review-checklist](.agents/skills/code-review-checklist/SKILL.md)**\
-  Purpose: Mandatory review checklist gate, covering security/performance/norms/maintainability.\
-  Usage Phase: QA / fail_hook.\
-  Trigger: Before commit/merge, or item-by-item排查 when failure rollback needed.
-
-- **[api-documentation-rules](.agents/skills/api-documentation-rules/SKILL.md)**\
-  Purpose: Mandatory endpoint documentation generation and archival rules, prevent "code updated but docs missing".\
-  Usage Phase: post_hook / Archive.\
-  Trigger: New/modified Controller endpoints.
-
-- **[database-documentation-sync](.agents/skills/database-documentation-sync/SKILL.md)**\
-  Purpose: Synchronize table documentation, lists, and ER diagrams when database structure changes.\
-  Usage Phase: post_hook / Archive.\
-  Trigger: Table/index modifications, new entities, or SQL migrations.
-
-- **[utils-usage-standard](.agents/skills/utils-usage-standard/SKILL.md)**\
-  Purpose: Unified utility class/framework usage, prevent fragmented styles from everyone writing their own.\
-  Usage Phase: Implement.\
-  Trigger: Preparing to introduce/reuse utility classes, writing common logic.
-
-- **[aliyun-oss](.agents/skills/aliyun-oss/SKILL.md)**\
-  Purpose: Object storage (multi-bucket/environment isolation/presigned URLs/upload/download) related capability norms.\
-  Usage Phase: Implement / Propose.\
-  Trigger: Involving file upload/download or storage solutions.
-
-- **[skill-graph-manager](.agents/skills/skill-graph-manager/SKILL.md)**\
-  Purpose: Maintain bidirectional links and central index consistency of skill knowledge graph.\
-  Usage Phase: After skill creation/modification.\
-  Trigger: New skills or adjusted skill relationships.
-
-- **[trae-skill-index](.agents/skills/trae-skill-index/SKILL.md)**\
-  Purpose: Master skill index entry, helping Agents quickly find suitable expert capabilities.\
-  Usage Phase: Any phase (capability lookup).\
-  Trigger: Uncertain which skill to use for current problem.
-- **[intent-gateway](.agents/skills/intent-gateway/SKILL.md)** (Read-Only Mode)\
-  Purpose: Supports `Audit.Codebase` (code audit), `QA.Doc` (doc Q&A), `QA.Doc.Actionize` (Q&A to action).\
-  Usage Phase: Gateway (read-only).\
-  Trigger: When read-only analysis or documentation Q&A is needed.
-
-### 6.2 Lifecycle Phase → Recommended Skills
+### 6.2 Lifecycle Phase → Recommended Skills Mapping
 
 | Phase | Recommended Skills |
 |-------|-------------------|
 | Explorer | product-manager-expert, devops-requirements-analysis, prd-task-splitter |
 | Propose | devops-system-design, devops-task-planning |
-| Review | devops-review-and-refactor, global-backend-standards, java-\*/mybatis-sql-standard/error-code-standard |
+| Review | devops-review-and-refactor, global-backend-standards, java-engineering-standards, java-backend-guidelines, java-backend-api-standard, mybatis-sql-standard, error-code-standard, java-data-permissions |
 | Implement | devops-feature-implementation, devops-bug-fix, utils-usage-standard, aliyun-oss |
 | QA | devops-testing-standard, code-review-checklist |
 | Archive | api-documentation-rules, database-documentation-sync |
@@ -761,68 +1256,319 @@ Contract template details: [OpenSpec Schema](.agents/llm_wiki/schema/openspec_sc
 
 ---
 
-## 7. Common Mechanism Checklist (Engineering Red Lines)
+## 7. Common Mechanisms Checklist (Engineering Red Lines)
 
-- **No Blind Search**: Drill down from Sitemap; fallback search only when indices fail.
-- **No Unauthorized Access**: Cross-domain modifications require explicit authorization (written in openspec and confirmed during Review/HITL phases).
-- **No Runaway**: Failure rollback + max retry threshold; must stop and request human intervention when threshold reached.
-- **No Bloat**: Specs must be archived; stable knowledge must be extracted to indices; indices exceeding threshold must split.
-
----
-
-## 8. Optional Auxiliary Scripts (Do Not Replace Agent, Only Deterministic Enhancement)
-
-- Graph health check (dead links/orphans/length warnings): [wiki_linter.py](.agents/scripts/wiki/wiki_linter.py)
-- Contract structure health check (critical structure missing checks): [schema_checker.py](.agents/scripts/wiki/schema_checker.py)
-- Preference tag health check (rule tag规范 checks): [pref_tag_checker.py](.agents/scripts/wiki/pref_tag_checker.py)
-- Lifecycle queue auxiliary (optional): [engine.py](.agents/scripts/harness/engine.py)
+- **No Blind Search**: Drill down from Sitemap; fallback search only when index cannot find
+- **No Unauthorized Access**: Cross-domain modifications must have explicit authorization (write to openspec and confirm in Review/HITL)
+- **No Runaway**: Failure rollback + max retry threshold; must stop and request human intervention when threshold reached
+- **No Bloat**: Specs must be archived; stable knowledge must be extracted to indices; indices must split when exceeding threshold
 
 ---
 
-## 9. Ideological Sources & Implementation Mapping (OpenSpec / Harness / LLM Wiki / Engine / Skills / Graph / Script Tools)
+## 8. Best Practices
 
-| Idea/Component | Our Understanding | Where Implemented |
-|----------------|-------------------|-------------------|
-| OpenSpec (Contract-First) | Freeze requirements and design with structured contracts first, then allow implementation and testing | `.agents/llm_wiki/schema/openspec_schema.md` + Phase 2 Propose + Approval Gate |
-| Harness (Lifecycle/State Machine) | Processes are not verbal agreements, but rollbackable, interceptable, closed-loop state machines | `.agents/workflow/LIFECYCLE.md` |
-| Hooks (Correction System) | Use guard/fail/loop to lock "unauthorized access, runaway, bloat" into the process | `.agents/workflow/HOOKS.md` |
-| LLM Wiki (Evolvable Knowledge Base) | Use sitemap + multi-level indices to let Agents autonomously roam for retrieval; use archive to prevent bloat | `.agents/llm_wiki/KNOWLEDGE_GRAPH.md` + `.agents/llm_wiki/wiki/*/index.md` + `.agents/llm_wiki/archive/` |
-| Knowledge Graph (Connectivity) | All knowledge must be traceable from root; orphans/dead links considered "garbage" | sitemap mounting discipline + .agents/scripts/wiki/wiki_linter.py (optional) |
-| Skills (Expert Capability Matrix) | Delegate professional problems to specialized skills, invoked on-demand within process phases, ensuring consistent standards | `.agents/skills/*/SKILL.md` + Phase mapping table |
-| Engine (Optional Auxiliary) | Does not replace Agent, only provides deterministic hosting of "queue/phase/retry count" for complex tasks | `.agents/scripts/harness/engine.py` (optional) |
-| Script Tools (Deterministic Enhancement) | Deterministic checks and auxiliaries (graph health checks, index splitting suggestions) delegated to scripts | `.agents/scripts/wiki/*` |
+### 8.1 Common Pitfalls & Solutions
 
-### 9.1 Correspondence with PDD / FDD / SDD / TDD
+#### Pitfall 1: Context Bloat
+**Symptoms**: Frequently trigger Escalation Protocol, high Token consumption, Agent attention dispersion
 
-- **PDD (Requirements)**: Mainly falls in Phase 1 Explorer (clarify boundaries, decompose tasks, form acceptance criteria).
-- **SDD (System Design)**: Mainly falls in Phase 2 Propose (database/endpoint/scalability design written into OpenSpec).
-- **FDD (Functional Design)**: Also falls in Phase 2 Propose (clarify functional behavior, exception branches, boundary conditions).
-- **TDD (Test-Driven)**: Mainly falls in Phase 5 QA (can also前置 to before Implement), enforced regression through fail_hook.
+**Causes**: Improper navigation strategy (should use Needle but used Exploration), inaccurate Saturation Gate judgment
+
+**Solutions**:
+- Check Read strategy selection (Needle for known files, Obvious for clear domains, Exploration for unclear)
+- Review 5 template types (routing, DTO validation, service pattern, mapper/SQL, table fields)
+- Consider using `--direct` flag to skip unnecessary drill-down
+
+#### Pitfall 2: Unauthorized Modifications
+**Symptoms**: scope_guard.py frequently FAILs, modified unexpected files, cross-domain pollution
+
+**Solutions**:
+- Always check focus_card.md
+- Confirm allowed scope before Implement
+- Request explicit authorization before cross-domain changes
+- Explicitly list all affected files in openspec.md
+
+#### Pitfall 3: Contract Corruption
+**Symptoms**: openspec.md inconsistent with implementation, schema_checker.py frequently fails
+
+**Solutions**:
+- Carefully check openspec_schema.md template
+- Run schema_checker.py pre-check before implementation
+- Verify again after implementation
+- Check failed checklist items for patterns
+
+#### Pitfall 4: Index Bloat Too Fast
+**Symptoms**: index.md frequently exceeds 400 lines triggering refactoring
+
+**Solutions**:
+- Streamline WAL fragments, extract only stable knowledge
+- Avoid duplicate content
+- Plan subdirectory splits in advance
+- Regularly run compactor.py
+- Monitor index lines, proactively refactor when approaching 400 lines
+
+#### Pitfall 5: Workflow Stuck Without Convergence
+**Symptoms**: Repeating same actions multiple times, same phase repeatedly fails
+
+**Solutions**:
+- Trigger Non-Convergence Fallback
+- Stop repeating same changes
+- Run deterministic verification and identify exact failure evidence
+- Use Escalation Card to request human help
+- Check if focus_card.md is clear
+
+### 8.2 Efficient Work Techniques
+
+#### Technique 1: Leverage Shortcuts
+```text
+@read --scope src/main/java/com/example/UserService.java -- explain auth logic
+@patch --risk low -- fix NPE in getUserById()
+@standard --risk high -- implement RBAC
+```
+
+#### Technique 2: Utilize DSL Flags
+```text
+@learn --scope src/foo/bar.ts --direct --depth deep -- explain architecture
+@patch --risk low --slim --test "mvn test -Dtest=UserServiceTest" -- fix NPE
+@standard --risk high --launch -- implement permissions with audit trail
+```
+
+#### Technique 3: Value Core Context Anchors
+Record in explore_report.md:
+- Key links (domain/api/data/architecture/preferences)
+- Business vocabulary and invariants
+- Engineering red lines
+
+#### Technique 4: Reasonable Elastic Extension
+Use `<Confidence_Assessment>` when close to breakthrough but budget nearly exhausted:
+```markdown
+<Confidence_Assessment>
+Consumed wiki 3/3, code 7/8. Reading one more wiki doc (wiki/api/authentication_patterns.md) will provide missing JWT integration template.
+Request: wiki +1
+Fallback if still missing: Ask human for specific auth library.
+</Confidence_Assessment>
+```
+
+### 8.3 Team Collaboration Suggestions
+
+#### Suggestion 1: Approval Gate as Parallel Starting Point
+- Notify frontend/QA teams immediately after contract freeze
+- Share API Contract and Acceptance Criteria from openspec.md
+- Frontend builds UI based on API contract
+- QA writes tests based on acceptance criteria
+
+#### Suggestion 2: Standardize Deliverables
+- Ensure openspec.md contains sufficient handoff information
+- API Contract includes complete JSON examples
+- Acceptance Criteria uses Given/When/Then format
+- Standardize error codes and messages
+
+#### Suggestion 3: Regularly Sync Preferences
+- Request human rating (1-10) during Archive phase
+- Extract experiences/anti-patterns to preferences/index.md
+- Next pre_hook automatically loads these preferences
+- Regularly review and update preferences
 
 ---
 
-## 10. Entry Index (Recommended Bookmark)
+## 9. Troubleshooting
 
-- Rule Entry: [AGENTS.md](AGENTS.md)
-- Knowledge Graph Root Entry: [.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
-- Contract Template: [.agents/llm_wiki/schema/openspec_schema.md](.agents/llm_wiki/schema/openspec_schema.md)
-- Intent Gateway: [.agents/router/ROUTER.md](.agents/router/ROUTER.md)
-- Context Funnel: [.agents/router/CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
-- Lifecycle: [.agents/workflow/LIFECYCLE.md](.agents/workflow/LIFECYCLE.md)
-- Hooks: [.agents/workflow/HOOKS.md](.agents/workflow/HOOKS.md)
+### 9.1 Common Problem Diagnosis
+
+#### Problem 1: Budget Frequently Exhausted
+**Diagnosis Steps**:
+1. Check Read strategy selection: `grep "Read strategy" .agents/router/runs/explore_report.md`
+2. Check Saturation Gate judgment: Did you acquire at least 2 templates? Found integration point examples? Have known call chain?
+3. Check compliance with Stop-Wiki/Stop-Code rules
+
+**Solutions**: Adjust Read strategy, use `--direct` flag, judge saturation more accurately, use elastic extension near breakthrough
+
+#### Problem 2: Review Repeatedly Fails
+**Diagnosis Steps**:
+1. Check openspec.md structure: `python3 .agents/scripts/wiki/schema_checker.py path/to/openspec.md`
+2. Check failure reasons: `grep "Failed_Reason" .agents/router/runs/launch_spec_*.md`
+3. Check for missing required sections: Acceptance Criteria, Security & Permissions, JSON Examples
+
+**Solutions**: Carefully check openspec_schema.md template, run schema_checker.py pre-check, supplement missing sections, fix JSON format
+
+#### Problem 3: Wiki Index Bloats Too Fast
+**Diagnosis Steps**:
+1. Check index lines: `wc -l .agents/llm_wiki/wiki/api/index.md`
+2. Check WAL fragment count: `ls -la .agents/llm_wiki/wiki/api/wal/`
+3. Analyze WAL fragment content: Too verbose? Duplicate content?
+
+**Solutions**: Streamline WAL fragments, avoid temporary/unstable info, plan subdirectory splits in advance, regularly run compactor.py
+
+#### Problem 4: Workflow Stuck Without Convergence
+**Diagnosis Steps**:
+1. Check if Non-Convergence situation: Same file modified 3+ times, same lint error persists, no progress
+2. Run deterministic verification: `python3 .agents/scripts/gates/comment_linter_java.py --path src/...`
+3. Capture exact failure evidence: file path, line number, error message
+
+**Solutions**: Trigger Non-Convergence Fallback, stop repeating changes, generate Escalation Card, request human intervention
+
+### 9.2 Diagnostic Tools Usage Guide
+
+#### wiki_linter.py
+```bash
+python .agents/scripts/wiki/wiki_linter.py
+```
+**Checks**: Dead links, orphan files, index length warnings
+**Output**: ERROR (must fix), WARNING (recommended fix)
+
+#### schema_checker.py
+```bash
+python .agents/scripts/wiki/schema_checker.py path/to/openspec.md
+```
+**Checks**: Missing key sections, JSON example existence
+**Common Failures**: Missing "Acceptance Criteria", incorrect JSON format
+
+#### compactor.py
+```bash
+python3 .agents/scripts/wiki/compactor.py
+```
+**Function**: WAL compaction, trigger Knowledge Architect
+**Log Interpretation**: "Appended X fragments" = success, "NEEDS_REFACTOR flagged" = needs manual intervention
+
+#### run.py (Unified Gate Runner)
+```bash
+python3 .agents/scripts/gates/run.py --intent Change --profile STANDARD --phase Implement
+```
+**Options**: `--verify-level quick|standard|strict`, `--artifact-tags domain,api,rules,...`
 
 ---
 
-**Related Documents**:
-- **📘 Main README (English)**: [README.md](README.md) - Project overview and quick start guide
-- **🇨🇳 Chinese Version**: [README_zh.md](README_zh.md) - Complete Chinese documentation
+## 10. Thought Sources & Implementation Mapping
+
+| Thought/Component | Our Understanding | Where Implemented |
+|-------------------|-------------------|-------------------|
+| OpenSpec (Contract-First) | Freeze requirements & design with structured contract before implementation & testing | openspec_schema.md + Phase 2 Propose + Approval Gate |
+| Harness (Lifecycle/State Machine) | Process is not verbal agreement, but rollbackable, interceptable, closable state machine | LIFECYCLE.md |
+| Hooks (Correction System) | Lock "unauthorized access, runaway, bloat" into process via guard/fail/loop | HOOKS.md |
+| LLM Wiki (Evolvable Knowledge Base) | Let Agents autonomously roam for retrieval via sitemap + multi-level index; prevent bloat via archive | KNOWLEDGE_GRAPH.md + wiki/*/index.md + archive/ |
+| Knowledge Graph (Connectivity) | All knowledge must be traceable from root; islands/dead links treated as "garbage" | sitemap mounting discipline + wiki_linter.py |
+| Skills (Expert Capability Matrix) | Delegate professional problems to specialized skills, call on-demand within process phases for consistent standards | skills/*/SKILL.md + Phase mapping table |
+| Engine (Optional Auxiliary) | Does not replace Agent, only provides deterministic hosting of "queue/phase/retry count" for complex tasks | harness/engine.py (optional) |
+| Scripts Tools (Determinism Enhancement) | Delegate checks and auxiliaries requiring determinism to scripts | scripts/wiki/*, scripts/gates/* |
+| Role Matrix (Dynamic Mounting) | Dynamically mount virtual roles based on different phases, each responsible for specific quality gates | ROLE_MATRIX.md + role_matrix.json |
+| WAL (Write-Ahead Log) | Achieve low-conflict knowledge write-back via WAL fragments, intelligent merging via compaction | wiki/*/wal/ + compactor.py |
+| Drift Queue | Capture and fix inconsistencies between Wiki and code | events/drift_queue/ |
+
+### 10.1 Correspondence with PDD/FDD/SDD/TDD
+
+- **PDD (Product Requirements Design)**: Mainly in Phase 1 Explorer (clarify boundaries, decompose tasks, form acceptance criteria)
+- **SDD (System Design)**: Mainly in Phase 2 Propose (database/interface/extensibility design written into OpenSpec)
+- **FDD (Functional Design)**: Also in Phase 2 Propose (functional behavior, exception branches, boundary conditions clarified)
+- **TDD (Test-Driven Development)**: Mainly in Phase 5 QA (can also前置 to before Implement), enforced regression via fail_hook
+
+```mermaid
+flowchart LR
+  PDD[PDD<br/>Product Requirements] --> Explorer[Phase 1: Explorer]
+  SDD[SDD<br/>System Design] --> Propose[Phase 2: Propose]
+  FDD[FDD<br/>Functional Design] --> Propose
+  TDD[TDD<br/>Test-Driven] --> QA[Phase 5: QA]
+
+  Explorer --> Propose --> Review --> Implement --> QA --> Archive
+
+  style PDD fill:#e1f5ff
+  style SDD fill:#fff4e6
+  style FDD fill:#fff4e6
+  style TDD fill:#e6ffe6
+```
+
+---
+
+## 11. Entry Index (Recommended Bookmarks)
+
+- **Rules Entry**: [AGENTS.md](AGENTS.md)
+- **Knowledge Graph Root**: [.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
+- **Contract Template**: [.agents/llm_wiki/schema/openspec_schema.md](.agents/llm_wiki/schema/openspec_schema.md)
+- **Intent Gateway**: [.agents/router/ROUTER.md](.agents/router/ROUTER.md)
+- **Context Funnel**: [.agents/router/CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
+- **Lifecycle**: [.agents/workflow/LIFECYCLE.md](.agents/workflow/LIFECYCLE.md)
+- **Hooks System**: [.agents/workflow/HOOKS.md](.agents/workflow/HOOKS.md)
+- **Role Matrix**: [.agents/workflow/ROLE_MATRIX.md](.agents/workflow/ROLE_MATRIX.md)
+- **Skills Master Index**: [.agents/skills/trae-skill-index/SKILL.md](.agents/skills/trae-skill-index/SKILL.md)
+
+---
+
+## Appendix
+
+### A. Glossary
+
+| Term | Chinese | Explanation |
+|------|---------|-------------|
+| Intent Gateway | 意图网关 | Routes natural language requests to execution modes |
+| Profile | 执行模式 | LEARN/PATCH/STANDARD three execution depths |
+| Shortcut | 快捷方式 | Syntax for forcing Profile specification (@read/@patch/@standard) |
+| Context Funnel | 知识漏斗 | Bidirectional navigation mechanism (forward retrieval + backward write-back) |
+| Lifecycle | 生命周期 | 6-phase state machine (Explorer→Archive) |
+| Hook | 钩子 | Automatic correction mechanisms (pre/guard/post/fail/loop) |
+| Role Matrix | 角色矩阵 | Dynamically mounted virtual role collection |
+| WAL | 写前日志 | Low-conflict knowledge write-back mechanism |
+| Drift Queue | 漂移队列 | Captures inconsistencies between Wiki and code |
+| HITL Gate | 人类闸门 | Human-In-The-Loop approval checkpoint |
+| Escalation Protocol | 升级协议 | Protocol to request human help when budget exhausted |
+| Saturation Gate | 饱和度门控 | Rules to judge if information is sufficient |
+| Delivery Capsule | 交付胶囊 | Complete handoff documentation package |
+| Core Context Anchors | 核心上下文锚点 | Collection of key links, business vocabulary, engineering red lines |
+
+### B. Quick Reference Card
+
+#### Common Commands
+```bash
+# Run unified gates
+python3 .agents/scripts/gates/run.py --intent Change --profile STANDARD --phase Implement
+
+# Check Wiki health
+python .agents/scripts/wiki/wiki_linter.py
+
+# Check OpenSpec structure
+python .agents/scripts/wiki/schema_checker.py path/to/openspec.md
+
+# WAL compaction
+python3 .agents/scripts/wiki/compactor.py
+
+# Check secrets leakage
+python3 .agents/scripts/gates/secrets_linter.py --paths "src/**/*.java"
+```
+
+#### Shortcuts Quick Reference
+```text
+@read --scope <path> -- <question>          # Read-only learning
+@patch --risk low -- <fix description>      # Quick fix
+@standard --risk high --launch -- <feature> # Full lifecycle
+```
+
+#### Status Values Quick Reference
+```text
+PENDING           # To be executed
+IN_PROGRESS       # Executing
+DONE              # Completed
+WAITING_APPROVAL  # Waiting for human approval
+FAILED            # Failed (requires human intervention)
+```
+
+#### Budget Limits
+```text
+Wiki ≤ 3 docs
+Code ≤ 8 files
+Max retries = 3
+Index threshold = 400 lines
+```
+
+### C. Version History
+
+| Version | Date | Change Description |
+|---------|------|-------------------|
+| 1.0.0 | 2026-04-17 | Initial version, comprehensive revision of ENGINEERING_MANUAL.md |
 
 ---
 
 <div align="center">
 
-**Built for sustainable, intelligent backend development**
+**Built for Sustainable Intelligent Backend Development**
 
-[⬆ Back to Top](#backend-agent-development-systembrengineering-manual--onboarding)
+[⬆ Back to Top](#backend-agent-development-system)
 
 </div>

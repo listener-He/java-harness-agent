@@ -12,16 +12,11 @@ If the user provides an explicit scope (file path, directory, class/method name,
 - Use the wiki funnel only if additional background context is needed after the first read.
 - DO NOT start by drilling down the Knowledge Graph for this scenario.
 
-### Rule 0.1: Decision-First Preflight (MUST)
-Before any heavy navigation (wiki drill-down, broad search, or reading multiple files), the Agent MUST produce a Preflight block:
-- Goal: one sentence
-- Deliverables: list (tables/APIs/internal methods/flows)
-- Default assumptions: up to 3 bullets
-- Open uncertainties: up to 2 bullets
-- Read strategy: `Needle | Obvious | Exploration`
-- Budgets (defaults): `wiki=3 docs`, `code=8 files` (same-file pagination reads do NOT count)
-- Stop conditions: saturation criteria + stop rules below
-- Escalation plan: what to request from human if budgets are hit
+### Rule 0.1: Implicit Budget & Preflight Check (MUST)
+Before any heavy navigation, the Agent MUST internally assess the goal and strictly adhere to the resource budgets.
+There is NO NEED to write out a heavy "Preflight block" in the chat unless specifically requested.
+- Budgets (Hard Limits): `wiki=3 docs`, `code=8 files` (same-file pagination reads do NOT count).
+- Stop conditions: If budgets are hit, the Agent MUST stop reading and ask the human for guidance or permission to continue.
 
 ### Rule 1: Always start at the root (MUST)
 Context collection MUST start by reading:
@@ -55,14 +50,17 @@ Stop reading and move to decision/implementation when ANY is met:
 - Integration point acquired: a concrete example of the dependency usage (e.g., `Provide/Template` call shape)
 - Executable chain acquired: a known good call chain exists and the remaining work is a mechanical extension
 
-#### 4.4 Stop-Wiki (MUST)
+#### Rule 4.4 Stop-Wiki (Elastic) & Fallback to Code
 Definition (wiki “no-gain”): reading did NOT add constraints that affect DB/API/permissions/flow and did NOT reduce rework risk.
-- If 3 consecutive wiki reads are “no-gain”, the Agent MUST stop wiki navigation and proceed with a minimal, standards-compliant decision.
+- If 3 consecutive wiki reads are “no-gain”, the Agent SHOULD stop wiki navigation.
+- **Wiki-Rot Fallback**: If the Agent detects that the Wiki might be outdated, contradictory, or lacks implementation details, it MUST stop reading the Wiki and **shift attention to the workspace code**. The workspace code is the ultimate source of truth.
+- **Elastic Extension**: If the Agent believes it is close to a breakthrough, it MAY output a `<Confidence_Assessment>` explaining what specific concept is missing and request an extension (e.g., `Next_Target: [architecture/auth_flow.md]`). The system will grant a +2 document budget extension before forcing a hard stop.
 
-#### 4.5 Stop-Code (MUST)
-Code reading must monotonically shrink scope.
+### Rule 4.5 Stop-Code (Elastic)
+Code reading must generally shrink scope.
 - After each code read, the Agent MUST update the scope (target file/class/method list) and it MUST be smaller or more precise.
-- If scope does not shrink for 2 consecutive code reads, the Agent MUST stop reading and trigger Escalation Protocol below.
+- If scope does not shrink for 2 consecutive code reads, the Agent SHOULD stop reading.
+- **Elastic Extension**: If the Agent needs to follow a specific call chain to complete its understanding (e.g., tracking an interface to its implementation), it MAY output a `<Confidence_Assessment>` detailing the exact symbol or file it needs to read next. The system will grant a +3 file budget extension before triggering Escalation Protocol.
 
 ### Rule 5: Escalation Protocol (MUST)
 If budgets are exhausted OR stop rules trigger and success criteria are not met, the Agent MUST request human help instead of continuing to read.

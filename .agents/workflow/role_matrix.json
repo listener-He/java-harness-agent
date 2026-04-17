@@ -1,0 +1,289 @@
+{
+  "version": 1,
+  "roles": {
+    "ambiguity_gatekeeper": {
+      "artifacts_required": [
+        ".agents/workflow/artifacts/focus_card.md"
+      ],
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/ambiguity_gate.py",
+          "args": [
+            "--intent",
+            "{intent_text}"
+          ]
+        },
+        {
+          "script": ".agents/scripts/gates/focus_card_gate.py",
+          "args": [
+            "--file",
+            ".agents/workflow/artifacts/focus_card.md"
+          ]
+        }
+      ]
+    },
+    "focus_guard": {
+      "artifacts_required": [
+        ".agents/workflow/artifacts/focus_card.md"
+      ],
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/scope_guard.py",
+          "args": [
+            "--focus-card",
+            ".agents/workflow/artifacts/focus_card.md",
+            "--files",
+            "{changed_files}"
+          ]
+        }
+      ]
+    },
+    "domain_analyst": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/writeback_gate.py",
+          "args": [
+            "--topic",
+            "{topic}",
+            "--date",
+            "{date}",
+            "--require",
+            "domain"
+          ]
+        }
+      ]
+    },
+    "interface_steward": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/writeback_gate.py",
+          "args": [
+            "--topic",
+            "{topic}",
+            "--date",
+            "{date}",
+            "--require",
+            "api"
+          ]
+        }
+      ]
+    },
+    "rules_lawyer": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/writeback_gate.py",
+          "args": [
+            "--topic",
+            "{topic}",
+            "--date",
+            "{date}",
+            "--require",
+            "rules"
+          ]
+        }
+      ]
+    },
+    "architecture_curator": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/writeback_gate.py",
+          "args": [
+            "--topic",
+            "{topic}",
+            "--date",
+            "{date}",
+            "--require",
+            "architecture"
+          ]
+        }
+      ]
+    },
+    "security_sentinel": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/secrets_linter.py",
+          "args": [
+            "--paths",
+            "src/main/resources/**/*.yml",
+            "src/main/resources/**/*.yaml",
+            "src/main/resources/**/*.properties",
+            ".agents/**/*.md"
+          ]
+        }
+      ]
+    },
+    "documentation_curator": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/delivery_capsule_gate.py",
+          "args": [
+            "--file",
+            "{delivery_file}"
+          ]
+        },
+        {
+          "script": ".agents/scripts/wiki/wiki_linter.py",
+          "args": []
+        }
+      ]
+    },
+    "skill_graph_curator": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/skill_index_linter.py",
+          "args": [
+            "--index",
+            ".agents/skills/trae-skill-index/SKILL.md",
+            "--skills-dir",
+            ".agents/skills",
+            "--fail-on-missing"
+          ]
+        }
+      ]
+    }
+  },
+  "mounts": [
+    {
+      "intent": "Change",
+      "profile": "PATCH",
+      "phase": "Explorer",
+      "roles": [
+        "ambiguity_gatekeeper",
+        "focus_guard"
+      ]
+    },
+    {
+      "intent": "Change",
+      "profile": "PATCH",
+      "phase": "Implement",
+      "roles": [
+        "focus_guard",
+        "security_sentinel"
+      ]
+    },
+    {
+      "intent": "Change",
+      "profile": "PATCH",
+      "phase": "QA",
+      "roles": [
+        "documentation_curator"
+      ]
+    },
+    {
+      "intent": "Change",
+      "profile": "PATCH",
+      "phase": "Archive",
+      "roles": [
+        "domain_analyst",
+        "interface_steward",
+        "rules_lawyer",
+        "documentation_curator",
+        "skill_graph_curator"
+      ]
+    },
+    {
+      "intent": "Change",
+      "profile": "STANDARD",
+      "phase": "Explorer",
+      "roles": [
+        "ambiguity_gatekeeper",
+        "focus_guard"
+      ]
+    },
+    {
+      "intent": "Change",
+      "profile": "STANDARD",
+      "phase": "Propose",
+      "roles": [
+        "domain_analyst",
+        "interface_steward",
+        "rules_lawyer"
+      ]
+    },
+    {
+      "intent": "Change",
+      "profile": "STANDARD",
+      "phase": "Implement",
+      "roles": [
+        "focus_guard",
+        "security_sentinel"
+      ]
+    },
+    {
+      "intent": "Change",
+      "profile": "STANDARD",
+      "phase": "QA",
+      "roles": [
+        "documentation_curator"
+      ]
+    },
+    {
+      "intent": "Change",
+      "profile": "STANDARD",
+      "phase": "Archive",
+      "roles": [
+        "domain_analyst",
+        "interface_steward",
+        "rules_lawyer",
+        "documentation_curator",
+        "skill_graph_curator"
+      ]
+    },
+    {
+      "intent": "Workflow",
+      "profile": "PATCH",
+      "phase": "Explorer",
+      "roles": [
+        "ambiguity_gatekeeper",
+        "focus_guard"
+      ]
+    },
+    {
+      "intent": "Workflow",
+      "profile": "PATCH",
+      "phase": "Implement",
+      "roles": [
+        "focus_guard",
+        "security_sentinel"
+      ]
+    },
+    {
+      "intent": "Workflow",
+      "profile": "PATCH",
+      "phase": "Archive",
+      "roles": [
+        "architecture_curator",
+        "documentation_curator",
+        "skill_graph_curator"
+      ]
+    },
+    {
+      "intent": "Workflow",
+      "profile": "STANDARD",
+      "phase": "Explorer",
+      "roles": [
+        "ambiguity_gatekeeper",
+        "focus_guard"
+      ]
+    },
+    {
+      "intent": "Workflow",
+      "profile": "STANDARD",
+      "phase": "Implement",
+      "roles": [
+        "focus_guard",
+        "security_sentinel"
+      ]
+    },
+    {
+      "intent": "Workflow",
+      "profile": "STANDARD",
+      "phase": "Archive",
+      "roles": [
+        "architecture_curator",
+        "documentation_curator",
+        "skill_graph_curator"
+      ]
+    }
+  ]
+}
