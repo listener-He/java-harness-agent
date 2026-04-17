@@ -1,13 +1,13 @@
 ---
 name: "devops-testing-standard"
-description: "Handles TDD phase. Invoke BEFORE writing feature code to write failing unit tests based on Specifications."
+description: "Handles Testing and QA. Invoke during Phase 5 to ensure test coverage and validation based on Specifications."
 ---
 
-# DevOps Phase 3 (Early): Test-Driven Development (TDD)
+# Phase 5: QA Test (Testing Standard)
 
-**Focus**: Writing Unit/Integration Tests based on Specs (SDD & TDD).
+**Focus**: Writing Unit/Integration Tests based on Specs and Validating Implementation.
 
-## 📋 TDD Flow
+## 📋 Testing Flow
 
 1. **Understand Test Architecture**:
    - Refer to the module testing guides (e.g., `src/test/java/.../README.md`) for the standard project testing template.
@@ -26,8 +26,8 @@ description: "Handles TDD phase. Invoke BEFORE writing feature code to write fai
      }
      ```
 
-2. **Write Failing Tests (Red)**:
-   - Based on the SDD Spec and API Prototype, create Test Classes.
+2. **Write and Validate Tests**:
+   - Based on the `openspec.md` created in Phase 2 (Propose), create or validate Test Classes.
    - **Service Tests**: Mock external dependencies. 
    - **Validation Tests**: Ensure JSR303 (`@Valid`) annotations trigger correctly.
 
@@ -42,5 +42,6 @@ description: "Handles TDD phase. Invoke BEFORE writing feature code to write fai
      3. **Boundary/Edge Cases**: Empty lists, nulls, max lengths, data permission boundaries (e.g., user A attempting to access user B's data).
 
 ## 🎯 Outcomes
-- Failing Test files committed.
-- Ready for Implementation (`devops-feature-implementation`) to make them pass (Green).
+- Test files committed and passing (Green).
+- Objective evidence produced for the QA phase.
+- Ready for Phase 6: Archive.

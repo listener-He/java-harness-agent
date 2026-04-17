@@ -15,7 +15,7 @@ description: "Handles System Architecture & Data Modeling (FDD & SDD). Invoke wh
 
 ### 1. Data Structure & ER Design
 - **Tables**: Define SQL `CREATE TABLE` statements with precise data types (`varchar`, `tinyint`, `bigint`).
-- **Standard Columns**: All tables MUST have `id` (bigint primary key), `tenant_id` (bigint), `create_time` (datetime), `update_time` (datetime), `is_deleted` (tinyint).
+- **Standard Columns**: All tables MUST have `id` (bigint primary key), `tenant_id` (bigint), `create_time` (datetime), `update_time` (datetime), `create_by` (bigint), `update_by` (bigint), `version` (int), `is_deleted` (tinyint).
 - **Relationships**: Design logical foreign keys (do NOT use physical DB foreign keys). Draw Mermaid ER diagrams.
 
 ### 2. Architectural Extensibility & Business Boundaries

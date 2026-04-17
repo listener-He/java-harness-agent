@@ -1,11 +1,14 @@
 ---
 name: "devops-feature-implementation"
-description: "Handles feature code implementation (FDD). Invoke when writing Java code, integrating underlying coding standards to make TDD tests pass."
+description: "Handles feature code implementation. Invoke in Phase 4 to write Java code according to the approved contract."
 ---
 
-# DevOps Phase 3 (Late): Feature-Driven Development (FDD)
+# Phase 4: Implement (Feature Implementation)
 
-**Focus**: Elegant, Robust Implementation to pass Tests and satisfy Specs.
+**Focus**: Elegant, Robust Implementation to satisfy Specs (`openspec.md`).
+
+## 🚨 Strict Rules (MANDATORY)
+- **Checkstyle Invocation**: You MUST invoke the `checkstyle` skill for ALL new and modified code.
 
 ## 📋 Implementation Directives
 
@@ -28,7 +31,6 @@ Do not over-design. In this repository, "Elegance" concretely means:
 - **Concurrency & Isolation**: Use `@ResourceLock` on modifying endpoints. Filter by `tenant_id` at the DB level or use `@BeforePermission`.
 
 ## 🎯 Outcomes
-- Java code (Controller, Service, Mapper, POJO) completed.
+- Java code (Controller, Service, Mapper, POJO) completed according to the contract.
 - Code elegantly structured, scalable, and secure.
-- Tests (from `devops-testing-standard`) are passing (Green).
-- Ready for Phase 4: `devops-review-and-refactor`.
+- Ready for Phase 5: QA Test.

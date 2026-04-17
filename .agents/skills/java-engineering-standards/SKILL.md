@@ -28,7 +28,7 @@ This skill dictates the project's strict architectural layering and business log
 
 ## 3. 实体类通用字段 (Entity Audit Fields)
 所有数据库 Entity 必须包含以下通用防腐字段，并且在业务代码中严格处理：
-- `id`, `tenant_id` (租户ID), `create_date`, `update_date`, `create_by`, `update_by`, `is_deleted`。
+- `id`, `tenant_id` (租户ID), `create_time`, `update_time`, `create_by`, `update_by`, `is_deleted`。
 
 ## 4. 命名规范 (Naming Conventions)
 - **接口命名 (Interface Naming)**：绝对禁止使用 `I` 作为接口名的前缀（例如：禁止使用 `IUserService`，必须直接使用 `UserService`）。

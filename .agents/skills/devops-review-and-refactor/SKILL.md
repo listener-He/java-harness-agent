@@ -1,11 +1,11 @@
 ---
 name: "devops-review-and-refactor"
-description: "Handles code review and feature modification. Invoke when reviewing code against specs or refactoring existing features with regression testing."
+description: "Handles review and modification. Invoke in Phase 3 to review the proposed contract against engineering standards, or when refactoring."
 ---
 
-# DevOps Phase 4: Review, Modification & Refactoring
+# Phase 3: Review (Review & Refactor)
 
-**Focus**: Safe Modification, Continuous Quality, Automated Review.
+**Focus**: Contract Review, Safe Modification, Continuous Quality, Automated Review.
 
 ## 📋 1. Safe Feature Modification (Refactoring Flow)
 When asked to modify or refactor existing code, follow this flow:
@@ -13,8 +13,8 @@ When asked to modify or refactor existing code, follow this flow:
 2. **Review Dependencies**: Check what other modules rely on this code.
 3. **Implement & Verify**: Make the change and ensure regression tests pass.
 
-## 📋 2. Automated Code Review (The CR Checklist)
-Before presenting any code or feature as "Done," run a self-correction loop. 
+## 📋 2. Automated Review (The CR Checklist)
+Before proceeding to the Approval Gate and Implementation, run a self-correction loop on the proposed `openspec.md` and related context. 
 
 **Context Gathering (CRITICAL)**:
 - Before reviewing, you MUST use `Read` or `Glob` tools to inspect relevant context (e.g., `pom.xml`, base classes, utility classes, DB structure) to prevent hallucinations. Do not assume a utility class exists without verifying it.
@@ -31,4 +31,6 @@ Before presenting any code or feature as "Done," run a self-correction loop.
 - [ ] **Error Handling**: Check against the `error-code-standard` skill.
 
 ## 🎯 Outcomes
-- A final "CR Checklist Report" output to the user detailing the checks and context gathered.
+- A final "Review Report" detailing the checks and context gathered.
+- If review passes, ready for Approval Gate.
+- If review fails, trigger `fail_hook` and roll back to Phase 2: Propose.

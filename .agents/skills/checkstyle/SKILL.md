@@ -57,7 +57,7 @@ This standard is synthesized from Google Java Style and Sun Code Conventions, he
 - **Inline Comments**: Use `//` for single-line comments. Place the comment on a separate line ABOVE the code it describes, not at the end of the line.
 
 ## 5. OOP & Best Practices (面向对象与最佳实践)
-- **Lombok**: Extensively use Lombok to reduce boilerplate. Use `@Getter`, `@Setter` (or `@Data` if appropriate, though explicit Getter/Setter is often safer for Entities), `@RequiredArgsConstructor` for dependency injection, and `@Slf4j` for logging.
+- **Lombok**: Extensively use Lombok to reduce boilerplate. Explicitly forbid `@Data` on Entity and DTO classes, mandate `@Getter` and `@Setter` instead. Use `@RequiredArgsConstructor` for dependency injection, and `@Slf4j` for logging.
 - **Dependency Injection**: ALWAYS use Constructor Injection via Lombok's `@RequiredArgsConstructor`. NEVER use `@Autowired` on fields.
 - **Validation**: Use `@Valid` or `@Validated` on Controller method parameters.
 - **Magic Numbers**: Avoid magic numbers or strings. Extract them to `private static final` constants or Enums.

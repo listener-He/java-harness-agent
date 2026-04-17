@@ -9,6 +9,9 @@ description: "Handles Bug Fixing. Invoke for diagnosing, reproducing, and fixing
 
 Do NOT mix this with standard feature development. This is a dedicated flow for fixing bugs.
 
+## 🚨 Strict Rules (MANDATORY)
+- **Checkstyle Invocation**: You MUST invoke the `checkstyle` skill for ALL new and modified code.
+
 ## 📋 Steps
 
 1. **Diagnose & Isolate**:

@@ -1,9 +1,9 @@
 ---
 name: "devops-task-planning"
-description: "Handles Task Planning. Invoke AFTER system design and BEFORE coding to break down the implementation into a Todo list."
+description: "Handles Task Planning. Invoke in Phase 2 AFTER system design and BEFORE coding to break down the implementation into a Todo list."
 ---
 
-# DevOps Phase 3: Task Planning (任务规划)
+# Phase 2: Propose (Task Planning)
 
 **Focus**: Divide and Conquer. Preventing monolithic and chaotic code generation.
 
@@ -33,4 +33,4 @@ description: "Handles Task Planning. Invoke AFTER system design and BEFORE codin
 
 ## 🎯 Outcomes
 - A populated Todo list in the workspace.
-- Stop here. Prompt the user to proceed to Phase 4: `devops-feature-implementation` (which will execute the tasks).
+- Stop here. Follow the LIFECYCLE.md and proceed to Phase 3: Review.
