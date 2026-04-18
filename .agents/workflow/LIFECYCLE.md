@@ -8,6 +8,61 @@ This document defines the execution lifecycle as a one-way state machine with ha
 - The Agent MUST maintain `launch_spec_{timestamp}.md` (`Status/Phase/Failed_Reason`) for resumability. Optional helper: `python3 ../scripts/harness/engine.py`.
 - Non-negotiable: one-way flow, hard gates, and anti-runaway rules MUST NOT be broken.
 
+## Special Scenario Routing（特殊场景路由）
+
+> 以下场景在进入标准 6 阶段前有专项处理逻辑，Agent 必须先识别场景再选择路径。
+
+### Scenario A: 紧急热修 (`@patch --emergency`)
+**触发**：用户明确说明 P0/生产故障/紧急修复  
+**流程**：
+1. 跳过 Phase 1 (Explorer) — 直接进入 Phase 4 (Implement)
+2. 以 `slim_spec.md` 替代完整 openspec（只需：问题描述 + 修改文件 + 验证方式）
+3. Phase 5 QA 仍必须执行（不可跳过）
+4. Phase 6 Archive：**延迟执行**，但不可永久跳过
+   - 在 `launch_spec.md` 中标记 `ARCHIVE_DEFERRED`
+   - 下次非紧急任务开始前，必须先完成上次的 Archive
+5. 自动在 preferences WAL 追加"紧急变更记录"
+
+### Scenario B: 数据库 Migration
+**触发**：检测到修改 `*.sql`、`*Migration*.java`，或 openspec 包含 DDL 变更  
+**附加要求（在 Phase 2 Propose 中必须完成）**：
+- `openspec.md` 必须包含"Migration 安全检查"章节：
+  - [ ] 回滚 SQL 已编写
+  - [ ] 已在测试库/沙箱验证通过
+  - [ ] 预计执行时长
+  - [ ] 是否影响在线流量（需停机/灰度）
+- Phase 3 Review 必须运行 `migration_gate.py`
+- Data WAL 写回**必须**包含 Migration 记录
+
+### Scenario C: 破坏性 API 变更
+**触发**：Controller 方法签名变更、RequestBody 字段删除/重命名、HTTP 状态码变更  
+**附加要求（在 Phase 2 Propose 中必须完成）**：
+- `openspec.md` 必须包含"破坏性变更影响分析"章节：
+  - 影响的消费方列表（前端/移动端/其他服务）
+  - 版本策略：`parallel`（新旧并存）/ `deprecate`（标记废弃+下线时间）/ `cut`（直接切换）
+  - 通知/协调计划
+- Phase 3 Review 必须运行 `api_breaking_gate.py`
+- API WAL 写回**必须**包含破坏性变更记录
+
+### Scenario D: 性能调优
+**触发**：用户描述含"慢查询"、"性能问题"、"超时"、"OOM"  
+**流程**：
+1. 先走 `@read --audit performance`，输出 `performance_report.md`
+   - 包含：慢查询 SQL/接口、调用链路、瓶颈假设、优化建议
+2. 用户确认调优方向后，再决定走 `@patch`（小优化）或 `@standard`（大重构）
+3. Data WAL / Architecture WAL 按实际变更写回
+
+### Scenario E: 依赖升级 (pom.xml)
+**触发**：检测到 `pom.xml` 变更（新增/升级 dependency）  
+**附加要求**：
+- Phase 3 Review 自动运行 `dependency_gate.py`
+  - 检查新依赖是否有已知 CVE
+  - 检查版本兼容性说明
+- 风险自动设为 MEDIUM（即使用户认为是小改动）
+- Architecture WAL 写回：记录新引入的依赖和原因
+
+---
+
 ## Phases (6) + Approval Gate
 This lifecycle is orchestrated by `[devops-lifecycle-master](../skills/devops-lifecycle-master/SKILL.md)`.
 

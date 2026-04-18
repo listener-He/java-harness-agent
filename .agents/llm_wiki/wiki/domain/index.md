@@ -1,21 +1,71 @@
-# Domain Index (Vocabulary & State)
+# Domain Index — 业务领域知识
 
-This index defines the project's vocabulary. The Agent MUST use these terms during `Explorer` and `Propose` to avoid domain drift.
+> 业务词汇表、核心实体、状态机、业务规则、不变量。
+> Agent 在 Explorer 和 Propose 阶段 **必须** 以本文件为业务语言基准，避免领域漂移。
 
-## Core Concepts & State Machines
+## 硬规则 (MUST)
+- 任何新增实体、业务规则、状态流转、术语，**必须**在 Archive 阶段写回本维度的 WAL。
+- 超过 30 个核心概念时，**必须**拆分为子词典文件（如 `dictionary_order.md`），本文件仅保留路由链接。
+- WAL 合并后旧文件移入 `wal/archive/`。
 
-| Concept | Definition | Details |
-|---|---|---|
-| (Example) Opportunity | A sales opportunity representing a potential deal | `[opportunity_states.md]` |
+---
+
+## 1. 核心实体 (Entities)
+
+| 实体名 | 中文名 | 所属模块 | 核心字段 | 生命周期状态 | 关键不变量 |
+|--------|--------|----------|----------|--------------|------------|
+| *(示例) Order* | *订单* | *trade* | *id, tenant_id, status, amount* | *PENDING→PAID→SHIPPED→DONE / CANCELLED* | *金额一旦支付不可减少* |
+
+---
+
+## 2. 业务流程 (Flows)
+
+| 流程名 | 触发入口 | 核心步骤（简述） | 关键决策点 | 异常/回滚路径 |
+|--------|----------|-----------------|------------|--------------|
+| *(示例) 下单流程* | *POST /order/create* | *校验库存→创建订单→锁库存→等待支付* | *库存不足→返回错误* | *支付超时→自动取消+释放库存* |
+
+---
+
+## 3. 业务规则 (Rules)
+
+| 规则名 | 适用实体 | 约束条件 | 执行层 | 违反后果 |
+|--------|----------|----------|--------|----------|
+| *(示例) 租户隔离* | *所有实体* | *所有查询必须带 tenant_id 过滤* | *Service/Mapper* | *数据越权* |
+
+---
+
+## 4. 状态机 (State Machines)
+
+| 实体 | 初始状态 | 终态（成功） | 终态（失败）| 状态转换规则（文字版）|
+|------|----------|-------------|------------|----------------------|
+| *(示例) Order* | *PENDING_PAYMENT* | *COMPLETED* | *CANCELLED* | *见 [order_states.md](order_states.md)* |
+
+---
+
+## 5. 术语表 (Glossary)
+
+| 术语 | 中文 | 定义 | 所在模块 | 勿与混淆 |
+|------|------|------|----------|----------|
+| *(示例) Tenant* | *租户* | *SaaS 隔离单元，所有数据以 tenant_id 为根* | *全局* | *Org（组织，租户下的子单元）* |
 
 ---
 
 ## Archive Extraction SOP
-If an `openspec.md` introduces new terms, roles, enum values, or state transitions, the Agent MUST extract them here during `Archive`.
 
-### Append Template
-```markdown
-| {term} | {1–2 sentence definition and boundary} | `[{details_doc}]` |
-```
+Archive 阶段，从 `openspec.md` 提取以下内容追加至对应表格：
+- 新实体 → 追加至"核心实体"
+- 新流程 → 追加至"业务流程"
+- 新规则/约束 → 追加至"业务规则"
+- 新状态/状态转换 → 追加至"状态机"
+- 新术语 → 追加至"术语表"
 
-Anti-bloat rule: if the vocabulary exceeds 30 concepts, you MUST split into per-line dictionaries (example: `dictionary_xxx.md`) and keep this file as a router.
+WAL 写入路径：`wal/YYYYMMDD_{topic}_domain_append.md`
+WAL 格式参考：[wal/WAL_FORMAT.md](wal/WAL_FORMAT.md)
+
+**触发条件**：修改 `*Service.java`、`*Entity.java`、`*DO.java`、`*Enum.java`、`*Mapper.xml` 时必须评估是否有新的业务知识需要回写。
+
+---
+
+## WAL Pending（待合并）
+
+*(compactor 合并后此处自动清空)*

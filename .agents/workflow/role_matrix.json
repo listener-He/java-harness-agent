@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "roles": {
     "ambiguity_gatekeeper": {
       "artifacts_required": [
@@ -8,17 +8,11 @@
       "gates": [
         {
           "script": ".agents/scripts/gates/ambiguity_gate.py",
-          "args": [
-            "--intent",
-            "{intent_text}"
-          ]
+          "args": ["--intent", "{intent_text}"]
         },
         {
           "script": ".agents/scripts/gates/focus_card_gate.py",
-          "args": [
-            "--file",
-            ".agents/workflow/artifacts/focus_card.md"
-          ]
+          "args": ["--file", ".agents/workflow/artifacts/focus_card.md"]
         }
       ]
     },
@@ -30,10 +24,8 @@
         {
           "script": ".agents/scripts/gates/scope_guard.py",
           "args": [
-            "--focus-card",
-            ".agents/workflow/artifacts/focus_card.md",
-            "--files",
-            "{changed_files}"
+            "--focus-card", ".agents/workflow/artifacts/focus_card.md",
+            "--files", "{changed_files}"
           ]
         }
       ]
@@ -42,14 +34,7 @@
       "gates": [
         {
           "script": ".agents/scripts/gates/writeback_gate.py",
-          "args": [
-            "--topic",
-            "{topic}",
-            "--date",
-            "{date}",
-            "--require",
-            "domain"
-          ]
+          "args": ["--topic", "{topic}", "--date", "{date}", "--require", "domain"]
         }
       ]
     },
@@ -57,14 +42,7 @@
       "gates": [
         {
           "script": ".agents/scripts/gates/writeback_gate.py",
-          "args": [
-            "--topic",
-            "{topic}",
-            "--date",
-            "{date}",
-            "--require",
-            "api"
-          ]
+          "args": ["--topic", "{topic}", "--date", "{date}", "--require", "api"]
         }
       ]
     },
@@ -72,14 +50,7 @@
       "gates": [
         {
           "script": ".agents/scripts/gates/writeback_gate.py",
-          "args": [
-            "--topic",
-            "{topic}",
-            "--date",
-            "{date}",
-            "--require",
-            "rules"
-          ]
+          "args": ["--topic", "{topic}", "--date", "{date}", "--require", "rules"]
         }
       ]
     },
@@ -87,14 +58,7 @@
       "gates": [
         {
           "script": ".agents/scripts/gates/writeback_gate.py",
-          "args": [
-            "--topic",
-            "{topic}",
-            "--date",
-            "{date}",
-            "--require",
-            "architecture"
-          ]
+          "args": ["--topic", "{topic}", "--date", "{date}", "--require", "architecture"]
         }
       ]
     },
@@ -116,10 +80,7 @@
       "gates": [
         {
           "script": ".agents/scripts/gates/delivery_capsule_gate.py",
-          "args": [
-            "--file",
-            "{delivery_file}"
-          ]
+          "args": ["--file", "{delivery_file}"]
         },
         {
           "script": ".agents/scripts/wiki/wiki_linter.py",
@@ -132,12 +93,55 @@
         {
           "script": ".agents/scripts/gates/skill_index_linter.py",
           "args": [
-            "--index",
-            ".agents/skills/trae-skill-index/SKILL.md",
-            "--skills-dir",
-            ".agents/skills",
+            "--index", ".agents/skills/trae-skill-index/SKILL.md",
+            "--skills-dir", ".agents/skills",
             "--fail-on-missing"
           ]
+        }
+      ]
+    },
+    "wal_enforcer": {
+      "_comment": "Archive 阶段强制检查所有 WAL 文件合规性，所有 PATCH/STANDARD 任务必须挂载",
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/wal_template_gate.py",
+          "args": ["--task-date", "{date}"]
+        }
+      ]
+    },
+    "reviews_keeper": {
+      "_comment": "Archive 阶段确保 reviews 维度 WAL 写回（每次任务固定触发）",
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/writeback_gate.py",
+          "args": ["--topic", "{topic}", "--date", "{date}", "--require", "reviews"]
+        }
+      ]
+    },
+    "migration_guardian": {
+      "_comment": "Review 阶段，检测到 Migration 变更时挂载",
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/migration_gate.py",
+          "args": ["--spec", ".agents/llm_wiki/wiki/specs/{topic}_openspec.md"]
+        }
+      ]
+    },
+    "api_breaking_guardian": {
+      "_comment": "Review 阶段，检测到破坏性 API 变更时挂载",
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/api_breaking_gate.py",
+          "args": ["--spec", ".agents/llm_wiki/wiki/specs/{topic}_openspec.md"]
+        }
+      ]
+    },
+    "dependency_guardian": {
+      "_comment": "Review 阶段，检测到 pom.xml 变更时挂载",
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/dependency_gate.py",
+          "args": ["--pom", "pom.xml", "--spec", ".agents/llm_wiki/wiki/specs/{topic}_openspec.md"]
         }
       ]
     }
@@ -147,27 +151,19 @@
       "intent": "Change",
       "profile": "PATCH",
       "phase": "Explorer",
-      "roles": [
-        "ambiguity_gatekeeper",
-        "focus_guard"
-      ]
+      "roles": ["ambiguity_gatekeeper", "focus_guard"]
     },
     {
       "intent": "Change",
       "profile": "PATCH",
       "phase": "Implement",
-      "roles": [
-        "focus_guard",
-        "security_sentinel"
-      ]
+      "roles": ["focus_guard", "security_sentinel"]
     },
     {
       "intent": "Change",
       "profile": "PATCH",
       "phase": "QA",
-      "roles": [
-        "documentation_curator"
-      ]
+      "roles": ["documentation_curator"]
     },
     {
       "intent": "Change",
@@ -178,44 +174,40 @@
         "interface_steward",
         "rules_lawyer",
         "documentation_curator",
-        "skill_graph_curator"
+        "skill_graph_curator",
+        "wal_enforcer",
+        "reviews_keeper"
       ]
     },
     {
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "Explorer",
-      "roles": [
-        "ambiguity_gatekeeper",
-        "focus_guard"
-      ]
+      "roles": ["ambiguity_gatekeeper", "focus_guard"]
     },
     {
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "Propose",
-      "roles": [
-        "domain_analyst",
-        "interface_steward",
-        "rules_lawyer"
-      ]
+      "roles": ["domain_analyst", "interface_steward", "rules_lawyer"]
+    },
+    {
+      "intent": "Change",
+      "profile": "STANDARD",
+      "phase": "Review",
+      "roles": ["security_sentinel"]
     },
     {
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "Implement",
-      "roles": [
-        "focus_guard",
-        "security_sentinel"
-      ]
+      "roles": ["focus_guard", "security_sentinel"]
     },
     {
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "QA",
-      "roles": [
-        "documentation_curator"
-      ]
+      "roles": ["documentation_curator"]
     },
     {
       "intent": "Change",
@@ -226,26 +218,22 @@
         "interface_steward",
         "rules_lawyer",
         "documentation_curator",
-        "skill_graph_curator"
+        "skill_graph_curator",
+        "wal_enforcer",
+        "reviews_keeper"
       ]
     },
     {
       "intent": "Workflow",
       "profile": "PATCH",
       "phase": "Explorer",
-      "roles": [
-        "ambiguity_gatekeeper",
-        "focus_guard"
-      ]
+      "roles": ["ambiguity_gatekeeper", "focus_guard"]
     },
     {
       "intent": "Workflow",
       "profile": "PATCH",
       "phase": "Implement",
-      "roles": [
-        "focus_guard",
-        "security_sentinel"
-      ]
+      "roles": ["focus_guard", "security_sentinel"]
     },
     {
       "intent": "Workflow",
@@ -254,26 +242,28 @@
       "roles": [
         "architecture_curator",
         "documentation_curator",
-        "skill_graph_curator"
+        "skill_graph_curator",
+        "wal_enforcer",
+        "reviews_keeper"
       ]
     },
     {
       "intent": "Workflow",
       "profile": "STANDARD",
       "phase": "Explorer",
-      "roles": [
-        "ambiguity_gatekeeper",
-        "focus_guard"
-      ]
+      "roles": ["ambiguity_gatekeeper", "focus_guard"]
+    },
+    {
+      "intent": "Workflow",
+      "profile": "STANDARD",
+      "phase": "Review",
+      "roles": ["security_sentinel"]
     },
     {
       "intent": "Workflow",
       "profile": "STANDARD",
       "phase": "Implement",
-      "roles": [
-        "focus_guard",
-        "security_sentinel"
-      ]
+      "roles": ["focus_guard", "security_sentinel"]
     },
     {
       "intent": "Workflow",
@@ -282,7 +272,9 @@
       "roles": [
         "architecture_curator",
         "documentation_curator",
-        "skill_graph_curator"
+        "skill_graph_curator",
+        "wal_enforcer",
+        "reviews_keeper"
       ]
     }
   ]

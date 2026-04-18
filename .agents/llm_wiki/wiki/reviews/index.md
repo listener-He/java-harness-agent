@@ -1,7 +1,62 @@
-# Reviews Index
+# Reviews Index — 代码审查记录
 
-This domain stores review artifacts and summaries (design reviews, code review checklists, audit reports).
+> 历次 Code Review 的高频发现、重构建议、质量趋势追踪。
+> 本维度为质量闭环的核心数据源，preferences/index.md 中的高频发现来自此处的汇总。
 
-Hard rules:
-- If you produce a reusable review report, it MUST be linked from this index.
-- Keep entries short and evidence-based. Link to the source files and line ranges when applicable.
+## 硬规则 (MUST)
+- Archive 阶段 **必须** 将本次任务的 Review 评分和关键发现追加至本文件。
+- 同类问题出现 ≥ 3 次时，**必须**升级为 `preferences/index.md` 中的反模式条目。
+- 本文件不存储完整 Review 记录（太大），只存储**结构化摘要**，完整记录归档至 `wal/`。
+
+---
+
+## 1. Review 评分历史 (Score History)
+
+| 日期 | 任务摘要 | Profile | 评分(1-10) | 主要扣分项 | 主要亮点 |
+|------|----------|---------|-----------|----------|----------|
+| *(示例) 2026-04-01* | *实现订单状态流转* | *STANDARD* | *7* | *Service 层缺少事务注解* | *状态机设计清晰* |
+
+---
+
+## 2. 高频问题汇总 (Recurring Issues)
+
+| 问题描述 | 类别 | 严重度 | 出现次数 | 升级状态 |
+|----------|------|--------|----------|----------|
+| *(占位)* | *-* | *-* | *0* | *-* |
+
+**升级规则**：出现次数 ≥ 3 → 自动升级为 preferences 反模式，在本表标记`已升级`。
+
+---
+
+## 3. 重构建议追踪 (Refactor Backlog)
+
+| 建议描述 | 影响范围 | 紧急度 | 提出日期 | 状态 |
+|----------|----------|--------|----------|------|
+| *(占位)* | *-* | *LOW* | *-* | *待处理* |
+
+---
+
+## 4. 质量趋势 (Quality Trend)
+
+| 季度 | 平均评分 | 高频问题 TOP3 | 趋势 |
+|------|----------|--------------|------|
+| *(占位)* | *-* | *-* | *-* |
+
+---
+
+## Archive Extraction SOP
+
+Archive 阶段（固定执行，每次任务）：
+1. 追加本次任务的评分行至"Review 评分历史"
+2. 识别本次 Review 中的问题，追加至"高频问题汇总"（更新出现次数）
+3. 若有重构建议，追加至"重构建议追踪"
+4. 若某问题出现次数达到 3，生成 preferences WAL 将其升级为反模式
+
+WAL 写入路径：`wal/YYYYMMDD_{topic}_reviews_append.md`
+WAL 格式参考：[wal/WAL_FORMAT.md](wal/WAL_FORMAT.md)
+
+---
+
+## WAL Pending（待合并）
+
+*(compactor 合并后此处自动清空)*

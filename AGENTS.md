@@ -9,9 +9,28 @@ This file is the single entry point. It contains essential navigation and hard c
 - **Scope Guard**: Do not modify files outside the agreed `focus_card.md` scope without explicit permission.
 
 ## 🧭 Initial Action Guidelines
-- **Direct Read**: If the user provides an explicit file path, class, or code snippet, read it directly first. Do NOT start with the Wiki Funnel.
-- **Root Drill-down**: If exploring a domain without an explicit scope, ALWAYS start at [KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) and follow the links downward.
-- **Resumability**: On session resume, ALWAYS read `router/runs/launch_spec_*.md` first to restore state.
+
+### 第一步：意图确认（MUST，每次任务必须输出）
+
+收到任务后，在任何操作前，先输出一行意图确认：
+
+```
+[Intent Check] 识别为 @{profile} | 风险 {LOW/MEDIUM/HIGH} | 意图 {Learn/Change/DocQA/Audit} | 触发原因：{信号词或判断依据}
+```
+
+示例：
+```
+[Intent Check] 识别为 @standard | 风险 HIGH | 意图 Change | 触发原因：关键词"数据库 Migration"→ 自动升级 HIGH
+[Intent Check] 识别为 @patch | 风险 LOW | 意图 Change | 触发原因：单点 NPE 修复，影响 1 个方法
+[Intent Check] 识别为 @read | 风险 N/A | 意图 Learn | 触发原因：用户未要求修改任何文件
+```
+
+用户可以纠正这一行，纠正后按新 profile 执行；否则自动继续。
+
+### 第二步：路由与导航
+- **Direct Read**: 用户提供了明确的文件路径或类名 → 直接读取，不从 Wiki Funnel 开始
+- **Root Drill-down**: 探索业务域时 → 从 [KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) 开始向下钻取
+- **Resumability**: 会话恢复时 → 先读 `router/runs/launch_spec_*.md` 恢复状态
 
 ## 🗂 Single Sources of Truth (SSOT)
 - Routing, profiles, shortcuts (`@read`, `@patch`, `@standard`): [.agents/router/ROUTER.md](.agents/router/ROUTER.md)

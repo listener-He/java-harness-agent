@@ -1,25 +1,79 @@
-# Architecture Index (Baselines & ADRs)
+# Architecture Index — 架构决策
 
-This domain records architecture baselines and ADRs (Architecture Decision Records).
+> 架构决策记录（ADR）、模块职责地图、集成拓扑、性能基线。
+> 做任何跨模块或全局技术选型前，**必须**先查阅本文件中已有的 ADR。
 
-## Hard Rules (MUST)
-- When making cross-cutting technical choices (module boundaries, middleware, global patterns), you MUST consult existing ADRs or add a new one.
+## 硬规则 (MUST)
+- 任何跨模块技术选型、中间件引入、全局模式变更，**必须**在 Propose 阶段新增 ADR，并在 Archive 阶段写回本文件。
+- 已有 ADR 被推翻时，**不得**删除原记录，需标记为 `Superseded` 并链接新 ADR。
+- 集成拓扑变更（新增/移除外部系统）**必须**同步更新"集成拓扑"表。
 
-## Baselines & Guards
-- Security baseline: [../preferences/security_rules.md](../preferences/security_rules.md)
+---
 
-## ADR List
+## 1. 架构决策记录 (ADRs)
 
-| ADR # | Title | Status | Decision Summary |
-|---|---|---|---|
-| (Example) ADR-001 | Use JWT for stateless auth | Accepted | Reduce Redis dependency; validate at the gateway |
+| ADR # | 标题 | 状态 | 决策摘要 | 决策日期 | 超级链接 |
+|-------|------|------|----------|----------|----------|
+| *(示例) ADR-001* | *使用 JWT 做无状态认证* | *Accepted* | *减少 Redis 依赖，网关层统一验签* | *2026-03-01* | *[adr_001.md](adrs/adr_001.md)* |
+
+**状态枚举**：`Proposed` | `Accepted` | `Deprecated` | `Superseded by ADR-XXX`
+
+---
+
+## 2. 模块地图 (Module Map)
+
+| 模块名 | 职责边界 | 核心类/入口 | 上游依赖 | 下游依赖 | 负责团队 |
+|--------|----------|------------|----------|----------|----------|
+| *(示例) auth-service* | *认证/鉴权/租户管理* | *AuthController, TokenService* | *无* | *用户服务* | *平台组* |
+
+---
+
+## 3. 使用中的设计模式 (Patterns)
+
+| 模式名 | 应用位置 | 引入原因 | 注意事项 |
+|--------|----------|----------|----------|
+| *(示例) 策略模式* | *支付渠道选择* | *支持多渠道动态切换* | *新增渠道必须注册 Spring Bean* |
+
+---
+
+## 4. 集成拓扑 (Integration Topology)
+
+| 外部系统 | 方向 | 协议 | 认证 | SLA 要求 | 降级策略 | 状态 |
+|----------|------|------|------|----------|----------|------|
+| *(示例) 阿里云 OSS* | *下游* | *HTTPS SDK* | *AccessKey* | *P99 < 2s* | *降级存本地临时目录* | *生产中* |
+
+---
+
+## 5. 性能 SLA 基线
+
+| 接口 / 操作 | P95 目标 | P99 目标 | 当前实测 | 最后测量日期 |
+|------------|---------|---------|----------|-------------|
+| *(示例) GET /order/list* | *200ms* | *500ms* | *180ms* | *2026-04-01* |
+
+---
+
+## 6. 安全基线
+
+→ 见 [../preferences/security_rules.md](../preferences/security_rules.md)（所有安全硬约束集中于此）
 
 ---
 
 ## Archive Extraction SOP
-If `Propose` makes a global architecture decision, you MUST write it back here during `Archive`.
 
-### Append Template
-```markdown
-| ADR-{XXX} | {decision title} | Accepted | {one-line reason} |
-```
+Archive 阶段从 `openspec.md` 提取：
+- 全局技术决策 → 追加至"ADR"
+- 新模块或模块边界调整 → 更新"模块地图"
+- 新设计模式引入 → 追加至"使用中的设计模式"
+- 新增/移除外部集成 → 更新"集成拓扑"
+- SLA 变化 → 更新"性能 SLA 基线"
+
+WAL 写入路径：`wal/YYYYMMDD_{topic}_architecture_append.md`
+WAL 格式参考：[wal/WAL_FORMAT.md](wal/WAL_FORMAT.md)
+
+**触发条件**：引入新中间件/框架、调整模块边界、新增外部系统集成、修改全局配置（`*Config.java`、`application*.yml` 架构相关部分）时，必须评估是否写回本维度。
+
+---
+
+## WAL Pending（待合并）
+
+*(compactor 合并后此处自动清空)*

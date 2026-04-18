@@ -56,7 +56,22 @@ Write-back policy (MUST):
 - For Profile `PATCH` and `STANDARD`, write-back is REQUIRED:
   - Domain WAL + API WAL + Rules WAL are mandatory.
   - Data WAL is mandatory when schema/DDL changes.
+  - Reviews WAL is mandatory for every task (even if just a “no new finding” confirmation).
 - The Agent MUST NOT end a change as “done” if write-back gates fail.
+
+WAL Template Gate (MUST, runs after all WAL files are written):
+- `python3 .agents/scripts/gates/wal_template_gate.py --task-date YYYYMMDD`
+- 检查内容：
+  1. 本次任务影响的所有维度均已写 WAL 文件
+  2. 每个 WAL 文件包含合法的 frontmatter（date/task/profile/dimension 字段）
+  3. WAL 内容非空、非模板占位符（不允许只写模板注释）
+  4. “无变化确认”行存在（当某维度无新知识时）
+- 不通过 → fail_hook → 任务状态设为 FAILED，不允许标记 DONE
+
+Special Scenario Gates（特殊场景门控，在 Phase 3 Review 中自动追加）：
+- Migration 变更：`python3 .agents/scripts/gates/migration_gate.py --spec openspec.md`
+- 破坏性 API：`python3 .agents/scripts/gates/api_breaking_gate.py --spec openspec.md`
+- 依赖升级：`python3 .agents/scripts/gates/dependency_gate.py --pom pom.xml`
 
 Optional evidence (writes a report file):
 - `python .agents/scripts/wiki/zero_residue_audit.py` (default output: `.agents/workflow/runs/`)
