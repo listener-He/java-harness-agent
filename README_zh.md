@@ -27,7 +27,7 @@
 </div>
 
 ---
-![./static/image.jpg](./static/image.jpg)
+![./static/image.jpg](https://fastly.jsdelivr.net/gh/listener-He/java-harness-agent@main/static/image.jpg)
 
 ## 📖 项目简介
 
