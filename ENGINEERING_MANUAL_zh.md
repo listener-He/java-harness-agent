@@ -2156,9 +2156,6 @@ sequenceDiagram
         Agent->>Spec: 更新状态为 PENDING
         Agent->>Agent: 返回 Propose 修订
     end
-    
-    style Human fill:#fff4e6
-    style Spec fill:#e1f5ff
 ```
 
 **持久化**:
