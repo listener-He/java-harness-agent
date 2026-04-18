@@ -37,5 +37,10 @@ This file is used by hooks for verification and is archived during `Archive`.
 ## Archived Evidence Index
 (This section is appended during `Archive`.)
 
+### Append Template
+```markdown
+- [{YYYY-MM-DD}] {Feature/Bug Name}: `[{evidence_file.md}]`
+```
+
 ### 2026
 - No entries

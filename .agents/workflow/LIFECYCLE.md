@@ -1,83 +1,121 @@
-# Lifecycle (Phases + Hooks)
+# Lifecycle — Phases, Profiles, and State Machine
 
-This document defines the execution lifecycle as a one-way state machine with hard gates and rollback rules.
+One-way state machine with hard gates and rollback rules.
 
-## Agent as the Engine (MUST)
-- The Agent MUST determine the current phase from context and execute the correct next action.
-- Before moving to the next phase, the Agent MUST apply the constraints in [HOOKS.md](HOOKS.md).
-- The Agent MUST maintain `launch_spec_{timestamp}.md` (`Status/Phase/Failed_Reason`) for resumability. Optional helper: `python3 ../scripts/harness/engine.py`.
-- Non-negotiable: one-way flow, hard gates, and anti-runaway rules MUST NOT be broken.
+---
 
-## Phases (6) + Approval Gate
-This lifecycle is orchestrated by `[devops-lifecycle-master](../skills/devops-lifecycle-master/SKILL.md)`.
+## Agent Obligations (MUST)
 
-Approval is a human gate. It is NOT counted as a phase.
+- Determine the current phase from context; execute the correct next action.
+- Apply hook constraints from [HOOKS.md](HOOKS.md) before moving to the next phase.
+- Maintain `launch_spec_{timestamp}.md` (`Status / Phase / Failed_Reason`) for resumability.
+- Never break the one-way flow, hard gates, or anti-runaway rules.
 
-## Profiles (Execution Modes)
-Not every request needs the full lifecycle.
+---
 
-- Profile `LEARN`: read-only explanation (no launch spec, no lifecycle, no write-back).
-- Profile `PATCH`: small change / bugfix (minimal artifacts; hooks still apply; archive write-back is REQUIRED).
-  - PATCH flow is short-circuited: `1_Explorer` -> `4_Implement` -> `5_QA` -> `6_Archive`.
-  - It skips `2_Propose` and `3_Review` and the `Approval Gate` completely.
-  - Requires a `slim_spec.md` during `4_Implement` which just contains a Change Log and QA Evidence.
-- Profile `STANDARD`: full lifecycle (Phase 1 to 6).
+## Execution Profiles
+
+| Profile | Flow | Approval Gate | Spec Required |
+|---|---|---|---|
+| LEARN | Read-only; no launch spec, no lifecycle, no write-back | No | No |
+| PATCH | `Explorer → Implement → QA → Archive` | No | Slim Spec (Change Log + QA evidence) |
+| STANDARD | `Explorer → Propose → Review → [GATE] → Implement → QA → Archive` | Yes (MEDIUM/HIGH) | Full `openspec.md` |
+
+---
+
+## Phases
 
 ### Phase 1: Explorer
-- Skills: `[product-manager-expert](../skills/product-manager-expert/SKILL.md)`, `[devops-requirements-analysis](../skills/devops-requirements-analysis/SKILL.md)`, `[prd-task-splitter](../skills/prd-task-splitter/SKILL.md)`
-- Actions:
-  - Run `pre_hook`.
-  - Read `../llm_wiki/wiki/preferences/index.md`.
-  - Clarify requirements and scope.
-- Output: `explore_report.md` including a `## Core Context Anchors` section.
+
+**Skills:** `product-manager-expert`, `devops-requirements-analysis`, `prd-task-splitter`
+
+**Actions:**
+1. Run `pre_hook`.
+2. Read `../llm_wiki/wiki/preferences/index.md`.
+3. Clarify requirements and scope.
+
+**Output:** `explore_report.md` — MUST include a `## Core Context Anchors` section (key wiki links, business vocabulary, engineering red lines).
+
+---
 
 ### Phase 2: Propose
-- Skills: `[devops-system-design](../skills/devops-system-design/SKILL.md)`, `[devops-task-planning](../skills/devops-task-planning/SKILL.md)`
-- Actions: follow the contract template `../llm_wiki/schema/openspec_schema.md`.
-- Output: `openspec.md` under `../llm_wiki/wiki/specs/`.
-  - LOW risk MAY use Slim Spec (see the schema).
-  - MEDIUM/HIGH risk MUST use the full schema.
+
+**Skills:** `devops-system-design`, `devops-task-planning`
+
+**Actions:** Follow the contract template in `../llm_wiki/schema/openspec_schema.md`.
+
+**Output:** `openspec.md` stored under `../llm_wiki/wiki/specs/`.
+- LOW risk: MAY use Slim Spec.
+- MEDIUM / HIGH risk: MUST use full schema.
+
+---
 
 ### Phase 3: Review
-- Skills: `[devops-review-and-refactor](../skills/devops-review-and-refactor/SKILL.md)`, `[global-backend-standards](../skills/global-backend-standards/SKILL.md)`
-- Review matrix:
-  - Engineering: `[java-engineering-standards](../skills/java-engineering-standards/SKILL.md)`, `[java-backend-guidelines](../skills/java-backend-guidelines/SKILL.md)`
-  - API & DB: `[java-backend-api-standard](../skills/java-backend-api-standard/SKILL.md)`, `[mybatis-sql-standard](../skills/mybatis-sql-standard/SKILL.md)`
-  - Security & permissions: `[error-code-standard](../skills/error-code-standard/SKILL.md)`, `[java-data-permissions](../skills/java-data-permissions/SKILL.md)`
-- If review fails, the workflow MUST trigger `fail_hook` and roll back to Phase 2.
 
-### Approval Gate (HITL)
-- Purpose: stop the engine before code is written under a wrong contract.
-- Actions:
-  - Present an `openspec.md` summary to the human.
-  - Ask for explicit approval to enter implementation.
-- Persistence: update the intent row in `launch_spec.md` to `WAITING_APPROVAL` and include the `openspec.md` link.
-- Risk levels:
-  - HIGH: DB schema/index changes, auth/permission strategy changes, error code system changes, cross-domain changes, shared foundations/utilities, unclear or large blast radius.
-  - MEDIUM: new/changed external APIs, core business path changes without DB/auth foundation changes.
-  - LOW: docs, pure renames/formatting, small bug fixes with clear blast radius.
-- Rule:
-  - MEDIUM/HIGH MUST stop at `WAITING_APPROVAL`.
-  - LOW MAY skip approval, but the Agent MUST state why in the delivery note.
+**Skills:** `devops-review-and-refactor`, `global-backend-standards`
+
+**Review matrix:**
+- Engineering: `java-engineering-standards`, `java-backend-guidelines`
+- API & DB: `java-backend-api-standard`, `mybatis-sql-standard`
+- Security & permissions: `error-code-standard`
+
+**Failure rule:** If review fails → trigger `fail_hook` → roll back to Phase 2.
+
+---
+
+### Approval Gate (Human-in-the-Loop)
+
+**Purpose:** Stop the engine before code is written against a wrong contract.
+
+**Actions:**
+1. Present an `openspec.md` summary to the human.
+2. Ask for explicit approval to enter implementation.
+
+**Persistence:** Set the intent row in `launch_spec.md` to `WAITING_APPROVAL`. Include a link to `openspec.md`.
+
+**Risk classification:**
+
+| Level | Examples |
+|---|---|
+| HIGH | DB schema/index changes; auth/permission strategy; error code system changes; cross-domain changes; shared utilities; unclear or large blast radius |
+| MEDIUM | New or changed external APIs; core business path changes without DB/auth foundation changes |
+| LOW | Docs only; pure renames/formatting; small bugfixes with clear blast radius |
+
+**Rules:**
+- MEDIUM/HIGH: MUST stop at `WAITING_APPROVAL`.
+- LOW: MAY skip approval, but MUST state the justification in the delivery note.
+
+---
 
 ### Phase 4: Implement
-- Skills: `[devops-feature-implementation](../skills/devops-feature-implementation/SKILL.md)`, `[devops-bug-fix](../skills/devops-bug-fix/SKILL.md)`, `[utils-usage-standard](../skills/utils-usage-standard/SKILL.md)`, `[aliyun-oss](../skills/aliyun-oss/SKILL.md)`
-- Actions: implement strictly according to the approved contract.
-- Constraint: no uncontrolled improvisation; follow Checkstyle and defensive programming.
+
+**Skills:** `devops-feature-implementation`, `devops-bug-fix`, `utils-usage-standard`, `aliyun-oss`
+
+**Actions:** Implement strictly according to the approved contract. Follow Checkstyle and defensive programming. No uncontrolled improvisation.
+
+---
 
 ### Phase 5: QA Test
-- Skills: `[devops-testing-standard](../skills/devops-testing-standard/SKILL.md)`, `[code-review-checklist](../skills/code-review-checklist/SKILL.md)`
-- Actions: run tests and produce objective evidence.
-- If QA fails, the workflow MUST roll back to Phase 4.
+
+**Skills:** `devops-testing-standard`, `code-review-checklist`
+
+**Actions:** Run tests and produce objective evidence (logs, test output, screenshots).
+
+**Failure rule:** If QA fails → roll back to Phase 4.
+
+---
 
 ### Phase 6: Archive
-This phase closes the loop and prevents bloat.
-1. Sync docs via `[api-documentation-rules](../skills/api-documentation-rules/SKILL.md)` and `[database-documentation-sync](../skills/database-documentation-sync/SKILL.md)`.
+
+**Purpose:** Close the loop and prevent knowledge bloat.
+
+**Steps (in order):**
+1. Sync docs via `api-documentation-rules` and `database-documentation-sync` skills.
 2. Extract stable knowledge into wiki indexes via the reverse funnel in `../router/CONTEXT_FUNNEL.md`.
 3. Move the original spec into `../llm_wiki/archive/`.
-4. Trigger WAL Compaction: execute `python3 .agents/scripts/wiki/compactor.py`. 
-   - **Smart Compaction**: The compactor checks the target `index.md` line count. If it is safely under the threshold (< 400 lines), it appends/merges the WAL fragments.
-   - **Auto-Refactoring Trigger**: If the file exceeds 400 lines, the compactor aborts physical append and flags `NEEDS_REFACTOR`. The Agent MUST temporarily mount the `Knowledge Architect` role to read the bloated index and the pending WALs, split the knowledge into sub-documents, update the routing links, and pass the `wiki_linter.py` gate before continuing.
-5. Process Drift Events: The Agent reads `.agents/events/drift_queue/` (if any events exist), quickly validates the discrepancy, and generates the necessary WAL append fragments to heal the wiki without losing focus on the original task.
-6. Ask the human for a 1–10 rating and extract preferences/anti-patterns into `../llm_wiki/wiki/preferences/index.md`.
-7. Trigger loop: re-read the launch spec and continue until the queue is empty.
+4. Trigger WAL Compaction: `python3 .agents/scripts/wiki/compactor.py`
+   - If target `index.md` < 400 lines: append/merge WAL fragments.
+   - If target `index.md` ≥ 400 lines: compactor sets `NEEDS_REFACTOR`. Mount the `Knowledge Architect` role to split the bloated index, update routing links, and pass `wiki_linter.py` before continuing.
+5. Process Drift Events: read `.agents/events/drift_queue/` (if events exist), validate discrepancies, generate WAL fragments to heal the wiki.
+6. Ask the human for a 1–10 rating. Extract preferences (rating ≥ 8) or anti-patterns (rating ≤ 5) into `../llm_wiki/wiki/preferences/index.md`.
+7. Re-read the launch spec and dispatch the next `PENDING` / `IN_PROGRESS` intent (loop until queue is empty).

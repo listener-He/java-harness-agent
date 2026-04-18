@@ -1,35 +1,82 @@
-# AGENTS.md — Entry Map & Core Directives
+# AGENTS.md — Entry Point & Hard Constraints
 
-This file is the single entry point. It contains essential navigation and hard constraints for the Agent.
+Single entry point. Read this file first on every session start. All links here use paths relative to the repo root.
 
-## 🚨 Hard Safety Constraints (MUST FOLLOW)
-- **Budget Limits**: Max 3 Wiki docs, Max 8 Code files per exploration. You MAY use a `<Confidence_Assessment>` to request an elastic extension if close to a breakthrough. If limits are fully exhausted, STOP and use the Escalation Protocol. Do not guess paths or perform runaway searches. ([CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md))
-- **Approval Gate**: For MEDIUM/HIGH risk changes, you MUST STOP after creating the spec and wait for human approval (`WAITING_APPROVAL`) before writing any code. ([LIFECYCLE.md](.agents/workflow/LIFECYCLE.md))
-- **Anti-Looping**: Max 3 retries for any failing script, test, or linter. If exceeded, STOP and ask the human. You MAY use `bypass_justification.md` to downgrade trivial script failures to WARN. ([HOOKS.md](.agents/workflow/HOOKS.md))
-- **Scope Guard**: Do not modify files outside the agreed `focus_card.md` scope without explicit permission.
+---
 
-## 🧭 Initial Action Guidelines
-- **Direct Read**: If the user provides an explicit file path, class, or code snippet, read it directly first. Do NOT start with the Wiki Funnel.
-- **Root Drill-down**: If exploring a domain without an explicit scope, ALWAYS start at [KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) and follow the links downward.
-- **Resumability**: On session resume, ALWAYS read `router/runs/launch_spec_*.md` first to restore state.
+## Hard Safety Constraints (Non-negotiable)
 
-## 🗂 Single Sources of Truth (SSOT)
-- Routing, profiles, shortcuts (`@read`, `@patch`, `@standard`): [.agents/router/ROUTER.md](.agents/router/ROUTER.md)
-- Navigation and write-back methodology: [.agents/router/CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)
-- Lifecycle phases and hooks: [.agents/workflow/LIFECYCLE.md](.agents/workflow/LIFECYCLE.md), [.agents/workflow/HOOKS.md](.agents/workflow/HOOKS.md)
-- Role mounting + gates: [.agents/workflow/ROLE_MATRIX.md](.agents/workflow/ROLE_MATRIX.md)
+| Constraint | Rule |
+|---|---|
+| **Budget** | Intelligently calculate initial budget based on task complexity. Default: wiki 3, code 8. Pagination of the same file does NOT count. |
+| **Reward Mechanism** | (Elastic extension) Output a `<Confidence_Assessment>` block explaining the specific missing concept/symbol to earn a budget reward (+2 wiki / +3 code) before hitting the hard stop (see [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)). |
+| **Budget exhausted** | STOP. File an Escalation Card (format in [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)). Do not guess paths or continue reading. |
+| **Approval Gate** | For MEDIUM/HIGH risk changes: STOP after creating the spec, set status to `WAITING_APPROVAL`, and wait for explicit human approval before writing any code. |
+| **Anti-loop** | Max 3 retries for any failing script, test, or linter per task. On exceed: STOP and ask human. Use `bypass_justification.md` only to downgrade trivial failures to WARN. |
+| **Scope Guard** | Do not modify files outside the agreed `focus_card.md` scope without explicit human permission. |
 
-## 📚 Essential Pointers
-- **Wiki Root Index**: [.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md)
-- **Specialist Skills Index**: [.agents/skills/trae-skill-index/SKILL.md](.agents/skills/trae-skill-index/SKILL.md) (Use this when you need specific expertise)
-- **Project Red Lines & Preferences**: [.agents/llm_wiki/wiki/preferences/index.md](.agents/llm_wiki/wiki/preferences/index.md)
-- **Delivery Schema Template**: [.agents/llm_wiki/schema/openspec_schema.md](.agents/llm_wiki/schema/openspec_schema.md)
+---
 
-## 🛑 Team Rule
-- **Do not commit runtime state or caches**. The following directories MUST be ignored and never committed:
-    - `.agents/router/runs/`
-    - `.agents/workflow/runs/`
-    - `.agents/events/drift_queue/`
-    - Python caches: `__pycache__/`, `*.pyc`
-    - Project build & IDE: `target/`, `build/`, `.idea/`, `.vscode/`, `.DS_Store`
-- **Only commit stable artifacts**: (e.g., source code, `openspec.md`, deliveries, and `wal/` fragments).
+## [Intent Check] — Mandatory First Output
+
+Before any action (reading files, searching, writing code), the Agent MUST output one `[Intent Check]` line:
+
+```
+[Intent Check] intent=<Learn|Change|DocQA|Audit> | profile=@<learn|patch|standard> | risk=<LOW|MEDIUM|HIGH> | scenario=<none|A|B|C|D|E> | emergency=<true|false>
+```
+
+**Rules:**
+- If the intent is ambiguous (missing action or object signal): output `[Intent Check] AMBIGUOUS — <reason>` and ask one clarifying question before proceeding.
+- If a special scenario (A–E) is matched: include `scenario=<letter>` and apply Scenario routing overrides (see [ROUTER.md](.agents/router/ROUTER.md#6-special-scenarios)).
+- The `[Intent Check]` line is the only required header. Do not add verbose preamble before it.
+
+---
+
+## Initial Action Decision Tree
+
+```
+Session start
+├─ User provided explicit file path / class / snippet?
+│   └─ YES → Read it directly. Skip wiki funnel.
+├─ Resuming an interrupted session?
+│   └─ YES → Read router/runs/launch_spec_*.md first. Restore from Status/Phase.
+└─ Exploring a domain without explicit scope?
+    └─ YES → Start at KNOWLEDGE_GRAPH.md and drill down.
+```
+
+---
+
+## Single Sources of Truth (SSOT)
+
+| Topic | File |
+|---|---|
+| Intent routing, profiles, shortcut DSL | [.agents/router/ROUTER.md](.agents/router/ROUTER.md) |
+| Context navigation + write-back | [.agents/router/CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md) |
+| Lifecycle phases + phase gates | [.agents/workflow/LIFECYCLE.md](.agents/workflow/LIFECYCLE.md) |
+| Hook definitions (pre/guard/post/fail/loop) | [.agents/workflow/HOOKS.md](.agents/workflow/HOOKS.md) |
+| Role mounting by (intent, profile, phase) | [.agents/workflow/ROLE_MATRIX.md](.agents/workflow/ROLE_MATRIX.md) |
+
+---
+
+## Essential Navigation Pointers
+
+| Resource | Path |
+|---|---|
+| Wiki root index | [.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) |
+| Skill index | [.agents/skills/trae-skill-index/SKILL.md](.agents/skills/trae-skill-index/SKILL.md) |
+| Project constraints & anti-patterns | [.agents/llm_wiki/wiki/preferences/index.md](.agents/llm_wiki/wiki/preferences/index.md) |
+| Spec / proposal template | [.agents/llm_wiki/schema/openspec_schema.md](.agents/llm_wiki/schema/openspec_schema.md) |
+
+---
+
+## Commit Policy
+
+**Never commit runtime state or caches.** The directories below are runtime-only:
+
+- `.agents/router/runs/`
+- `.agents/workflow/runs/`
+- `.agents/events/drift_queue/`
+- Python caches: `__pycache__/`, `*.pyc`
+- Build/IDE artifacts: `target/`, `build/`, `.idea/`, `.vscode/`, `.DS_Store`
+
+**Only commit stable artifacts**: source code, `openspec.md`, delivery capsules, and `wal/` fragments.

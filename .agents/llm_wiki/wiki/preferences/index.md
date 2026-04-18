@@ -27,5 +27,6 @@ During `Archive`, the Agent MUST ask the human for a 1–10 rating.
 
 ### Append Template
 ```markdown
-- **{short rule}**: {what to do / what not to do, and why}
+- **[{Tags}] [{Level}] {short rule}**: {what to do / what not to do, and why}
 ```
+*Note: `[Tags]` can be `[Security]`, `[Performance]`, `[DB]`, etc. `[Level]` must be `MUST`, `SHOULD`, or `NEVER`.*

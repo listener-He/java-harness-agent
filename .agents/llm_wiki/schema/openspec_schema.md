@@ -35,6 +35,17 @@ spec_mode: SLIM
 - Evidence: logs/snippets/screenshots/links (if any)
 ```
 
+## Standard Spec (MEDIUM/HIGH risk)
+
+When the change is MEDIUM or HIGH risk, you MUST use the Standard Spec format.
+
+Hard rules:
+- The document MUST include the marker `spec_mode: STANDARD`.
+- The document MUST contain all sections below (1 through 7).
+
+```markdown
+spec_mode: STANDARD
+
 ## 1. Context
 - Business goal: one sentence.
 - Scope of change: list modules/packages/key classes to be changed (objective checklist for review and QA).
@@ -76,3 +87,4 @@ This section MUST use structured language suitable for automated tests.
 - Happy path: Given / When / Then.
 - Edge cases: invalid params, concurrency, permission denied, etc.
 - Unit test requirements: key branches and asserts.
+```

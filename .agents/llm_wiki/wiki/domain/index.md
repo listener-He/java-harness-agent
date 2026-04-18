@@ -4,9 +4,9 @@ This index defines the project's vocabulary. The Agent MUST use these terms duri
 
 ## Core Concepts & State Machines
 
-| Concept | Definition | Details |
-|---|---|---|
-| (Example) Opportunity | A sales opportunity representing a potential deal | `[opportunity_states.md]` |
+| Concept | Definition | Related Concepts | Details |
+|---|---|---|---|
+| (Example) Opportunity | A sales opportunity representing a potential deal | Lead, Account, Deal | `[opportunity_states.md]` |
 
 ---
 
@@ -15,7 +15,7 @@ If an `openspec.md` introduces new terms, roles, enum values, or state transitio
 
 ### Append Template
 ```markdown
-| {term} | {1–2 sentence definition and boundary} | `[{details_doc}]` |
+| {term} | {1–2 sentence definition and boundary} | {Related Concepts / Synonyms} | `[{details_doc}]` |
 ```
 
 Anti-bloat rule: if the vocabulary exceeds 30 concepts, you MUST split into per-line dictionaries (example: `dictionary_xxx.md`) and keep this file as a router.

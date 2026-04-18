@@ -1,79 +1,49 @@
 ---
 name: "error-code-standard"
-description: "Guides the usage of system error codes. Invoke when generating or modifying code that throws BusinessException or returns ApiResponse.failed to select or create appropriate ErrorCodes."
+description: "Guides the usage of system error codes and domain exceptions. Invoke when generating or modifying code that throws domain exceptions or returns unified error responses."
 ---
 
-# Error Code Standard (异常状态码使用规范)
+# Error Code Standard (异常状态码与契约设计规范)
 
-**CRITICAL: You MUST read and follow this guide before generating ANY code that returns an error response (`ApiResponse.failed`) or throws a business exception (`new BusinessException`).**
+**CRITICAL: You MUST read and follow this guide before generating ANY code that returns an error response or throws a business domain exception.**
 
-This project uses a highly abstracted, behavior-driven 4-digit ErrorCode system. We do **NOT** create a new enum for every specific error message (e.g., no separate codes for "phone number error" vs. "email error"). Instead, we reuse abstract codes and override the `message`.
+This project uses a highly abstracted, behavior-driven Error Code system and a Unified API Response format. We do **NOT** create a new enum for every specific error message (e.g., no separate codes for "phone number error" vs. "email error"). Instead, we reuse abstract codes and override the `message` dynamically.
 
-## 🧠 Decision Flow: How to choose an ErrorCode
+## 🧠 Core Ideas & Design
 
-When you need to return an error, follow these steps:
+### 1. Unified API Response Format
+All interactions between the frontend and backend must strictly adhere to a Unified Response format. This ensures that the frontend can consistently parse the `code`, `message`, and `data` fields.
+- **Read Operations**: Controllers must wrap query results in a unified success response.
+- **Write Operations**: Services should ideally return the unified response structure directly, allowing validation failures to return a failure response cleanly without always throwing exceptions.
 
-### 1. Analyze the Error Scenario
-Ask yourself: What type of error is this?
-- Is it a **system/infrastructure** error (e.g., 404 Not Found, 401 Unauthorized)? -> Go to **SystemErrorCode** (0~999).
-- Is it a **technical failure** (e.g., external API failed)? -> Go to **BizErrorCode 1xxx**.
-- Is it a **hard rule/validation** failure (e.g., empty param, duplicate data)? -> Go to **BizErrorCode 2xxx**.
-- Is it a **business logic/state** failure (e.g., quota exceeded, dependency exists)? -> Go to **BizErrorCode 3xxx**.
-- Does the frontend need to **do something specific** (e.g., redirect, pop up a strong modal)? -> Go to **BizErrorCode 4xxx**.
+### 2. Domain-Driven Exceptions
+Instead of using standard Java exceptions (like `IllegalArgumentException`) for business rule violations, the system uses a centralized Domain Exception concept.
+- **Behavior-Driven**: The domain exception represents a violation of business rules or state.
+- **Dynamic Messages**: You should instantiate the domain exception with a highly abstracted error code (e.g., "Data Duplicated") and dynamically pass the specific error message (e.g., "Role name already exists").
 
-### 2. Map to Existing Codes
-Check the existing dictionaries in `SystemErrorCode.java` and `BizErrorCode.java`. 
-**Always try to reuse an existing code by overriding the message.**
-
-#### Common Reusable Mappings:
-- **Parameter Validation (Empty, Format Error, Limit Exceeded)**:
-  - Code: `BizErrorCode.PARAM_INVALID` (2001)
-  - Example: `new BusinessException(BizErrorCode.PARAM_INVALID, "手机号格式不正确")`
-- **Data Duplication (Name exists, Phone exists)**:
-  - Code: `BizErrorCode.DATA_DUPLICATED` (2002)
-  - Example: `new BusinessException(BizErrorCode.DATA_DUPLICATED, "部门名称已存在")`
-- **Dependency Exists (Cannot delete because children exist)**:
-  - Code: `BizErrorCode.HAS_DEPENDENCY` (3003)
-  - Example: `new BusinessException(BizErrorCode.HAS_DEPENDENCY, "该部门下存在员工，不允许删除")`
-- **Invalid State (Cannot modify because already started/finished)**:
-  - Code: `BizErrorCode.INVALID_STATE` (3002)
-  - Example: `new BusinessException(BizErrorCode.INVALID_STATE, "排班已开始，无法修改")`
-- **Resource Quota (Limit reached)**:
-  - Code: `BizErrorCode.QUOTA_EXCEEDED` (3001)
-  - Example: `new BusinessException(BizErrorCode.QUOTA_EXCEEDED, "公司数量已达上限")`
-- **Rate Limit (Too frequent)**:
-  - Code: `BizErrorCode.RATE_LIMIT` (2003)
-  - Example: `new BusinessException(BizErrorCode.RATE_LIMIT, "请勿频繁发送验证码")`
-
-### 3. When to Create a NEW Code (Rare!)
-You should **ONLY** create a new code in `BizErrorCode.java` if:
-1. The error requires a **completely new frontend interaction** (e.g., 4xxx series).
-2. The error represents a **completely new abstract category** of business failure that cannot be grouped under existing codes (e.g., if we introduce a new abstract concept like "Geographical Restriction").
-
-If you must create one, follow the 4-digit numbering rule:
-- `1xxx`: General Technical
-- `2xxx`: Rule / Validation
-- `3xxx`: Business Logic
-- `4xxx`: Interaction (Frontend actions)
+### 3. Categorized Abstract Error Codes
+Error codes are designed as abstract categories rather than specific instances. When an error occurs, you map it to the closest abstract category:
+- **1xxx Series (Technical Failures)**: External API failures, timeouts, etc.
+- **2xxx Series (Hard Rules & Validation)**: Empty parameters, format errors, duplicate data (e.g., "Name exists", "Phone exists"), rate limits.
+- **3xxx Series (Business Logic & State)**: Quota exceeded, invalid state (e.g., "Cannot modify because already started"), dependency exists (e.g., "Cannot delete because children exist").
+- **4xxx Series (Interaction Prompts)**: Errors that require specific frontend actions (e.g., redirect to login, pop up a strong confirmation modal).
 
 ## 💻 Code Generation Rules
 
 ### 1. Throwing Exceptions
-ALWAYS prefer the dynamic message constructor of `BusinessException`:
+ALWAYS prefer reusing abstract error codes and providing specific messages when throwing domain exceptions:
 ```java
 // Good: Reusing abstract code, specific message
-throw new BusinessException(BizErrorCode.DATA_DUPLICATED, "角色名称已存在");
+throw new DomainException(AbstractErrorCode.DATA_DUPLICATED, "角色名称已存在");
 
-// Bad: Using generic failed for everything
-throw new BusinessException("角色名称已存在"); // Defaults to 3000
-
-// Bad: Creating a new enum DEPT_NAME_EXIST just for this
+// Bad: Creating a new enum DEPT_NAME_EXIST just for this specific scenario
 ```
 
-### 2. Returning ApiResponse.failed (in Controllers or Services)
+### 2. Returning Unified Error Responses
+When returning a failure from a Controller or Service without throwing an exception, always use the unified response builder and reference the abstract error code:
 ```java
 // Good
-return ApiResponse.failed(BizErrorCode.PARAM_INVALID.getCode(), "结束时间不能早于开始时间");
+return ApiResponse.failed(AbstractErrorCode.PARAM_INVALID.getCode(), "结束时间不能早于开始时间");
 
 // Bad: Hardcoding numbers
 return ApiResponse.failed(2001, "结束时间不能早于开始时间");

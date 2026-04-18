@@ -1,36 +1,77 @@
 ---
 name: "java-engineering-standards"
-description: "Enforces strict layer architecture, pojo sub-packages, and business design rules. Invoke when setting up new modules, refactoring, or defining business logic flow."
+description: "Enforces strict layer architecture, POJO sub-packages, and business design rules. Invoke when setting up new modules, refactoring, or defining business logic flow."
 ---
 
 # Java Engineering & Architecture Standards
 
-This skill dictates the project's strict architectural layering and business logic distribution rules based on the `business` module implementation.
+Dictates the project's strict architectural layering and business logic distribution rules.
 
-## 1. 架构分层规范 (Architecture Layering)
+---
 
-**常规情况下，代码严格限制为以下三层结构：**
-- **Controller (控制层)**：负责对外暴露 API，接收 HTTP 请求，参数校验，提取 `AccessUser` 用户上下文。
-  - 对于**读操作**（查询详情、分页等），Controller 负责调用 Service，并将结果用 `ApiResponse.success(data)` 封装。
-  - 对于**写操作**（新增、修改、删除、启停等），Controller **直接返回** Service 层的执行结果（如 `return service.add(request);`）。
-- **Service (业务层)**：负责核心业务逻辑的处理、事务管理、权限校验。
-  - **写操作方法**允许且建议直接返回 `ApiResponse<Void>` 或 `ApiResponse<T>`，以便于在业务校验失败时优雅地使用 `ApiResponse.failed("错误信息")` 阻断流程，避免滥用异常。
-  - **读操作方法**必须返回原始的 DTO/VO 或 `PageData<T>`。
-- **Mapper (数据层)**：只负责与数据库的直接交互（MyBatis-Plus），禁止包含业务逻辑。
+## 1. Architecture Layering (3 Layers, Strictly Enforced)
 
-## 2. 领域对象规范 (POJO Directory Structure)
+### Controller (API Layer)
+- Responsibility: expose HTTP endpoints, receive requests, validate parameters, extract `AccessUser` context.
+- **Read operations** (query / pagination): call Service, wrap result in a Unified Response structure.
+- **Write operations** (add / update / delete / toggle): call Service, directly return the Unified Response structure returned by the Service.
 
-所有的实体和传输对象必须放在模块下的 `pojo` 目录，并严格划分子包：
-- **`pojo.request`**：用于接收前端参数的 DTO（如 `XXXAddRequest`, `XXXQueryRequest`）。
-- **`pojo.response`**：用于返回给前端的 VO 数据（如 `XXXResponse`, `XXXInfoResponse`）。
-- **`pojo.entity`**：数据库映射实体类。
-- **`pojo.constants`**：模块内的枚举和常量（如 `XXXType`，需实现 `BaseEnum` 接口）。
+### Service (Business Layer)
+- Responsibility: core business logic, transaction management, permission validation.
+- **Write methods**: MAY (and SHOULD) return `ApiResponse<Void>` or `ApiResponse<T>` directly, so that business validation failures can return a unified failure structure with an error message without throwing exceptions.
+- **Read methods**: MUST return raw DTO/VO or `PageData<T>` — not a Unified Response wrapper.
 
-## 3. 实体类通用字段 (Entity Audit Fields)
-所有数据库 Entity 必须包含以下通用防腐字段，并且在业务代码中严格处理：
-- `id`, `tenant_id` (租户ID), `create_time`, `update_time`, `create_by`, `update_by`, `is_deleted`。
+### Mapper (Data Layer)
+- Responsibility: direct database interaction via MyBatis-Plus only.
+- MUST NOT contain any business logic.
 
-## 4. 命名规范 (Naming Conventions)
-- **接口命名 (Interface Naming)**：绝对禁止使用 `I` 作为接口名的前缀（例如：禁止使用 `IUserService`，必须直接使用 `UserService`）。
-- **实现类命名 (Implementation Naming)**：实现类必须以 `Impl` 结尾（例如：`UserServiceImpl`）。
-- **实体类命名 (Entity Naming)**：数据库映射类必须以 `Entity` 结尾（例如：`UserEntity`）。
+---
+
+## 2. POJO Directory Structure
+
+All entities and transfer objects MUST be placed under the module's `pojo` directory, split into sub-packages:
+
+| Sub-package | Contains | Naming example |
+|---|---|---|
+| `pojo.request` | DTOs for receiving frontend parameters | `XXXAddRequest`, `XXXQueryRequest` |
+| `pojo.response` | VOs returned to the frontend | `XXXResponse`, `XXXInfoResponse` |
+| `pojo.entity` | Database-mapped entity classes | `XXXEntity` |
+| `pojo.constants` | Module-scoped enums and constants (MUST implement `BaseEnum`) | `XXXType` |
+
+---
+
+## 3. Entity Audit Fields (MUST Include)
+
+Every database Entity MUST contain the following standard anti-corruption fields:
+
+| Field | Type | Purpose |
+|---|---|---|
+| `id` | Long / String | Primary key |
+| `tenant_id` | Long | Tenant isolation — always filter at DB level |
+| `create_time` | LocalDateTime | Creation timestamp |
+| `update_time` | LocalDateTime | Last update timestamp |
+| `create_by` | Long | Creator user ID |
+| `update_by` | Long | Last updater user ID |
+| `is_deleted` | Integer (0/1) | Soft-delete flag |
+
+---
+
+## 4. Naming Conventions
+
+| Element | Rule | Example (correct) | Example (forbidden) |
+|---|---|---|---|
+| Interface | No `I` prefix | `UserService` | `IUserService` |
+| Implementation class | Suffix `Impl` | `UserServiceImpl` | `UserService` (as class) |
+| Entity class | Suffix `Entity` | `UserEntity` | `User` |
+| Enum / constant class | Suffix `Type` or `Enum` | `OrderType` | `OrderStatus` (ambiguous) |
+| Methods (camelCase) | lowerCamelCase | `getUserById` | `GetUserById` |
+| Constants | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT` | `maxRetryCount` |
+
+---
+
+## 5. Cross-cutting Rules
+
+- **No interface prefix `I`**: absolutely forbidden. Interfaces use the plain role name.
+- **Tenant isolation**: every list query MUST filter by `tenant_id` at the DB level (or via `@BeforePermission`). Never trust caller-provided tenant context without server-side enforcement.
+- **Soft delete**: use `is_deleted = 0` filter; NEVER hard-delete domain records.
+- **Transaction scope**: transactions MUST be confined to the Service layer. Controllers and Mappers MUST NOT own transactions.

@@ -356,7 +356,6 @@ graph LR
 - `devops-system-design` - 模式建模
 - `mybatis-sql-standard` - SQL 性能守卫
 - `database-documentation-sync` - ER 图更新
-- `java-data-permissions` - 数据权限校验
 
 ---
 
@@ -706,7 +705,6 @@ Escalation Card格式：
 - **[java-backend-guidelines](.agents/skills/java-backend-guidelines/SKILL.md)** - 防御性编程、完整装配、分页
 - **[java-backend-api-standard](.agents/skills/java-backend-api-standard/SKILL.md)** - API 设计模式（动词/路径/响应结构）
 - **[java-javadoc-standard](.agents/skills/java-javadoc-standard/SKILL.md)** - 统一 Javadoc 风格与注释规范
-- **[java-data-permissions](.agents/skills/java-data-permissions/SKILL.md)** - 数据权限约束（查询过滤/动作校验）
 - **[mybatis-sql-standard](.agents/skills/mybatis-sql-standard/SKILL.md)** - MyBatis SQL 性能与安全守卫
 - **[error-code-standard](.agents/skills/error-code-standard/SKILL.md)** - 统一错误码与异常表达
 - **[checkstyle](.agents/skills/checkstyle/SKILL.md)** - Java 代码风格强制（Google/Sun 混合）

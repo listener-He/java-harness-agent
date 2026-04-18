@@ -441,7 +441,6 @@ java-harness-agent/
     │   ├── java-backend-guidelines/SKILL.md
     │   ├── java-backend-api-standard/SKILL.md
     │   ├── java-javadoc-standard/SKILL.md
-    │   ├── java-data-permissions/SKILL.md
     │   ├── mybatis-sql-standard/SKILL.md
     │   ├── error-code-standard/SKILL.md
     │   ├── checkstyle/SKILL.md
@@ -796,7 +795,7 @@ stateDiagram-v2
 
 **Purpose**: Automated technical review against standards
 
-**Skills**: devops-review-and-refactor, global-backend-standards, java-engineering-standards, java-backend-guidelines, java-backend-api-standard, mybatis-sql-standard, error-code-standard, java-data-permissions
+**Skills**: devops-review-and-refactor, global-backend-standards, java-engineering-standards, java-backend-guidelines, java-backend-api-standard, mybatis-sql-standard, error-code-standard
 
 **Review Dimensions**:
 1. Architecture & engineering standards
@@ -950,7 +949,7 @@ sequenceDiagram
 
 #### 3.4.3 guard_hook
 
-**Bound Skills**: checkstyle, java-javadoc-standard, java-data-permissions
+**Bound Skills**: checkstyle, java-javadoc-standard
 
 **Purposes**:
 1. Standard enforcement
@@ -1226,13 +1225,12 @@ python3 .agents/scripts/gates/run.py --artifact-tags domain,api,rules,data,archi
 #### Code Standards (9)
 14. **global-backend-standards**: MASTER index for all backend development
 15. **java-engineering-standards**: Strict layer architecture, pojo sub-packages, business design rules
-16. **java-backend-guidelines**: Defensive programming, Complete assembly, CustomPage pagination, Hutool usage
+16. **java-backend-guidelines**: Defensive programming, in-memory assembly, standardized pagination wrappers, Hutool usage
 17. **java-backend-api-standard**: Backend API design standards (no path variables, standard verbs, ApiResponse formats)
 18. **java-javadoc-standard**: Strict Javadoc commenting style
-19. **java-data-permissions**: Data permissions (Query filtering vs Action validation via @BeforePermission)
-20. **mybatis-sql-standard**: Strict MyBatis SQL writing standards (performance, anti-JOIN, index utilization)
-21. **error-code-standard**: System error codes usage
-22. **checkstyle**: Strict Java checkstyle rules (Google + Sun standards)
+19. **mybatis-sql-standard**: Strict MyBatis SQL writing standards (performance, anti-JOIN, index utilization)
+20. **error-code-standard**: System error codes usage
+21. **checkstyle**: Strict Java checkstyle rules (Google + Sun standards)
 
 #### Testing & Review (2)
 23. **devops-testing-standard**: TDD phase, write failing unit tests based on Specifications
@@ -1248,7 +1246,7 @@ python3 .agents/scripts/gates/run.py --artifact-tags domain,api,rules,data,archi
 |-------|-------------------|
 | Explorer | product-manager-expert, devops-requirements-analysis, prd-task-splitter |
 | Propose | devops-system-design, devops-task-planning |
-| Review | devops-review-and-refactor, global-backend-standards, java-engineering-standards, java-backend-guidelines, java-backend-api-standard, mybatis-sql-standard, error-code-standard, java-data-permissions |
+| Review | devops-review-and-refactor, global-backend-standards, java-engineering-standards, java-backend-guidelines, java-backend-api-standard, mybatis-sql-standard, error-code-standard |
 | Implement | devops-feature-implementation, devops-bug-fix, utils-usage-standard, aliyun-oss |
 | QA | devops-testing-standard, code-review-checklist |
 | Archive | api-documentation-rules, database-documentation-sync |

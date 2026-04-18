@@ -355,7 +355,6 @@ graph LR
 - `devops-system-design` - Schema modeling
 - `mybatis-sql-standard` - SQL performance guards
 - `database-documentation-sync` - ER diagram updates
-- `java-data-permissions` - Data permission validation
 
 ---
 
@@ -705,7 +704,7 @@ Status values: `PENDING`, `IN_PROGRESS`, `DONE`, `WAITING_APPROVAL`, `FAILED`
 - **[java-backend-guidelines](.agents/skills/java-backend-guidelines/SKILL.md)** - Defensive programming, complete assembly, pagination
 - **[java-backend-api-standard](.agents/skills/java-backend-api-standard/SKILL.md)** - API design patterns (verbs/paths/response structures)
 - **[java-javadoc-standard](.agents/skills/java-javadoc-standard/SKILL.md)** - Unified Javadoc style & annotation norms
-- **[java-data-permissions](.agents/skills/java-data-permissions/SKILL.md)** - Data permission constraints (query filtering/action validation)
+
 - **[mybatis-sql-standard](.agents/skills/mybatis-sql-standard/SKILL.md)** - MyBatis SQL performance & safety guards
 - **[error-code-standard](.agents/skills/error-code-standard/SKILL.md)** - Unified error codes & exception expression
 - **[checkstyle](.agents/skills/checkstyle/SKILL.md)** - Java code style enforcement (Google/Sun hybrid)

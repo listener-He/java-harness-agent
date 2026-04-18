@@ -545,8 +545,6 @@ java-harness-agent/
     │   │   └── SKILL.md                   # Java API 标准
     │   ├── java-javadoc-standard/
     │   │   └── SKILL.md                   # Java Javadoc 标准
-    │   ├── java-data-permissions/
-    │   │   └── SKILL.md                   # 数据权限
     │   ├── mybatis-sql-standard/
     │   │   └── SKILL.md                   # MyBatis SQL 标准
     │   ├── error-code-standard/
@@ -761,7 +759,7 @@ java-harness-agent/
 - **意图与生命周期** (4个): intent-gateway, devops-lifecycle-master, skill-graph-manager, trae-skill-index
 - **需求与设计** (5个): product-manager-expert, prd-task-splitter, devops-requirements-analysis, devops-system-design, devops-task-planning
 - **实现** (4个): devops-feature-implementation, devops-bug-fix, utils-usage-standard, aliyun-oss
-- **代码标准** (9个): global-backend-standards, java-engineering-standards, java-backend-guidelines, java-backend-api-standard, java-javadoc-standard, java-data-permissions, mybatis-sql-standard, error-code-standard, checkstyle
+- **代码标准** (9个): global-backend-standards, java-engineering-standards, java-backend-guidelines, java-backend-api-standard, java-javadoc-standard, mybatis-sql-standard, error-code-standard, checkstyle
 - **测试与评审** (2个): devops-testing-standard, code-review-checklist
 - **文档** (2个): api-documentation-rules, database-documentation-sync
 
@@ -2063,7 +2061,6 @@ flowchart TB
 - java-backend-api-standard
 - mybatis-sql-standard
 - error-code-standard
-- java-data-permissions
 
 **评审矩阵**:
 ```mermaid
@@ -2081,14 +2078,12 @@ flowchart LR
     SQL --> MyBatis[mybatis-sql-standard]
     
     Sec --> ErrorCode[error-code-standard]
-    Sec --> Permissions[java-data-permissions]
     
     Standards --> Result{评审结果}
     Guidelines --> Result
     APIDesign --> Result
     MyBatis --> Result
     ErrorCode --> Result
-    Permissions --> Result
     
     Result -->|PASS| Approval[进入 Approval Gate]
     Result -->|FAIL| FailHook[fail_hook 触发]
@@ -2103,7 +2098,7 @@ flowchart LR
 1. ✅ 架构与工程标准（java-engineering-standards, java-backend-guidelines）
 2. ✅ API 设计模式（java-backend-api-standard）
 3. ✅ SQL 性能与安全（mybatis-sql-standard）
-4. ✅ 安全与数据权限（error-code-standard, java-data-permissions）
+4. ✅ 安全与数据权限（error-code-standard）
 
 **失败处理**:
 - 触发 fail_hook
@@ -2517,7 +2512,6 @@ flowchart TB
 **绑定技能**:
 - checkstyle
 - java-javadoc-standard
-- java-data-permissions
 
 **目的**:
 1. **标准守卫**: 强制执行风格和必需模式
@@ -2963,7 +2957,7 @@ Please clarify or generate escalation card
 - Cache key format: `user:profile:{userId}`
 
 ## Exception Handling
-- Use BusinessException for business logic errors
+- Use Domain Exceptions for business logic errors
 - Map error codes to HTTP status codes per error-code-standard
 - Log all exceptions with stack trace and context
 
@@ -3406,7 +3400,7 @@ public class ResourceController {
      *
      * @param request the creation request
      * @return the created resource
-     * @throws BusinessException if validation fails or resource exists
+     * @throws DomainException if validation fails or resource exists
      */
     @PostMapping
     public ApiResponse<ResourceDTO> createResource(@Valid @RequestBody CreateResourceRequest request) {
@@ -3623,7 +3617,7 @@ Implemented resource creation API with full validation and permission checks.
 - **相关资源**: 项目架构文档
 
 **16. java-backend-guidelines**
-- **用途**: 综合 Java 指南,强制执行防御性编程、Complete assembly、CustomPage 分页和 Hutool 使用
+- **用途**: 综合 Java 指南,强制执行防御性编程、内存组装策略、标准化分页包装器和 Hutool 使用
 - **使用阶段**: Implement 阶段
 - **触发条件**: 生成代码时
 - **输出工件**: 符合指南的 Java 代码
@@ -3643,28 +3637,22 @@ Implemented resource creation API with full validation and permission checks.
 - **输出工件**: 符合标准的 Javadoc 注释
 - **相关资源**: comment_linter_java.py
 
-**19. java-data-permissions**
-- **用途**: 指导数据权限(查询过滤 vs 操作验证通过 @BeforePermission)
-- **使用阶段**: Implement 阶段,Review 阶段
-- **触发条件**: 编写需要授权的 API 时
-- **输出工件**: 带有正确权限检查的代码
-- **相关资源**: 权限框架文档
 
-**20. mybatis-sql-standard**
+**19. mybatis-sql-standard**
 - **用途**: 强制执行严格的 MyBatis SQL 编写标准,专注于性能、反 JOIN 策略、索引利用和隐式类型转换预防
 - **使用阶段**: Implement 阶段,Review 阶段
 - **触发条件**: 编写或审查 Mapper XML 或 LambdaQuery 时
 - **输出工件**: 高性能、符合标准的 SQL
 - **相关资源**: MyBatis 文档,数据库索引文档
 
-**21. error-code-standard**
+**20. error-code-standard**
 - **用途**: 指导系统错误码的使用
 - **使用阶段**: Implement 阶段,Review 阶段
-- **触发条件**: 生成或修改抛出 BusinessException 或返回 ApiResponse.failed 的代码时
+- **触发条件**: 生成或修改抛出领域异常或返回统一错误响应的代码时
 - **输出工件**: 正确使用 ErrorCode 的代码
 - **相关资源**: 错误码定义文件
 
-**22. checkstyle**
+**21. checkstyle**
 - **用途**: 强制执行结合 Google 和 Sun 标准的严格 Java checkstyle 规则,适用于 org 和 rbac 模块
 - **使用阶段**: Implement 阶段,Review 阶段
 - **触发条件**: 生成、审查或重构 Java 代码以确保风格合规时
@@ -3715,7 +3703,7 @@ Implemented resource creation API with full validation and permission checks.
 |-------|-------------------|
 | Explorer | product-manager-expert, devops-requirements-analysis, prd-task-splitter |
 | Propose | devops-system-design, devops-task-planning |
-| Review | devops-review-and-refactor, global-backend-standards, java-engineering-standards, java-backend-guidelines, java-backend-api-standard, mybatis-sql-standard, error-code-standard, java-data-permissions |
+| Review | devops-review-and-refactor, global-backend-standards, java-engineering-standards, java-backend-guidelines, java-backend-api-standard, mybatis-sql-standard, error-code-standard |
 | Implement | devops-feature-implementation, devops-bug-fix, utils-usage-standard, aliyun-oss |
 | QA | devops-testing-standard, code-review-checklist |
 | Archive | api-documentation-rules, database-documentation-sync |
@@ -4031,7 +4019,7 @@ Fallback if still missing: Ask human for specific authentication library to use.
 ## Learned from iteration 20260417
 
 ### Positive Patterns
-- Use CustomPage for all list queries
+- Use standardized pagination wrappers for all list queries
 - Add @BeforePermission to all mutation endpoints
 - Log all exceptions with context
 

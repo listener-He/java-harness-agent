@@ -25,10 +25,9 @@ Do not over-design. In this repository, "Elegance" concretely means:
 - If modifying an old class is unavoidable, ensure existing unit tests pass before adding new logic.
 
 ### 3. Robustness & Scale
-- **Exceptions**: Use `BusinessException` with appropriate error codes (See `error-code-standard`).
+- **Exceptions**: Use Domain Exceptions with appropriate abstract error codes (See `error-code-standard`).
 - **Defensive Checks**: Validate inputs (`@Valid`) and enforce business rules early in the service layer.
 - **High Performance**: Follow `mybatis-sql-standard` (Anti-JOIN, batching). No DB queries or RPC calls inside loops.
-- **Concurrency & Isolation**: Use `@ResourceLock` on modifying endpoints. Filter by `tenant_id` at the DB level or use `@BeforePermission`.
 
 ## 🎯 Outcomes
 - Java code (Controller, Service, Mapper, POJO) completed according to the contract.

@@ -25,4 +25,10 @@ This index lists `openspec.md` documents that are currently in progress or recen
 
 ## Recently Archived
 (Knowledge extracted into api/data/domain. This section is read-only traceability.)
+
+### Append Template (Archived)
+```markdown
+- [{YYYY-MM-DD}] {Feature Name}: `[{spec_file.md}]`
+```
+
 - No entries

@@ -31,9 +31,9 @@ description: "MANDATORY Code Review Checklist. Evaluates code against ALL projec
 - [ ] **Naming**: `UpperCamelCase` for classes, `lowerCamelCase` for methods/variables, proper POJO suffixes (`Request`, `Response`).
 
 ### 3. Service Logic & Data Assembly (`java-backend-guidelines`)
-- [ ] **Anti-JOIN Assembly**: Did you use `Complete.start()` to fetch names/dictionaries instead of SQL JOINs?
-- [ ] **Pagination**: Did you use `CustomPage.execute()` for pagination?
-- [ ] **Null Checks**: Did you use `EmptyUtil.isEmpty()` or `EmptyUtil.isNotEmpty()` instead of `obj == null`?
+- [ ] **Anti-JOIN Assembly**: Did you use in-memory data assembly strategy to fetch names/dictionaries instead of SQL JOINs?
+- [ ] **Pagination**: Did you use the standardized pagination wrapper for pagination?
+- [ ] **Null Checks**: Did you use `Objects.isNull()` or `Objects.nonNull()` instead of `obj == null`?
 - [ ] **Bean Copy**: Did you use `cn.hutool.core.bean.BeanUtil` for object mapping?
 
 ### 4. Alibaba Code Guidelines & Business Logic
@@ -43,7 +43,7 @@ description: "MANDATORY Code Review Checklist. Evaluates code against ALL projec
 - [ ] **Transaction Scope**: Is `@Transactional` only wrapping the necessary database operations? (Keep heavy computations or RPC calls OUTSIDE the transaction).
 - [ ] **Magic Numbers**: Are there any unexplained magic numbers/strings in the code? (Replace with Enums or Constants).
 
-### 5. Database & SQL Performance (`mybatis-sql-standard` & `java-data-permissions`)
+### 5. Database & SQL Performance (`mybatis-sql-standard`)
 - [ ] **Tenant Isolation**: Is `.eq(Entity::getTenantId, tenantId)` the VERY FIRST condition in the query? (MANDATORY)
 - [ ] **Logical Delete**: Is `.eq(Entity::getIsDeleted, false)` included?
 - [ ] **No `SELECT *`**: Are specific columns queried instead of `*` in XML?
@@ -51,9 +51,9 @@ description: "MANDATORY Code Review Checklist. Evaluates code against ALL projec
 - [ ] **Type Matching**: Do Java parameter types perfectly match DB column types to prevent implicit conversion?
 
 ### 6. Error Handling (`error-code-standard`)
-- [ ] **Abstract Error Codes**: Did you reuse abstract codes (e.g., `BizErrorCode.PARAM_INVALID`, `DATA_DUPLICATED`, `HAS_DEPENDENCY`) instead of creating new ones?
-- [ ] **Dynamic Messages**: Did you override the message? (e.g., `new BusinessException(BizErrorCode.DATA_DUPLICATED, "角色名称已存在")`).
-- [ ] **No Generic Fails**: Did you avoid `new BusinessException("Some error")` if a more specific abstract code exists?
+- [ ] **Abstract Error Codes**: Did you reuse abstract domain codes (e.g., `PARAM_INVALID`, `DATA_DUPLICATED`, `HAS_DEPENDENCY`) instead of creating new ones?
+- [ ] **Dynamic Messages**: Did you override the message? (e.g., `new DomainException(AbstractErrorCode.DATA_DUPLICATED, "角色名称已存在")`).
+- [ ] **No Generic Fails**: Did you avoid throwing generic DomainException without an abstract code if a more specific one exists?
 
 ## 📝 Output Format Requirement
 At the end of your task, append a short checklist summary. Example:

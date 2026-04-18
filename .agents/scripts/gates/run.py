@@ -150,7 +150,16 @@ def _should_run_gate(script: str, rendered_args: list[str], verify_level: str, a
             if not any(rt in artifact_tags for rt in req_types):
                 return False, f"skip by artifact-tags={sorted(artifact_tags)}"
 
-    # 3) Strict mode runs mounted gates as-is (plus we can append global gates later if needed)
+    # 3) Scenario-gated scripts: only run when the matching scenario tag is present
+    scenario_gates = {
+        "migration_gate.py": "scenario_b",
+        "api_breaking_gate.py": "scenario_c",
+        "dependency_gate.py": "scenario_e",
+    }
+    if base in scenario_gates and scenario_gates[base] not in artifact_tags:
+        return False, f"skip: requires artifact-tag '{scenario_gates[base]}'"
+
+    # 4) Strict mode runs mounted gates as-is
     return True, ""
 
 

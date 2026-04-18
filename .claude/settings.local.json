@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 .agents/scripts/gates/wal_template_gate.py --wal-dir /tmp/nonexistent)",
+      "Bash(python3 .agents/scripts/gates/migration_gate.py --sql-dir /tmp/nonexistent)",
+      "Bash(python3 .agents/scripts/gates/api_breaking_gate.py --openspec /tmp/nonexistent.md)",
+      "Bash(python3 .agents/scripts/gates/dependency_gate.py --pom /tmp/nonexistent.xml)",
+      "Bash(python3 -m py_compile .agents/scripts/gates/run.py)",
+      "Bash(python3 .agents/scripts/gates/ambiguity_gate.py --intent \"implement user list pagination query, verified by test case\")",
+      "Bash(python3 .agents/scripts/gates/ambiguity_gate.py --intent \"do it\")",
+      "Bash(python3 .agents/scripts/gates/ambiguity_gate.py --intent \"refactor the lifecycle hook, verified by passing gate\")"
+    ]
+  }
+}

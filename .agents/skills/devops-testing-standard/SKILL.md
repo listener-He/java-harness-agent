@@ -38,7 +38,7 @@ description: "Handles Testing and QA. Invoke during Phase 5 to ensure test cover
 4. **Coverage Expectations (Quantified)**:
    - Every public method MUST have tests covering at least three scenarios:
      1. **Normal/Happy Path**: Valid inputs yielding expected outputs.
-     2. **Exception Path**: Invalid inputs triggering `BusinessException`.
+     2. **Exception Path**: Invalid inputs triggering Domain Exceptions.
      3. **Boundary/Edge Cases**: Empty lists, nulls, max lengths, data permission boundaries (e.g., user A attempting to access user B's data).
 
 ## 🎯 Outcomes

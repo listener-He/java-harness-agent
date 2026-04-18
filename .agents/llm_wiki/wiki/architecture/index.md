@@ -10,9 +10,9 @@ This domain records architecture baselines and ADRs (Architecture Decision Recor
 
 ## ADR List
 
-| ADR # | Title | Status | Decision Summary |
-|---|---|---|---|
-| (Example) ADR-001 | Use JWT for stateless auth | Accepted | Reduce Redis dependency; validate at the gateway |
+| ADR # | Title | Status | Decision Summary | Date | Doc Link |
+|---|---|---|---|---|---|
+| (Example) ADR-001 | Use JWT for stateless auth | Accepted | Reduce Redis dependency; validate at the gateway | 2026-04-14 | `[adr_001_jwt.md]` |
 
 ---
 
@@ -21,5 +21,5 @@ If `Propose` makes a global architecture decision, you MUST write it back here d
 
 ### Append Template
 ```markdown
-| ADR-{XXX} | {decision title} | Accepted | {one-line reason} |
+| ADR-{XXX} | {decision title} | Accepted | {one-line reason} | {YYYY-MM-DD} | `[{doc_link}]` |
 ```

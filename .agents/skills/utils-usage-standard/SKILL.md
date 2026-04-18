@@ -12,7 +12,7 @@ This skill defines the standard operating procedures for discovering, utilizing,
 ## 📐 2. Boundaries, Accessibility & Dependencies
 **Rule:** If a custom utility is strictly necessary, it must adhere to rigid structural boundaries.
 - **Statelessness:** Utilities MUST be purely stateless. Declare classes as `public final class` and explicitly define a `private` default constructor to prevent instantiation. All methods MUST be `public static` (or `package-private static`).
-- **Dependency Isolation (Acyclic Dependencies):** Pure technical utilities (e.g., `DateUtil`, `StringUtil`) are STRICTLY PROHIBITED from importing business-level components (e.g., `UserService`, business entities, or domain-specific `BusinessException`).
+- **Dependency Isolation (Acyclic Dependencies):** Pure technical utilities (e.g., `DateUtil`, `StringUtil`) are STRICTLY PROHIBITED from importing business-level components (e.g., `UserService`, business entities, or domain-specific exceptions).
 - **Accessibility Control:** Place global utilities in `common/utils`. Place module-specific utilities in `[module]/utils` and restrict their visibility to `package-private` where possible to prevent cross-domain contamination.
 
 ## 🧩 3. Functional Programming Mindset

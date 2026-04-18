@@ -8,9 +8,9 @@ This index is the routing table for database tables, ER notes, and index strateg
 
 ## Core Tables
 
-| Table Name | Purpose | Key Fields / Index Notes | Source Spec |
-|---|---|---|---|
-| (Example) sys_user | Stores core user info and credentials | `id, username, tenant_id (indexed)` | `[user_table.md]` |
+| Table Name | Store Type | Purpose | Key Fields / Index Notes | Retention Policy | Source Spec |
+|---|---|---|---|---|---|
+| (Example) sys_user | MySQL | Stores core user info and credentials | `id, username, tenant_id (indexed)` | Soft delete (is_deleted) | `[user_table.md]` |
 
 ---
 
@@ -19,7 +19,7 @@ Append a new row during `Archive` using the template below.
 
 ### Append Template
 ```markdown
-| {Table Name} | {one-line purpose} | `{key fields and index notes}` | `[{spec_doc_name}]` |
+| {Table Name} | {Store Type} | {one-line purpose} | `{key fields and index notes}` | {Retention Policy} | `[{spec_doc_name}]` |
 ```
 
 Anti-bloat rule: if this index grows beyond 50 tables, you MUST split by module (example: `auth_tables.md`, `trade_tables.md`) and keep only top-level links here.

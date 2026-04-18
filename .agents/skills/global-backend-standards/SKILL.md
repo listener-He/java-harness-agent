@@ -21,16 +21,14 @@ If your task involves specific domains, you must invoke the following skills (or
    - Covers: Controller/Service/Mapper layering, POJO package structure (`request`, `response`, `entity`, `constants`).
 2. **API & Controller Design** -> `java-backend-api-standard`
    - Covers: NO Path Variables (`@PathVariable` is banned), action verbs in URLs (`/add`, `/page`), `@ResourceLock`, `@Validated`.
-3. **Data Security & Isolation** -> `java-data-permissions`
-   - Covers: Tenant isolation (MANDATORY), `@BeforePermission` for action validation, `.in()` query filtering for lists.
-4. **Service Logic & Utilities** -> `java-backend-guidelines`
-   - Covers: `Complete.start()` for anti-JOIN data assembly, `CustomPage.execute` for pagination, `EmptyUtil`, `BeanUtil`.
-5. **Database & SQL Performance** -> `mybatis-sql-standard`
+3**Service Logic & Utilities** -> `java-backend-guidelines`
+   - Covers: In-memory data assembly strategy (Anti-JOIN), standardized pagination wrappers, `Objects` utility, `BeanUtil`.
+4**Database & SQL Performance** -> `mybatis-sql-standard`
    - Covers: Anti-JOIN strategy, preventing implicit type conversion, leftmost prefix index rules, banning `SELECT *`.
-6. **Code Style & Formatting** -> `checkstyle`
+5**Code Style & Formatting** -> `checkstyle`
    - Covers: K&R braces, 4-space indentation, strict Javadoc, lowerCamelCase.
-7. **Error Codes** -> `error-code-standard`
-   - Covers: Reusing abstract codes (`BizErrorCode`), dynamic overriding of BusinessException messages.
+6**Error Codes** -> `error-code-standard`
+   - Covers: Unified error response format, domain-driven exceptions, abstract error codes.
 
 ---
 
@@ -42,6 +40,6 @@ If your code fails any check (e.g. you used `@PathVariable`, wildcard imports, o
 ## Commands for AI Agent
 If the user uses these commands, execute the corresponding behavior based on the standards above:
 - `/gen-api`: Generate Controller + Request + Response following the NO Path Variable, verb-suffix URL, and `@ResourceLock` rules.
-- `/gen-service`: Generate Service Impl returning `ApiResponse` for writes, and using `Complete` / `CustomPage` for reads.
+- `/gen-service`: Generate Service Impl returning ApiResponse for writes, and using in-memory assembly / standardized pagination for reads.
 - `/optimize-sql`: Review XML/LambdaQuery for JOINs, type conversions, and index order. Rewrite to application-level assembly if necessary.
 - `/add-perm`: Add `@BeforePermission` to actions, or inject tenant/dept filters into `lambdaQuery`.

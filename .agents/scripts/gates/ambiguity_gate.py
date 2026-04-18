@@ -27,30 +27,72 @@ def _has_any(text: str, keywords: list[str]) -> bool:
     return any(k in t for k in keywords)
 
 
+_STOP_WORDS = {
+    "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
+    "of", "with", "by", "from", "is", "are", "was", "be", "this", "that",
+    "it", "its", "we", "i", "you", "he", "she", "they", "our", "my",
+    "all", "not", "no", "do", "does", "have", "has", "can", "will", "should",
+    "如何", "怎么", "什么", "这个", "那个", "是否", "需要",
+}
+
+
+def _has_content_word(text: str) -> bool:
+    """Return True if the text contains at least one content word (non-stop-word, len >= 4).
+    This is an open-ended fallback so that business domain objects (table names, service
+    names, feature names) are accepted without being hardcoded in this gate.
+    """
+    words = re.split(r"[\s\-_/.,;:!?()\[\]{}\"']+", text)
+    return any(len(w) >= 4 and w not in _STOP_WORDS for w in words)
+
+
 def _check_intent(intent: str) -> tuple[int, list[str]]:
     reasons: list[str] = []
     t = _normalize(intent)
     if not t:
         return EXIT_FAIL, ["intent is empty"]
 
-    object_signals = [
-        "api", "接口", "表", "schema", "rbac", "权限", "菜单", "登录", "鉴权", "datascope", "组织", "部门",
-        "agent", "agents", "workflow", "流程", "hook", "hooks", "gate", "gates", "role", "roles", "matrix",
-        "wiki", "wal", "lifecycle", "router"
+    # Only abstract process-level artifacts are hardcoded.
+    # Business domain objects (tables, APIs, services, permissions, etc.) are intentionally
+    # excluded — the LLM reads the workspace code to identify them.
+    process_object_signals = [
+        # Workflow process artifacts
+        "hook", "hooks", "gate", "gates", "lifecycle", "router", "workflow",
+        "wiki", "wal", "launch_spec", "focus_card", "openspec", "explore_report",
+        "skill", "skills", "role_matrix", "agent", "agents",
+        # Chinese equivalents
+        "流程", "门控", "生命周期",
     ]
-    action_signals = ["设计", "实现", "修复", "新增", "改造", "优化", "落地", "上线", "测试"]
-    success_signals = ["验收", "通过", "可用", "跑通", "门禁", "测试用例", "接口返回", "deliver", "wiki", "文档"]
+    action_signals = [
+        # English
+        "implement", "add", "create", "fix", "refactor", "optimize", "design",
+        "migrate", "update", "remove", "delete", "integrate", "deploy", "test", "review",
+        "build", "generate", "write", "change", "modify",
+        # Chinese
+        "设计", "实现", "修复", "新增", "改造", "优化", "落地", "上线", "测试",
+    ]
+    success_signals = [
+        # English
+        "pass", "deliver", "working", "verified", "evidence",
+        "test case", "doc", "documented", "returns",
+        # Chinese
+        "验收", "通过", "可用", "跑通", "门禁", "测试用例", "接口返回", "文档",
+    ]
 
-    has_object = _has_any(t, object_signals)
+    has_process_object = _has_any(t, process_object_signals)
     has_action = _has_any(t, action_signals)
     has_success = _has_any(t, success_signals)
 
+    # Fallback: if no hardcoded process object matched, check for any content word
+    # (length ≥ 4, not a common stop word). Business domain objects are expected here —
+    # the gate accepts them without knowing their meaning; the LLM handles semantics.
+    has_object = has_process_object or _has_content_word(t)
+
     if not has_action:
-        reasons.append("missing action signal")
+        reasons.append("missing action signal (e.g. implement, fix, add, design)")
     if not has_object:
-        reasons.append("missing object signal")
+        reasons.append("missing object — intent appears to have no noun/target (very short or all stop-words)")
     if not has_success:
-        reasons.append("missing success/evidence signal")
+        reasons.append("missing success/evidence signal (e.g. verified, test case, deliver, doc)")
 
     if has_action and has_object:
         if has_success:
@@ -71,12 +113,18 @@ def _check_anchors_file(path: str) -> tuple[int, list[str]]:
     if "## Core Context Anchors" not in content:
         return EXIT_FAIL, ["missing section: ## Core Context Anchors"]
 
-    required_markers = [
-        "Business", "业务", "API", "接口", "Rules", "规则", "Risk", "风险", "Evidence", "证据"
+    # Check for abstract anchor dimension headings, not business-specific terms.
+    # The actual domain content (API names, table names, etc.) is written by the LLM
+    # based on workspace analysis — we only verify the structural skeleton exists.
+    anchor_dimension_markers = [
+        # Process/engineering dimensions
+        "Red Line", "red line", "Constraint", "constraint",
+        "Risk", "risk", "Evidence", "evidence",
+        "Rules", "rules", "规则", "风险", "证据", "约束",
     ]
-    present = sum(1 for m in required_markers if m in content)
+    present = sum(1 for m in anchor_dimension_markers if m in content)
     if present < 2:
-        return EXIT_WARN, ["anchors are too thin (<2 required markers)"]
+        return EXIT_WARN, ["anchors are too thin — include at least 2 of: Red Lines, Constraints, Risk, Evidence, Rules"]
     return 0, []
 
 
