@@ -21,6 +21,7 @@ If the user supplies an explicit shortcut, it MUST override automatic routing.
 | `@read` / `@learn` | LEARN (read-only) |
 | `@patch` / `@quickfix` | PATCH (small change / bugfix) |
 | `@standard` | STANDARD (full lifecycle) |
+| `@gc` / `@librarian` | STANDARD (Forced role: `@Librarian`, triggers WAL Compaction) |
 
 ### Shortcut DSL (Composable)
 
@@ -55,6 +56,9 @@ If the user supplies an explicit shortcut, it MUST override automatic routing.
 *DocQA actionize:*
 - `--actionize` — convert DocQA into an executable STANDARD queue (requires confirmation)
 - `--yes` — auto-confirm `--actionize` / `--launch` (use with caution)
+
+*Maintenance:*
+- `@gc` / `@librarian` — shortcut to mount `@Librarian` role and perform WAL compaction.
 
 **Conflict rules (MUST enforce)**
 

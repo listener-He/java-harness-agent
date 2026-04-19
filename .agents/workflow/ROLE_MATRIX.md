@@ -7,7 +7,9 @@ Hard rules:
 - “Role output” is enforced by deterministic gate scripts (exit codes).
 - Machine config lives in `role_matrix.json` (SSOT for automation). This file is the human-readable explanation.
 
-## 1) Roles (What / Output / Gate)
+## 1) Roles (Executable Checklists / Output / Gate)
+
+Roles are not just names—they are strictly enforced **Executable Checklists**. An Agent MUST explicitly acknowledge and execute the checklist items for its mounted role.
 
 ### Ambiguity Gatekeeper
 Purpose:
