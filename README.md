@@ -96,7 +96,7 @@ To minimize costs:
 flowchart TB
     subgraph Input["📥 Input Layer"]
         User[👤 User Requirements]
-        Shortcut[⚡ Shortcuts<br/>@read/@patch/@standard]
+        Shortcut["⚡ Shortcuts<br/>@read/@patch/@standard"]
     end
     
     subgraph Gateway["🎯 Intent Gateway Layer (ROUTER)"]
@@ -116,7 +116,7 @@ flowchart TB
     
     subgraph Knowledge["🧠 Knowledge Graph Layer (LLM Wiki)"]
         KG[KNOWLEDGE_GRAPH.md<br/>Root Node]
-        DomainIndex[Domain Indices<br/>api/data/domain/...]
+        DomainIndex["Domain Indices<br/>api/data/domain etc."]
         Docs[Specific Documents]
         Archive[Archive Zone<br/>Cold Storage]
     end
@@ -134,11 +134,16 @@ flowchart TB
     
     subgraph Roles["🎭 Role Matrix Layer (ROLE MATRIX)"]
         Ambiguity[Ambiguity Gatekeeper<br/>Ambiguity Guard]
+        ReqEngineer[Requirement Engineer<br/>Requirements]
+        SysArchitect[System Architect<br/>Architecture]
+        LeadEngineer[Lead Engineer<br/>Code & Shift-Left]
+        CodeReviewer[Code Reviewer<br/>Quality QA]
         FocusGuard[Focus Guard<br/>Anti-Drift Guard]
-        DomainAnalyst[Domain Analyst<br/>Domain Analyst]
-        InterfaceSteward[Interface Steward<br/>Interface Manager]
+        KnowledgeExt[Knowledge Extractor<br/>Unified WAL]
         SecuritySentinel[Security Sentinel<br/>Security Sentinel]
         DocCurator[Documentation Curator<br/>Doc Curator]
+        SkillCurator[Skill Graph Curator<br/>Skills]
+        Librarian[Librarian<br/>GC & Compaction]
         KnowledgeArch[Knowledge Architect<br/>Knowledge Architect]
     end
     
@@ -156,7 +161,7 @@ flowchart TB
     end
     
     subgraph Scripts["📜 Script Tools Layer (SCRIPTS)"]
-        Gates[Gate Scripts<br/>ambiguity_gate.py etc.]
+        Gates["Gate Scripts<br/>ambiguity_gate.py etc."]
         WikiTools[Wiki Tools<br/>linter/compactor]
         Engine[Engine Helper<br/>engine.py]
     end
@@ -186,12 +191,19 @@ flowchart TB
     Phase6 --> LaunchSpec
     
     Phase1 -.->|Mount| Ambiguity
+    Phase1 -.->|Mount| ReqEngineer
     Phase1 -.->|Mount| FocusGuard
-    Phase2 -.->|Mount| DomainAnalyst
-    Phase2 -.->|Mount| InterfaceSteward
+    Phase2 -.->|Mount| SysArchitect
+    Phase3 -.->|Mount| SysArchitect
+    Phase4 -.->|Mount| LeadEngineer
+    Phase4 -.->|Mount| FocusGuard
     Phase4 -.->|Mount| SecuritySentinel
+    Phase5 -.->|Mount| CodeReviewer
     Phase5 -.->|Mount| DocCurator
-    Phase6 -.->|Mount| KnowledgeArch
+    Phase6 -.->|Mount| KnowledgeExt
+    Phase6 -.->|Mount| DocCurator
+    Phase6 -.->|Mount| SkillCurator
+    Phase6 -.->|Mount| Librarian
     
     Phase1 -.->|Trigger| PreHook
     Phase4 -.->|Trigger| GuardHook
@@ -208,16 +220,6 @@ flowchart TB
     Phase1 -.->|Query| SkillIndex
     Phase2 -.->|Query| SkillIndex
     Phase4 -.->|Query| BackendSkills
-    
-    style Input fill:#e1f5ff
-    style Gateway fill:#fff4e6
-    style Context fill:#f0e6ff
-    style Knowledge fill:#e6ffe6
-    style Lifecycle fill:#ffe6f0
-    style Roles fill:#fff9e6
-    style Hooks fill:#ffe6e6
-    style Skills fill:#e6f0ff
-    style Scripts fill:#f5f5f5
 ```
 
 ### Core Components Breakdown
@@ -311,7 +313,7 @@ stateDiagram-v2
     ApprovalGate --> Implement: Implement per Contract
     Implement --> ValidationGate: STOP & Request Compile
     ValidationGate --> QA: Test Validation
-    QA --> Archive: Knowledge Extraction (New Session)
+    QA --> Archive: Knowledge Extraction (Same Session)
     Archive --> [*]: Queue Complete
     
     Review --> Propose: fail_hook(review failed)
@@ -873,7 +875,7 @@ Failure rollback + max retry threshold (3 attempts for scripts, STRICT MAX 2 for
 - Specs must be archived after extraction
 - Stable knowledge must be extracted to indices
 - Indices exceeding 500 lines must be split into subdirectories
-- Archive execution is highly recommended to be done in a **new clean chat session** to avoid context window overload
+- Archive execution transitions automatically in the **same session**, using targeted `git diff <files>` or `openspec.md` to avoid context overload.
 
 ---
 

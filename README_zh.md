@@ -97,7 +97,7 @@
 flowchart TB
     subgraph Input["📥 输入层"]
         User[👤 用户需求]
-        Shortcut[⚡ Shortcuts<br/>@read/@patch/@standard]
+        Shortcut["⚡ Shortcuts<br/>@read/@patch/@standard"]
     end
     
     subgraph Gateway["🎯 意图网关层 (ROUTER)"]
@@ -117,7 +117,7 @@ flowchart TB
     
     subgraph Knowledge["🧠 知识图谱层 (LLM Wiki)"]
         KG[KNOWLEDGE_GRAPH.md<br/>根节点]
-        DomainIndex[域索引<br/>api/data/domain/...]
+        DomainIndex["域索引<br/>api/data/domain等"]
         Docs[具体文档]
         Archive[归档区<br/>冷存储]
     end
@@ -135,11 +135,16 @@ flowchart TB
     
     subgraph Roles["🎭 角色矩阵层 (ROLE MATRIX)"]
         Ambiguity[Ambiguity Gatekeeper<br/>模糊性守卫]
+        ReqEngineer[Requirement Engineer<br/>需求工程师]
+        SysArchitect[System Architect<br/>系统架构师]
+        LeadEngineer[Lead Engineer<br/>主程]
+        CodeReviewer[Code Reviewer<br/>代码审查官]
         FocusGuard[Focus Guard<br/>防漂移守卫]
-        DomainAnalyst[Domain Analyst<br/>领域分析师]
-        InterfaceSteward[Interface Steward<br/>接口管理员]
+        KnowledgeExt[Knowledge Extractor<br/>知识提取官]
         SecuritySentinel[Security Sentinel<br/>安全哨兵]
         DocCurator[Documentation Curator<br/>文档策展人]
+        SkillCurator[Skill Graph Curator<br/>技能策展人]
+        Librarian["Librarian<br/>图书管理员GC"]
         KnowledgeArch[Knowledge Architect<br/>知识架构师]
     end
     
@@ -157,7 +162,7 @@ flowchart TB
     end
     
     subgraph Scripts["📜 脚本工具层 (SCRIPTS)"]
-        Gates[门禁脚本<br/>ambiguity_gate.py等]
+        Gates["门禁脚本<br/>ambiguity_gate.py等"]
         WikiTools[Wiki工具<br/>linter/compactor]
         Engine[引擎辅助<br/>engine.py]
     end
@@ -187,12 +192,19 @@ flowchart TB
     Phase6 --> LaunchSpec
     
     Phase1 -.->|挂载| Ambiguity
+    Phase1 -.->|挂载| ReqEngineer
     Phase1 -.->|挂载| FocusGuard
-    Phase2 -.->|挂载| DomainAnalyst
-    Phase2 -.->|挂载| InterfaceSteward
+    Phase2 -.->|挂载| SysArchitect
+    Phase3 -.->|挂载| SysArchitect
+    Phase4 -.->|挂载| LeadEngineer
+    Phase4 -.->|挂载| FocusGuard
     Phase4 -.->|挂载| SecuritySentinel
+    Phase5 -.->|挂载| CodeReviewer
     Phase5 -.->|挂载| DocCurator
-    Phase6 -.->|挂载| KnowledgeArch
+    Phase6 -.->|挂载| KnowledgeExt
+    Phase6 -.->|挂载| DocCurator
+    Phase6 -.->|挂载| SkillCurator
+    Phase6 -.->|挂载| Librarian
     
     Phase1 -.->|触发| PreHook
     Phase4 -.->|触发| GuardHook
@@ -209,16 +221,6 @@ flowchart TB
     Phase1 -.->|查询| SkillIndex
     Phase2 -.->|查询| SkillIndex
     Phase4 -.->|查询| BackendSkills
-    
-    style Input fill:#e1f5ff
-    style Gateway fill:#fff4e6
-    style Context fill:#f0e6ff
-    style Knowledge fill:#e6ffe6
-    style Lifecycle fill:#ffe6f0
-    style Roles fill:#fff9e6
-    style Hooks fill:#ffe6e6
-    style Skills fill:#e6f0ff
-    style Scripts fill:#f5f5f5
 ```
 
 ### 核心组件详解
@@ -312,7 +314,7 @@ stateDiagram-v2
     ApprovalGate --> Implement: 按契约实现
     Implement --> ValidationGate: 停止并请求编译
     ValidationGate --> QA: 测试验证
-    QA --> Archive: 知识提取 (新会话)
+    QA --> Archive: 知识提取 (同一会话无缝执行)
     Archive --> [*]: 队列完成
     
     Review --> Propose: fail_hook(机审失败)
@@ -873,7 +875,7 @@ python .agents/scripts/gates/run.py --intent <intent> --profile <profile> --phas
 - 规范必须在提取后归档
 - 稳定知识必须提取到索引
 - 超过 500 行的索引必须拆分为子目录
-- **强烈建议在全新的干净会话中执行 Archive 归档**，以避免上下文窗口过载和幻觉
+- **Archive 归档会在同一会话中无缝执行**，并仅依靠定向的 `git diff <files>` 或 `openspec.md` 来提取知识，避免重读历史导致上下文过载。
 
 ---
 

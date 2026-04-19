@@ -260,14 +260,19 @@ Phase6[6_Archive]
 end
 
 subgraph Roles["🎭 Role Matrix"]
-Ambiguity[Ambiguity Gatekeeper]
-FocusGuard[Focus Guard]
-DomainAnalyst[Domain Analyst]
-InterfaceSteward[Interface Steward]
-SecuritySentinel[Security Sentinel]
-DocCurator[Documentation Curator]
-KnowledgeArch[Knowledge Architect]
-end
+        Ambiguity[Ambiguity Gatekeeper]
+        ReqEngineer[Requirement Engineer]
+        SysArchitect[System Architect]
+        LeadEngineer[Lead Engineer]
+        CodeReviewer[Code Reviewer]
+        FocusGuard[Focus Guard]
+        KnowledgeExt[Knowledge Extractor]
+        SecuritySentinel[Security Sentinel]
+        DocCurator[Documentation Curator]
+        SkillCurator[Skill Graph Curator]
+        Librarian["Librarian GC"]
+        KnowledgeArch[Knowledge Architect]
+    end
 
 subgraph Hooks["🛡️ Hooks System"]
 PreHook[pre_hook]
@@ -313,12 +318,19 @@ Phase5 --> Phase6
 Phase6 --> LaunchSpec
 
 Phase1 -.->|Mount| Ambiguity
-Phase1 -.->|Mount| FocusGuard
-Phase2 -.->|Mount| DomainAnalyst
-Phase2 -.->|Mount| InterfaceSteward
-Phase4 -.->|Mount| SecuritySentinel
-Phase5 -.->|Mount| DocCurator
-Phase6 -.->|Mount| KnowledgeArch
+    Phase1 -.->|Mount| ReqEngineer
+    Phase1 -.->|Mount| FocusGuard
+    Phase2 -.->|Mount| SysArchitect
+    Phase3 -.->|Mount| SysArchitect
+    Phase4 -.->|Mount| LeadEngineer
+    Phase4 -.->|Mount| FocusGuard
+    Phase4 -.->|Mount| SecuritySentinel
+    Phase5 -.->|Mount| CodeReviewer
+    Phase5 -.->|Mount| DocCurator
+    Phase6 -.->|Mount| KnowledgeExt
+    Phase6 -.->|Mount| DocCurator
+    Phase6 -.->|Mount| SkillCurator
+    Phase6 -.->|Mount| Librarian
 
 Phase1 -.->|Trigger| PreHook
 Phase4 -.->|Trigger| GuardHook
@@ -334,16 +346,6 @@ KnowledgeArch -.->|Call| WikiTools
 
 Phase1 -.->|Query| SkillIndex
 Phase4 -.->|Query| BackendSkills
-
-style Input fill:#e1f5ff
-style Gateway fill:#fff4e6
-style Context fill:#f0e6ff
-style Knowledge fill:#e6ffe6
-style Lifecycle fill:#ffe6f0
-style Roles fill:#fff9e6
-style Hooks fill:#ffe6e6
-style Skills fill:#e6f0ff
-style Scripts fill:#f5f5f5
 ```
 
 ### 1.3 Core Components Details
@@ -492,7 +494,7 @@ java-harness-agent/
 **.agents/workflow/**:
 - **LIFECYCLE.md**: 6-phase state machine, Approval Gate, Launch Spec template, breakpoint resume
 - **HOOKS.md**: 5 hooks (pre/guard/post/fail/loop), Non-Convergence Fallback, Justification Bypass
-- **ROLE_MATRIX.md**: 9 virtual roles, mounting rules, automation contract
+- **ROLE_MATRIX.md**: 11 virtual roles, mounting rules, automation contract
 
 **.agents/llm_wiki/**:
 - **KNOWLEDGE_GRAPH.md**: Knowledge graph root node (mandatory entry point)
@@ -740,7 +742,7 @@ stateDiagram-v2
   Implement --> ValidationGate
   ValidationGate --> QA
   QA --> Archive
-  Archive --> [*] : Queue Complete (Recommend New Session)
+  Archive --> [*] : Queue Complete (Seamless Write-back)
 
   Review --> Propose: fail_hook(review failed)
   QA --> Implement: fail_hook(compile/test failed, max 2 retries)
@@ -762,7 +764,7 @@ stateDiagram-v2
 
 **Purpose**: Clarify requirements, define scope, identify risks
 
-**Mounted Roles**: Ambiguity Gatekeeper, Focus Guard
+**Mounted Roles**: Ambiguity Gatekeeper, Requirement Engineer, Focus Guard
 
 **Skills**: product-manager-expert, devops-requirements-analysis, prd-task-splitter
 
@@ -781,7 +783,7 @@ stateDiagram-v2
 
 **Purpose**: Design solution and freeze contract
 
-**Mounted Roles**: Domain Analyst, Interface Steward, Rules Lawyer
+**Mounted Roles**: System Architect
 
 **Skills**: devops-system-design, devops-task-planning
 
@@ -868,7 +870,7 @@ sequenceDiagram
 
 **Purpose**: Implement code within contract boundaries
 
-**Mounted Roles**: Focus Guard, Security Sentinel
+**Mounted Roles**: Lead Engineer, Focus Guard, Security Sentinel
 
 **Skills**: devops-feature-implementation, devops-bug-fix, utils-usage-standard, aliyun-oss
 
@@ -886,7 +888,7 @@ sequenceDiagram
 
 **Purpose**: Quality assurance following TDD principles
 
-**Mounted Roles**: Documentation Curator
+**Mounted Roles**: Code Reviewer, Documentation Curator
 
 **Skills**: devops-testing-standard, code-review-checklist
 
@@ -909,11 +911,11 @@ sequenceDiagram
 
 #### 3.3.8 Phase 6: Archive
 
-**Highly Recommended**: Given the heavy context accumulated in previous phases, it is highly recommended to execute the Archive phase in a **NEW, clean chat session** to prevent LLM hallucinations and context window overloads.
+**Highly Recommended**: Given the heavy context accumulated in previous phases, it is required to execute the Archive phase using **targeted `git diff` or `openspec.md`** to prevent LLM hallucinations and context window overloads, seamlessly within the same session.
 
 **Purpose**: Knowledge extraction and cleanup, prevent bloat
 
-**Mounted Roles**: Domain Analyst, Interface Steward, Rules Lawyer, Documentation Curator, Skill Graph Curator, Knowledge Architect (if refactoring needed)
+**Mounted Roles**: System Architect, Documentation Curator, Skill Graph Curator, Knowledge Architect (if refactoring needed)
 
 **Skills**: api-documentation-rules, database-documentation-sync
 
@@ -1049,116 +1051,66 @@ sequenceDiagram
 - "Role outputs" enforced by deterministic gate scripts (exit codes)
 - Machine config in role_matrix.json (automated SSOT)
 
-### 4.2 9 Virtual Roles
+### 4.2 11 Virtual Roles
 
 #### 1. Ambiguity Gatekeeper
-**Purpose**: Prevent starting work on vague inputs, stop runaway exploration early
+**Purpose**: Prevent starting work on vague input and stop runaway exploration early.
+**Gate**: `ambiguity_gate.py` + `focus_card_gate.py`
 
-**Output**: focus_card.md or escalation card
+#### 2. Requirement Engineer
+**Purpose**: Bridge the gap between human desires and technical specifications. Output Acceptance Criteria.
+**Gate**: `ambiguity_gate.py`
 
-**Gates**: ambiguity_gate.py + focus_card_gate.py (FAIL blocks progress)
+#### 3. System Architect
+**Purpose**: Design high-level interactions, DDL, and patterns. Handover AC to spec.
+**Gate**: Approval Gate
 
----
+#### 4. Lead Engineer
+**Purpose**: Write compilable code adhering to project paradigms. Follow Boundary Exception Protocol.
+**Gate**: `scope_guard.py` + Compilation
 
-#### 2. Domain Analyst
-**Purpose**: Capture business domain vocabulary, invariants, boundaries
+#### 5. Code Reviewer
+**Purpose**: Rigorous tech-lead inspection (Performance, Paradigm, Robustness).
+**Gate**: `linter.py`
 
-**Output**: Domain WAL fragments
+#### 6. Focus Guard
+**Purpose**: Prevent attention drift outside `focus_card.md`.
+**Gate**: `scope_guard.py`
 
-**Gates**: writeback_gate.py (Domain WAL required)
+#### 7. Knowledge Extractor
+**Purpose**: Unified extraction of Domain, API, and Rules into WAL.
+**Gate**: `writeback_gate.py`
 
----
+#### 8. Security Sentinel
+**Purpose**: Pure script executor to prevent secret leakage.
+**Gate**: `secrets_linter.py`
 
-#### 3. Interface Steward
-**Purpose**: Capture API contract facts (endpoint/auth/error semantics) and link to spec
+#### 9. Documentation Curator
+**Purpose**: Ensure handoff-ready capsule and WAL references.
+**Gate**: `delivery_capsule_gate.py` + `wiki_linter.py`
 
-**Output**: API WAL fragments
+#### 10. Skill Graph Curator
+**Purpose**: Ensure new skills are indexed.
+**Gate**: `skill_index_linter.py`
 
-**Gates**: writeback_gate.py (API WAL required)
-
----
-
-#### 4. Rules Lawyer
-**Purpose**: Capture rules domain (permission/data scope/cache/exception)
-
-**Output**: Rules WAL fragments
-
-**Gates**: writeback_gate.py (Rules WAL required)
-
----
-
-#### 5. Security Sentinel
-**Purpose**: Prevent secret leaks and obvious authZ bypass risks
-
-**Output**: Delivery capsule "Security notes" (or explicit "N/A")
-
-**Gates**: secrets_linter.py (FAIL on high-confidence hits)
-
----
-
-#### 6. Documentation Curator
-**Purpose**: Ensure complete, handoff-ready capsule + WAL references at work end
-
-**Output**: Delivery capsule
-
-**Gates**: delivery_capsule_gate.py + wiki_linter.py
-
----
-
-#### 7. Focus Guard
-**Purpose**: Prevent attention drift and unauthorized cross-domain edits
-
-**Output**: Scope constraints in focus_card.md
-
-**Gates**: scope_guard.py (FAIL if modified files exceed allowed scope)
-
----
-
-#### 8. Skill Graph Curator
-**Purpose**: Ensure new/changed skills are indexed and graph remains consistent
-
-**Output**: Skill index updates or explicit follow-up entries
-
-**Gates**: skill_index_linter.py (default WARN, may escalate to FAIL later)
-
----
-
-#### 9. Knowledge Architect (Wiki Auto-Refactoring)
-**Purpose**: Dynamically trigger during WAL compaction when wiki indices become bloated (>400 lines). Reorganize, deduplicate, and split large index.md files into focused sub-documents while maintaining clean routing graph
-
-**Output**: Refactored smaller index.md (as router) and new specialized sub-documents
-
-**Gates**: wiki_linter.py (FAIL if dead links exist or any file still >500 lines)
-
-**Refactoring Flow**:
-```mermaid
-flowchart TB
-  Start[Index >= 400 lines] --> Analyze[Analyze Structure]
-  Analyze --> Cluster[Identify Topic Clusters]
-  Cluster --> CreateSubDocs[Create Sub-docs]
-  CreateSubDocs --> Migrate[Migrate Content]
-  Migrate --> RewriteIndex[Rewrite Index as Router]
-  RewriteIndex --> UpdateLinks[Update Parent Links]
-  UpdateLinks --> Lint[Run wiki_linter.py]
-  Lint -->|PASS| Done[Done]
-  Lint -->|FAIL| Fix[Fix Issues]
-  Fix --> Lint
-```
+#### 11. Librarian (GC)
+**Purpose**: Garbage collect and merge WAL fragments into main wiki.
+**Gate**: `wiki_linter.py`
 
 ### 4.3 Mounting Rules (by Intent/Profile/Phase)
 
 #### Change / PATCH
-- **Explorer**: Ambiguity Gatekeeper + Focus Guard
-- **Implement**: Focus Guard + Security Sentinel
-- **QA**: Documentation Curator
-- **Archive**: Domain Analyst + Interface Steward + Rules Lawyer + Documentation Curator + Skill Graph Curator
+- **Explorer**: Ambiguity Gatekeeper + Requirement Engineer + Focus Guard
+- **Implement**: Lead Engineer + Focus Guard + Security Sentinel
+- **QA**: Code Reviewer + Documentation Curator
+- **Archive**: Knowledge Extractor + Documentation Curator + Skill Graph Curator
 
 #### Change / STANDARD
-- **Explorer**: Ambiguity Gatekeeper + Focus Guard
-- **Propose/Review**: Domain Analyst + Interface Steward + Rules Lawyer
-- **Implement**: Focus Guard + Security Sentinel
-- **QA**: Documentation Curator
-- **Archive**: Domain Analyst + Interface Steward + Rules Lawyer + Documentation Curator + Skill Graph Curator
+- **Explorer**: Ambiguity Gatekeeper + Requirement Engineer + Focus Guard
+- **Propose/Review**: System Architect
+- **Implement**: Lead Engineer + Focus Guard + Security Sentinel
+- **QA**: Code Reviewer + Documentation Curator
+- **Archive**: Knowledge Extractor + Documentation Curator + Skill Graph Curator
 
 ### 4.4 Automation Contract
 

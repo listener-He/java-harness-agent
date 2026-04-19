@@ -265,7 +265,7 @@ Agent 自由发挥导致跨域污染和契约腐败，表现为:
 flowchart TB
     subgraph Input["📥 输入层"]
         User[👤 用户需求]
-        Shortcut[⚡ Shortcuts<br/>@read/@patch/@standard]
+        Shortcut["⚡ Shortcuts<br/>@read/@patch/@standard"]
     end
     
     subgraph Gateway["🎯 意图网关层 (ROUTER)"]
@@ -285,7 +285,7 @@ flowchart TB
     
     subgraph Knowledge["🧠 知识图谱层 (LLM Wiki)"]
         KG[KNOWLEDGE_GRAPH.md<br/>根节点]
-        DomainIndex[域索引<br/>api/data/domain/...]
+        DomainIndex["域索引<br/>api/data/domain等"]
         Docs[具体文档]
         Archive[归档区<br/>冷存储]
     end
@@ -303,11 +303,16 @@ flowchart TB
     
     subgraph Roles["🎭 角色矩阵层 (ROLE MATRIX)"]
         Ambiguity[Ambiguity Gatekeeper<br/>模糊性守卫]
+        ReqEngineer[Requirement Engineer<br/>需求工程师]
+        SysArchitect[System Architect<br/>系统架构师]
+        LeadEngineer[Lead Engineer<br/>主程]
+        CodeReviewer[Code Reviewer<br/>代码审查官]
         FocusGuard[Focus Guard<br/>防漂移守卫]
-        DomainAnalyst[Domain Analyst<br/>领域分析师]
-        InterfaceSteward[Interface Steward<br/>接口管理员]
+        KnowledgeExt[Knowledge Extractor<br/>知识提取官]
         SecuritySentinel[Security Sentinel<br/>安全哨兵]
         DocCurator[Documentation Curator<br/>文档策展人]
+        SkillCurator[Skill Graph Curator<br/>技能策展人]
+        Librarian["Librarian<br/>图书管理员GC"]
         KnowledgeArch[Knowledge Architect<br/>知识架构师]
     end
     
@@ -325,7 +330,7 @@ flowchart TB
     end
     
     subgraph Scripts["📜 脚本工具层 (SCRIPTS)"]
-        Gates[门禁脚本<br/>ambiguity_gate.py等]
+        Gates["门禁脚本<br/>ambiguity_gate.py等"]
         WikiTools[Wiki工具<br/>linter/compactor]
         Engine[引擎辅助<br/>engine.py]
     end
@@ -355,12 +360,19 @@ flowchart TB
     Phase6 --> LaunchSpec
     
     Phase1 -.->|挂载| Ambiguity
+    Phase1 -.->|挂载| ReqEngineer
     Phase1 -.->|挂载| FocusGuard
-    Phase2 -.->|挂载| DomainAnalyst
-    Phase2 -.->|挂载| InterfaceSteward
+    Phase2 -.->|挂载| SysArchitect
+    Phase3 -.->|挂载| SysArchitect
+    Phase4 -.->|挂载| LeadEngineer
+    Phase4 -.->|挂载| FocusGuard
     Phase4 -.->|挂载| SecuritySentinel
+    Phase5 -.->|挂载| CodeReviewer
     Phase5 -.->|挂载| DocCurator
-    Phase6 -.->|挂载| KnowledgeArch
+    Phase6 -.->|挂载| KnowledgeExt
+    Phase6 -.->|挂载| DocCurator
+    Phase6 -.->|挂载| SkillCurator
+    Phase6 -.->|挂载| Librarian
     
     Phase1 -.->|触发| PreHook
     Phase4 -.->|触发| GuardHook
@@ -377,16 +389,6 @@ flowchart TB
     Phase1 -.->|查询| SkillIndex
     Phase2 -.->|查询| SkillIndex
     Phase4 -.->|查询| BackendSkills
-    
-    style Input fill:#e1f5ff
-    style Gateway fill:#fff4e6
-    style Context fill:#f0e6ff
-    style Knowledge fill:#e6ffe6
-    style Lifecycle fill:#ffe6f0
-    style Roles fill:#fff9e6
-    style Hooks fill:#ffe6e6
-    style Skills fill:#e6f0ff
-    style Scripts fill:#f5f5f5
 ```
 
 ### 1.3 核心组件详解
@@ -427,7 +429,7 @@ Hooks System (拦截与纠偏)
 Role Matrix (动态挂载)
   ← Ambiguity Gatekeeper (Explorer)
   ← Focus Guard (Implement)
-  ← Domain Analyst (Propose/Archive)
+  ← Knowledge Extractor (Archive)
   ← Knowledge Architect (Archive重构)
 ```
 
@@ -469,7 +471,7 @@ java-harness-agent/
     ├── workflow/                          # 流程层：生命周期状态机 + 钩子纠偏
     │   ├── LIFECYCLE.md                   # 生命周期规范（6阶段状态机定义）
     │   ├── HOOKS.md                       # 钩子规范（5种钩子触发条件与效果）
-    │   ├── ROLE_MATRIX.md                 # 角色矩阵规范（9个虚拟角色定义与挂载规则）
+    │   ├── ROLE_MATRIX.md                 # 角色矩阵规范（11个虚拟角色定义与挂载规则）
     │   └── runs/                          # 运行时状态（不提交）
     │       └── execution_logs/
     │
@@ -691,7 +693,7 @@ java-harness-agent/
 3. **[ROLE_MATRIX.md](.agents/workflow/ROLE_MATRIX.md)**
    - **做什么**: 定义虚拟角色（review personas）以及如何根据 (Intent, Profile, Phase) 动态挂载
    - **核心内容**:
-     - 9 个角色定义 (Ambiguity Gatekeeper/Focus Guard/Domain Analyst/Interface Steward/Rules Lawyer/Security Sentinel/Documentation Curator/Skill Graph Curator/Knowledge Architect)
+     - 11 个角色定义 (Requirement Engineer/System Architect/Lead Engineer/Code Reviewer/Knowledge Extractor/Librarian/等)
      - 每个角色的目的、输出、门禁
      - 挂载规则 (按 Intent/Profile/Phase)
      - 自动化契约 (role_matrix.json)
@@ -1905,7 +1907,7 @@ stateDiagram-v2
     Implement --> ValidationGate
     ValidationGate --> QA
     QA --> Archive
-    Archive --> [*] : 队列完成 (建议新会话)
+    Archive --> [*] : 队列完成 (无缝写入)
     
     Review --> Propose : fail_hook(机审不通过)
     QA --> Implement : fail_hook(编译/测试失败, 严格最多2次)
@@ -1945,6 +1947,7 @@ stateDiagram-v2
 
 **挂载角色**:
 - Ambiguity Gatekeeper（模糊性守卫）
+- Requirement Engineer（需求工程师）
 - Focus Guard（防漂移守卫）
 
 **激活技能**:
@@ -2015,9 +2018,7 @@ explore_report.md MUST 包含 `## Core Context Anchors` 章节
 **目的**: 设计解决方案并冻结契约。
 
 **挂载角色**:
-- Domain Analyst（领域分析师）
-- Interface Steward（接口管理员）
-- Rules Lawyer（规则律师）
+- System Architect（系统架构师）
 
 **激活技能**:
 - devops-system-design
@@ -2181,6 +2182,7 @@ sequenceDiagram
 **目的**: 在契约边界内实现代码。
 
 **挂载角色**:
+- Lead Engineer（主程）
 - Focus Guard（防漂移守卫）
 - Security Sentinel（安全哨兵）
 
@@ -2249,6 +2251,7 @@ def check_scope(modified_files, focus_card):
 **目的**: 遵循 TDD 原则的质量保证。
 
 **挂载角色**:
+- Code Reviewer（代码审查官）
 - Documentation Curator（文档策展人）
 
 **激活技能**:
@@ -2333,14 +2336,12 @@ flowchart TB
 
 ##### Phase 6: Archive（知识提取）
 
-**强烈建议**: 鉴于前 5 个阶段积累了极长的代码与对话上下文，强烈建议在一个**全新的干净会话 (New Session)** 中执行 Archive，以防止大模型产生幻觉或触发长度限制熔断。
+**强烈建议**: 鉴于前 5 个阶段积累了极长的代码与对话上下文，强制要求在同一会话中使用定向的 **`git diff <files>`** 或 `openspec.md` 来执行 Archive，避免重读历史导致大模型产生幻觉或触发长度限制熔断。
 
 **目的**: 知识提取与清理,防止膨胀。
 
 **挂载角色**:
-- Domain Analyst
-- Interface Steward
-- Rules Lawyer
+- Knowledge Extractor
 - Documentation Curator
 - Skill Graph Curator
 - Knowledge Architect（如果需要重构）
@@ -2768,403 +2769,51 @@ Action:
 
 ---
 
-### 4.2 角色定义（9个虚拟角色）
+### 4.2 角色定义（11个虚拟角色）
 
 #### 1. Ambiguity Gatekeeper（模糊性守门员）
-
-**目的**: 防止在模糊输入上开始工作,尽早停止失控探索
-
-**挂载时机**: 
-- Explorer 阶段
-- 任何需求不明确的场景
-
-**输出**:
-- focus_card.md（goal/non-goals/allowed scope/stop rules）
-- 或 escalation card（如果需求过于模糊）
-
-**门禁**:
-- ambiguity_gate.py + focus_card_gate.py（FAIL 阻止进度）
-
-**检查项**:
-- Goal 是否清晰且可执行?
-- Non-goals 是否明确排除范围外内容?
-- Allowed scope 是否具体到文件路径?
-- Stop rules 是否可量化?
-
-**ambiguity_gate.py 示例**:
-```bash
-python3 .agents/scripts/gates/ambiguity_gate.py \
-  --intent "implement user authentication" \
-  --focus-card .agents/router/runs/focus_card.md
-```
-
-**输出**:
-```text
-[PASS] Focus card is valid and unambiguous
-```
-
-或
-
-```text
-[FAIL] Goal is too vague: "implement user authentication"
-Expected: Specific endpoints, auth method (JWT/OAuth), session management details
-
-Please clarify or generate escalation card
-```
-
----
-
-#### 2. Domain Analyst（领域分析师）
-
-**目的**: 捕获业务领域词汇、不变量和边界
-
-**挂载时机**:
-- Propose 阶段
-- Archive 阶段
-
-**输出**:
-- Domain WAL 片段
-
-**门禁**:
-- writeback_gate.py（Domain WAL required）
-
-**职责**:
-- 识别业务术语和词汇表
-- 记录领域不变量(invariants)
-- 定义边界上下文(bounded context)
-- 提取业务规则和约束
-
-**Domain WAL 示例**:
-```markdown
-# WAL Fragment - 20260417_order_domain
-
-## Type: append
-## Domain: domain
-## Timestamp: 2026-04-17T14:30:22Z
-
-### Content
-
-## Business Vocabulary
-- **Order**: A customer's request to purchase products
-- **Order Status**: PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED
-- **Payment Method**: CREDIT_CARD, ALIPAY, WECHAT_PAY
-
-## Invariants
-- An order cannot be cancelled after SHIPPED status
-- Total amount must equal sum of item prices plus shipping fee
-- Each order must have at least one order item
-
-## Bounded Context
-- Order Context: Handles order lifecycle
-- Payment Context: Handles payment processing
-- Inventory Context: Handles stock management
-
-### Source
-- openspec.md: [.agents/llm_wiki/wiki/specs/order_api_spec.md](...)
-- launch_spec: [.agents/router/runs/launch_spec_20260417_143022.md](...)
-```
-
----
-
-#### 3. Interface Steward（接口管理员）
-
-**目的**: 捕获 API 契约事实(endpoint/auth/error 语义)并链接到 spec
-
-**挂载时机**:
-- Propose 阶段
-- Archive 阶段
-
-**输出**:
-- API WAL 片段
-
-**门禁**:
-- writeback_gate.py（API WAL required）
-
-**职责**:
-- 记录 API endpoint 签名
-- 定义认证和授权要求
-- 标准化错误码和错误消息
-- 维护 API 版本兼容性策略
-
-**API WAL 示例**:
-```markdown
-# WAL Fragment - 20260417_user_api
-
-## Type: append
-## Domain: api
-## Timestamp: 2026-04-17T14:30:22Z
-
-### Content
-
-## New Endpoints
-
-### GET /api/v1/users/{id}
-**Description**: Retrieve user profile by ID
-**Authentication**: Bearer token required
-**Authorization**: User can only access their own profile; Admin can access any profile
-**Request Parameters**:
-- `id` (path): User ID (UUID format)
-**Response**:
-- 200 OK: User profile object
-- 404 NOT_FOUND: User not found
-- 403 FORBIDDEN: Insufficient permissions
-**Example**:
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "username": "john_doe",
-  "email": "john@example.com",
-  "createdAt": "2026-01-15T10:30:00Z"
-}
-```
-
-### Source
-- openspec.md: [.agents/llm_wiki/wiki/specs/user_api_spec.md](...)
-```
-
----
-
-#### 4. Rules Lawyer（规则律师）
-
-**目的**: 捕获规则域(permission/data scope/cache/exception)
-
-**挂载时机**:
-- Propose 阶段
-- Archive 阶段
-
-**输出**:
-- Rules WAL 片段
-
-**门禁**:
-- writeback_gate.py（Rules WAL required）
-
-**职责**:
-- 记录权限规则和数据访问控制
-- 定义缓存策略和失效规则
-- 标准化异常处理和错误码
-- 记录审计和日志要求
-
-**Rules WAL 示例**:
-```markdown
-# WAL Fragment - 20260417_permission_rules
-
-## Type: append
-## Domain: architecture
-## Timestamp: 2026-04-17T14:30:22Z
-
-### Content
-
-## Permission Rules
-- Users can only view/edit their own data
-- Admins can view/edit all users' data
-- Super admins can manage system configurations
-
-## Data Scope Rules
-- Query filtering: Always add `WHERE user_id = :currentUserId` for non-admin queries
-- Action validation: Use `@BeforePermission` annotation on mutation endpoints
-
-## Cache Rules
-- User profile cache TTL: 5 minutes
-- Cache invalidation: On profile update, invalidate user cache
-- Cache key format: `user:profile:{userId}`
-
-## Exception Handling
-- Use Domain Exceptions for business logic errors
-- Map error codes to HTTP status codes per error-code-standard
-- Log all exceptions with stack trace and context
-
-### Source
-- openspec.md: [...]
-```
-
----
-
-#### 5. Security Sentinel（安全哨兵）
-
-**目的**: 防止密钥泄漏和明显的 authZ 绕过风险
-
-**挂载时机**:
-- Implement 阶段
-- Archive 阶段
-
-**输出**:
-- Delivery capsule "Security notes"（或明确的"N/A"）
-
-**门禁**:
-- secrets_linter.py（默认在高置信度命中时 FAIL）
-
-**职责**:
-- 扫描硬编码密钥和密码
-- 检查权限绕过漏洞
-- 验证输入验证和 sanitization
-- 检查 SQL 注入风险
-
-**secrets_linter.py 示例**:
-```bash
-python3 .agents/scripts/gates/secrets_linter.py \
-  --paths "src/main/java/**/*.java"
-```
-
-**输出**:
-```text
-[PASS] No secrets detected in scanned files
-```
-
-或
-
-```text
-[FAIL] Potential secret found in src/main/java/com/example/Config.java:L25
-Pattern matched: AWS_ACCESS_KEY_ID = "AKIA..."
-
-Action: Move to environment variable or secrets manager
-```
-
----
-
-#### 6. Documentation Curator（文档策展人）
-
-**目的**: 确保工作结束时有一个完整的、可用于交接的 capsule + WAL 引用
-
-**挂载时机**:
-- QA 阶段
-- Archive 阶段
-
-**输出**:
-- Delivery capsule
-
-**门禁**:
-- delivery_capsule_gate.py + wiki_linter.py
-
-**职责**:
-- 生成交接文档
-- 确保 WAL 引用完整
-- 验证文档一致性
-- 记录已知问题和待办事项
-
-**Delivery Capsule 格式**:
-```markdown
-# Delivery Capsule - {feature_name}
-
-## Summary
-[Brief description of what was delivered]
-
-## Changes
-- File 1: [Description]
-- File 2: [Description]
-
-## WAL References
-- API WAL: [.agents/llm_wiki/wiki/api/wal/20260417_xxx.md](...)
-- Domain WAL: [.agents/llm_wiki/wiki/domain/wal/20260417_xxx.md](...)
-- Rules WAL: [.agents/llm_wiki/wiki/architecture/wal/20260417_xxx.md](...)
-
-## Testing
-- Test coverage: XX%
-- Key scenarios covered: [List]
-
-## Known Issues
-- [Issue 1 with workaround]
-- [Issue 2 planned for future]
-
-## Handoff Notes
-- For frontend: API contract in openspec.md
-- For QA: Test evidence in test_evidence.md
-```
-
----
-
-#### 7. Focus Guard（防漂移守卫）
-
-**目的**: 防止注意力漂移和未经合约授权的跨域编辑
-
-**输出**:
-- focus_card.md 中的范围约束
-
-**门禁**:
-- scope_guard.py（如果修改的文件超出允许范围则 FAIL）
-
-**挂载时机**:
-- Explorer 阶段(生成 focus_card)
-- Implement 阶段(enforce 范围)
-
-**职责**:
-- 在 Explorer 阶段协助生成清晰的 focus_card
-- 在 Implement 阶段监控文件修改
-- 拦截未经授权的跨域修改
-- 请求显式授权或停止
-
-**scope_guard.py 检查**:
-```bash
-python3 .agents/scripts/gates/scope_guard.py \
-  --focus-card .agents/router/runs/focus_card.md \
-  --modified-files src/main/java/com/example/*.java
-```
-
----
-
-#### 8. Skill Graph Curator（技能图谱策展人）
-
-**目的**: 确保新/更改的技能被索引且图谱保持一致
-
-**输出**:
-- 技能索引更新或明确的后续条目
-
-**门禁**:
-- skill_index_linter.py（默认 WARN,以后可提升为 FAIL）
-
-**挂载时机**:
-- Archive 阶段(如果有技能变更)
-
-**职责**:
-- 检测新创建或修改的技能
-- 更新 trae-skill-index/SKILL.md
-- 维护双向链接
-- 验证技能图谱连通性
-
----
-
-#### 9. Knowledge Architect（知识架构师 - Wiki 自动重构）
-
-**目的**: 在 WAL 压缩期间当 wiki 索引变得臃肿时(例如>400行)动态触发。重组、去重并将大型 index.md 文件拆分为专注的子文档,同时保持干净的路由图谱
-
-**输出**:
-- 重构后的更小的 index.md(充当路由器)和新的专用子文档
-
-**门禁**:
-- wiki_linter.py（如果存在死链,或任何文件仍超过 500 行则 FAIL）
-
-**挂载时机**:
-- Archive 阶段第4步(WAL Compaction)
-- 当 index.md >= 400 行时自动触发
-
-**职责**:
-- 分析膨胀的 index 内容结构
-- 识别主题聚类
-- 创建专注的子文档
-- 迁移内容到子文档
-- 重写 index 作为路由器
-- 更新上级链接
-- 通过 wiki_linter.py 门禁
-
-**重构流程**:
-```mermaid
-flowchart TB
-    Start[Index >= 400 lines] --> Analyze[分析内容结构]
-    Analyze --> Cluster[识别主题聚类]
-    Cluster --> CreateSubDocs[创建子文档]
-    CreateSubDocs --> Migrate[迁移内容]
-    Migrate --> RewriteIndex[重写 index 作为路由器]
-    RewriteIndex --> UpdateLinks[更新上级链接]
-    UpdateLinks --> Lint[运行 wiki_linter.py]
-    Lint -->|PASS| Done[完成]
-    Lint -->|FAIL| Fix[修复问题]
-    Fix --> Lint
-    
-    style Start fill:#ffe6e6
-    style CreateSubDocs fill:#fff4e6
-    style Done fill:#e6ffe6
-```
-
----
+**目的**：防止在模糊的输入上开始工作，尽早阻止失控的探索。
+**门控**：`ambiguity_gate.py` + `focus_card_gate.py`
+
+#### 2. Requirement Engineer（需求工程师）
+**目的**：桥接人类意图与技术规范，输出验收标准（AC）。
+**门控**：`ambiguity_gate.py`
+
+#### 3. System Architect（系统架构师）
+**目的**：设计高层交互、DDL、设计模式。负责 EPIC 拆解。
+**门控**：Approval Gate（人工批准）
+
+#### 4. Lead Engineer（主程）
+**目的**：严格按规范编写业务代码。遵循“越界申请机制”和“质量左移”。
+**门控**：`scope_guard.py` + 编译成功
+
+#### 5. Code Reviewer（代码审查官）
+**目的**：严苛的质量检查（性能、范式、健壮性）。
+**门控**：`linter.py`
+
+#### 6. Focus Guard（防漂移守卫）
+**目的**：防止注意力漂移和未经授权的跨域编辑。
+**门控**：`scope_guard.py`
+
+#### 7. Knowledge Extractor（知识提取官）
+**目的**：统一提取 Domain、API 和 Rules，避免角色争夺。
+**门控**：`writeback_gate.py`
+
+#### 8. Security Sentinel（安全哨兵）
+**目的**：纯脚本执行者。运行扫描脚本防止密钥泄露。
+**门控**：`secrets_linter.py`
+
+#### 9. Documentation Curator（文档策展人）
+**目的**：确保交付胶囊和 WAL 引用完整。
+**门控**：`delivery_capsule_gate.py` + `wiki_linter.py`
+
+#### 10. Skill Graph Curator（技能图谱策展人）
+**目的**：确保新技能被索引。
+**门控**：`skill_index_linter.py`
+
+#### 11. Librarian（图书管理员/GC）
+**目的**：合并散碎的 WAL 碎片，清理旧数据。
+**门控**：`wiki_linter.py`
 
 ### 4.3 挂载规则（按 Intent/Profile/Phase）
 
@@ -3172,20 +2821,20 @@ flowchart TB
 
 | Phase | Mounted Roles | Required Artifacts |
 |-------|--------------|-------------------|
-| Explorer | Ambiguity Gatekeeper + Focus Guard | focus_card.md |
-| Implement | Focus Guard + Security Sentinel | Code changes, security notes |
-| QA | Documentation Curator | Test evidence, delivery capsule |
-| Archive | Domain Analyst + Interface Steward + Rules Lawyer + Documentation Curator + Skill Graph Curator | Domain/API/Rules WAL fragments, delivery capsule |
+| Explorer | Ambiguity Gatekeeper + Requirement Engineer + Focus Guard | focus_card.md |
+| Implement | Lead Engineer + Focus Guard + Security Sentinel | Code changes, security notes |
+| QA | Code Reviewer + Documentation Curator | Test evidence, delivery capsule |
+| Archive | Knowledge Extractor + Documentation Curator + Skill Graph Curator | Unified Knowledge WAL fragment, delivery capsule |
 
 #### Change / STANDARD
 
 | Phase | Mounted Roles | Required Artifacts |
 |-------|--------------|-------------------|
-| Explorer | Ambiguity Gatekeeper + Focus Guard | focus_card.md |
-| Propose/Review | Domain Analyst + Interface Steward + Rules Lawyer | openspec.md with complete schema |
-| Implement | Focus Guard + Security Sentinel | Code changes, security notes |
-| QA | Documentation Curator | Test evidence, delivery capsule |
-| Archive | Domain Analyst + Interface Steward + Rules Lawyer + Documentation Curator + Skill Graph Curator | Domain/API/Rules WAL fragments, delivery capsule |
+| Explorer | Ambiguity Gatekeeper + Requirement Engineer + Focus Guard | focus_card.md |
+| Propose/Review | System Architect | openspec.md with complete schema |
+| Implement | Lead Engineer + Focus Guard + Security Sentinel | Code changes, security notes |
+| QA | Code Reviewer + Documentation Curator | Test evidence, delivery capsule |
+| Archive | Knowledge Extractor + Documentation Curator + Skill Graph Curator | Unified Knowledge WAL fragment, delivery capsule |
 
 ---
 

@@ -125,6 +125,19 @@ Output:
 Gate:
 - `wiki_linter.py` (FAIL if dead links exist, or if any file still exceeds 500 lines).
 
+### Librarian (Knowledge Compaction)
+Purpose:
+- Prevent WAL "graveyard" bloat by periodically merging scattered WAL fragments into the main wiki and performing Garbage Collection (GC).
+Executable Checklist:
+- [ ] Run `python3 .agents/scripts/tools/librarian_gc.py --aggregate` to read all unmerged WAL fragments.
+- [ ] Merge the aggregated knowledge intelligently into `KNOWLEDGE_GRAPH.md` or specific Domain `.md` files.
+- [ ] Ensure no contradictions or hallucinations exist in the updated wiki.
+- [ ] Run `python3 .agents/scripts/tools/librarian_gc.py --clean` to delete the old WAL fragments.
+Output:
+- Updated main wiki files (`KNOWLEDGE_GRAPH.md`, etc.).
+Gate:
+- `wiki_linter.py` (Verify no dead links).
+
 ## 2) Mounting Rules (By Intent/Profile/Phase)
 
 ### Change / PATCH
