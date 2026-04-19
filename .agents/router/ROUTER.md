@@ -182,7 +182,7 @@ When launching a lifecycle queue:
 2. Drive transitions by updating only `Status / Phase / Failed_Reason`
 3. Optional: `python3 ../scripts/harness/engine.py init "..."` to create and maintain the file
 
-After QA is done, it is highly recommended to leave the `Archive` phase as `PENDING`, open a **new chat session**, and instruct the Agent to "Continue with Archive" to prevent context bloat.
+After QA is done, transition automatically to the Archive phase in the **same session**. Use lightweight targeted commands (like `git diff <specific_files>` based on `focus_card.md`) or review `openspec.md` to summarize changes for WAL write-back, avoiding heavy context rereads.
 
 **Status values:** `PENDING` | `IN_PROGRESS` | `DONE` | `WAITING_APPROVAL` | `FAILED`
 
@@ -208,6 +208,36 @@ After QA is done, it is highly recommended to leave the `Archive` phase as `PEND
 ## 6. Special Scenarios
 
 These scenarios override the default routing rules. Match the user's request against the scenario list BEFORE applying standard routing.
+
+### Scenario DEBUG — Deep Troubleshooting
+
+**Trigger:** The user reports a bug, error, or exception but the root cause is unknown, requiring investigation before fixing.
+
+**Routing:** Profile `PATCH`, Intent `Audit` (downgraded from `Change`). 
+
+**Engine Behavior:** 
+- The Agent is ALLOWED to execute terminal commands (e.g., tests, log reading) with a higher Retry limit (up to 5 times) to gather evidence.
+- The Agent is FORBIDDEN from modifying business code (`SearchReplace`) during the DEBUG scenario.
+- The `<Cognitive_Brake>` MUST include `[Hypothesis]` and `[Verification]` steps.
+- Once the root cause is found, the Agent MUST yield to the user or transition to a standard `Change` intent to apply the fix.
+
+---
+
+### Scenario EPIC — Massive Refactoring or Cross-Domain Feature
+
+**Trigger:** The user requests a massive feature, a framework migration, or a task spanning more than 2 distinct domains.
+
+**Routing:** Profile `STANDARD`, Intent `Change`, Risk `HIGH`.
+
+**Engine Behavior:**
+- **Contract-driven Delegation:** The Agent MUST NOT write code directly. It assumes the role of "Foreman + QA".
+- The Agent MUST first write a highly detailed `openspec.md` (defining API contracts, schemas, etc.).
+- **Micro-tasking:** The Agent MUST NOT dispatch massive goals to sub-agents (e.g., "Refactor this module"). It MUST slice the work into `tasks.md`.
+- The Agent delegates work to Sub-agents using high-frequency, short-lifecycle prompts (e.g., *"Read openspec.md section 2, ONLY generate UserEntity.java"*).
+- **Verification Gate:** The Agent MUST verify the sub-agent's return output against the spec before dispatching the next micro-task. Sub-agents are treated as "typewriters", not architects.
+- The `<Cognitive_Brake>` MUST include an evaluation of the "Blast Radius" and "Dependencies".
+
+---
 
 ### Scenario A — Emergency Hotfix (`@patch --emergency`)
 

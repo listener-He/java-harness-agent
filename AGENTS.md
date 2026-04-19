@@ -24,14 +24,14 @@ Single entry point. Read this file first on every session start. All links here 
 Before any action (reading files, searching, writing code), the Agent MUST output the following headers AND a structured thinking block:
 
 ```xml
-[Intent Check] intent=<Learn|Change|DocQA|Audit> | profile=@<learn|patch|standard> | risk=<LOW|MEDIUM|HIGH> | scenario=<none|A|B|C|D|E> | emergency=<true|false>
+[Intent Check] intent=<Learn|Change|DocQA|Audit> | profile=@<learn|patch|standard> | risk=<LOW|MEDIUM|HIGH> | scenario=<none|DEBUG|EPIC|A|B|C|D|E> | emergency=<true|false>
         [Lifecycle: <Plan|Execute|Validate|Archive>] | [Mounted Role: @<Role>]
 
 <Cognitive_Brake>
-    - Role & Scope: As [@RoleX], my authorized file boundary is [focus_card.md / None]. Am I crossing it?
-    - Budget & Context: Wiki reads: [X]/3, Code reads: [Y]/8. Do I need to Grep specific project standards/exceptions first?
-    - Architectural Defense: Is this a cross-domain/transactional change? Am I at a STOP gate like Approval or Validation?
-    - Next State: What exact artifact, WAL, or validation command will I output/run right now?
+- Role & Scope: As [@RoleX], my authorized file boundary is [focus_card.md / None]. Am I crossing it?
+- Budget & Context: Wiki reads: [X]/3, Code reads: [Y]/8. Do I need to Grep specific project standards/exceptions first?
+- Architectural Defense: Is this a cross-domain/transactional change? Am I at a STOP gate like Approval or Validation?
+- Next State: What exact artifact, WAL, or validation command will I output/run right now?
 </Cognitive_Brake>
 ```
 
@@ -43,7 +43,7 @@ Before any action (reading files, searching, writing code), the Agent MUST outpu
 - **CoT Requirement**: The `<Cognitive_Brake>` block is MANDATORY. It forces you to adopt the assigned Role Personas (e.g., as `@Security Sentinel` or `@Focus Guard`) before acting like a Coder.
 - **Language Matching**: The internal reasoning text inside the `<Cognitive_Brake>` MUST be written in the same natural language as the user's most recent prompt (e.g., 简体中文, にほんご, Español,  English) to maximize human readability. The XML tags and protocol headers (e.g., `[Intent Check]`) MUST remain in English for script parsing.
 - If the intent is ambiguous (missing action or object signal): output `[Intent Check] AMBIGUOUS — <reason>` and ask one clarifying question before proceeding.
-- If a special scenario (A–E) is matched: include `scenario=<letter>` and apply Scenario routing overrides (see [ROUTER.md](.agents/router/ROUTER.md#6-special-scenarios)).
+- If a special scenario (DEBUG, EPIC, A–E) is matched: include `scenario=<name>` and apply Scenario routing overrides (see [ROUTER.md](.agents/router/ROUTER.md#6-special-scenarios)).
 - You MUST explicitly declare any Phase transition using the `[Lifecycle: ...]` header.
 - The `[Mounted Role: ...]` MUST be derived from `.agents/workflow/ROLE_MATRIX.md` based on the current Phase.
 - These lines are the only required headers. Do not add verbose preamble before them.
@@ -114,10 +114,10 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 2. **Cognitive Brake:**
 ```xml
 <Cognitive_Brake>
-    - Role & Scope: As @Ambiguity Gatekeeper, current boundary is None. Must output focus_card.md to lock scope.
-    - Budget & Context: Wiki: 1/3, Code: 2/8. Must grep `CustomerException` standards.
-    - Architectural Defense: Cross-table operation (Tenant/Asset). Requires `@Transactional` Facade. Currently in Propose phase -> reaching Approval Gate. MUST STOP. No coding allowed.
-    - Next State: Output explore_report.md, focus_card.md, and openspec.md. Yield for human approval.
+- Role & Scope: As @Ambiguity Gatekeeper, current boundary is None. Must output focus_card.md to lock scope.
+- Budget & Context: Wiki: 1/3, Code: 2/8. Must grep `CustomerException` standards.
+- Architectural Defense: Cross-table operation (Tenant/Asset). Requires `@Transactional` Facade. Currently in Propose phase -> reaching Approval Gate. MUST STOP. No coding allowed.
+- Next State: Output explore_report.md, focus_card.md, and openspec.md. Yield for human approval.
 </Cognitive_Brake>
 ```
 3. **Action:** Agent reads context, creates the spec detailing a `@Transactional` Facade layer, and defines the exact files to touch in `focus_card.md`.
@@ -149,16 +149,16 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 </Cognitive_Brake>
 ```
 3. **Action:** Agent uses `RunCommand` (`mvn clean compile`). Fixes a `javax` import error (Retry 1/2) and recompiles successfully.
-4. **Yield:** Agent reports: *"Compilation passed! Context is heavy. Highly recommend opening a New Session and prompting 'Execute Archive' to extract knowledge."*
+4. **Yield:** Agent reports: *"Compilation passed! Transitioning automatically to Archive phase to extract knowledge."*
 
-**Turn 4: Archive (Phase 6) — *In a New Clean Session***
+**Turn 4: Archive (Phase 6) — *Seamless Write-back***
 1. **Output headers:** `[Lifecycle: Archive] | [Mounted Role: @Domain Analyst + @Documentation Curator]`
 2. **Cognitive Brake:**
 ```xml
 <Cognitive_Brake>
 - Role & Scope: As @Domain Analyst, extraction only. No code mutation.
 - Budget & Context: Wiki: 0/3, Code: 0/8.
-- Architectural Defense: Asynchronous Archive execution. Clean context isolated from heavy coding history.
+- Architectural Defense: Execute Archive seamlessly in the same session. Rely on targeted `git diff <files>` or `openspec.md` to summarize changes, strictly avoiding re-reading heavy coding history.
 - Next State: Write schema changes to `data/wal/YYYYMMDD_asset_type.md`.
 </Cognitive_Brake>
 ```
