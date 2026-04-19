@@ -49,7 +49,7 @@ Prevent delivery of uncompilable code or broken dependencies.
 
 **Actions:**
 - The Agent MUST autonomously run `RunCommand` to execute `javac`, `mvn clean compile`, or `gradle build`.
-- If compilation fails, the Agent MUST fix the error (e.g., missing imports, syntax errors) and re-verify before yielding the final response.
+- If compilation fails, the Agent MUST fix the error and re-verify. **MAX 2 RETRIES**. If it still fails after 2 attempts, STOP and ask the human for help. Do not enter an infinite loop.
 
 ---
 

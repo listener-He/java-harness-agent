@@ -38,15 +38,15 @@ For developing a new feature or complex module, you MUST execute these phases se
 - **Skill to Invoke**: `devops-review-and-refactor`
 - **Guardrail**: Must pass all checks before implementation. Failures loop back to Propose.
 
-### Phase 4: Task Planning (任务规划)
-- **Task**: Break down the design into actionable steps using the `TodoWrite` tool.
-- **Skill to Invoke**: `devops-task-planning`
-- **Guardrail**: Prevent monolithic code generation. Divide and conquer.
+### Phase 4: Implementation (Implement)
+- **Task**: Execute the code changes strictly according to the `openspec.md` contract.
+- **Skills to Invoke**: `devops-feature-implementation`, `devops-task-planning`
+- **Guardrail**: Code must strictly match `openspec.md`. Do not improvise.
 
-### Phase 5: Implementation & QA (Implement & Test)
-- **Task**: Execute the Todo list. Write tests first, then write robust code.
-- **Skills to Invoke**: `devops-testing-standard` & `devops-feature-implementation`
-- **Guardrail**: Code must strictly match `openspec.md`. Test failures loop back to Implement.
+### Phase 5: QA Test
+- **Task**: Run compilation (`javac`, `mvn compile`) and write tests/evidence.
+- **Skills to Invoke**: `devops-testing-standard`, `code-review-checklist`
+- **Guardrail**: Test/compilation failures loop back to Implement.
 
 ### Phase 6: Knowledge Archiving & Evaluation (Archive)
 - **Task**: Extract knowledge to `llm_wiki`, move spec to `archive`, collect user evaluation (1-10) and update `preferences/index.md`.

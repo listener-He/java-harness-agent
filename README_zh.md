@@ -10,17 +10,15 @@
 [![Agent-Ready](https://img.shields.io/badge/Agent-Ready-brightgreen.svg)](README.md)
 [![Lifecycle](https://img.shields.io/badge/Lifecycle-Stable-success.svg)](.agents/workflow/LIFECYCLE.md)
 
-## ⚠️ 核心定位声明
+## ⚠️ 核心定位声明：一个 LLM 原生的操作环境
 
-> **本项目不是传统的开发框架或面向人类的工具。**
+> **“不要把方向盘交给引擎。”**
 >
-> **它是一个纯 LLM 原生的规约线束，专为大语言模型的自主执行而设计。**
+> 这是一个**机器对机器（M2M）的基础设施**。它不是 Spring Boot 那样给人类调用的 Java 框架，也不是 CLI 开发者脚手架。它是一个**认知线束 (Cognitive Harness)**——由人类设计，但**专供大语言模型（LLM）阅读、解析和执行**的工程协议。
 >
-> 从第一天起，这个系统就被架构为**完全由 AI Agent 驱动**，而非人类。每一个组件——从意图网关到生命周期状态机，从知识图谱到技能矩阵——都被工程化为 LLM 可执行的协议，用于自我导航、自我纠偏和自我演进。
->
-> **如果你用「人类开发者工具」的标准来评估这个项目，你将从根本上误解其设计哲学。** 这是软件工程中机器对机器协调的基础设施。
+> 通过将工程纪律（生命周期状态机、角色矩阵、无向量知识图谱）编码为 LLM 原生的格式，它将 AI 从一个简单的“代码补全机”重塑为了一个能够自我导航、自我纠偏的自主工程实体。
 
-**Agent 驱动研发体系（工程规范手册 + Onboarding）** Java Harness Agent 是一套专为可持续软件演进打造的后端开发流程。它将"契约优先"的 OpenSpec 设计理念与五大核心组件——意图网关 (Intent Gateway)、6 阶段生命周期状态机、知识图谱 (LLM Wiki)、专业技能 (Skills) 以及钩子纠偏 (Hooks)——深度融合。通过支持层级下钻的 LLM Wiki 机制，它从根本上防止了上下文膨胀，全面赋能 AI Agent 实现从需求理解到生产级代码交付的自主构建、自动化测试与自我修复闭环。
+**Java Harness Agent** 是一套专为可持续软件演进打造的 Agent 驱动后端开发流程。它将"契约优先"的 OpenSpec 设计理念与五大核心组件——意图网关 (Intent Gateway)、6 阶段生命周期状态机、知识图谱 (LLM Wiki)、专业技能 (Skills) 以及钩子纠偏 (Hooks)——深度融合。通过支持层级下钻的 LLM Wiki 机制，它从根本上防止了上下文膨胀，全面赋能 AI Agent 实现从需求理解到生产级代码交付的自主构建、自动化测试与自我修复闭环。
 
  [工程手册](ENGINEERING_MANUAL_zh.md) | [快速开始](#-快速上手)
 
@@ -36,12 +34,48 @@
 ### ✨ 核心特性
 
 - 🎯 **意图驱动**：自然语言 → 结构化意图队列 → 可执行任务
-- 🔄 **生命周期状态机**：Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive
+- 🔄 **生命周期状态机**：Explorer → Propose → Review → Approval Gate (HITL) → Implement → Validation Gate → QA → Archive
 - 🧠 **知识图谱**：分层 Wiki 系统，支持双向导航
 - 🛡️ **自我纠偏**：自动守卫钩子、失败恢复、人类介入检查点
 - 📊 **契约先行**：基于 OpenSpec 的设计优先于实现
 - 🔌 **技能矩阵**：25+ 专业技能提供领域专家能力
 - 📈 **防膨胀机制**：自动知识提取与归档，防止信息过载
+
+---
+
+## 💰 Token 经济学与成本模型
+
+鉴于 Java Harness Agent 是一个强约束的 Agent 框架，它天生比简单的“代码补全工具”消耗更多的 Token。然而，它的架构将成本从**“试错与盲目搜索”**转移到了**“前期规划与门控防御”**上，从而使复杂任务的全局成本变得极其稳定和可预期。
+
+### 1. 哪里产生了额外的“思考税” (The Thinking Tax)
+- 每次对话，Agent 都必须输出 `<Cognitive_Brake>` 并阅读强制性的系统上下文（如 `LIFECYCLE.md`, `AGENTS.md`）。这导致每一轮都会产生大约 **~500 个输出 Token 和 ~2000 个输入 Token** 的硬性基线损耗。
+- 在 `Propose` 阶段，架构强制要求撰写 `explore_report.md` 和 `openspec.md`，这会在写哪怕一行代码之前，额外消耗掉约 ~1500 个输出 Token。
+
+### 2. ROI 盘点：三种工程模式的终极对比 (以开发跨表事务功能为例)
+
+*注：以下估算基于当前最新的旗舰模型（如 GPT-5.4, GPT-5.3-Codex, Claude 3.7 Sonnet, Gemini 3.5 Pro），按平均输入 ~$2.5/M，输出 ~$15/M 计算。*
+
+| 开发范式 | 行为特征 | 输入 Tokens | 输出 Tokens | 隐性成本与风险 | 最终评价 |
+|----------|----------|--------------|---------------|----------------------|---------|
+| **纯对话 / Copilot** | 缺乏上下文，直接生成代码。 | ~5k | ~1k | **极高的返工率**。忘记加事务、漏字段、甚至引错包。需要人类反复写 Prompt 去纠正。 | Token 极省，但极其消耗人类时间。 |
+| **无约束的 Auto-Agent** | 盲目调用 `SearchCodebase` 或 `Grep` 扫库，遇到编译报错陷入死循环重试。 | **10万+** | 10k+ | **灾难级损耗**。因上下文过载和死循环，迅速烧光 Token 预算，且极易触发平台熔断。 | 不可控，高风险。 |
+| **Java Harness Agent (本架构)** | 缴纳适量的“思考税”，利用漏斗限流（`Wiki≤3, Code≤8`），写好 `openspec.md` 并在 Approval Gate 停下。 | **~30k** | **~6k** | **成本确定且可控**。架构错误在前期被人类拦截，语法错误被左移验证（Shift-Left Validation）消化。 | **甜点位 (The Sweet Spot)**。用可控的 Token 消耗换取了高质量的交付。 |
+
+### 3. 不同场景的 Token 消耗预期计算 (基于最新旗舰模型)
+
+| 场景模式 (Profile) | 典型交互轮数 | 输入 Tokens | 输出 Tokens | 预期成本 / 任务 |
+|------------------|---------------|--------------|---------------|----------------------|
+| **`@patch` (小型 Bug 修复)** | 1-2 轮 | ~5k - 8k | ~1k - 2k | **$0.03 - $0.05** |
+| **`@standard` (新功能开发)** | 4-6 轮 | ~20k - 40k | ~4k - 8k | **$0.10 - $0.25** |
+| **`@learn` (文档问答)** | 1 轮 | ~3k - 5k | ~500 | **$0.01 - $0.02** |
+
+### 4. Token 优化公式与建议
+**总 Token 成本 = (基础上下文 + 漏斗收集的负载) × 轮数 + (规范生成 + 代码生成 + 认知刹车输出)**
+
+为了最大化性价比：
+1. **善用快捷指令**：对于琐碎的修改，使用 `@patch` 替代默认的 `@standard`，从而跳过 Phase 1-3，直接省下几千 Token。
+2. **提供明确的作用域**：在提示词中带上 `--scope src/Foo.java`。这会触发 **Rule 0**（直接读取），跳过整个知识图谱的下钻检索过程，立省海量输入 Token。
+3. **尊重刹车点**：当 Agent 在 Validation Gate（编译前）停下时，请确保您本地的依赖或环境没问题后再允许它编译，防止它陷入重试循环。
 
 ---
 
@@ -218,8 +252,9 @@ flowchart TB
 
 **核心约束速览:**
 - **预算限制**: Wiki ≤ 3 文档, Code ≤ 8 文件（同文件分页不计）
-- **Approval Gate**: MEDIUM/HIGH 风险必须在 `WAITING_APPROVAL` 停止等待人类确认
-- **防循环**: 任何脚本/测试/linter 最多重试 3 次，超限必须请求人类介入
+- **认知刹车 (Cognitive Brake)**: 在任何操作前必须输出 `<Cognitive_Brake>` XML 块，强制校验角色、边界和预算
+- **双重人类门控**: 必须在写代码前 (`Approval Gate`) 和执行重度编译前 (`Validation Gate`) 停止并等待人类确认
+- **防循环**: 脚本/linter最多重试3次；编译/测试**严格最多重试2次**。超限必须请求人类介入，严禁死循环
 - **范围守卫**: 未经明确授权不得修改 `focus_card.md` 约定范围外的文件
 
 #### 第二步：理解意图网关 🎯
@@ -275,12 +310,13 @@ stateDiagram-v2
     Propose --> Review: 技术评审
     Review --> ApprovalGate: HITL闸门
     ApprovalGate --> Implement: 按契约实现
-    Implement --> QA: 测试验证
-    QA --> Archive: 知识提取
+    Implement --> ValidationGate: 停止并请求编译
+    ValidationGate --> QA: 测试验证
+    QA --> Archive: 知识提取 (新会话)
     Archive --> [*]: 队列完成
     
     Review --> Propose: fail_hook(机审失败)
-    QA --> Implement: fail_hook(测试失败)
+    QA --> Implement: fail_hook(编译/测试失败, 最多2次)
     
     note right of ApprovalGate
         MEDIUM/HIGH风险:
@@ -314,9 +350,9 @@ stateDiagram-v2
 graph LR
     A[Explorer<br/>澄清需求] --> B[Propose<br/>OpenSpec]
     B --> C[Review<br/>技术评审]
-    C --> D[Approval<br/>HITL闸门]
-    D --> E[Implement<br/>按契约实现]
-    E --> F[QA<br/>测试验证]
+    C --> D[Approval<br/>HITL闸门] --> E[Implement<br/>按契约实现]
+    E --> V[Validation<br/>停止请求编译]
+    V --> F[QA<br/>测试验证]
     F --> G[Archive<br/>更新索引]
     
     style A fill:#e1f5ff
@@ -661,10 +697,11 @@ Escalation Card格式：
 
 | 机制 | 触发点 | 触发条件 | 产生效果 | 评判方式 |
 |------|--------|----------|----------|----------|
+| **Cognitive_Brake** | 任何行动前 | 协议强制执行 | 迫使LLM在调用工具或写代码前，显式推理角色、边界、预算和下一步动作 | XML CoT解析 |
 | **pre_hook** | 进入新阶段前 | 阶段转换 | 加载相关规则集 + 输出Decision-First Preflight + budgets | 必需的输出格式 |
 | **guard_hook** | 实现/改动过程中 | 风格不合规、权限/越权、跨域污染、预算耗尽 | 立即阻断、要求重写或授权；执行Anti-runaway guard | 规范技能审查 + 预算规则 |
 | **fail_hook** | 任意阶段失败 | 编译/测试/审查失败 | 状态降级回退；记录失败原因到 `openspec.md`；触发重试计数 | 客观日志（编译/测试输出） |
-| **Max Retries** | fail_hook 内 | 同一阶段连续失败达到阈值（3次） | 强制停止并请求人类介入 | 失败计数达到阈值 |
+| **Max Retries** | fail_hook 内 | 同一阶段连续失败达到阈值 | 强制停止并请求人类介入（脚本最多3次，编译严格最多2次） | 失败计数达到阈值 |
 | **Approval Gate (HITL)** | Review 通过后 | 需要进入 Implement | "冻结契约"，由人类授权是否进入实现 | 人类确认（YES/NO + 修改意见） |
 | **文档一致性门禁** | post_hook / Archive | Wiki 幻觉与契约腐败风险 | 只读校验（`schema_checker.py` + `wiki_linter.py`），发现 FAIL 时触发 `fail_hook` | 脚本退出码（非零即 FAIL） |
 | **Archive 写回** | 任务结束 | 新增/变更知识需要沉淀 | 从 Spec 提取稳定知识、归档热文档、更新索引（WAL 机制） | 规则校验、连通性检查 |
@@ -830,12 +867,13 @@ python .agents/scripts/gates/run.py --intent <intent> --profile <profile> --phas
 跨域修改需要在 `openspec.md` 中明确授权，并在 Review/HITL 阶段确认。
 
 ### 🚫 不暴走
-失败回退 + 最大重试阈值（3 次）。达到阈值时停止并请求人类介入。
+失败回退 + 严格的最大重试阈值（脚本3次，编译严格2次）。达到阈值时必须停止并请求人类介入，严禁死循环。
 
 ### 🚫 不膨胀
 - 规范必须在提取后归档
 - 稳定知识必须提取到索引
 - 超过 500 行的索引必须拆分为子目录
+- **强烈建议在全新的干净会话中执行 Archive 归档**，以避免上下文窗口过载和幻觉
 
 ---
 

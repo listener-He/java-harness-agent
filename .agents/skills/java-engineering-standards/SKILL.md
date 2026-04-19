@@ -18,8 +18,10 @@ Dictates the project's strict architectural layering and business logic distribu
 
 ### Service (Business Layer)
 - Responsibility: core business logic, transaction management, permission validation.
-- **Write methods**: MAY (and SHOULD) return `ApiResponse<Void>` or `ApiResponse<T>` directly, so that business validation failures can return a unified failure structure with an error message without throwing exceptions.
 - **Read methods**: MUST return raw DTO/VO or `PageData<T>` — not a Unified Response wrapper.
+- **Write methods (Return vs. Throw Exception)**:
+  - **Return `ApiResponse<T>`**: Use this when the operation is independent, explicitly known to the caller (e.g., direct Controller call), and DOES NOT require rolling back a database transaction.
+  - **Throw `DomainException`**: Use this for non-query operations where module call depth is deep, OR **when transaction rollback is sensitive/required**. Throwing an exception is the standard and safest way to trigger `@Transactional` rollback.
 
 ### Mapper (Data Layer)
 - Responsibility: direct database interaction via MyBatis-Plus only.

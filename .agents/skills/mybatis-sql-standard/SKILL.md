@@ -44,6 +44,7 @@ This skill dictates the absolute rules for designing database tables, modeling d
   - **❌ NEGATIVE EXAMPLE (DB-Level JOIN):**
     `SELECT u.*, d.dept_name FROM user u LEFT JOIN dept d ON u.dept_id = d.id` (Banned).
 - **Allowed JOIN Exceptions:** You may use `JOIN` ONLY WHEN the filtering (`WHERE`) or sorting (`ORDER BY`) strictly depends on the joined table's columns AND data volume is strictly controlled.
+- **Deep Pagination & Large IN Clauses (OOM Protection):** When assembling data in memory, if the first query returns a massive number of IDs (e.g., >1000), you MUST NOT pass them all into an `IN (...)` clause at once. You must use `Lists.partition(ids, 500)` to batch the queries, or rely on proper pagination to limit the initial dataset.
 
 ---
 
@@ -90,6 +91,7 @@ This skill dictates the absolute rules for designing database tables, modeling d
 ---
 
 ## 🛡 5. Tenant Isolation Guarantee
-**Rule:** NEVER forget the tenant boundary.
-- When writing raw XML SQL, `WHERE tenant_id = #{tenantId}` MUST be the first condition in the `WHERE` clause (aligning with the leftmost prefix of the composite index).
-- Do not bypass MyBatis-Plus Tenant Line Interceptors unless explicitly authorized via `@InterceptorIgnore(tenantLine = "true")`.
+**Rule:** Rely on the global Tenant Interceptor; do NOT duplicate conditions.
+- The system uses MyBatis-Plus `TenantLineInnerInterceptor`. It will automatically append `tenant_id = ?` to all queries and updates.
+- **DO NOT** manually add `.eq(User::getTenantId, tenantId)` or `WHERE tenant_id = #{tenantId}` in your code or XML. This causes redundant SQL (e.g., `tenant_id = 1 AND tenant_id = 1`) and potential syntax errors.
+- Only manually append the tenant condition if you have explicitly bypassed the interceptor via `@InterceptorIgnore(tenantLine = "true")`.

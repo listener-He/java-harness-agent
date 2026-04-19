@@ -99,6 +99,7 @@ One-way state machine with hard gates and rollback rules.
 1. Execute the `<Cognitive_Brake>` template to establish boundaries (transactional layers, existing exceptions/validations) BEFORE coding.
 2. Implement strictly according to the approved contract. Follow Checkstyle and defensive programming. No uncontrolled improvisation.
 3. Create new tables/schemas only in the WAL data domain (`wiki/data/wal/`), not as root `.sql` scripts.
+4. **STOP (Yield):** Once code is written, you MUST STOP and ask the human for permission to proceed to Phase 5 (QA Test). Do not auto-continue into heavy compilation.
 
 ---
 
@@ -111,14 +112,14 @@ One-way state machine with hard gates and rollback rules.
 1. Trigger `shift_left_hook`: Autonomously execute `javac` or Maven/Gradle build commands. Fix all compilation errors (`javax` vs `jakarta`, missing imports).
 2. Run tests and produce objective evidence (logs, test output, screenshots).
 
-**Failure rule:** If QA fails → roll back to Phase 4.
+**Failure rule:** If QA fails → roll back to Phase 4. **STRICT MAX RETRIES: 2.** If tests or compilation fail more than 2 times, STOP immediately and ask the human for help. Do not enter an infinite fixing loop.
 
 ---
 
 ### Phase 6: Archive
 
 **Mounted Roles:** `@Domain Analyst`, `@Interface Steward`, `@Rules Lawyer`, `@Documentation Curator`, `@Skill Graph Curator`
-**Purpose:** Close the loop and prevent knowledge bloat.
+**Purpose:** Close the loop and prevent knowledge bloat. Highly recommended to execute in a **NEW, clean chat session** to avoid context window overload.
 
 **Steps (in order):**
 1. Sync docs via `api-documentation-rules` and `database-documentation-sync` skills.

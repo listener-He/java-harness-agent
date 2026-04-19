@@ -182,7 +182,7 @@ When launching a lifecycle queue:
 2. Drive transitions by updating only `Status / Phase / Failed_Reason`
 3. Optional: `python3 ../scripts/harness/engine.py init "..."` to create and maintain the file
 
-After each `Archive` phase, re-read the launch spec to decide whether to continue with the next intent.
+After QA is done, it is highly recommended to leave the `Archive` phase as `PENDING`, open a **new chat session**, and instruct the Agent to "Continue with Archive" to prevent context bloat.
 
 **Status values:** `PENDING` | `IN_PROGRESS` | `DONE` | `WAITING_APPROVAL` | `FAILED`
 

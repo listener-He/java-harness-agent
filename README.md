@@ -10,15 +10,13 @@
 [![Agent-Ready](https://img.shields.io/badge/Agent-Ready-brightgreen.svg)](README.md)
 [![Lifecycle](https://img.shields.io/badge/Lifecycle-Stable-success.svg)](.agents/workflow/LIFECYCLE.md)
 
-## ⚠️ Critical Positioning Statement
+## ⚠️ Critical Positioning Statement: An LLM-Native Operating System
 
-> **This project is NOT a traditional development framework or human-facing tool.**
->
-> **It is a pure LLM-native specification harness designed exclusively for autonomous execution by large language models.**
->
-> From day one, this system was architected to be **driven entirely by AI agents**, not humans. Every component—from the Intent Gateway to the Lifecycle State Machine, from the Knowledge Graph to the Skills Matrix—is engineered as executable protocol for LLMs to self-navigate, self-correct, and self-evolve.
->
-> **If you're evaluating this with "human developer tool" standards, you will fundamentally misunderstand its design philosophy.** This is infrastructure for machine-to-machine coordination in software engineering workflows.
+> **"Do not hand a steering wheel to an engine."**
+> 
+> This repository is a **machine-to-machine infrastructure**. It is not a Java framework like Spring Boot, nor is it a CLI tool for human engineers. It is a **Cognitive Harness**—an executable protocol designed *by* humans, but read, interpreted, and executed *exclusively by* Large Language Models (LLMs).
+> 
+> By encoding engineering discipline (Lifecycle State Machines, Role Matrices, Vector-less Knowledge Graphs) into LLM-native formats, it transforms the AI from a simple code-completion oracle into an autonomous, self-navigating, and self-correcting engineering agent.
 
 **Java Harness Agent** is an agent-driven backend engineering framework designed for sustainable software development. It integrates an Intent Gateway, a 6-phase Lifecycle State Machine, Contract-first OpenSpec design, and a drill-down LLM Wiki (Knowledge Graph) to prevent context bloat, enabling AI agents to autonomously build, test, and self-correct production-ready code.
 
@@ -35,12 +33,48 @@
 ### ✨ Key Features
 
 - 🎯 **Intent-Driven**: Natural language → Structured intent queues → Executable tasks
-- 🔄 **Lifecycle State Machine**: Explorer → Propose → Review → Approval Gate (HITL) → Implement → QA → Archive
+- 🔄 **Lifecycle State Machine**: Explorer → Propose → Review → Approval Gate (HITL) → Implement → Validation Gate → QA → Archive
 - 🧠 **Knowledge Graph**: Hierarchical wiki system with bidirectional navigation
 - 🛡️ **Self-Correcting**: Automatic guard hooks, failure recovery, human-in-the-loop checkpoints
 - 📊 **Contract-First**: OpenSpec-based design before implementation
 - 🔌 **Skills Matrix**: 25+ specialized skills providing domain expert capabilities
 - 📈 **Anti-Bloat Mechanism**: Automatic knowledge extraction and archival to prevent information overload
+
+---
+
+## 💰 Token Economics & Cost Model
+
+Given that Java Harness Agent is an agentic framework, it inherently consumes more tokens than a simple code completion tool. However, its architecture shifts costs from **Rework & Blind Search** to **Planning & Guardrails**, resulting in highly predictable and stable overall costs for complex tasks.
+
+### 1. The "Thinking Tax" (Where Costs Increase)
+- Each turn requires the LLM to output the `<Cognitive_Brake>` and read mandatory system contexts (e.g., `LIFECYCLE.md`, `AGENTS.md`). This adds a fixed baseline "thinking tax" of **~500 Output Tokens and ~2000 Input Tokens** per interaction.
+- The `Propose` phase explicitly requires drafting `explore_report.md` and `openspec.md`, consuming an extra ~1500 Output Tokens before a single line of code is written.
+
+### 2. The ROI: Comparing 3 Paradigms for a Complex Feature (e.g., Cross-Table Transaction)
+
+*Note: Estimates assume pricing for the latest flagship models (e.g., GPT-5.4, GPT-5.3-Codex, Claude 3.7 Sonnet, Gemini 3.5 Pro), averaging ~$2.5/M Input and ~$15/M Output.*
+
+| Paradigm | Behavior | Input Tokens | Output Tokens | Hidden Costs / Risks | Verdict |
+|----------|----------|--------------|---------------|----------------------|---------|
+| **Pure Chat / Copilot** | Jumps straight to coding with limited context. | ~5k | ~1k | **High Rework Rate.** Misses transaction boundaries, forgets existing enums. Requires human prompt corrections. | Cheap in Tokens, Expensive in Human Time. |
+| **Unconstrained Auto-Agent** | Blindly searches the entire codebase (e.g., `SearchCodebase` or `Grep` without limits), loops endlessly on compile errors. | **100k+** | 10k+ | **Disastrous.** Burns through budget via massive context bloat and infinite loops before hitting platform limits. | Unpredictable & Dangerous. |
+| **Java Harness Agent** | Pays the "Thinking Tax", limits searches (`Wiki≤3, Code≤8`), designs `openspec.md`, and STOPs at Approval Gates. | **~30k** | **~6k** | **Highly predictable.** Architectural errors are intercepted early by humans; syntax errors are digested by Shift-Left Validation. | **The Sweet Spot.** Optimized for high-quality delivery with controlled token spend. |
+
+### 3. Scenario-Based Token Estimates (Using Latest Flagship Models)
+
+| Scenario Profile | Typical Turns | Input Tokens | Output Tokens | Expected Cost / Task |
+|------------------|---------------|--------------|---------------|----------------------|
+| **`@patch` (Small Bugfix)** | 1-2 Turns | ~5k - 8k | ~1k - 2k | **$0.03 - $0.05** |
+| **`@standard` (New Feature)** | 4-6 Turns | ~20k - 40k | ~4k - 8k | **$0.10 - $0.25** |
+| **`@learn` (Doc QA)** | 1 Turn | ~3k - 5k | ~500 | **$0.01 - $0.02** |
+
+### 4. Token Optimization Formula
+**Total Token Cost = (Base Context + Context Funnel Payload) × Turns + (Artifact Generation + Code Generation + Cognitive Brake)**
+
+To minimize costs:
+1. **Use Shortcuts**: Use `@patch` instead of `@standard` for trivial changes to skip Phase 1-3.
+2. **Provide Explicit Scopes**: Include `--scope src/Foo.java` in your prompt. This triggers **Rule 0** (Direct Read), bypassing the entire Knowledge Funnel drill-down process and saving thousands of Input Tokens.
+3. **Respect the Brakes**: When the agent STOPs at the Validation Gate, ensure your local environment is ready before allowing it to compile, preventing retry loops.
 
 ---
 
@@ -217,8 +251,9 @@ Start with [AGENTS.md](AGENTS.md) - the master entry point defining execution di
 
 **Core Constraints Quick Reference:**
 - **Budget Limits**: Wiki ≤ 3 docs, Code ≤ 8 files (same-file pagination doesn't count)
-- **Approval Gate**: MEDIUM/HIGH risk must stop at `WAITING_APPROVAL` for human confirmation
-- **Anti-Looping**: Any script/test/linter max 3 retries; exceed threshold must request human intervention
+- **Cognitive Brake**: Mandatory `<Cognitive_Brake>` XML block before any action to enforce Role, Scope, and Budget awareness
+- **Approval & Validation Gates**: Must STOP for human confirmation before writing code (`Approval Gate`) and before heavy compilation (`Validation Gate`)
+- **Anti-Looping**: Max 3 retries for scripts/linters; STRICT MAX 2 retries for compilation. Exceeding thresholds MUST request human intervention
 - **Scope Guard**: Cannot modify files outside `focus_card.md` agreed scope without explicit authorization
 
 #### Step 2: Understand Intent Gateway 🎯
@@ -274,12 +309,13 @@ stateDiagram-v2
     Propose --> Review: Technical Review
     Review --> ApprovalGate: HITL Checkpoint
     ApprovalGate --> Implement: Implement per Contract
-    Implement --> QA: Test Validation
-    QA --> Archive: Knowledge Extraction
+    Implement --> ValidationGate: STOP & Request Compile
+    ValidationGate --> QA: Test Validation
+    QA --> Archive: Knowledge Extraction (New Session)
     Archive --> [*]: Queue Complete
     
     Review --> Propose: fail_hook(review failed)
-    QA --> Implement: fail_hook(test failed)
+    QA --> Implement: fail_hook(compile/test failed, max 2 retries)
     
     note right of ApprovalGate
         MEDIUM/HIGH Risk:
@@ -313,9 +349,9 @@ stateDiagram-v2
 graph LR
     A[Explorer<br/>Clarify Requirements] --> B[Propose<br/>OpenSpec]
     B --> C[Review<br/>Technical Review]
-    C --> D[Approval<br/>HITL Checkpoint]
-    D --> E[Implement<br/>Per Contract]
-    E --> F[QA<br/>Test Validation]
+    C --> D[Approval<br/>HITL Checkpoint] --> E[Implement<br/>Per Contract]
+    E --> V[Validation<br/>STOP Gate]
+    V --> F[QA<br/>Test Validation]
     F --> G[Archive<br/>Update Index]
     
     style A fill:#e1f5ff
@@ -660,10 +696,11 @@ Status values: `PENDING`, `IN_PROGRESS`, `DONE`, `WAITING_APPROVAL`, `FAILED`
 
 | Mechanism | Trigger Point | Trigger Condition | Effect | Evaluation Method |
 |-----------|--------------|-------------------|--------|-------------------|
+| **Cognitive_Brake** | Before any action | Protocol enforcement | Forces LLM to explicitly reason about roles, boundaries, budgets, and next steps before generating tools or code | XML CoT parsing |
 | **pre_hook** | Before entering new phase | Phase transition | Load relevant rule sets + output Decision-First Preflight + budgets | Required output format |
 | **guard_hook** | During implementation/modification | Style violations, permission breaches, cross-domain pollution, budget exhaustion | Immediate block, require rewrite or authorization; enforce Anti-runaway guard | Standard skill review + Budget rules |
 | **fail_hook** | Any phase failure | Compilation/test/review failures | State downgrade rollback; log failure reason to `openspec.md`; trigger retry count | Objective logs (compilation/test output) |
-| **Max Retries** | Inside fail_hook | Same phase consecutive failures reach threshold (3 times) | Force stop and request human intervention | Failure count reaches threshold |
+| **Max Retries** | Inside fail_hook | Same phase consecutive failures reach threshold | Force stop and request human intervention (Max 3 for scripts, STRICT MAX 2 for compilation) | Failure count reaches threshold |
 | **Approval Gate (HITL)** | After Review passes | Need to enter Implement | "Freeze contract", human authorizes whether to proceed | Human confirmation (YES/NO + modification feedback) |
 | **Doc Consistency Gate** | post_hook / Archive | Wiki hallucination & contract corruption risk | Read-only validation (`schema_checker.py` + `wiki_linter.py`), trigger `fail_hook` on FAIL | Script exit codes (non-zero = FAIL) |
 | **Archive Write-back** | Task completion | New/changed knowledge needs persistence | Extract stable knowledge from Spec, archive hot documents, update indices (WAL mechanism) | Rule validation, connectivity check |
@@ -830,12 +867,13 @@ Always start from [Knowledge Graph Root](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) �
 Cross-domain modifications require explicit authorization in `openspec.md` and confirmation during Review/HITL phases.
 
 ### 🚫 No Runaway Loops
-Failure rollback + max retry threshold (3 attempts). Stop and request human intervention when threshold reached.
+Failure rollback + max retry threshold (3 attempts for scripts, STRICT MAX 2 for compilation). Stop and request human intervention when threshold reached. Never infinite loop.
 
 ### 🚫 No Knowledge Bloat
 - Specs must be archived after extraction
 - Stable knowledge must be extracted to indices
 - Indices exceeding 500 lines must be split into subdirectories
+- Archive execution is highly recommended to be done in a **new clean chat session** to avoid context window overload
 
 ---
 

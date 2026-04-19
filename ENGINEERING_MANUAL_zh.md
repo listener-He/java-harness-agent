@@ -67,14 +67,15 @@
 graph LR
     A[Explorer<br/>澄清需求] --> B[Propose<br/>OpenSpec]
     B --> C[Review<br/>技术评审]
-    C --> D[Approval<br/>HITL闸门]
-    D --> E[Implement<br/>按契约实现]
-    E --> F[QA<br/>测试验证]
+    C --> D[Approval<br/>HITL闸门] --> E[Implement<br/>按契约实现]
+    E --> V[Validation<br/>停止请求编译]
+    V --> F[QA<br/>测试验证]
     F --> G[Archive<br/>更新索引]
     
     style A fill:#e1f5ff
     style B fill:#fff4e6
     style D fill:#ffe6e6
+    style V fill:#fff9e6
     style G fill:#e6ffe6
 ```
 
@@ -1899,25 +1900,32 @@ stateDiagram-v2
     [*] --> Explorer
     Explorer --> Propose
     Propose --> Review
-    Review --> Approval
-    Approval --> Implement
-    Implement --> QA
+    Review --> ApprovalGate
+    ApprovalGate --> Implement
+    Implement --> ValidationGate
+    ValidationGate --> QA
     QA --> Archive
-    Archive --> [*] : 队列完成
+    Archive --> [*] : 队列完成 (建议新会话)
     
     Review --> Propose : fail_hook(机审不通过)
-    QA --> Implement : fail_hook(测试失败)
+    QA --> Implement : fail_hook(编译/测试失败, 严格最多2次)
     
-    note right of Approval
+    note right of ApprovalGate
         HITL Gate
         MEDIUM/HIGH必须等待
+    end note
+    
+    note right of ValidationGate
+        STOP Gate
+        请求编译授权
     end note
     
     style Explorer fill:#e1f5ff
     style Propose fill:#fff4e6
     style Review fill:#ffe6e6
-    style Approval fill:#fff9e6
+    style ApprovalGate fill:#fff9e6
     style Implement fill:#e6ffe6
+    style ValidationGate fill:#fff9e6
     style QA fill:#f0e6ff
     style Archive fill:#e6f0ff
 ```
@@ -2197,14 +2205,16 @@ flowchart TB
     Block --> RequestAuth[请求显式授权]
     PermissionCheck -->|通过| CrossDomainCheck[跨域检查]
     CrossDomainCheck -->|未授权| Block
-    CrossDomainCheck -->|已授权| Finalize[完成实现]
-    Finalize --> PostHook[post_hook]
+    CrossDomainCheck -->|已授权| Finalize[完成代码编写]
+    Finalize --> ValidationGate[Validation Gate 停止请求编译]
+    ValidationGate --> PostHook[post_hook]
     PostHook --> End[完成]
     
     style PreHook fill:#e1f5ff
     style GuardHook fill:#fff4e6
     style CodeGen fill:#e6ffe6
     style Block fill:#ffe6e6
+    style ValidationGate fill:#fff9e6
 ```
 
 **纪律**:
@@ -2213,6 +2223,7 @@ flowchart TB
 - 应用防御性编程指南
 - 尊重领域边界(guard_hook 守卫)
 - 不得修改 focus_card.md 约定范围外的文件
+- **STOP 强制中断**: 代码完成后必须 STOP 并请求人类允许执行编译，不得直接进入重度编译测试环节。
 
 **Focus Card 机制**:
 - 由 Ambiguity Gatekeeper 在 Explorer 阶段生成
@@ -2315,11 +2326,14 @@ flowchart TB
 
 **失败处理**:
 - 触发 fail_hook
+- 严格限制：编译与测试**最多重试2次**。超过 2 次必须立即 STOP 并请求人类协助，严禁死循环。
 - 回退到 Phase 4（Implement）
 
 ---
 
 ##### Phase 6: Archive（知识提取）
+
+**强烈建议**: 鉴于前 5 个阶段积累了极长的代码与对话上下文，强烈建议在一个**全新的干净会话 (New Session)** 中执行 Archive，以防止大模型产生幻觉或触发长度限制熔断。
 
 **目的**: 知识提取与清理,防止膨胀。
 
@@ -2439,12 +2453,13 @@ flowchart TB
 
 **规范文件**: [HOOKS.md](.agents/workflow/HOOKS.md)
 
-**5种钩子**:
-1. **pre_hook**: 前置钩子 - 进入新阶段前加载规则集
-2. **guard_hook**: 守卫钩子 - 执行核心动作时实时守卫
-3. **post_hook**: 后置钩子 - 完成一个阶段后审计
-4. **fail_hook**: 失败回退钩子 - 测试/评审/编译失败时回退
-5. **loop_hook**: 队列循环钩子 - Archive 完成后消费下一个意图
+**6种核心控制机制**:
+1. **Cognitive_Brake**: 认知刹车 - 在任何行动前强制输出，推理角色、边界、预算和下一步动作
+2. **pre_hook**: 前置钩子 - 进入新阶段前加载规则集
+3. **guard_hook**: 守卫钩子 - 执行核心动作时实时守卫
+4. **post_hook**: 后置钩子 - 完成一个阶段后审计
+5. **fail_hook**: 失败回退钩子 - 测试/评审/编译失败时回退
+6. **loop_hook**: 队列循环钩子 - Archive 完成后消费下一个意图
 
 ---
 
@@ -2608,8 +2623,8 @@ Request explicit authorization in openspec.md or modify focus_card.md
 
 **目的**:
 1. **状态降级**: 回退到前一阶段,并将失败原因附加到 openspec.md(或相关任务工件)。修复所有失败的清单项
-2. **最大重试次数(3)**: 如果同一阶段失败 3 次,Agent MUST 停止并请求人类介入
-3. **脚本重试上限(3)**: 在一个任务中,每个门禁脚本最多失败 3 次;当失败超过 3 次时,Agent MUST 停止并请求人类介入
+2. **最大重试次数(脚本3次，编译严格2次)**: 如果同一阶段失败达到允许的最大次数,Agent MUST 停止并请求人类介入。严禁死循环。
+3. **脚本重试上限**: 在一个任务中,每个门禁脚本最多失败 3 次；编译（如 `mvn compile`）最多失败 2 次。当失败超限时,Agent MUST 停止并请求人类介入
 4. **任务状态重置**: 当任务结束(Archive)或进程收到中断信号时,重试状态自动清除;可通过 `run.py --end-task` 显式重置
 5. **持久化**: 更新 launch_spec.md 行为 FAILED 并写入 Failed_Reason
 
@@ -2630,8 +2645,8 @@ Request explicit authorization in openspec.md or modify focus_card.md
 ```mermaid
 flowchart TB
     Fail[检测到失败] --> CheckRetryCount{检查重试次数}
-    CheckRetryCount -->|< 3次| RecordFailure[记录失败原因]
-    CheckRetryCount -->|>= 3次| Escalate[触发 Escalation Protocol]
+    CheckRetryCount -->|< 最大允许次数| RecordFailure[记录失败原因]
+    CheckRetryCount -->|>= 最大允许次数| Escalate[触发 Escalation Protocol]
     
     RecordFailure --> UpdateSpec[更新 openspec.md]
     UpdateSpec --> UpdateLaunchSpec[更新 launch_spec.md 状态为 FAILED]

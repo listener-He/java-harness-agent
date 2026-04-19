@@ -39,12 +39,15 @@ throw new DomainException(AbstractErrorCode.DATA_DUPLICATED, "角色名称已存
 // Bad: Creating a new enum DEPT_NAME_EXIST just for this specific scenario
 ```
 
-### 2. Returning Unified Error Responses
-When returning a failure from a Controller or Service without throwing an exception, always use the unified response builder and reference the abstract error code:
-```java
-// Good
-return ApiResponse.failed(AbstractErrorCode.PARAM_INVALID.getCode(), "结束时间不能早于开始时间");
+### 2. Returning Unified Error Responses vs. Throwing Exceptions
+The choice between returning an `ApiResponse.failed()` and throwing a `DomainException` depends on transaction sensitivity:
+- **Throw Exception (Preferred for Writes)**: If the business logic is deep, or it involves `@Transactional` database writes, you MUST throw a `DomainException`. This is the only way to guarantee the transaction rolls back safely.
+- **Return ApiResponse (Preferred for Fast-Fails/Reads)**: If it's a simple, independent validation at the surface level (e.g., Controller) where no transaction has started, returning `ApiResponse.failed(...)` is acceptable.
 
-// Bad: Hardcoding numbers
-return ApiResponse.failed(2001, "结束时间不能早于开始时间");
+```java
+// Good (Deep logic / Transactional):
+throw new DomainException(AbstractErrorCode.PARAM_INVALID, "结束时间不能早于开始时间");
+
+// Good (Surface validation / Non-transactional):
+return ApiResponse.failed(AbstractErrorCode.PARAM_INVALID.getCode(), "结束时间不能早于开始时间");
 ```

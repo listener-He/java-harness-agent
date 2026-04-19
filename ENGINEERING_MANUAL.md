@@ -67,14 +67,15 @@ This section provides typical "follow-along" playbooks. The rules remain consist
 graph LR
   A[Explorer<br/>Clarify Requirements] --> B[Propose<br/>OpenSpec]
   B --> C[Review<br/>Technical Review]
-  C --> D[Approval<br/>HITL Gate]
-  D --> E[Implement<br/>Per Contract]
-  E --> F[QA<br/>Test Validation]
+  C --> D[Approval<br/>HITL Checkpoint] --> E[Implement<br/>Per Contract]
+  E --> V[Validation<br/>STOP Gate]
+  V --> F[QA<br/>Test Validation]
   F --> G[Archive<br/>Update Index]
 
   style A fill:#e1f5ff
   style B fill:#fff4e6
   style D fill:#ffe6e6
+  style V fill:#fff9e6
   style G fill:#e6ffe6
 ```
 
@@ -734,18 +735,24 @@ stateDiagram-v2
   [*] --> Explorer
   Explorer --> Propose
   Propose --> Review
-  Review --> Approval
-  Approval --> Implement
-  Implement --> QA
+  Review --> ApprovalGate
+  ApprovalGate --> Implement
+  Implement --> ValidationGate
+  ValidationGate --> QA
   QA --> Archive
-  Archive --> [*]
+  Archive --> [*] : Queue Complete (Recommend New Session)
 
-  Review --> Propose: fail_hook
-  QA --> Implement: fail_hook
+  Review --> Propose: fail_hook(review failed)
+  QA --> Implement: fail_hook(compile/test failed, max 2 retries)
 
-  note right of Approval
+  note right of ApprovalGate
     HITL Gate
     MEDIUM/HIGH must wait
+  end note
+
+  note right of ValidationGate
+    STOP Gate
+    Request Compile Permission
   end note
 ```
 
@@ -871,6 +878,7 @@ sequenceDiagram
 - Apply defensive programming
 - Respect domain boundaries (guard_hook)
 - Must not modify files outside focus_card.md scope
+- **STOP Gate**: Once code is written, you MUST STOP and ask the human for permission to proceed to compilation. Do not auto-continue into heavy testing.
 
 **Focus Card Enforcement**: scope_guard.py checks if modified files are within allowed scope.
 
@@ -894,9 +902,14 @@ sequenceDiagram
 - Covered scenarios ([Pass]/[Fail])
 - Coverage metrics
 
-**Failure Handling**: Trigger fail_hook, rollback to Phase 4 (Implement).
+**Failure Handling**: 
+- Trigger fail_hook
+- **STRICT MAX RETRIES: 2**. If tests or compilation fail more than 2 times, STOP immediately and ask the human for help. Do not enter an infinite loop.
+- Rollback to Phase 4 (Implement)
 
 #### 3.3.8 Phase 6: Archive
+
+**Highly Recommended**: Given the heavy context accumulated in previous phases, it is highly recommended to execute the Archive phase in a **NEW, clean chat session** to prevent LLM hallucinations and context window overloads.
 
 **Purpose**: Knowledge extraction and cleanup, prevent bloat
 
@@ -940,6 +953,7 @@ sequenceDiagram
 | **post_hook** | After completing phase | Ensure docs sync with code | Append logs |
 | **fail_hook** | Test/review/compile failure | Rollback to previous phase | Decrement retry count |
 | **loop_hook** | After Archive completes | Consume next intent from queue | Continue or finish |
+| **Cognitive_Brake** | Before any action | Protocol enforcement | Forces LLM to explicitly reason about roles, boundaries, budgets, and next steps before generating tools or code |
 
 #### 3.4.2 pre_hook
 
@@ -987,8 +1001,8 @@ sequenceDiagram
 
 **Purposes**:
 1. **State Degradation**: Rollback to previous phase, append failure reason to openspec.md
-2. **Max Retries (3)**: If same phase fails 3 times, Agent MUST stop and request human intervention
-3. **Script Retry Limit (3)**: Each gate script can fail max 3 times per task
+2. **Max Retries (3 for scripts, STRICT MAX 2 for compilation)**: If same phase fails max allowed times, Agent MUST stop and request human intervention. Never infinite loop.
+3. **Script Retry Limit**: Each gate script can fail max 3 times per task. Compilations (`mvn compile`) can fail max 2 times.
 4. **Task State Reset**: Retry state clears on task completion (Archive) or interrupt signal; can explicitly reset via `run.py --end-task`
 5. **Persistence**: Update launch_spec.md to FAILED with Failed_Reason
 

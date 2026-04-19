@@ -12,7 +12,7 @@ Single entry point. Read this file first on every session start. All links here 
 | **Reward Mechanism** | (Elastic extension) Output a `<Confidence_Assessment>` block explaining the specific missing concept/symbol to earn a budget reward (+2 wiki / +3 code) before hitting the hard stop (see [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)). |
 | **Budget exhausted** | STOP. File an Escalation Card (format in [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)). Do not guess paths or continue reading. |
 | **Approval Gate** | For MEDIUM/HIGH risk changes: STOP after creating the spec, set status to `WAITING_APPROVAL`, and wait for explicit human approval before writing any code. |
-| **Anti-loop** | Max 3 retries for any failing script, test, or linter per task. On exceed: STOP and ask human. Use `bypass_justification.md` only to downgrade trivial failures to WARN. |
+| **Anti-loop** | Max 3 retries for scripts/linters. STRICT MAX 2 retries for compilation/RunCommand fixes. On exceed: STOP and ask human. Never infinite loop. |
 | **Scope Guard** | Do not modify files outside the agreed `focus_card.md` scope without explicit human permission. |
 | **Exit Gate (Archive)** | Before yielding the final response to the human, you MUST output an `[Lifecycle: Archive]` block and write WAL fragments for any new API, Domain, or Logic changed. NEVER say you are done without writing the WAL. |
 | **Task Checklist** | Before entering `Execute` phase, you MUST create `.agents/workflow/runs/current_task.md` with `[ ] Write-back to wiki (WAL)` as the last item to track progress. |
@@ -28,16 +28,16 @@ Before any action (reading files, searching, writing code), the Agent MUST outpu
 [Lifecycle: <Plan|Execute|Validate|Archive>] | [Mounted Role: @<Role>]
 
 <Cognitive_Brake>
-- Role Assumption: What are my currently mounted roles (e.g., @Focus Guard + @Security Sentinel) and what specific artifacts/guards must I deliver in this phase per `ROLE_MATRIX.md`?
-- Context Sniffing: What existing project conventions, custom exceptions, or validation rules do I need to Grep/Search before assuming standard Java behavior?
-- Architectural Defense: Does this operation span multiple tables/domains? If so, what is the transaction boundary and rollback strategy (e.g., Facade layer)?
-- Shift-Left Validation: How will I verify this change (e.g., `javac`, Maven, tests) before telling the user I am done?
-- State Mutation: What WAL fragments or documentation will need updating in the Archive phase?
+- Role & Scope: As [@RoleX], my authorized file boundary is [focus_card.md / None]. Am I crossing it?
+- Budget & Context: Wiki reads: [X]/3, Code reads: [Y]/8. Do I need to Grep specific project standards/exceptions first?
+- Architectural Defense: Is this a cross-domain/transactional change? Am I at a STOP gate like Approval or Validation?
+- Next State: What exact artifact, WAL, or validation command will I output/run right now?
 </Cognitive_Brake>
 ```
 
 **Rules:**
 - **CoT Requirement**: The `<Cognitive_Brake>` block is MANDATORY. It forces you to adopt the assigned Role Personas (e.g., as `@Security Sentinel` or `@Focus Guard`) before acting like a Coder.
+- **Language Matching**: The internal reasoning text inside the `<Cognitive_Brake>` MUST be written in the same natural language as the user's most recent prompt (e.g., Simplified Chinese, Japanese, Spanish) to maximize human readability. The XML tags and protocol headers (e.g., `[Intent Check]`) MUST remain in English for script parsing.
 - If the intent is ambiguous (missing action or object signal): output `[Intent Check] AMBIGUOUS — <reason>` and ask one clarifying question before proceeding.
 - If a special scenario (A–E) is matched: include `scenario=<letter>` and apply Scenario routing overrides (see [ROUTER.md](.agents/router/ROUTER.md#6-special-scenarios)).
 - You MUST explicitly declare any Phase transition using the `[Lifecycle: ...]` header.
@@ -99,27 +99,64 @@ Session start
 
 ---
 
-## Standard Agent Turn (Few-Shot Paradigm)
+## Standard Workflow Saga (Few-Shot Paradigm for STANDARD Profile)
 
-To build muscle memory and avoid impulsive "Coder" behavior, follow this exact rhythm for code modification turns:
+To build muscle memory and respect the Human-in-the-Loop constraints, follow this multi-turn rhythm for any `STANDARD` task:
 
 **User:** "Add a new asset type to the tenant and invalidate the old one."
 
-**Agent Internal Loop (Perfect Execution):**
-1. **Output headers & CoT (Mandatory):**
+**Turn 1: Explorer & Propose (Phase 1 & Phase 2)**
+1. **Output headers:** `[Lifecycle: Propose] | [Mounted Role: @Domain Analyst + @Ambiguity Gatekeeper]`
+2. **Cognitive Brake:**
 ```xml
-[Intent Check] intent=Change | profile=@standard | risk=MEDIUM | scenario=none | emergency=false
-[Lifecycle: Execute] | [Mounted Role: @Focus Guard + @Security Sentinel]
-
 <Cognitive_Brake>
-- Role Assumption: As @Focus Guard, I must strictly only edit the Controller and Service classes authorized in the `focus_card.md`. As @Security Sentinel, I must ensure no raw passwords or PII are exposed in the new exception messages.
-- Context Sniffing: I need to Grep for `CustomerException` or `BaseResponse` instead of throwing raw `RuntimeException`. I must check for existing validation annotations (e.g., `jakarta` vs `javax`).
-- Architectural Defense: Adding an asset and invalidating an old one touches multiple tables. This MUST be wrapped in a `@Transactional` Facade/Manage layer, NOT crammed into the Controller.
-- Shift-Left Validation: After generating code, I will use `RunCommand` to run `mvn compile` or `javac` to catch import errors before responding to the user.
-- State Mutation: I will write a WAL fragment into `.agents/llm_wiki/wiki/data/wal/YYYYMMDD_asset_type.md` for the new enum/DB change.
+- Role & Scope: As @Ambiguity Gatekeeper, current boundary is None. Must output focus_card.md to lock scope.
+- Budget & Context: Wiki: 1/3, Code: 2/8. Must grep `CustomerException` standards.
+- Architectural Defense: Cross-table operation (Tenant/Asset). Requires `@Transactional` Facade. Currently in Propose phase -> reaching Approval Gate. MUST STOP. No coding allowed.
+- Next State: Output explore_report.md, focus_card.md, and openspec.md. Yield for human approval.
 </Cognitive_Brake>
 ```
-2. **Action 1 (Sniffing):** Agent uses `Grep` or `SearchCodebase` to find custom exceptions and validation imports.
-3. **Action 2 (Coding):** Agent uses `SearchReplace` / `Write` to create the Facade layer and update the Controller, ensuring high cohesion.
-4. **Action 3 (Shift-Left Validation):** Agent uses `RunCommand` (`mvn clean compile`). It catches a `javax` import error, fixes it, and recompiles successfully.
-5. **Action 4 (Archive):** Agent transitions to `[Lifecycle: Archive]`, writes the database schema/enum change as a Markdown fragment into `data/wal/`, and ONLY THEN yields the final response to the user.
+3. **Action:** Agent reads context, creates the spec detailing a `@Transactional` Facade layer, and defines the exact files to touch in `focus_card.md`.
+4. **Approval Gate (STOP):** Agent stops and asks the User: *"The spec is ready. Please review `openspec.md`. Do you approve moving to implementation?"* (Agent MUST NOT write code yet).
+
+**Turn 2: Implement (Phase 4) — *After Human Approves***
+1. **Output headers:** `[Lifecycle: Implement] | [Mounted Role: @Focus Guard + @Security Sentinel]`
+2. **Cognitive Brake:**
+```xml
+<Cognitive_Brake>
+- Role & Scope: As @Focus Guard, strict boundary is Controller/Service per focus_card.md. Zero drift.
+- Budget & Context: Wiki: 0/3, Code: 0/8 (reset for new turn). Verified `jakarta.validation` requirement.
+- Architectural Defense: Write operation requires `@Transactional` in Manage layer per openspec.md. After writing code, MUST STOP at Validation Gate before compilation.
+- Next State: Execute SearchReplace. STOP and prompt: "Code generated. Requesting permission to run mvn compile."
+</Cognitive_Brake>
+```
+3. **Action:** Agent writes code using `SearchReplace`.
+4. **Validation Gate (STOP):** Agent stops and asks the User for permission to run heavy compilations or tests.
+
+**Turn 3: Shift-Left Validation (Phase 5) — *After Human Approves***
+1. **Output headers:** `[Lifecycle: Validate] | [Mounted Role: @Documentation Curator]`
+2. **Cognitive Brake:**
+```xml
+<Cognitive_Brake>
+- Role & Scope: As Validator, scope is test/compile only. No feature drift.
+- Budget & Context: Wiki: 0/3, Code: 0/8.
+- Architectural Defense: STRICT MAX RETRIES is 2. If `mvn compile` fails twice, MUST stop and escalate to human. No infinite loops.
+- Next State: Execute `mvn clean compile` via RunCommand.
+</Cognitive_Brake>
+```
+3. **Action:** Agent uses `RunCommand` (`mvn clean compile`). Fixes a `javax` import error (Retry 1/2) and recompiles successfully.
+4. **Yield:** Agent reports: *"Compilation passed! Context is heavy. Highly recommend opening a New Session and prompting 'Execute Archive' to extract knowledge."*
+
+**Turn 4: Archive (Phase 6) — *In a New Clean Session***
+1. **Output headers:** `[Lifecycle: Archive] | [Mounted Role: @Domain Analyst + @Documentation Curator]`
+2. **Cognitive Brake:**
+```xml
+<Cognitive_Brake>
+- Role & Scope: As @Domain Analyst, extraction only. No code mutation.
+- Budget & Context: Wiki: 0/3, Code: 0/8.
+- Architectural Defense: Asynchronous Archive execution. Clean context isolated from heavy coding history.
+- Next State: Write schema changes to `data/wal/YYYYMMDD_asset_type.md`.
+</Cognitive_Brake>
+```
+3. **Action:** Agent writes the database schema changes into `data/wal/YYYYMMDD_asset_type.md`.
+4. **Yield:** Agent reports full completion to the User.

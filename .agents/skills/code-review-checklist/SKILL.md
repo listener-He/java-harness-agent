@@ -9,9 +9,10 @@ description: "MANDATORY Code Review Checklist. Evaluates code against ALL projec
 
 ## 🔄 The Self-Correction Loop Protocol
 1. **Evaluate**: After making edits, immediately run the code against the checklist below.
-2. **Fix**: If any rule is violated (e.g., you used `@Autowired` instead of `@RequiredArgsConstructor`), immediately use editing tools to fix it.
+2. **Fix**: If any rule is violated, immediately use editing tools to fix it.
 3. **Re-evaluate**: Run the checklist again on the fixed code.
-4. **Pass**: Only end your turn when all checks pass 100%. At the end of your response, output a brief "CR Checklist Report" confirming compliance or detailing what was automatically fixed.
+4. **Anti-Infinite-Loop (Max Retries: 3)**: You MUST NOT retry fixing the same rule more than 3 times. If a rule cannot be satisfied due to an architectural conflict, STOP, output a `bypass_justification.md` explaining the conflict, and ask the human for guidance.
+5. **Pass**: End your turn when all checks pass (or are safely bypassed). Output a brief "CR Checklist Report" confirming compliance or detailing what was fixed/bypassed.
 
 ## 📋 The Ultimate CR Checklist
 
@@ -20,7 +21,7 @@ description: "MANDATORY Code Review Checklist. Evaluates code against ALL projec
 - [ ] **URL Verbs**: Endpoint URLs must end with action verbs (e.g., `/add`, `/update`, `/delete`, `/page`, `/list`).
 - [ ] **Resource Lock**: Write operations (add/update/delete) MUST have `@ResourceLock`.
 - [ ] **Validation**: DTOs MUST use `@Validated` or `@Valid`.
-- [ ] **Return Type**: Controllers MUST directly return the Service's `ApiResponse` for write operations, or `ApiResponse.success(data)` for reads.
+- [ ] **Return Type & Exceptions**: Service layer should return `ApiResponse` for simple/independent validations. However, if the operation requires **transaction rollback** or is deeply nested, the Service MUST throw a `DomainException` to guarantee data consistency. Controllers catch or return these accordingly.
 
 ### 2. Checkstyle & Formatting (`checkstyle`)
 - [ ] **Indentation**: 4 spaces used? (NO tabs).
@@ -44,7 +45,7 @@ description: "MANDATORY Code Review Checklist. Evaluates code against ALL projec
 - [ ] **Magic Numbers**: Are there any unexplained magic numbers/strings in the code? (Replace with Enums or Constants).
 
 ### 5. Database & SQL Performance (`mybatis-sql-standard`)
-- [ ] **Tenant Isolation**: Is `.eq(Entity::getTenantId, tenantId)` the VERY FIRST condition in the query? (MANDATORY)
+- [ ] **Tenant Isolation**: Rely on MyBatis-Plus `TenantLineInnerInterceptor`. DO NOT manually append `.eq(Entity::getTenantId, tenantId)` unless explicitly ignoring the interceptor.
 - [ ] **Logical Delete**: Is `.eq(Entity::getIsDeleted, false)` included?
 - [ ] **No `SELECT *`**: Are specific columns queried instead of `*` in XML?
 - [ ] **Index Friendly**: Are there NO functions on the left side of `=` in the `WHERE` clause? (e.g., no `DATE(create_time) = ?`).
@@ -53,7 +54,7 @@ description: "MANDATORY Code Review Checklist. Evaluates code against ALL projec
 ### 6. Error Handling (`error-code-standard`)
 - [ ] **Abstract Error Codes**: Did you reuse abstract domain codes (e.g., `PARAM_INVALID`, `DATA_DUPLICATED`, `HAS_DEPENDENCY`) instead of creating new ones?
 - [ ] **Dynamic Messages**: Did you override the message? (e.g., `new DomainException(AbstractErrorCode.DATA_DUPLICATED, "角色名称已存在")`).
-- [ ] **No Generic Fails**: Did you avoid throwing generic DomainException without an abstract code if a more specific one exists?
+- [ ] **No Generic Fails**: Did you always provide a specific error message when reusing an abstract code? (e.g., `new DomainException(AbstractErrorCode.PARAM_INVALID, "Specific reason here")`).
 
 ## 📝 Output Format Requirement
 At the end of your task, append a short checklist summary. Example:
