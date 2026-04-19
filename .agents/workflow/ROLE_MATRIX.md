@@ -85,19 +85,38 @@ Gate:
 ## 2) Mounting Rules (By Intent/Profile/Phase)
 
 ### Change / PATCH
-- Explorer: Ambiguity Gatekeeper + Focus Guard
-- Implement: Focus Guard + Security Sentinel
-- QA: Documentation Curator
-- Archive: Domain Analyst + Interface Steward + Rules Lawyer + Documentation Curator + Skill Graph Curator
+- Explorer: `@Ambiguity Gatekeeper` + `@Focus Guard`
+- Implement: `@Focus Guard` + `@Security Sentinel`
+- QA: `@Documentation Curator`
+- Archive: `@Domain Analyst` + `@Interface Steward` + `@Rules Lawyer` + `@Documentation Curator` + `@Skill Graph Curator`
 
 ### Change / STANDARD
-- Explorer: Ambiguity Gatekeeper + Focus Guard
-- Propose/Review: Domain Analyst + Interface Steward + Rules Lawyer
-- Implement: Focus Guard + Security Sentinel
-- QA: Documentation Curator
-- Archive: Domain Analyst + Interface Steward + Rules Lawyer + Documentation Curator + Skill Graph Curator
+- Explorer: `@Ambiguity Gatekeeper` + `@Focus Guard`
+- Propose/Review: `@Domain Analyst` + `@Interface Steward` + `@Rules Lawyer`
+- Implement: `@Focus Guard` + `@Security Sentinel`
+- QA: `@Documentation Curator`
+- Archive: `@Domain Analyst` + `@Interface Steward` + `@Rules Lawyer` + `@Documentation Curator` + `@Skill Graph Curator`
 
-## 3) Automation Contract
+## 3) LLM Cognitive Execution Protocol (MUST)
+
+When transitioning to a new phase, the Agent MUST check the **Mounted Roles** listed in `LIFECYCLE.md` and explicitly embody them inside the `<Cognitive_Brake>` block.
+
+**If the Role Matrix is ignored or unused:**
+- The LLM defaults to a generic "Coder" persona, which fails to produce required WAL fragments (Domain/API/Rules) or violates scope (Focus Guard).
+- This will cause the deterministic Python gates (e.g., `writeback_gate.py`, `scope_guard.py`) to **FAIL**, blocking the workflow.
+
+**How the LLM MUST handle multiple roles:**
+In the `<Cognitive_Brake>`, explicitly state the active roles and their required artifacts.
+*Example (Phase 4: Implement):*
+```xml
+- Role Assumption: As @Focus Guard, I will only modify `UserService.java`. As @Security Sentinel, I will not log user passwords in the new error handler.
+```
+*Example (Phase 6: Archive):*
+```xml
+- Role Assumption: As @Domain Analyst, I must write the DB schema WAL. As @Interface Steward, I must write the API WAL. As @Documentation Curator, I must finalize the Delivery Capsule.
+```
+
+## 4) Automation Contract
 - The runner reads `role_matrix.json` and decides:
   - which roles are required for the current phase
   - which gate scripts must run

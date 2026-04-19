@@ -27,6 +27,7 @@ One-way state machine with hard gates and rollback rules.
 
 ### Phase 1: Explorer
 
+**Mounted Roles:** `@Ambiguity Gatekeeper`, `@Focus Guard`
 **Skills:** `product-manager-expert`, `devops-requirements-analysis`, `prd-task-splitter`
 
 **Actions:**
@@ -40,6 +41,7 @@ One-way state machine with hard gates and rollback rules.
 
 ### Phase 2: Propose
 
+**Mounted Roles:** `@Domain Analyst`, `@Interface Steward`, `@Rules Lawyer`
 **Skills:** `devops-system-design`, `devops-task-planning`
 
 **Actions:** Follow the contract template in `../llm_wiki/schema/openspec_schema.md`.
@@ -52,6 +54,7 @@ One-way state machine with hard gates and rollback rules.
 
 ### Phase 3: Review
 
+**Mounted Roles:** `@Domain Analyst`, `@Interface Steward`, `@Rules Lawyer`
 **Skills:** `devops-review-and-refactor`, `global-backend-standards`
 
 **Review matrix:**
@@ -89,17 +92,24 @@ One-way state machine with hard gates and rollback rules.
 
 ### Phase 4: Implement
 
+**Mounted Roles:** `@Focus Guard`, `@Security Sentinel`
 **Skills:** `devops-feature-implementation`, `devops-bug-fix`, `utils-usage-standard`, `aliyun-oss`
 
-**Actions:** Implement strictly according to the approved contract. Follow Checkstyle and defensive programming. No uncontrolled improvisation.
+**Actions:**
+1. Execute the `<Cognitive_Brake>` template to establish boundaries (transactional layers, existing exceptions/validations) BEFORE coding.
+2. Implement strictly according to the approved contract. Follow Checkstyle and defensive programming. No uncontrolled improvisation.
+3. Create new tables/schemas only in the WAL data domain (`wiki/data/wal/`), not as root `.sql` scripts.
 
 ---
 
 ### Phase 5: QA Test
 
+**Mounted Roles:** `@Documentation Curator`
 **Skills:** `devops-testing-standard`, `code-review-checklist`
 
-**Actions:** Run tests and produce objective evidence (logs, test output, screenshots).
+**Actions:**
+1. Trigger `shift_left_hook`: Autonomously execute `javac` or Maven/Gradle build commands. Fix all compilation errors (`javax` vs `jakarta`, missing imports).
+2. Run tests and produce objective evidence (logs, test output, screenshots).
 
 **Failure rule:** If QA fails → roll back to Phase 4.
 
@@ -107,6 +117,7 @@ One-way state machine with hard gates and rollback rules.
 
 ### Phase 6: Archive
 
+**Mounted Roles:** `@Domain Analyst`, `@Interface Steward`, `@Rules Lawyer`, `@Documentation Curator`, `@Skill Graph Curator`
 **Purpose:** Close the loop and prevent knowledge bloat.
 
 **Steps (in order):**

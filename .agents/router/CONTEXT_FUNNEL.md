@@ -98,9 +98,14 @@ Write-back eligibility is defined in [ROUTER.md](ROUTER.md) (by profile and flag
 1. Read [KNOWLEDGE_GRAPH.md](../llm_wiki/KNOWLEDGE_GRAPH.md) to find the correct mount point.
 2. Do NOT edit shared `index.md` files directly.
 3. Write a WAL fragment into the target domain `wal/` directory.
-   - Example: `../llm_wiki/wiki/api/wal/YYYYMMDD_feature_x_api_append.md`
+   - Example (API): `../llm_wiki/wiki/api/wal/YYYYMMDD_feature_x_api_append.md`
+   - Example (Data/DB): `../llm_wiki/wiki/data/wal/YYYYMMDD_feature_x_db_schema.md` (DO NOT write `.sql` files into the project root `sql/` directory).
 4. Merge and splitting are performed in a low-conflict window (typically by a human or by the compactor script when explicitly triggered).
 5. If an index exceeds the hard size limit: it MUST be split (see `ARCHIVE_WAL.md`).
+
+**Few-Shot Example (DB Change Archive):**
+When generating a new table or altering a schema, the Agent MUST NOT drop a raw `.sql` file in the project root.
+*Correct behavior:* Create a Markdown file `.agents/llm_wiki/wiki/data/wal/20260419_add_tenant_asset_table.md` containing the DDL code blocks and ER mapping notes.
 
 ---
 

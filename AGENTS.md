@@ -21,14 +21,23 @@ Single entry point. Read this file first on every session start. All links here 
 
 ## Mandatory First Outputs
 
-Before any action (reading files, searching, writing code), the Agent MUST output the following two lines:
+Before any action (reading files, searching, writing code), the Agent MUST output the following headers AND a structured thinking block:
 
-```
+```xml
 [Intent Check] intent=<Learn|Change|DocQA|Audit> | profile=@<learn|patch|standard> | risk=<LOW|MEDIUM|HIGH> | scenario=<none|A|B|C|D|E> | emergency=<true|false>
 [Lifecycle: <Plan|Execute|Validate|Archive>] | [Mounted Role: @<Role>]
+
+<Cognitive_Brake>
+- Role Assumption: What are my currently mounted roles (e.g., @Focus Guard + @Security Sentinel) and what specific artifacts/guards must I deliver in this phase per `ROLE_MATRIX.md`?
+- Context Sniffing: What existing project conventions, custom exceptions, or validation rules do I need to Grep/Search before assuming standard Java behavior?
+- Architectural Defense: Does this operation span multiple tables/domains? If so, what is the transaction boundary and rollback strategy (e.g., Facade layer)?
+- Shift-Left Validation: How will I verify this change (e.g., `javac`, Maven, tests) before telling the user I am done?
+- State Mutation: What WAL fragments or documentation will need updating in the Archive phase?
+</Cognitive_Brake>
 ```
 
 **Rules:**
+- **CoT Requirement**: The `<Cognitive_Brake>` block is MANDATORY. It forces you to adopt the assigned Role Personas (e.g., as `@Security Sentinel` or `@Focus Guard`) before acting like a Coder.
 - If the intent is ambiguous (missing action or object signal): output `[Intent Check] AMBIGUOUS — <reason>` and ask one clarifying question before proceeding.
 - If a special scenario (A–E) is matched: include `scenario=<letter>` and apply Scenario routing overrides (see [ROUTER.md](.agents/router/ROUTER.md#6-special-scenarios)).
 - You MUST explicitly declare any Phase transition using the `[Lifecycle: ...]` header.
@@ -87,3 +96,30 @@ Session start
 - Build/IDE artifacts: `target/`, `build/`, `.idea/`, `.vscode/`, `.DS_Store`
 
 **Only commit stable artifacts**: source code, `openspec.md`, delivery capsules, and `wal/` fragments.
+
+---
+
+## Standard Agent Turn (Few-Shot Paradigm)
+
+To build muscle memory and avoid impulsive "Coder" behavior, follow this exact rhythm for code modification turns:
+
+**User:** "Add a new asset type to the tenant and invalidate the old one."
+
+**Agent Internal Loop (Perfect Execution):**
+1. **Output headers & CoT (Mandatory):**
+```xml
+[Intent Check] intent=Change | profile=@standard | risk=MEDIUM | scenario=none | emergency=false
+[Lifecycle: Execute] | [Mounted Role: @Focus Guard + @Security Sentinel]
+
+<Cognitive_Brake>
+- Role Assumption: As @Focus Guard, I must strictly only edit the Controller and Service classes authorized in the `focus_card.md`. As @Security Sentinel, I must ensure no raw passwords or PII are exposed in the new exception messages.
+- Context Sniffing: I need to Grep for `CustomerException` or `BaseResponse` instead of throwing raw `RuntimeException`. I must check for existing validation annotations (e.g., `jakarta` vs `javax`).
+- Architectural Defense: Adding an asset and invalidating an old one touches multiple tables. This MUST be wrapped in a `@Transactional` Facade/Manage layer, NOT crammed into the Controller.
+- Shift-Left Validation: After generating code, I will use `RunCommand` to run `mvn compile` or `javac` to catch import errors before responding to the user.
+- State Mutation: I will write a WAL fragment into `.agents/llm_wiki/wiki/data/wal/YYYYMMDD_asset_type.md` for the new enum/DB change.
+</Cognitive_Brake>
+```
+2. **Action 1 (Sniffing):** Agent uses `Grep` or `SearchCodebase` to find custom exceptions and validation imports.
+3. **Action 2 (Coding):** Agent uses `SearchReplace` / `Write` to create the Facade layer and update the Controller, ensuring high cohesion.
+4. **Action 3 (Shift-Left Validation):** Agent uses `RunCommand` (`mvn clean compile`). It catches a `javax` import error, fixes it, and recompiles successfully.
+5. **Action 4 (Archive):** Agent transitions to `[Lifecycle: Archive]`, writes the database schema/enum change as a Markdown fragment into `data/wal/`, and ONLY THEN yields the final response to the user.

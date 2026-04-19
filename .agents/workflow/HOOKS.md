@@ -32,10 +32,24 @@ Defines when and how to enforce constraints throughout the lifecycle.
 **Bound skills:** `checkstyle`, `java-javadoc-standard`
 
 **Purpose:**
-- **Standards guard:** Enforce style and required patterns.
+- **Architectural Defense (MUST):** Ensure operations spanning multiple DB tables/domains are pushed down to a `@Transactional` Service or Facade layer. Controllers must remain thin.
+- **Standards guard:** Enforce style, custom project exceptions (e.g., `CustomerException`), and required patterns (e.g., `jakarta.validation` vs `javax`).
 - **Domain boundary guard:** Do NOT modify cross-domain files unless explicitly authorized in `openspec.md`.
 - **Anti-runaway guard (MUST):** Enforce budgeted navigation + stop rules + escalation protocol (see `../router/CONTEXT_FUNNEL.md`).
 - **Anti-drift guard (MUST):** Maintain a `Focus Card` and enforce scope via `scope_guard.py` (see `../workflow/ROLE_MATRIX.md`).
+
+---
+
+### 2.5 `shift_left_hook` — Active Verification (MUST)
+
+**Trigger:** Immediately after writing/modifying code, BEFORE telling the user "I am done".
+
+**Purpose:**
+Prevent delivery of uncompilable code or broken dependencies.
+
+**Actions:**
+- The Agent MUST autonomously run `RunCommand` to execute `javac`, `mvn clean compile`, or `gradle build`.
+- If compilation fails, the Agent MUST fix the error (e.g., missing imports, syntax errors) and re-verify before yielding the final response.
 
 ---
 
