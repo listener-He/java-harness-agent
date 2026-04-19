@@ -25,13 +25,13 @@ Before any action (reading files, searching, writing code), the Agent MUST outpu
 
 ```xml
 [Intent Check] intent=<Learn|Change|DocQA|Audit> | profile=@<learn|patch|standard> | risk=<LOW|MEDIUM|HIGH> | scenario=<none|A|B|C|D|E> | emergency=<true|false>
-[Lifecycle: <Plan|Execute|Validate|Archive>] | [Mounted Role: @<Role>]
+        [Lifecycle: <Plan|Execute|Validate|Archive>] | [Mounted Role: @<Role>]
 
 <Cognitive_Brake>
-- Role & Scope: As [@RoleX], my authorized file boundary is [focus_card.md / None]. Am I crossing it?
-- Budget & Context: Wiki reads: [X]/3, Code reads: [Y]/8. Do I need to Grep specific project standards/exceptions first?
-- Architectural Defense: Is this a cross-domain/transactional change? Am I at a STOP gate like Approval or Validation?
-- Next State: What exact artifact, WAL, or validation command will I output/run right now?
+    - Role & Scope: As [@RoleX], my authorized file boundary is [focus_card.md / None]. Am I crossing it?
+    - Budget & Context: Wiki reads: [X]/3, Code reads: [Y]/8. Do I need to Grep specific project standards/exceptions first?
+    - Architectural Defense: Is this a cross-domain/transactional change? Am I at a STOP gate like Approval or Validation?
+    - Next State: What exact artifact, WAL, or validation command will I output/run right now?
 </Cognitive_Brake>
 ```
 
@@ -114,11 +114,10 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 2. **Cognitive Brake:**
 ```xml
 <Cognitive_Brake>
-- Role & Scope: As @Ambiguity Gatekeeper, current boundary is None. Must output focus_card.md to lock scope.
-- Budget & Context: Wiki: 1/3, Code: 2/8. Must grep `CustomerException` standards.
-- Architectural Defense: Cross-table operation (Tenant/Asset). Requires `@Transactional` Facade. Currently in Propose phase -> reaching Approval Gate. MUST STOP. No coding allowed.
-- Next State: Output explore_report.md, focus_card.md, and openspec.md. Yield for human approval.
-- Language Matching: User speaks English. Outputting in English.
+    - Role & Scope: As @Ambiguity Gatekeeper, current boundary is None. Must output focus_card.md to lock scope.
+    - Budget & Context: Wiki: 1/3, Code: 2/8. Must grep `CustomerException` standards.
+    - Architectural Defense: Cross-table operation (Tenant/Asset). Requires `@Transactional` Facade. Currently in Propose phase -> reaching Approval Gate. MUST STOP. No coding allowed.
+    - Next State: Output explore_report.md, focus_card.md, and openspec.md. Yield for human approval.
 </Cognitive_Brake>
 ```
 3. **Action:** Agent reads context, creates the spec detailing a `@Transactional` Facade layer, and defines the exact files to touch in `focus_card.md`.
@@ -133,7 +132,6 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 - Budget & Context: Wiki: 0/3, Code: 0/8 (reset for new turn). Verified `jakarta.validation` requirement.
 - Architectural Defense: Write operation requires `@Transactional` in Manage layer per openspec.md. After writing code, MUST STOP at Validation Gate before compilation.
 - Next State: Execute SearchReplace. STOP and prompt: "Code generated. Requesting permission to run mvn compile."
-- Language Matching: User speaks English. Outputting in English.
 </Cognitive_Brake>
 ```
 3. **Action:** Agent writes code using `SearchReplace`.
@@ -148,7 +146,6 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 - Budget & Context: Wiki: 0/3, Code: 0/8.
 - Architectural Defense: STRICT MAX RETRIES is 2. If `mvn compile` fails twice, MUST stop and escalate to human. No infinite loops.
 - Next State: Execute `mvn clean compile` via RunCommand.
-- Language Matching: User speaks English. Outputting in English.
 </Cognitive_Brake>
 ```
 3. **Action:** Agent uses `RunCommand` (`mvn clean compile`). Fixes a `javax` import error (Retry 1/2) and recompiles successfully.
@@ -163,7 +160,6 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 - Budget & Context: Wiki: 0/3, Code: 0/8.
 - Architectural Defense: Asynchronous Archive execution. Clean context isolated from heavy coding history.
 - Next State: Write schema changes to `data/wal/YYYYMMDD_asset_type.md`.
-- Language Matching: User speaks English. Outputting in English.
 </Cognitive_Brake>
 ```
 3. **Action:** Agent writes the database schema changes into `data/wal/YYYYMMDD_asset_type.md`.
