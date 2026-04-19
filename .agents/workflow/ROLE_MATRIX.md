@@ -11,6 +11,58 @@ Hard rules:
 
 Roles are not just names—they are strictly enforced **Executable Checklists**. An Agent MUST explicitly acknowledge and execute the checklist items for its mounted role.
 
+### Requirement Engineer
+Purpose:
+- Bridge the gap between human desires and technical specifications. Translate raw, unstructured user input into testable User Stories and Acceptance Criteria.
+Executable Checklist:
+- [ ] Ask clarifying questions to eliminate vague adjectives (e.g., "fast", "beautiful", "better").
+- [ ] Define the "Happy Path" and at least two "Edge Cases" (Unhappy Paths).
+- [ ] Output clear Acceptance Criteria (AC) that QA can test against.
+Output:
+- `explore_report.md` (containing User Stories and AC).
+Gate:
+- `ambiguity_gate.py` (Must pass definition of ready).
+
+### System Architect
+Purpose:
+- Design the high-level system interactions, database schema (DDL), and design patterns before any code is written. Acts as the "Foreman" in EPIC scenarios.
+Executable Checklist:
+- [ ] **Hard Context Handover:** Read `explore_report.md` and explicitly map your design back to the Acceptance Criteria (AC).
+- [ ] Evaluate if new dependencies/middleware are required.
+- [ ] Define system boundaries and output the API/Data contract in `openspec.md`.
+- [ ] Assess the "Blast Radius" of the proposed changes.
+Output:
+- `openspec.md` (Must include an AC mapping section).
+Gate:
+- Approval Gate (Requires human sign-off on the spec).
+
+### Lead Engineer
+Purpose:
+- Translate the `openspec.md` into concrete, compilable code while strictly adhering to existing project paradigms.
+Executable Checklist:
+- [ ] Write code strictly within the boundaries of `focus_card.md`.
+- [ ] **Boundary Exception Protocol:** If out-of-scope files MUST be modified, DO NOT edit them directly. Output a `[Boundary Exception Request]` explaining why, and wait for human approval.
+- [ ] Prioritize reusing existing Utils, Base classes, and patterns over reinventing the wheel.
+- [ ] Ensure all exceptions are properly caught and handled (no swallowed exceptions).
+- [ ] **Shift-Left Quality:** Code MUST strictly adhere to `checkstyle` and `java-javadoc-standard` before yielding. Do not leave basic formatting or missing Javadocs for the Reviewer.
+Output:
+- Modified source code files.
+Gate:
+- `scope_guard.py` + Compilation success.
+
+### Code Reviewer
+Purpose:
+- Conduct a rigorous, tech-lead-level inspection of the newly written code focusing purely on quality metrics before QA/Archive.
+Executable Checklist:
+- [ ] **Performance:** Check for N+1 query risks or large object memory leaks.
+- [ ] **Paradigm:** Check for SOLID violations or methods exceeding 50 lines.
+- [ ] **Readability:** Ensure clear naming conventions and extract Magic Numbers into constants.
+- [ ] **Robustness:** Verify boundary conditions (Null, 0, negative values) are handled.
+Output:
+- Code Review annotations or refactoring suggestions (if changes are needed).
+Gate:
+- `linter.py` / Static analysis checks.
+
 ### Ambiguity Gatekeeper
 Purpose:
 - Prevent starting work on vague input and stop runaway exploration early.
@@ -19,33 +71,22 @@ Output:
 Gate:
 - `ambiguity_gate.py` + `focus_card_gate.py` (FAIL blocks progress).
 
-### Domain Analyst
+### Knowledge Extractor
 Purpose:
-- Capture business domain vocabulary, invariants, and boundaries.
+- Consolidate all knowledge extraction (Domain, API, Rules) during the Archive phase into a single structured output, preventing role competition.
+Executable Checklist:
+- [ ] Read `targeted git diff` or `openspec.md` (DO NOT read full history).
+- [ ] Extract knowledge into a unified structured format categorizing `[Domain]`, `[Interface]`, and `[Rules]` changes.
 Output:
-- Domain WAL fragment.
+- Unified WAL fragment containing Domain, API, and Rules updates.
 Gate:
-- `writeback_gate.py` (Domain WAL required).
-
-### Interface Steward
-Purpose:
-- Capture API contract facts (endpoints/auth/error semantics) and link to spec.
-Output:
-- API WAL fragment.
-Gate:
-- `writeback_gate.py` (API WAL required).
-
-### Rules Lawyer
-Purpose:
-- Capture rules domain (permission/data scope/cache/exception).
-Output:
-- Rules WAL fragment.
-Gate:
-- `writeback_gate.py` (Rules WAL required).
+- `writeback_gate.py` (Validates presence of the 3 required sections).
 
 ### Security Sentinel
 Purpose:
-- Prevent secret leakage and obvious authZ bypass risks.
+- Pure script executor. Prevent secret leakage and obvious authZ bypass risks without subjective LLM hallucination.
+Executable Checklist:
+- [ ] Run `secrets_linter.py` and strictly report the exit code/output. Do not perform subjective security code reviews (leave logical review to Code Reviewer).
 Output:
 - Delivery capsule “Security notes” (or explicit “N/A”).
 Gate:
@@ -90,14 +131,14 @@ Gate:
 - Explorer: `@Ambiguity Gatekeeper` + `@Focus Guard`
 - Implement: `@Focus Guard` + `@Security Sentinel`
 - QA: `@Documentation Curator`
-- Archive: `@Domain Analyst` + `@Interface Steward` + `@Rules Lawyer` + `@Documentation Curator` + `@Skill Graph Curator`
+- Archive: `@Knowledge Extractor` + `@Documentation Curator` + `@Skill Graph Curator`
 
 ### Change / STANDARD
-- Explorer: `@Ambiguity Gatekeeper` + `@Focus Guard`
-- Propose/Review: `@Domain Analyst` + `@Interface Steward` + `@Rules Lawyer`
-- Implement: `@Focus Guard` + `@Security Sentinel`
-- QA: `@Documentation Curator`
-- Archive: `@Domain Analyst` + `@Interface Steward` + `@Rules Lawyer` + `@Documentation Curator` + `@Skill Graph Curator`
+- Explorer: `@Ambiguity Gatekeeper` + `@Requirement Engineer` + `@Focus Guard`
+- Propose/Review: `@System Architect`
+- Implement: `@Lead Engineer` + `@Focus Guard` + `@Security Sentinel`
+- QA: `@Code Reviewer` + `@Documentation Curator`
+- Archive: `@Knowledge Extractor` + `@Documentation Curator` + `@Skill Graph Curator`
 
 ## 3) LLM Cognitive Execution Protocol (MUST)
 
@@ -111,11 +152,11 @@ When transitioning to a new phase, the Agent MUST check the **Mounted Roles** li
 In the `<Cognitive_Brake>`, explicitly state the active roles and their required artifacts.
 *Example (Phase 4: Implement):*
 ```xml
-- Role Assumption: As @Focus Guard, I will only modify `UserService.java`. As @Security Sentinel, I will not log user passwords in the new error handler.
+- Role Assumption: As @Focus Guard, I will only modify `UserService.java`. As @Lead Engineer, I will ensure proper exception handling and formatting.
 ```
 *Example (Phase 6: Archive):*
 ```xml
-- Role Assumption: As @Domain Analyst, I must write the DB schema WAL. As @Interface Steward, I must write the API WAL. As @Documentation Curator, I must finalize the Delivery Capsule.
+- Role Assumption: As @Knowledge Extractor, I must write the unified WAL fragment. As @Documentation Curator, I must finalize the Delivery Capsule.
 ```
 
 ## 4) Automation Contract

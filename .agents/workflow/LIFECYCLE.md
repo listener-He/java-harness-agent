@@ -27,7 +27,7 @@ One-way state machine with hard gates and rollback rules.
 
 ### Phase 1: Explorer
 
-**Mounted Roles:** `@Ambiguity Gatekeeper`, `@Focus Guard`
+**Mounted Roles:** `@Ambiguity Gatekeeper`, `@Requirement Engineer`, `@Focus Guard`
 **Skills:** `product-manager-expert`, `devops-requirements-analysis`, `prd-task-splitter`
 
 **Actions:**
@@ -41,7 +41,7 @@ One-way state machine with hard gates and rollback rules.
 
 ### Phase 2: Propose
 
-**Mounted Roles:** `@Domain Analyst`, `@Interface Steward`, `@Rules Lawyer`
+**Mounted Roles:** `@System Architect`
 **Skills:** `devops-system-design`, `devops-task-planning`
 
 **Actions:** Follow the contract template in `../llm_wiki/schema/openspec_schema.md`.
@@ -54,7 +54,7 @@ One-way state machine with hard gates and rollback rules.
 
 ### Phase 3: Review
 
-**Mounted Roles:** `@Domain Analyst`, `@Interface Steward`, `@Rules Lawyer`
+**Mounted Roles:** `@System Architect`
 **Skills:** `devops-review-and-refactor`, `global-backend-standards`
 
 **Review matrix:**
@@ -92,7 +92,7 @@ One-way state machine with hard gates and rollback rules.
 
 ### Phase 4: Implement
 
-**Mounted Roles:** `@Focus Guard`, `@Security Sentinel`
+**Mounted Roles:** `@Lead Engineer`, `@Focus Guard`, `@Security Sentinel`
 **Skills:** `devops-feature-implementation`, `devops-bug-fix`, `utils-usage-standard`, `aliyun-oss`
 
 **Actions:**
@@ -105,7 +105,7 @@ One-way state machine with hard gates and rollback rules.
 
 ### Phase 5: QA Test
 
-**Mounted Roles:** `@Documentation Curator`
+**Mounted Roles:** `@Code Reviewer`, `@Documentation Curator`
 **Skills:** `devops-testing-standard`, `code-review-checklist`
 
 **Actions:**
@@ -118,8 +118,8 @@ One-way state machine with hard gates and rollback rules.
 
 ### Phase 6: Archive
 
-**Mounted Roles:** `@Domain Analyst`, `@Interface Steward`, `@Rules Lawyer`, `@Documentation Curator`, `@Skill Graph Curator`
-**Purpose:** Close the loop and prevent knowledge bloat. Highly recommended to execute in a **NEW, clean chat session** to avoid context window overload.
+**Mounted Roles:** `@Knowledge Extractor`, `@Documentation Curator`, `@Skill Graph Curator`
+**Purpose:** Close the loop and prevent knowledge bloat. Execute seamlessly in the **same session**. Rely on targeted `git diff <files>` or `openspec.md` to summarize changes, strictly avoiding re-reading heavy coding history.
 
 **Steps (in order):**
 1. Sync docs via `api-documentation-rules` and `database-documentation-sync` skills.

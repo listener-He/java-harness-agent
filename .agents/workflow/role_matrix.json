@@ -38,51 +38,6 @@
         }
       ]
     },
-    "domain_analyst": {
-      "gates": [
-        {
-          "script": ".agents/scripts/gates/writeback_gate.py",
-          "args": [
-            "--topic",
-            "{topic}",
-            "--date",
-            "{date}",
-            "--require",
-            "domain"
-          ]
-        }
-      ]
-    },
-    "interface_steward": {
-      "gates": [
-        {
-          "script": ".agents/scripts/gates/writeback_gate.py",
-          "args": [
-            "--topic",
-            "{topic}",
-            "--date",
-            "{date}",
-            "--require",
-            "api"
-          ]
-        }
-      ]
-    },
-    "rules_lawyer": {
-      "gates": [
-        {
-          "script": ".agents/scripts/gates/writeback_gate.py",
-          "args": [
-            "--topic",
-            "{topic}",
-            "--date",
-            "{date}",
-            "--require",
-            "rules"
-          ]
-        }
-      ]
-    },
     "architecture_curator": {
       "gates": [
         {
@@ -140,6 +95,74 @@
           ]
         }
       ]
+    },
+    "requirement_engineer": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/ambiguity_gate.py",
+          "args": [
+            "--require",
+            "explore_report.md"
+          ]
+        }
+      ]
+    },
+    "system_architect": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/openspec_gate.py",
+          "args": [
+            "--require",
+            "openspec.md"
+          ]
+        }
+      ]
+    },
+    "lead_engineer": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/scope_guard.py",
+          "args": [
+            "--focus-card",
+            ".agents/workflow/artifacts/focus_card.md",
+            "--files",
+            "{changed_files}"
+          ]
+        }
+      ]
+    },
+    "code_reviewer": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/linter.py",
+          "args": [
+            "--strict"
+          ]
+        }
+      ]
+    },
+    "librarian": {
+      "gates": [
+        {
+          "script": ".agents/scripts/wiki/wiki_linter.py",
+          "args": []
+        }
+      ]
+    },
+    "knowledge_extractor": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/writeback_gate.py",
+          "args": [
+            "--topic",
+            "{topic}",
+            "--date",
+            "{date}",
+            "--require",
+            "domain,api,rules"
+          ]
+        }
+      ]
     }
   },
   "mounts": [
@@ -174,9 +197,7 @@
       "profile": "PATCH",
       "phase": "Archive",
       "roles": [
-        "domain_analyst",
-        "interface_steward",
-        "rules_lawyer",
+        "knowledge_extractor",
         "documentation_curator",
         "skill_graph_curator"
       ]
@@ -187,6 +208,7 @@
       "phase": "Explorer",
       "roles": [
         "ambiguity_gatekeeper",
+        "requirement_engineer",
         "focus_guard"
       ]
     },
@@ -195,9 +217,7 @@
       "profile": "STANDARD",
       "phase": "Propose",
       "roles": [
-        "domain_analyst",
-        "interface_steward",
-        "rules_lawyer"
+        "system_architect"
       ]
     },
     {
@@ -205,6 +225,7 @@
       "profile": "STANDARD",
       "phase": "Implement",
       "roles": [
+        "lead_engineer",
         "focus_guard",
         "security_sentinel"
       ]
@@ -214,6 +235,7 @@
       "profile": "STANDARD",
       "phase": "QA",
       "roles": [
+        "code_reviewer",
         "documentation_curator"
       ]
     },
@@ -222,11 +244,10 @@
       "profile": "STANDARD",
       "phase": "Archive",
       "roles": [
-        "domain_analyst",
-        "interface_steward",
-        "rules_lawyer",
+        "knowledge_extractor",
         "documentation_curator",
-        "skill_graph_curator"
+        "skill_graph_curator",
+        "librarian"
       ]
     },
     {

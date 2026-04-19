@@ -110,11 +110,11 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 **User:** "Add a new asset type to the tenant and invalidate the old one."
 
 **Turn 1: Explorer & Propose (Phase 1 & Phase 2)**
-1. **Output headers:** `[Lifecycle: Propose] | [Mounted Role: @Domain Analyst + @Ambiguity Gatekeeper]`
+1. **Output headers:** `[Lifecycle: Propose] | [Mounted Role: @System Architect + @Requirement Engineer + @Ambiguity Gatekeeper]`
 2. **Cognitive Brake:**
 ```xml
 <Cognitive_Brake>
-- Role & Scope: As @Ambiguity Gatekeeper, current boundary is None. Must output focus_card.md to lock scope.
+- Role & Scope: As @Ambiguity Gatekeeper, current boundary is None. Must output focus_card.md to lock scope. As @System Architect, must output openspec.md mapping AC.
 - Budget & Context: Wiki: 1/3, Code: 2/8. Must grep `CustomerException` standards.
 - Architectural Defense: Cross-table operation (Tenant/Asset). Requires `@Transactional` Facade. Currently in Propose phase -> reaching Approval Gate. MUST STOP. No coding allowed.
 - Next State: Output explore_report.md, focus_card.md, and openspec.md. Yield for human approval.
@@ -124,11 +124,11 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 4. **Approval Gate (STOP):** Agent stops and asks the User: *"The spec is ready. Please review `openspec.md`. Do you approve moving to implementation?"* (Agent MUST NOT write code yet).
 
 **Turn 2: Implement (Phase 4) — *After Human Approves***
-1. **Output headers:** `[Lifecycle: Implement] | [Mounted Role: @Focus Guard + @Security Sentinel]`
+1. **Output headers:** `[Lifecycle: Implement] | [Mounted Role: @Lead Engineer + @Focus Guard + @Security Sentinel]`
 2. **Cognitive Brake:**
 ```xml
 <Cognitive_Brake>
-- Role & Scope: As @Focus Guard, strict boundary is Controller/Service per focus_card.md. Zero drift.
+- Role & Scope: As @Focus Guard, strict boundary is Controller/Service per focus_card.md. Zero drift. As @Lead Engineer, writing code.
 - Budget & Context: Wiki: 0/3, Code: 0/8 (reset for new turn). Verified `jakarta.validation` requirement.
 - Architectural Defense: Write operation requires `@Transactional` in Manage layer per openspec.md. After writing code, MUST STOP at Validation Gate before compilation.
 - Next State: Execute SearchReplace. STOP and prompt: "Code generated. Requesting permission to run mvn compile."
@@ -138,11 +138,11 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 4. **Validation Gate (STOP):** Agent stops and asks the User for permission to run heavy compilations or tests.
 
 **Turn 3: Shift-Left Validation (Phase 5) — *After Human Approves***
-1. **Output headers:** `[Lifecycle: Validate] | [Mounted Role: @Documentation Curator]`
+1. **Output headers:** `[Lifecycle: Validate] | [Mounted Role: @Code Reviewer + @Documentation Curator]`
 2. **Cognitive Brake:**
 ```xml
 <Cognitive_Brake>
-- Role & Scope: As Validator, scope is test/compile only. No feature drift.
+- Role & Scope: As @Code Reviewer, scope is test/compile and static analysis only. No feature drift.
 - Budget & Context: Wiki: 0/3, Code: 0/8.
 - Architectural Defense: STRICT MAX RETRIES is 2. If `mvn compile` fails twice, MUST stop and escalate to human. No infinite loops.
 - Next State: Execute `mvn clean compile` via RunCommand.
@@ -152,14 +152,14 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 4. **Yield:** Agent reports: *"Compilation passed! Transitioning automatically to Archive phase to extract knowledge."*
 
 **Turn 4: Archive (Phase 6) — *Seamless Write-back***
-1. **Output headers:** `[Lifecycle: Archive] | [Mounted Role: @Domain Analyst + @Documentation Curator]`
+1. **Output headers:** `[Lifecycle: Archive] | [Mounted Role: @Knowledge Extractor + @Documentation Curator + @Skill Graph Curator]`
 2. **Cognitive Brake:**
 ```xml
 <Cognitive_Brake>
-- Role & Scope: As @Domain Analyst, extraction only. No code mutation.
+- Role & Scope: As @Knowledge Extractor, extraction only. No code mutation.
 - Budget & Context: Wiki: 0/3, Code: 0/8.
 - Architectural Defense: Execute Archive seamlessly in the same session. Rely on targeted `git diff <files>` or `openspec.md` to summarize changes, strictly avoiding re-reading heavy coding history.
-- Next State: Write schema changes to `data/wal/YYYYMMDD_asset_type.md`.
+- Next State: Write unified knowledge fragment to `data/wal/YYYYMMDD_asset_type.md`.
 </Cognitive_Brake>
 ```
 3. **Action:** Agent writes the database schema changes into `data/wal/YYYYMMDD_asset_type.md`.
