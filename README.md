@@ -52,7 +52,7 @@ Given that Java Harness Agent is an agentic framework, it inherently consumes mo
 
 ### 2. The ROI: Comparing 3 Paradigms for a Complex Feature (e.g., Cross-Table Transaction)
 
-*Note: Estimates assume pricing for the latest flagship models (e.g., GPT-5.4, GPT-5.3-Codex, Claude 3.7 Sonnet, Gemini 3.5 Pro), averaging ~$2.5/M Input and ~$15/M Output.*
+*Note: Estimates assume a typical modern flagship LLM (e.g., GPT-4o, Claude 3.5/3.7 Sonnet, Gemini 1.5 Pro) pricing model.*
 
 | Paradigm | Behavior | Input Tokens | Output Tokens | Hidden Costs / Risks | Verdict |
 |----------|----------|--------------|---------------|----------------------|---------|
@@ -64,9 +64,9 @@ Given that Java Harness Agent is an agentic framework, it inherently consumes mo
 
 | Scenario Profile | Typical Turns | Input Tokens | Output Tokens | Expected Cost / Task |
 |------------------|---------------|--------------|---------------|----------------------|
-| **`@patch` (Small Bugfix)** | 1-2 Turns | ~5k - 8k | ~1k - 2k | **$0.03 - $0.05** |
-| **`@standard` (New Feature)** | 4-6 Turns | ~20k - 40k | ~4k - 8k | **$0.10 - $0.25** |
-| **`@learn` (Doc QA)** | 1 Turn | ~3k - 5k | ~500 | **$0.01 - $0.02** |
+| **`@patch` (Small Bugfix)** | 1-2 Turns | ~5k - 8k | ~1k - 2k | **$0.05 - $0.15** |
+| **`@standard` (New Feature)** | 4-6 Turns | ~20k - 40k | ~4k - 8k | **$0.30 - $0.80** |
+| **`@learn` (Doc QA)** | 1 Turn | ~3k - 5k | ~500 | **$0.02 - $0.05** |
 
 ### 4. Token Optimization Formula
 **Total Token Cost = (Base Context + Context Funnel Payload) × Turns + (Artifact Generation + Code Generation + Cognitive Brake)**

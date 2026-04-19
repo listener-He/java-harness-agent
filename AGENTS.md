@@ -8,7 +8,7 @@ Single entry point. Read this file first on every session start. All links here 
 
 | Constraint | Rule |
 |---|---|
-| **Budget** | Intelligently calculate initial budget based on task complexity. Default: wiki 3, code 8. Pagination of the same file does NOT count. |
+| **Context Bloat Prevention** | Prefer native Search Sub-Agents (e.g., Trae, Qoder, Claude Code, Gemini CLI, Codex) for codebase scanning. If unavailable, STRICTLY enforce Budget Limits (Wiki ≤ 3, Code ≤ 8) as the "Poor Man's Sub-Agent". Pagination doesn't count. |
 | **Reward Mechanism** | (Elastic extension) Output a `<Confidence_Assessment>` block explaining the specific missing concept/symbol to earn a budget reward (+2 wiki / +3 code) before hitting the hard stop (see [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)). |
 | **Budget exhausted** | STOP. File an Escalation Card (format in [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)). Do not guess paths or continue reading. |
 | **Approval Gate** | For MEDIUM/HIGH risk changes: STOP after creating the spec, set status to `WAITING_APPROVAL`, and wait for explicit human approval before writing any code. |
@@ -35,9 +35,13 @@ Before any action (reading files, searching, writing code), the Agent MUST outpu
 </Cognitive_Brake>
 ```
 
+**Dynamic Cognitive Brake (Token Optimization):**
+- For `@standard` profile or high-risk tasks: The FULL 4-point `<Cognitive_Brake>` is MANDATORY.
+- For `@patch` profile or minor continuous steps: You may use a Micro-Brake to save tokens: `<Brake>Scope: [safe/boundaries]. Action: [next step]</Brake>`.
+
 **Rules:**
 - **CoT Requirement**: The `<Cognitive_Brake>` block is MANDATORY. It forces you to adopt the assigned Role Personas (e.g., as `@Security Sentinel` or `@Focus Guard`) before acting like a Coder.
-- **Language Matching**: The internal reasoning text inside the `<Cognitive_Brake>` MUST be written in the same natural language as the user's most recent prompt (e.g., Simplified Chinese, Japanese, Spanish) to maximize human readability. The XML tags and protocol headers (e.g., `[Intent Check]`) MUST remain in English for script parsing.
+- **Language Matching**: The internal reasoning text inside the `<Cognitive_Brake>` MUST be written in the same natural language as the user's most recent prompt (e.g., 简体中文, にほんご, Español,  English) to maximize human readability. The XML tags and protocol headers (e.g., `[Intent Check]`) MUST remain in English for script parsing.
 - If the intent is ambiguous (missing action or object signal): output `[Intent Check] AMBIGUOUS — <reason>` and ask one clarifying question before proceeding.
 - If a special scenario (A–E) is matched: include `scenario=<letter>` and apply Scenario routing overrides (see [ROUTER.md](.agents/router/ROUTER.md#6-special-scenarios)).
 - You MUST explicitly declare any Phase transition using the `[Lifecycle: ...]` header.
@@ -50,8 +54,8 @@ Before any action (reading files, searching, writing code), the Agent MUST outpu
 
 ```
 Session start
-├─ Rule 0.0: Workflow Initialization (MANDATORY)
-│   └─ Even if explicit paths are provided (Rule 0), you MUST read LIFECYCLE.md and ROLE_MATRIX.md before taking any action.
+├─ Rule 0.0: Workflow Initialization (SSOT Lazy Loading)
+│   └─ Read ONLY `AGENTS.md` on startup. Lazy-load `LIFECYCLE.md`, `ROLE_MATRIX.md`, or specific `SKILL.md` ONLY when transitioning phases or executing specific tasks.
 ├─ Rule 0: User provided explicit file path / class / snippet?
 │   └─ YES → Read it directly. Skip wiki funnel.
 ├─ Resuming an interrupted session?
@@ -114,6 +118,7 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 - Budget & Context: Wiki: 1/3, Code: 2/8. Must grep `CustomerException` standards.
 - Architectural Defense: Cross-table operation (Tenant/Asset). Requires `@Transactional` Facade. Currently in Propose phase -> reaching Approval Gate. MUST STOP. No coding allowed.
 - Next State: Output explore_report.md, focus_card.md, and openspec.md. Yield for human approval.
+- Language Matching: User speaks English. Outputting in English.
 </Cognitive_Brake>
 ```
 3. **Action:** Agent reads context, creates the spec detailing a `@Transactional` Facade layer, and defines the exact files to touch in `focus_card.md`.
@@ -128,6 +133,7 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 - Budget & Context: Wiki: 0/3, Code: 0/8 (reset for new turn). Verified `jakarta.validation` requirement.
 - Architectural Defense: Write operation requires `@Transactional` in Manage layer per openspec.md. After writing code, MUST STOP at Validation Gate before compilation.
 - Next State: Execute SearchReplace. STOP and prompt: "Code generated. Requesting permission to run mvn compile."
+- Language Matching: User speaks English. Outputting in English.
 </Cognitive_Brake>
 ```
 3. **Action:** Agent writes code using `SearchReplace`.
@@ -142,6 +148,7 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 - Budget & Context: Wiki: 0/3, Code: 0/8.
 - Architectural Defense: STRICT MAX RETRIES is 2. If `mvn compile` fails twice, MUST stop and escalate to human. No infinite loops.
 - Next State: Execute `mvn clean compile` via RunCommand.
+- Language Matching: User speaks English. Outputting in English.
 </Cognitive_Brake>
 ```
 3. **Action:** Agent uses `RunCommand` (`mvn clean compile`). Fixes a `javax` import error (Retry 1/2) and recompiles successfully.
@@ -156,6 +163,7 @@ To build muscle memory and respect the Human-in-the-Loop constraints, follow thi
 - Budget & Context: Wiki: 0/3, Code: 0/8.
 - Architectural Defense: Asynchronous Archive execution. Clean context isolated from heavy coding history.
 - Next State: Write schema changes to `data/wal/YYYYMMDD_asset_type.md`.
+- Language Matching: User speaks English. Outputting in English.
 </Cognitive_Brake>
 ```
 3. **Action:** Agent writes the database schema changes into `data/wal/YYYYMMDD_asset_type.md`.
