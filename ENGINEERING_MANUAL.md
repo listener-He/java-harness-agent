@@ -110,6 +110,42 @@ stateDiagram-v2
   Archive --> [*]
 ```
 
+### Scenario EPIC: Massive Refactoring or Cross-Domain Feature
+
+- **Goal**: Handle massive features spanning multiple domains or framework migrations.
+- **Lifecycle Path**: Forces System Architect to produce a micro-task breakdown in `openspec.md` during Propose.
+- **Key Deliverables**: Sub-agent dispatch list; strictly restricts the main Agent from direct coding.
+
+### Scenario DEBUG: Deep Troubleshooting & RCA
+
+- **Goal**: Investigate unknown root causes (e.g., production 500 errors) through deep hypothesis and verification.
+- **Lifecycle Path**: Intent downgraded to Audit, Profile downgraded to PATCH.
+- **Key Deliverables**: Allows high-frequency terminal commands (e.g., log reading, tests) up to 5 times, but FORBIDS business code modification until RCA is found.
+
+### Scenario EPIC: Massive Refactoring or Cross-Domain Feature
+
+- **Goal**: Handle massive features spanning multiple domains or framework migrations.
+- **Lifecycle Path**: Forces System Architect to produce a micro-task breakdown in `openspec.md` during Propose.
+- **Key Deliverables**: Sub-agent dispatch list; strictly restricts the main Agent from direct coding.
+
+### Scenario DEBUG: Deep Troubleshooting & RCA
+
+- **Goal**: Investigate unknown root causes (e.g., production 500 errors) through deep hypothesis and verification.
+- **Lifecycle Path**: Intent downgraded to Audit, Profile downgraded to PATCH.
+- **Key Deliverables**: Allows high-frequency terminal commands (e.g., log reading, tests) up to 5 times, but FORBIDS business code modification until RCA is found.
+
+### Scenario EPIC: Massive Refactoring or Cross-Domain Feature
+
+- **Goal**: Handle massive features spanning multiple domains or framework migrations.
+- **Lifecycle Path**: Forces System Architect to produce a micro-task breakdown in `openspec.md` during Propose.
+- **Key Deliverables**: Sub-agent dispatch list; strictly restricts the main Agent from direct coding.
+
+### Scenario DEBUG: Deep Troubleshooting & RCA
+
+- **Goal**: Investigate unknown root causes (e.g., production 500 errors) through deep hypothesis and verification.
+- **Lifecycle Path**: Intent downgraded to Audit, Profile downgraded to PATCH.
+- **Key Deliverables**: Allows high-frequency terminal commands (e.g., log reading, tests) up to 5 times, but FORBIDS business code modification until RCA is found.
+
 ### Scenario D: Performance/SQL Optimization
 
 - **Goal**: Optimize performance without changing external behavior.
@@ -494,7 +530,7 @@ java-harness-agent/
 **.agents/workflow/**:
 - **LIFECYCLE.md**: 6-phase state machine, Approval Gate, Launch Spec template, breakpoint resume
 - **HOOKS.md**: 5 hooks (pre/guard/post/fail/loop), Non-Convergence Fallback, Justification Bypass
-- **ROLE_MATRIX.md**: 11 virtual roles, mounting rules, automation contract
+- **ROLE_MATRIX.md**: 12 virtual roles, mounting rules, automation contract
 
 **.agents/llm_wiki/**:
 - **KNOWLEDGE_GRAPH.md**: Knowledge graph root node (mandatory entry point)
@@ -1051,7 +1087,7 @@ sequenceDiagram
 - "Role outputs" enforced by deterministic gate scripts (exit codes)
 - Machine config in role_matrix.json (automated SSOT)
 
-### 4.2 11 Virtual Roles
+### 4.2 12 Virtual Roles
 
 #### 1. Ambiguity Gatekeeper
 **Purpose**: Prevent starting work on vague input and stop runaway exploration early.
@@ -1095,6 +1131,10 @@ sequenceDiagram
 
 #### 11. Librarian (GC)
 **Purpose**: Garbage collect and merge WAL fragments into main wiki.
+**Gate**: `wiki_linter.py`
+
+#### 12. Knowledge Architect
+**Purpose**: Triggered dynamically to refactor and split bloated Wiki indices.
 **Gate**: `wiki_linter.py`
 
 ### 4.3 Mounting Rules (by Intent/Profile/Phase)
