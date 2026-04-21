@@ -237,8 +237,8 @@ These scenarios override the default routing rules. Match the user's request aga
 - **Contract-driven Delegation:** The Agent MUST NOT write code directly. It assumes the role of "Foreman + QA".
 - The Agent MUST first write a highly detailed `openspec.md` (defining API contracts, schemas, etc.).
 - **Micro-tasking:** The Agent MUST NOT dispatch massive goals to sub-agents (e.g., "Refactor this module"). It MUST slice the work into `tasks.md`.
-- The Agent delegates work to Sub-agents using high-frequency, short-lifecycle prompts (e.g., *"Read openspec.md section 2, ONLY generate UserEntity.java"*).
-- **Verification Gate:** The Agent MUST verify the sub-agent's return output against the spec before dispatching the next micro-task. Sub-agents are treated as "typewriters", not architects.
+- The Agent delegates work to Sub-agents using high-frequency, short-lifecycle prompts. When dispatching, the Agent MUST use the contract schema defined in [subagent_contract_schema.md](../llm_wiki/schema/subagent_contract_schema.md) to format the prompt.
+- **Verification Gate:** The Agent MUST verify the sub-agent's return output against the contract schema before dispatching the next micro-task. Sub-agents are treated as "typewriters", not architects.
 - The `<Cognitive_Brake>` MUST include an evaluation of the "Blast Radius" and "Dependencies".
 
 ---

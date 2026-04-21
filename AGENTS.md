@@ -8,7 +8,7 @@ Single entry point. Read this file first on every session start. All links here 
 
 | Constraint | Rule |
 |---|---|
-| **Context Bloat Prevention** | Prefer native Search Sub-Agents (e.g., Trae, Qoder, Claude Code, Gemini CLI, Codex) for codebase scanning. If unavailable, STRICTLY enforce Budget Limits (Wiki ≤ 3, Code ≤ 8) as the "Poor Man's Sub-Agent". Pagination doesn't count. |
+| **Context Bloat Prevention** | Prefer native Search Sub-Agents (e.g., Trae, Qoder, Claude Code, Gemini CLI, Codex) for codebase scanning. When dispatching tasks to Sub-Agents, you MUST format your prompt using [.agents/llm_wiki/schema/subagent_contract_schema.md](.agents/llm_wiki/schema/subagent_contract_schema.md). If unavailable, STRICTLY enforce Budget Limits (Wiki ≤ 3, Code ≤ 8) as the "Poor Man's Sub-Agent". Pagination doesn't count. |
 | **Reward Mechanism** | (Elastic extension) Output a `<Confidence_Assessment>` block explaining the specific missing concept/symbol to earn a budget reward (+2 wiki / +3 code) before hitting the hard stop (see [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)). |
 | **Budget exhausted** | STOP. File an Escalation Card (format in [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)). Do not guess paths or continue reading. |
 | **Approval Gate** | For MEDIUM/HIGH risk changes: STOP after creating the spec, set status to `WAITING_APPROVAL`, and wait for explicit human approval before writing any code. |

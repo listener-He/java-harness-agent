@@ -10,6 +10,7 @@ This file is intentionally English-only to maximize agent execution reliability.
 
 ## Templates
 - **[OpenSpec Schema](openspec_schema.md)**: the proposal contract. It can also carry optional handoff sections (API contract + acceptance criteria) when collaboration is needed.
+- **[Sub-Agent Contract Schema](subagent_contract_schema.md)**: the minimal executable contract template for dispatching tasks to sub-agents (e.g., Trae, Qoder, search).
 
 ## Process Links (Do not duplicate rules here)
 - **[Router](../../router/ROUTER.md)**: map requests into an intent queue (`launch_spec`).
