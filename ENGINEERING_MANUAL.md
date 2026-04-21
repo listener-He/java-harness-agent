@@ -72,11 +72,14 @@ graph LR
   V --> F[QA<br/>Test Validation]
   F --> G[Archive<br/>Update Index]
 
-  style A fill:#e1f5ff
-  style B fill:#fff4e6
-  style D fill:#ffe6e6
-  style V fill:#fff9e6
-  style G fill:#e6ffe6
+  style A fill:#e1f5ff,stroke:#333,stroke-width:2px
+  style B fill:#fff4e6,stroke:#333,stroke-width:2px
+  style C fill:#ffe6e6,stroke:#333,stroke-width:2px
+  style D fill:#fff9e6,stroke:#333,stroke-width:2px
+  style E fill:#e6ffe6,stroke:#333,stroke-width:2px
+  style V fill:#fff9e6,stroke:#333,stroke-width:2px
+  style F fill:#f0e6ff,stroke:#333,stroke-width:2px
+  style G fill:#e6f0ff,stroke:#333,stroke-width:2px
 ```
 
 ### Scenario B: New API + Schema Changes
@@ -569,9 +572,14 @@ flowchart LR
   E -->|PATCH| G[Minimal Output]
   E -->|STANDARD| H[Full Lifecycle]
 
-  style F fill:#e1f5ff
-  style G fill:#fff4e6
-  style H fill:#ffe6e6
+  style A fill:#e1f5ff,stroke:#333,stroke-width:2px
+  style B fill:#fff4e6,stroke:#333,stroke-width:2px
+  style C fill:#fff4e6,stroke:#333,stroke-width:2px
+  style D fill:#fff4e6,stroke:#333,stroke-width:2px
+  style E fill:#ffe6e6,stroke:#333,stroke-width:2px
+  style F fill:#e1f5ff,stroke:#333,stroke-width:2px
+  style G fill:#fff4e6,stroke:#333,stroke-width:2px
+  style H fill:#ffe6e6,stroke:#333,stroke-width:2px
 ```
 
 #### 3.1.2 Shortcut DSL
@@ -1474,10 +1482,16 @@ flowchart LR
 
   Explorer --> Propose --> Review --> Implement --> QA --> Archive
 
-  style PDD fill:#e1f5ff
-  style SDD fill:#fff4e6
-  style FDD fill:#fff4e6
-  style TDD fill:#e6ffe6
+  style PDD fill:#e1f5ff,stroke:#333,stroke-width:2px
+  style SDD fill:#fff4e6,stroke:#333,stroke-width:2px
+  style FDD fill:#fff4e6,stroke:#333,stroke-width:2px
+  style TDD fill:#e6ffe6,stroke:#333,stroke-width:2px
+  style Explorer fill:#e1f5ff,stroke:#333,stroke-width:2px
+  style Propose fill:#fff4e6,stroke:#333,stroke-width:2px
+  style Review fill:#ffe6e6,stroke:#333,stroke-width:2px
+  style Implement fill:#e6ffe6,stroke:#333,stroke-width:2px
+  style QA fill:#f0e6ff,stroke:#333,stroke-width:2px
+  style Archive fill:#e6f0ff,stroke:#333,stroke-width:2px
 ```
 
 ---

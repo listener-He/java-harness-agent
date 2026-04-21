@@ -72,11 +72,14 @@ graph LR
     V --> F[QA<br/>测试验证]
     F --> G[Archive<br/>更新索引]
     
-    style A fill:#e1f5ff
-    style B fill:#fff4e6
-    style D fill:#ffe6e6
-    style V fill:#fff9e6
-    style G fill:#e6ffe6
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px
+    style B fill:#fff4e6,stroke:#333,stroke-width:2px
+    style C fill:#ffe6e6,stroke:#333,stroke-width:2px
+    style D fill:#fff9e6,stroke:#333,stroke-width:2px
+    style E fill:#e6ffe6,stroke:#333,stroke-width:2px
+    style V fill:#fff9e6,stroke:#333,stroke-width:2px
+    style F fill:#f0e6ff,stroke:#333,stroke-width:2px
+    style G fill:#e6f0ff,stroke:#333,stroke-width:2px
 ```
 
 ### 场景 B：新增接口 + 改表（含索引）

@@ -326,13 +326,23 @@ stateDiagram-v2
         状态=WAITING_APPROVAL
     end note
     
-    style Explorer fill:#e1f5ff
-    style Propose fill:#fff4e6
-    style Review fill:#ffe6e6
-    style ApprovalGate fill:#fff9e6
-    style Implement fill:#e6ffe6
-    style QA fill:#f0e6ff
-    style Archive fill:#e6f0ff
+    classDef explorerClass fill:#e1f5ff,stroke:#333
+    classDef proposeClass fill:#fff4e6,stroke:#333
+    classDef reviewClass fill:#ffe6e6,stroke:#333
+    classDef approvalClass fill:#fff9e6,stroke:#333
+    classDef implementClass fill:#e6ffe6,stroke:#333
+    classDef validationClass fill:#fff9e6,stroke:#333
+    classDef qaClass fill:#f0e6ff,stroke:#333
+    classDef archiveClass fill:#e6f0ff,stroke:#333
+    
+    class Explorer explorerClass
+    class Propose proposeClass
+    class Review reviewClass
+    class ApprovalGate approvalClass
+    class Implement implementClass
+    class ValidationGate validationClass
+    class QA qaClass
+    class Archive archiveClass
 ```
 
 **断点续传机制:**
@@ -357,10 +367,14 @@ graph LR
     V --> F[QA<br/>测试验证]
     F --> G[Archive<br/>更新索引]
     
-    style A fill:#e1f5ff
-    style B fill:#fff4e6
-    style D fill:#ffe6e6
-    style G fill:#e6ffe6
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px
+    style B fill:#fff4e6,stroke:#333,stroke-width:2px
+    style C fill:#ffe6e6,stroke:#333,stroke-width:2px
+    style D fill:#fff9e6,stroke:#333,stroke-width:2px
+    style E fill:#e6ffe6,stroke:#333,stroke-width:2px
+    style V fill:#fff9e6,stroke:#333,stroke-width:2px
+    style F fill:#f0e6ff,stroke:#333,stroke-width:2px
+    style G fill:#e6f0ff,stroke:#333,stroke-width:2px
 ```
 
 **关键产出**:
