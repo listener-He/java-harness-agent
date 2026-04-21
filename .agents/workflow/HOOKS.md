@@ -98,6 +98,14 @@ python .agents/scripts/wiki/zero_residue_audit.py
 ```
 Default output: `.agents/workflow/runs/`
 
+#### Archive Cleanup (Conservative Mode)
+
+After Phase 6 (Archive) has extracted WAL and moved the spec into cold storage, archive the session runtime artifacts and leave pointer files:
+
+```bash
+python3 .agents/scripts/tools/archive_session_artifacts.py --slug <feature_slug>
+```
+
 #### Explorer Post-Hook: Core Context Anchors (MUST)
 
 The `explore_report.md` produced by the Explorer `post_hook` MUST include a section named `## Core Context Anchors` containing:

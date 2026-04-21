@@ -29,11 +29,30 @@ During `Archive` `post_hook`, the Agent MUST extract from the current `openspec.
 
 ---
 
-## 3. Archiving & Cleanup
-1. Move the spec: after extraction, move the session `openspec.md` into `.agents/llm_wiki/archive/` (rename to `YYYYMMDD_feature_name.md`).
-2. Clean the active index: update `.agents/llm_wiki/wiki/specs/index.md` by removing the entry from the active list (or moving it into "Recently Archived").
+## 3. Archiving & Cleanup (MUST)
+### 3.1 Move spec to cold storage
+- Move the spec: after extraction, move the session `openspec.md` to:
+  - `.agents/llm_wiki/archive/`
+- Rename it with a date prefix to avoid collisions:
+  - `YYYYMMDD_<feature>_openspec.md`
 
-## 3.5 Merge (Low-conflict Window)
+### 3.2 Clean the active index
+ - update `.agents/llm_wiki/wiki/specs/index.md` by removing the entry from the active list (or moving it into "Recently Archived").
+
+### 3.3 Keep pointer files in `runs/` (Conservative Mode)
+
+To prevent the next task from accidentally reusing the previous session’s spec/scope, replace:
+- `.agents/workflow/runs/openspec.md`
+- `.agents/workflow/runs/focus_card.md`
+
+with read-only pointer files that only contain the archive location.
+
+Use the provided tool:
+
+```bash
+python3 .agents/scripts/tools/archive_session_artifacts.py --slug <feature_slug>
+```
+### 3.5 Merge (Low-conflict Window)
 - Goal: merge WAL fragments into stable `index.md` files and reorganize them if needed.
 - Approach:
   - Human merges periodically; or
