@@ -25,7 +25,7 @@ Single entry point. Read this file first on every session start. All links here 
 Before any action (reading files, searching, writing code), the Agent MUST output the following headers AND a structured thinking block:
 
 ```xml
-[Intent Check] intent=<Learn|Change|DocQA|Audit> | profile=@<learn|patch|standard> | risk=<LOW|MEDIUM|HIGH> | scenario=<none|DEBUG|EPIC|A|B|C|D|E> | emergency=<true|false>
+[Intent Check] intent=<Learn|Change|DocQA|Audit> | profile=@<learn|patch|standard> | risk=<TRIVIAL|LOW|MEDIUM|HIGH> | scenario=<none|DEBUG|EPIC|A|B|C|D|E> | emergency=<true|false>
         [Lifecycle: <Plan|Execute|Validate|Archive>] | [Mounted Role: @<Role>]
 
 <Cognitive_Brake>
@@ -105,64 +105,6 @@ Session start
 
 ---
 
-## Standard Workflow Saga (Few-Shot Paradigm for STANDARD Profile)
+## Standard Workflow Saga
 
-To build muscle memory and respect the Human-in-the-Loop constraints, follow this multi-turn rhythm for any `STANDARD` task:
-
-**User:** "Add a new asset type to the tenant and invalidate the old one."
-
-**Turn 1: Explorer & Propose (Phase 1 & Phase 2)**
-1. **Output headers:** `[Lifecycle: Propose] | [Mounted Role: @System Architect + @Requirement Engineer + @Ambiguity Gatekeeper]`
-2. **Cognitive Brake:**
-```xml
-<Cognitive_Brake>
-- Role & Scope: As @Ambiguity Gatekeeper, current boundary is None. Must output .agents/workflow/runs/focus_card.md to lock scope. As @System Architect, must output .agents/workflow/runs/openspec.md mapping AC.
-- Budget & Context: Wiki: 1/3, Code: 2/8. Must grep `CustomerException` standards.
-- Architectural Defense: Cross-table operation (Tenant/Asset). Requires `@Transactional` Facade. Currently in Propose phase -> reaching Approval Gate. MUST STOP. No coding allowed.
-- Next State: Output explore_report.md, .agents/workflow/runs/focus_card.md, and .agents/workflow/runs/openspec.md. Yield for human approval.
-</Cognitive_Brake>
-```
-3. **Action:** Agent reads context, creates the spec detailing a `@Transactional` Facade layer, and defines the exact files to touch in `.agents/workflow/runs/focus_card.md`.
-4. **Approval Gate (STOP):** Agent stops and asks the User: *"The spec is ready. Please review `.agents/workflow/runs/openspec.md`. Do you approve moving to implementation?"* (Agent MUST NOT write code yet).
-
-**Turn 2: Implement (Phase 4) — *After Human Approves***
-1. **Output headers:** `[Lifecycle: Implement] | [Mounted Role: @Lead Engineer + @Focus Guard + @Security Sentinel]`
-2. **Cognitive Brake:**
-```xml
-<Cognitive_Brake>
-- Role & Scope: As @Focus Guard, strict boundary is Controller/Service per focus_card.md. Zero drift. As @Lead Engineer, writing code.
-- Budget & Context: Wiki: 0/3, Code: 0/8 (reset for new turn). Verified `jakarta.validation` requirement.
-- Architectural Defense: Write operation requires `@Transactional` in Manage layer per openspec.md. After writing code, MUST STOP at Validation Gate before compilation.
-- Next State: Execute SearchReplace. STOP and prompt: "Code generated. Requesting permission to run mvn compile."
-</Cognitive_Brake>
-```
-3. **Action:** Agent writes code using `SearchReplace`.
-4. **Validation Gate (STOP):** Agent stops and asks the User for permission to run heavy compilations or tests.
-
-**Turn 3: Shift-Left Validation (Phase 5) — *After Human Approves***
-1. **Output headers:** `[Lifecycle: Validate] | [Mounted Role: @Code Reviewer + @Documentation Curator]`
-2. **Cognitive Brake:**
-```xml
-<Cognitive_Brake>
-- Role & Scope: As @Code Reviewer, scope is test/compile and static analysis only. No feature drift.
-- Budget & Context: Wiki: 0/3, Code: 0/8.
-- Architectural Defense: STRICT MAX RETRIES is 2. If `mvn compile` fails twice, MUST stop and escalate to human. No infinite loops.
-- Next State: Execute `mvn clean compile` via RunCommand.
-</Cognitive_Brake>
-```
-3. **Action:** Agent uses `RunCommand` (`mvn clean compile`). Fixes a `javax` import error (Retry 1/2) and recompiles successfully.
-4. **Yield:** Agent reports: *"Compilation passed! Transitioning automatically to Archive phase to extract knowledge."*
-
-**Turn 4: Archive (Phase 6) — *Seamless Write-back***
-1. **Output headers:** `[Lifecycle: Archive] | [Mounted Role: @Knowledge Extractor + @Documentation Curator + @Skill Graph Curator]`
-2. **Cognitive Brake:**
-```xml
-<Cognitive_Brake>
-- Role & Scope: As @Knowledge Extractor, extraction only. No code mutation.
-- Budget & Context: Wiki: 0/3, Code: 0/8.
-- Architectural Defense: Execute Archive seamlessly in the same session. Rely on targeted `git diff <files>` or `.agents/workflow/runs/openspec.md` to summarize changes. Follow ARCHIVE_WAL.md to move the spec to `.agents/llm_wiki/archive/YYYYMMDD_asset_type_openspec.md`.
-- Next State: Write unified knowledge fragment to `.agents/llm_wiki/wiki/data/wal/YYYYMMDD_asset_type.md`.
-</Cognitive_Brake>
-```
-3. **Action:** Agent writes the database schema changes into `.agents/llm_wiki/wiki/data/wal/YYYYMMDD_asset_type.md`.
-4. **Yield:** Agent reports full completion to the User.
+To build muscle memory and respect the Human-in-the-Loop constraints, refer to [.agents/workflow/EXAMPLES.md](.agents/workflow/EXAMPLES.md) for a multi-turn rhythm example of any `STANDARD` task.

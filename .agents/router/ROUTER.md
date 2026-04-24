@@ -149,8 +149,10 @@ Required sequence:
 3. If no specialist skill can be identified: consult [trae-skill-index](../skills/trae-skill-index/SKILL.md)
 
 ### Rule 3: Change intent → profile by risk
-- LOW → Profile `PATCH` (Slim Spec allowed)
-- MEDIUM/HIGH → Profile `STANDARD` (full schema + Approval Gate)
+- TRIVIAL → Profile `PATCH` (No Spec needed, No Approval Gate needed). Direct fast-path: `Implement -> QA -> Archive`. (For typos, format, comments)
+- LOW → Profile `PATCH` (Slim Spec allowed, NO Approval Gate needed). Direct fast-path: `Explorer -> Implement -> QA -> Archive`.
+- MEDIUM → Profile `STANDARD` (full schema + Approval Gate)
+- HIGH → Profile `STANDARD` (full schema + Approval Gate + Strict Security/Migration Gates)
 
 ### Rule 3.1: Budgeted Navigation (MUST)
 For `Change` and `Audit` intents, uncontrolled exploration is forbidden.
@@ -237,6 +239,7 @@ These scenarios override the default routing rules. Match the user's request aga
 - **Contract-driven Delegation:** The Agent MUST NOT write code directly. It assumes the role of "Foreman + QA".
 - The Agent MUST first write a highly detailed `.agents/workflow/runs/openspec.md` (defining API contracts, schemas, etc.).
 - **Micro-tasking:** The Agent MUST NOT dispatch massive goals to sub-agents (e.g., "Refactor this module"). It MUST slice the work into `tasks.md`.
+- **Parallel Dispatch:** The Orchestrator Agent MUST dispatch tasks to sub-agents, acting as the scheduler.
 - The Agent delegates work to Sub-agents using high-frequency, short-lifecycle prompts. When dispatching, the Agent MUST use the contract schema defined in [subagent_contract_schema.md](../llm_wiki/schema/subagent_contract_schema.md) to format the prompt.
 - **Verification Gate:** The Agent MUST verify the sub-agent's return output against the contract schema before dispatching the next micro-task. Sub-agents are treated as "typewriters", not architects.
 - The `<Cognitive_Brake>` MUST include an evaluation of the "Blast Radius" and "Dependencies".

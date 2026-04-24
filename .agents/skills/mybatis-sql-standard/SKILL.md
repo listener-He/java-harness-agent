@@ -22,15 +22,15 @@ This skill dictates the absolute rules for designing database tables, modeling d
 - **JSON for Schema-less Data:** Use `JSON` data types for highly dynamic, non-searchable attributes (e.g., `extra_properties`, `form_snapshots`). Do NOT extract them into EAV (Entity-Attribute-Value) anti-pattern tables unless they require indexing.
 
 ### 1.2 Standardized Base Columns
-**Rule:** Every business table MUST contain the following standard audit and control columns.
+**Rule:** EVERY business table MUST include the following 8 standard audit and control fields:
 - `id` (BIGINT, Primary Key, Snowflake/Auto-increment)
-- `tenant_id` (BIGINT, NOT NULL, default 0 - for multi-tenancy)
+- `tenant_id` (BIGINT, NOT NULL, default 0 - for data isolation/multi-tenancy)
 - `create_time` (DATETIME, NOT NULL, default CURRENT_TIMESTAMP)
 - `update_time` (DATETIME, NOT NULL, default CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)
 - `create_by` (BIGINT, NOT NULL, creator's ID)
 - `update_by` (BIGINT, NOT NULL, updater's ID)
-- `is_deleted` (TINYINT, NOT NULL, default 0 - for soft deletes)
-- `version` (INT, NOT NULL, default 0 - for Optimistic Locking, if required)
+- `is_deleted` (TINYINT, NOT NULL, default 0 - for soft deletes, 0=normal, 1=deleted)
+- `version` (INT, NOT NULL, default 0 - for Optimistic Locking)
 
 ---
 

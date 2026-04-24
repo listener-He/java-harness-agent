@@ -17,7 +17,7 @@ Defines when and how to enforce constraints throughout the lifecycle.
 
 **Trigger:** Before entering any new phase.
 
-**Bound skills:** `global-backend-standards`, `java-backend-guidelines`
+**Bound skills:** `java-architecture-standards`
 
 **Purpose:** Load the relevant rule sets before the phase begins. Example: before `Implement`, load defensive programming standards and project preferences.
 
@@ -29,7 +29,7 @@ Defines when and how to enforce constraints throughout the lifecycle.
 
 **Trigger:** While performing core actions (generating code, writing SQL).
 
-**Bound skills:** `checkstyle`, `java-javadoc-standard`
+**Bound skills:** `java-coding-style`
 
 **Purpose:**
 - **Architectural Defense (MUST):** Ensure operations spanning multiple DB tables/domains are pushed down to a `@Transactional` Service or Facade layer. Controllers must remain thin.
@@ -37,6 +37,7 @@ Defines when and how to enforce constraints throughout the lifecycle.
 - **Domain boundary guard:** Do NOT modify cross-domain files unless explicitly authorized in `.agents/workflow/runs/openspec.md`.
 - **Anti-runaway guard (MUST):** Enforce budgeted navigation + stop rules + escalation protocol (see `../router/CONTEXT_FUNNEL.md`).
 - **Anti-drift guard (MUST):** Maintain a `Focus Card` and enforce scope via `scope_guard.py` (see `../workflow/ROLE_MATRIX.md`).
+- **Fast-Path Impact Guard:** For `TRIVIAL` tasks bypassing `Explorer`, the Agent MUST execute a global `Grep` or `SearchCodebase` to ensure the variable/method being renamed or modified has no hidden or hardcoded dependencies (e.g., XML mappings, reflection).
 
 ---
 
@@ -45,11 +46,12 @@ Defines when and how to enforce constraints throughout the lifecycle.
 **Trigger:** Immediately after writing/modifying code, BEFORE telling the user "I am done".
 
 **Purpose:**
-Prevent delivery of uncompilable code or broken dependencies.
+Prevent delivery of uncompilable code, broken dependencies, or unverified "fast-path" logic.
 
 **Actions:**
 - The Agent MUST autonomously run `RunCommand` to execute `javac`, `mvn clean compile`, or `gradle build`.
 - If compilation fails, the Agent MUST fix the error and re-verify. **MAX 2 RETRIES**. If it still fails after 2 attempts, STOP and ask the human for help. Do not enter an infinite loop.
+- **Fast-Path QA Guard (Soft Interrupt):** For `TRIVIAL` and `LOW` risk tasks in the `PATCH` profile, if the modified method/class lacks unit test coverage, the Agent MUST trigger a "Soft Interrupt". The Agent must present the `git diff` to the user and wait 5 seconds (or ask for a quick confirmation) before proceeding to Archive. Do not blindly assume QA is complete without tests.
 
 ---
 
@@ -57,7 +59,7 @@ Prevent delivery of uncompilable code or broken dependencies.
 
 **Trigger:** After a phase completes, before transitioning to the next.
 
-**Bound skills:** `api-documentation-rules`, `database-documentation-sync`
+**Bound skills:** `wal-documentation-rules`
 
 **Purpose:** Ensure API/DB documentation stays in sync with code changes. Optionally append logs to `workflow/runs/`.
 
@@ -82,9 +84,10 @@ Read-only checks (do NOT modify files):
 
 **Severity and bypass:**
 - Follow `linter-severity-standard` skill.
+- The Agent is ENCOURAGED to use `quality-checklist` from `.agents/skills/spec-quality-checklist/SKILL.md` to self-correct documents BEFORE running strict python gates.
 - If a gate returns FAIL due to a rule violation (e.g., missing Javadoc on a trivial private method, or a legacy pattern): the Agent MAY generate a `bypass_justification.md` explaining why the rule should be waived in this specific context.
 - When `bypass_justification.md` is present for a specific gate failure: the runner downgrades FAIL to WARN, allowing the workflow to proceed.
-- WARN: allowed to proceed, but the Agent MUST explain and state a follow-up action. This will be presented to the human at the Approval Gate.
+- Python gates should be treated as guidelines rather than absolute blockers if logic dictates otherwise. Use `WARN` instead of `FAIL` for stylistic mismatches.
 
 **Write-back policy (MUST):**
 - For PATCH and STANDARD: write-back is REQUIRED.

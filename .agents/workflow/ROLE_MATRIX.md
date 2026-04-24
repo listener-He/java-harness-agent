@@ -18,6 +18,8 @@ Executable Checklist:
 - [ ] Ask clarifying questions to eliminate vague adjectives (e.g., "fast", "beautiful", "better").
 - [ ] Define the "Happy Path" and at least two "Edge Cases" (Unhappy Paths).
 - [ ] Output clear Acceptance Criteria (AC) that QA can test against.
+- [ ] **Cognitive Check:** Review `.agents/skills/cognitive-bias-checklist/SKILL.md` to avoid 'Framing Effect' or 'Confirmation Bias' when defining the problem.
+- [ ] **Quality Check:** Apply `.agents/skills/spec-quality-checklist/SKILL.md` to ensure the report defines the problem clearly and has actionable next steps.
 Output:
 - `explore_report.md` (containing User Stories and AC).
 Gate:
@@ -31,6 +33,10 @@ Executable Checklist:
 - [ ] Evaluate if new dependencies/middleware are required.
 - [ ] Define system boundaries and output the API/Data contract in `openspec.md`.
 - [ ] Assess the "Blast Radius" of the proposed changes.
+- [ ] **Cognitive Check:** Review `.agents/skills/cognitive-bias-checklist/SKILL.md` to prevent Confirmation Bias or Anchoring Effect during design.
+- [ ] **Decision Check:** Use `.agents/skills/decision-frameworks/SKILL.md` when evaluating multiple architecture options.
+- [ ] **EPIC Splitter:** If the task is Scenario EPIC, MUST use `.agents/skills/task-decomposition-guide/SKILL.md` to break the design into actionable `tasks.md`.
+- [ ] **Spec Quality Check:** Ensure `openspec.md` passes the structural and clarity checks from `.agents/skills/spec-quality-checklist/SKILL.md` before submission.
 Output:
 - `openspec.md` (Must include an AC mapping section).
 Gate:
@@ -44,7 +50,7 @@ Executable Checklist:
 - [ ] **Boundary Exception Protocol:** If out-of-scope files MUST be modified, DO NOT edit them directly. Output a `[Boundary Exception Request]` explaining why, and wait for human approval.
 - [ ] Prioritize reusing existing Utils, Base classes, and patterns over reinventing the wheel.
 - [ ] Ensure all exceptions are properly caught and handled (no swallowed exceptions).
-- [ ] **Shift-Left Quality:** Code MUST strictly adhere to `checkstyle` and `java-javadoc-standard` before yielding. Do not leave basic formatting or missing Javadocs for the Reviewer.
+- [ ] **Shift-Left Quality:** Code MUST strictly adhere to `java-coding-style` before yielding. Do not leave basic formatting or missing Javadocs for the Reviewer.
 Output:
 - Modified source code files.
 Gate:
@@ -63,9 +69,23 @@ Output:
 Gate:
 - `linter.py` / Static analysis checks.
 
+### Devil's Advocate (Anti-Hallucination)
+Purpose:
+- Act purely as a destructive critic during Propose or Review phases. Find logical holes in the design.
+Executable Checklist:
+- [ ] Apply `.agents/skills/cognitive-bias-checklist/SKILL.md` to identify Confirmation Bias or Planning Fallacy in the proposal.
+- [ ] Challenge the "Happy Path" by identifying at least 2 overlooked Edge Cases.
+- [ ] Use 5-Why analysis from `.agents/skills/decision-frameworks/SKILL.md` to drill down on proposed solutions.
+Output:
+- Refutation notes or requested amendments to `openspec.md`.
+Gate:
+- `ambiguity_gate.py` / LLM peer-review.
+
 ### Ambiguity Gatekeeper
 Purpose:
 - Prevent starting work on vague input and stop runaway exploration early.
+Executable Checklist:
+- [ ] **DEBUG Root Cause Check:** If diagnosing an issue, apply `5-Why Analysis` from `.agents/skills/decision-frameworks/SKILL.md` before making assumptions.
 Output:
 - `focus_card.md` (goal / non-goals / allowed scope / stop rules) OR an escalation card.
 Gate:
@@ -94,9 +114,13 @@ Gate:
 
 ### Documentation Curator
 Purpose:
-- Ensure end-of-work has a complete, handoff-ready capsule + WAL references.
+- Update user-facing docs, READMEs, API endpoints, or Javadocs reflecting the new changes.
+Executable Checklist:
+- [ ] Scan for any public API signature changes.
+- [ ] Ensure comments are helpful and describe *why*, not just *what*.
+- [ ] **Quality Check:** Apply `.agents/skills/spec-quality-checklist/SKILL.md` to ensure the final docs are highly readable and actionable for the next developer.
 Output:
-- Delivery capsule.
+- Updates to `docs/` or inline Javadocs.
 Gate:
 - `delivery_capsule_gate.py` + `wiki_linter.py`.
 
@@ -141,17 +165,17 @@ Gate:
 ## 2) Mounting Rules (By Intent/Profile/Phase)
 
 ### Change / PATCH
-- Explorer: `@Ambiguity Gatekeeper` + `@Focus Guard`
-- Implement: `@Focus Guard` + `@Security Sentinel`
-- QA: `@Documentation Curator`
-- Archive: `@Knowledge Extractor` + `@Documentation Curator` + `@Skill Graph Curator`
+- Explorer: `@Ambiguity Gatekeeper`
+- Implement: `@Focus Guard`
+- QA: `@Code Reviewer`
+- Archive: `@Knowledge Extractor`
 
 ### Change / STANDARD
-- Explorer: `@Ambiguity Gatekeeper` + `@Requirement Engineer` + `@Focus Guard`
-- Propose/Review: `@System Architect`
-- Implement: `@Lead Engineer` + `@Focus Guard` + `@Security Sentinel`
-- QA: `@Code Reviewer` + `@Documentation Curator`
-- Archive: `@Knowledge Extractor` + `@Documentation Curator` + `@Skill Graph Curator`
+- Explorer: `@Requirement Engineer`
+- Propose/Review: `@System Architect` + `@Devil's Advocate`
+- Implement: `@Lead Engineer` + `@Focus Guard`
+- QA: `@Code Reviewer`
+- Archive: `@Knowledge Extractor`
 
 ## 3) LLM Cognitive Execution Protocol (MUST)
 

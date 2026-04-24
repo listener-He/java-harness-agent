@@ -22,7 +22,7 @@ Root node of the Skill Knowledge Graph. Navigate here to find the appropriate sp
 | Skill | Purpose |
 |---|---|
 | [product-manager-expert](../product-manager-expert/SKILL.md) | Requirements research, validation, PRD generation, and prototyping. |
-| [prd-task-splitter](../prd-task-splitter/SKILL.md) | Analyzes PRDs to produce structured task lists, time estimates, and dependency maps. |
+| [task-decomposition-guide](../task-decomposition-guide/SKILL.md) | MANDATORY MASTER skill for decomposing large PRDs or EPIC scenarios into manageable subtasks. Enforces Agile INVEST criteria and Vertical Slicing. |
 
 ---
 
@@ -46,14 +46,10 @@ Root node of the Skill Knowledge Graph. Navigate here to find the appropriate sp
 | Skill | Purpose |
 |---|---|
 | [global-backend-standards](../global-backend-standards/SKILL.md) | **MASTER index** for all backend code generation. Invoke before writing any Java/Spring/MyBatis code. |
-| [java-engineering-standards](../java-engineering-standards/SKILL.md) | Layer architecture, POJO sub-packages, entity audit fields, naming conventions. |
-| [java-backend-api-standard](../java-backend-api-standard/SKILL.md) | API design rules (no `@PathVariable`, verb-suffix URLs, `@ResourceLock`, `@Validated`). |
-| [java-backend-guidelines](../java-backend-guidelines/SKILL.md) | Defensive programming, in-memory data assembly, standardized pagination wrappers, `Objects` utility, `BeanUtil`. |
-| [utils-usage-standard](../utils-usage-standard/SKILL.md) | Core utility class usage rules. |
-| [error-code-standard](../error-code-standard/SKILL.md) | Unified error response, domain-driven exceptions, abstract error codes. |
+| [java-architecture-standards](../java-architecture-standards/SKILL.md) | MANDATORY MASTER skill for Java backend architecture, API design, and engineering rules. |
+| [java-coding-style](../java-coding-style/SKILL.md) | MANDATORY MASTER skill for Java coding style, strict Javadoc templates, utility class boundaries, and functional programming patterns. |
+| [java-testing-standards](../java-testing-standards/SKILL.md) | MANDATORY MASTER skill for Java Testing & QA, test isolation, mock guidelines, and the 3-scenario coverage rule. |
 | [mybatis-sql-standard](../mybatis-sql-standard/SKILL.md) | Anti-JOIN strategy, type conversion prevention, leftmost prefix index rules, no `SELECT *`. |
-| [java-javadoc-standard](../java-javadoc-standard/SKILL.md) | Project Javadoc style enforcement. |
-| [checkstyle](../checkstyle/SKILL.md) | K&R braces, 4-space indent, lowerCamelCase, strict Javadoc. |
 
 ---
 
@@ -62,8 +58,10 @@ Root node of the Skill Knowledge Graph. Navigate here to find the appropriate sp
 | Skill | Purpose |
 |---|---|
 | [code-review-checklist](../code-review-checklist/SKILL.md) | **MANDATORY** code review checklist — run before every code delivery. |
-| [api-documentation-rules](../api-documentation-rules/SKILL.md) | API interface documentation standards. |
-| [database-documentation-sync](../database-documentation-sync/SKILL.md) | Database documentation sync rules. |
+| [cognitive-bias-checklist](../cognitive-bias-checklist/SKILL.md) | Cognitive bias checklist for deep analysis and architectural design. |
+| [decision-frameworks](../decision-frameworks/SKILL.md) | Decision frameworks (SWOT, 5-Why, Decision Matrix) for complex scenarios. |
+| [spec-quality-checklist](../spec-quality-checklist/SKILL.md) | Flexible quality gate checklist for AI self-correction on docs/specs. |
+| [wal-documentation-rules](../wal-documentation-rules/SKILL.md) | MANDATORY documentation capture during the Archive phase (API and Database). |
 | [linter-severity-standard](../linter-severity-standard/SKILL.md) | Linter severity levels (FAIL / WARN / IGNORE) and bypass justification protocol. |
 | [aliyun-oss](../aliyun-oss/SKILL.md) | OSS object storage module usage. |
 

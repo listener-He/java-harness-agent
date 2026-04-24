@@ -18,7 +18,7 @@ One-way state machine with hard gates and rollback rules.
 | Profile | Flow | Approval Gate | Spec Required |
 |---|---|---|---|
 | LEARN | Read-only; no launch spec, no lifecycle, no write-back | No | No |
-| PATCH | `Explorer → Implement → QA → Archive` | No | Slim Spec (Change Log + QA evidence) |
+| PATCH | `(TRIVIAL)` `Implement(Grep Check) → QA(Soft Interrupt?) → Archive(Drift)`<br>`(LOW)` `Explorer → Implement → QA(Soft Interrupt?) → Archive` | No | TRIVIAL: None<br>LOW: Slim Spec |
 | STANDARD | `Explorer → Propose → Review → [GATE] → Implement → QA → Archive` | Yes (MEDIUM/HIGH) | Full `openspec.md` |
 
 ---
@@ -28,7 +28,7 @@ One-way state machine with hard gates and rollback rules.
 ### Phase 1: Explorer
 
 **Mounted Roles:** `@Ambiguity Gatekeeper`, `@Requirement Engineer`, `@Focus Guard`
-**Skills:** `product-manager-expert`, `devops-requirements-analysis`, `prd-task-splitter`
+**Skills:** `product-manager-expert`, `task-decomposition-guide`
 
 **Actions:**
 1. Run `pre_hook`.
@@ -42,7 +42,7 @@ One-way state machine with hard gates and rollback rules.
 ### Phase 2: Propose
 
 **Mounted Roles:** `@System Architect`
-**Skills:** `devops-system-design`, `devops-task-planning`
+**Skills:** `java-architecture-standards`, `task-decomposition-guide`
 
 **Actions:** Follow the contract template in `../llm_wiki/schema/openspec_schema.md`.
 
@@ -55,12 +55,12 @@ One-way state machine with hard gates and rollback rules.
 ### Phase 3: Review
 
 **Mounted Roles:** `@System Architect`
-**Skills:** `devops-review-and-refactor`, `global-backend-standards`
+**Skills:** `code-review-checklist`, `java-architecture-standards`
 
 **Review matrix:**
-- Engineering: `java-engineering-standards`, `java-backend-guidelines`
-- API & DB: `java-backend-api-standard`, `mybatis-sql-standard`
-- Security & permissions: `error-code-standard`
+- Engineering & API: `java-architecture-standards`
+- DB & SQL: `mybatis-sql-standard`
+- Style & Util: `java-coding-style`
 
 **Failure rule:** If review fails → trigger `fail_hook` → roll back to Phase 2.
 
@@ -78,22 +78,19 @@ One-way state machine with hard gates and rollback rules.
 
 **Risk classification:**
 
-| Level | Examples |
-|---|---|
-| HIGH | DB schema/index changes; auth/permission strategy; error code system changes; cross-domain changes; shared utilities; unclear or large blast radius |
-| MEDIUM | New or changed external APIs; core business path changes without DB/auth foundation changes |
-| LOW | Docs only; pure renames/formatting; small bugfixes with clear blast radius |
-
-**Rules:**
-- MEDIUM/HIGH: MUST stop at `WAITING_APPROVAL`.
-- LOW: MAY skip approval, but MUST state the justification in the delivery note.
+| Level | Examples | Rules |
+|---|---|---|
+| HIGH | DB schema/index changes; auth/permission strategy; error code system changes; cross-domain changes; shared utilities; unclear or large blast radius | MUST use `STANDARD` profile. MUST stop at `WAITING_APPROVAL`. Triggers strict Python gates (e.g., `migration_gate.py`). |
+| MEDIUM | New or changed external APIs; core business path changes without DB/auth foundation changes | MUST use `STANDARD` profile. MUST stop at `WAITING_APPROVAL`. |
+| LOW | Small bugfixes with clear blast radius; logic tweaks within a single domain | Uses `PATCH` profile. Requires Slim Spec. **QA Guard:** If no unit tests cover the change, MUST trigger a Soft Interrupt (display Diff to human). |
+| TRIVIAL | Docs only; pure renames/formatting; adding comments; fixing typos | Uses `PATCH` profile. No Spec required. **Impact Guard:** MUST perform a global `Grep` before renaming/changing to ensure no hidden dependencies. **Archive Guard:** MUST write a 1-line summary to `drift_queue` before exit. |
 
 ---
 
 ### Phase 4: Implement
 
 **Mounted Roles:** `@Lead Engineer`, `@Focus Guard`, `@Security Sentinel`
-**Skills:** `devops-feature-implementation`, `devops-bug-fix`, `utils-usage-standard`, `aliyun-oss`
+**Skills:** `java-architecture-standards`, `java-coding-style`
 
 **Actions:**
 1. Execute the `<Cognitive_Brake>` template to establish boundaries (transactional layers, existing exceptions/validations) BEFORE coding.
@@ -106,7 +103,7 @@ One-way state machine with hard gates and rollback rules.
 ### Phase 5: QA Test
 
 **Mounted Roles:** `@Code Reviewer`, `@Documentation Curator`
-**Skills:** `devops-testing-standard`, `code-review-checklist`
+**Skills:** `java-testing-standards`, `code-review-checklist`
 
 **Actions:**
 1. Trigger `shift_left_hook`: Autonomously execute `javac` or Maven/Gradle build commands. Fix all compilation errors (`javax` vs `jakarta`, missing imports).
@@ -122,7 +119,7 @@ One-way state machine with hard gates and rollback rules.
 **Purpose:** Close the loop and prevent knowledge bloat. Execute seamlessly in the **same session**. Rely on targeted `git diff <files>` or `.agents/workflow/runs/openspec.md` to summarize changes, strictly avoiding re-reading heavy coding history. Follow `ARCHIVE_WAL.md` to move the spec to `.agents/llm_wiki/archive/YYYYMMDD_<feature>_openspec.md`.
 
 **Steps (in order):**
-1. Sync docs via `api-documentation-rules` and `database-documentation-sync` skills.
+1. Sync docs via `wal-documentation-rules` skill.
 2. Extract stable knowledge into wiki indexes via the reverse funnel in `../router/CONTEXT_FUNNEL.md`.
 3. Move the original spec into `../llm_wiki/archive/`.
 4. Trigger WAL Compaction: `python3 .agents/scripts/wiki/compactor.py`
