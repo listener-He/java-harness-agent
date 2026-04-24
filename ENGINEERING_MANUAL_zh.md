@@ -89,11 +89,11 @@ Agent 接收到用户输入后，第一步必须进行 `[Intent Check]`，将其
 
 ```mermaid
 flowchart TD
-    A((用户输入)) -->|解析 Intent| B{网关风险评级}
+    A((用户输入)) -->|"解析 Intent"| B{网关风险评级}
     
     subgraph PATCH 轨道 轻量与极速
-        B -->|TRIVIAL 极速| C[跳过探索与设计]
-        B -->|LOW 轻量| D[@Ambiguity Gatekeeper 画出 Focus Card]
+        B -->|"TRIVIAL 极速"| C[跳过探索与设计]
+        B -->|"LOW 轻量"| D[@Ambiguity Gatekeeper 画出 Focus Card]
         C --> E[@Lead Engineer 极速编码]
         D --> E
         E --> F[@Code Reviewer 代码审查]
@@ -101,8 +101,8 @@ flowchart TD
     end
     
     subgraph STANDARD 轨道 重型架构
-        B -->|MEDIUM 契约| H[@Requirement Engineer 澄清需求]
-        B -->|HIGH 史诗| H
+        B -->|"MEDIUM 契约"| H[@Requirement Engineer 澄清需求]
+        B -->|"HIGH 史诗"| H
         H --> I[@System Architect 产出 openspec.md]
         I --> J[@Devil's Advocate 破坏性审查]
         J --> K((Approval Gate 人类审批))
@@ -473,9 +473,9 @@ flowchart TD
     B --> C[提取结构化知识]
     C --> D{分类写入 WAL}
     
-    D -->|API 变更| E[.agents/llm_wiki/wiki/api/wal/xxx.md]
-    D -->|DB 变更| F[.agents/llm_wiki/wiki/data/wal/xxx.md]
-    D -->|架构变更| G[.agents/llm_wiki/wiki/architecture/wal/xxx.md]
+    D -->|"API 变更"| E[.agents/llm_wiki/wiki/api/wal/xxx.md]
+    D -->|"DB 变更"| F[.agents/llm_wiki/wiki/data/wal/xxx.md]
+    D -->|"架构变更"| G[.agents/llm_wiki/wiki/architecture/wal/xxx.md]
     
     H[人类输入 @gc] --> I[@Librarian 唤醒]
     I --> J[读取并合并所有 WAL 碎片]

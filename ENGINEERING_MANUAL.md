@@ -89,11 +89,11 @@ Once an intent is confirmed, the system routes the task into two completely diff
 
 ```mermaid
 flowchart TD
-    A((User Input)) -->|Parse Intent| B{Gateway Risk Rating}
+    A((User Input)) -->|"Parse Intent"| B{Gateway Risk Rating}
     
     subgraph PATCH Track Lightweight & Fast
-        B -->|TRIVIAL| C[Skip Explore & Design]
-        B -->|LOW| D[@Ambiguity Gatekeeper draws Focus Card]
+        B -->|"TRIVIAL"| C[Skip Explore & Design]
+        B -->|"LOW"| D[@Ambiguity Gatekeeper draws Focus Card]
         C --> E[@Lead Engineer Fast Coding]
         D --> E
         E --> F[@Code Reviewer Code Audit]
@@ -101,8 +101,8 @@ flowchart TD
     end
     
     subgraph STANDARD Track Heavy Architecture
-        B -->|MEDIUM Contract| H[@Requirement Engineer Clarifies]
-        B -->|HIGH Epic| H
+        B -->|"MEDIUM Contract"| H[@Requirement Engineer Clarifies]
+        B -->|"HIGH Epic"| H
         H --> I[@System Architect outputs openspec.md]
         I --> J[@Devil's Advocate Destructive Review]
         J --> K((Approval Gate HITL))
@@ -156,45 +156,46 @@ stateDiagram-v2
         a1(Clarify Requirements) --> a2(Draw Boundaries)
     }
     
-    1_Explorer --> 2_Propose: ambiguity_gate.py PASS
+    1_Explorer --> 2_Propose: "ambiguity_gate.py PASS"
     
     state 2_Propose {
         direction LR
         b1(Design API Contract) --> b2(Design DB Schema)
     }
     
-    2_Propose --> 3_Review: Output openspec.md
+    2_Propose --> 3_Review: "Output openspec.md"
     
     state 3_Review {
         direction LR
         c1(Hunt Confirmation Bias) --> c2(Hunt Unhandled Exceptions)
     }
     
-    3_Review --> 4_Approval_Gate: Internal Critique Complete
-    3_Review --> 2_Propose: Fatal Flaw Found (Rollback)
+    3_Review --> 4_Approval_Gate: "Internal Critique Complete"
+    3_Review --> 2_Propose: "Fatal Flaw Found (Rollback)"
     
     state 4_Approval_Gate {
         [*] --> WAITING_APPROVAL
-        WAITING_APPROVAL --> Human Confirms Continue: Human Input
+        WAITING_APPROVAL --> Human Confirms Continue: "Human Input"
     }
     
-    4_Approval_Gate --> 5_Implement: Contract Absolutely Frozen
+    4_Approval_Gate --> 5_Implement: "Contract Absolutely Frozen"
     
     state 5_Implement {
         direction LR
         d1(Reuse Existing Utils) --> d2(Strict Coding)
     }
     
-    5_Implement --> 6_QA_Archive: scope_guard.py Boundary PASS
+    5_Implement --> 6_QA_Archive: "scope_guard.py Boundary PASS"
     
-    6_QA_Archive --> 5_Implement: shift_left_hook Compile Fail (Max 2 Rollbacks)
+    6_QA_Archive --> 5_Implement: "shift_left_hook Compile Fail (Max 2 Rollbacks)"
     
     state 6_QA_Archive {
         direction LR
-        e1(Execute Linter) --> e2(Security Scan) --> e3(Extract WAL Fragments)
+        e1(Execute Linter) --> e2(Security Scan)
+        e2 --> e3(Extract WAL Fragments)
     }
     
-    6_QA_Archive --> [*]: writeback_gate.py PASS, Task Complete
+    6_QA_Archive --> [*]: "writeback_gate.py PASS, Task Complete"
 ```
 
 ### 🔍 Phase 1: Explorer (Explore & Clarify Requirements)
@@ -472,9 +473,9 @@ flowchart TD
     B --> C[Extract Structured Knowledge]
     C --> D{Categorize & Write WAL}
     
-    D -->|API Change| E[.agents/llm_wiki/wiki/api/wal/xxx.md]
-    D -->|DB Change| F[.agents/llm_wiki/wiki/data/wal/xxx.md]
-    D -->|Arch Change| G[.agents/llm_wiki/wiki/architecture/wal/xxx.md]
+    D -->|"API Change"| E[.agents/llm_wiki/wiki/api/wal/xxx.md]
+    D -->|"DB Change"| F[.agents/llm_wiki/wiki/data/wal/xxx.md]
+    D -->|"Arch Change"| G[.agents/llm_wiki/wiki/architecture/wal/xxx.md]
     
     H[Human inputs @gc] --> I[Awaken @Librarian]
     I --> J[Read & Merge all WAL fragments]
