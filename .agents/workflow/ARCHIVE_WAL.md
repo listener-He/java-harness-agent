@@ -8,6 +8,9 @@ Focus: define how the Agent extracts stable knowledge from a single `openspec.md
 - De-duplication: consolidate repeated knowledge into a single stable place.
 - Slimming: split documents when they exceed hard limits.
 - Cold/Hot separation: after extraction, move specs to cold storage.
+- **Language Preference (Audience separation):**
+  - **Machine-facing content** (e.g., Code snippets, schemas, YAML, directory structures, script names) MUST be kept in **English**.
+  - **Human-facing content** (e.g., explanations, context, rationale, mitigation strategies, and summaries) MUST be written in the **User's primary language** (e.g., if Chinese, use Chinese; English is the fallback).
 
 ---
 

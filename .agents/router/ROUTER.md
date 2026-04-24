@@ -98,7 +98,7 @@ If the user supplies an explicit shortcut, it MUST override automatic routing.
 
 ### STANDARD
 - Full lifecycle: Explorer → Propose → Review → Approval Gate → Implement → QA → Archive.
-- Requires `openspec.md` (full schema for MEDIUM/HIGH, Slim Spec for LOW).
+- Requires `.agents/workflow/runs/openspec.md` (full schema for MEDIUM/HIGH, Slim Spec for LOW).
 
 ---
 
@@ -186,7 +186,7 @@ When launching a lifecycle queue:
 2. Drive transitions by updating only `Status / Phase / Failed_Reason`
 3. Optional: `python3 ../scripts/harness/engine.py init "..."` to create and maintain the file
 
-After QA is done, transition automatically to the Archive phase in the **same session**. Use lightweight targeted commands (like `git diff <specific_files>` based on `focus_card.md`) or review `openspec.md` to summarize changes for WAL write-back, avoiding heavy context rereads.
+After QA is done, transition automatically to the Archive phase in the **same session**. Use lightweight targeted commands (like `git diff <specific_files>` based on `.agents/workflow/runs/focus_card.md`) or review `.agents/workflow/runs/openspec.md` to summarize changes for WAL write-back, avoiding heavy context rereads.
 
 **Status values:** `PENDING` | `IN_PROGRESS` | `DONE` | `WAITING_APPROVAL` | `FAILED`
 
@@ -235,7 +235,7 @@ These scenarios override the default routing rules. Match the user's request aga
 
 **Engine Behavior:**
 - **Contract-driven Delegation:** The Agent MUST NOT write code directly. It assumes the role of "Foreman + QA".
-- The Agent MUST first write a highly detailed `openspec.md` (defining API contracts, schemas, etc.).
+- The Agent MUST first write a highly detailed `.agents/workflow/runs/openspec.md` (defining API contracts, schemas, etc.).
 - **Micro-tasking:** The Agent MUST NOT dispatch massive goals to sub-agents (e.g., "Refactor this module"). It MUST slice the work into `tasks.md`.
 - The Agent delegates work to Sub-agents using high-frequency, short-lifecycle prompts. When dispatching, the Agent MUST use the contract schema defined in [subagent_contract_schema.md](../llm_wiki/schema/subagent_contract_schema.md) to format the prompt.
 - **Verification Gate:** The Agent MUST verify the sub-agent's return output against the contract schema before dispatching the next micro-task. Sub-agents are treated as "typewriters", not architects.
@@ -282,9 +282,9 @@ FAIL → block Archive. Bypass requires `bypass_justification.md` with DBA sign-
 
 **Required gates (post-hook):**
 ```
-python3 .agents/scripts/gates/api_breaking_gate.py --openspec <openspec.md>
+python3 .agents/scripts/gates/api_breaking_gate.py --openspec .agents/workflow/runs/openspec.md
 ```
-FAIL → block Implement phase. The Agent MUST document the migration guide in `openspec.md` before proceeding.
+FAIL → block Implement phase. The Agent MUST document the migration guide in `.agents/workflow/runs/openspec.md` before proceeding.
 
 ---
 
