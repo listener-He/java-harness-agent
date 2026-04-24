@@ -91,7 +91,7 @@ Once an intent is confirmed, the system routes the task into two completely diff
 flowchart TD
     A((User Input)) -->|Parse Intent| B{Gateway Risk Rating}
     
-    subgraph PATCH Track (Lightweight & Fast)
+    subgraph PATCH Track Lightweight & Fast
         B -->|TRIVIAL| C[Skip Explore & Design]
         B -->|LOW| D[@Ambiguity Gatekeeper draws Focus Card]
         C --> E[@Lead Engineer Fast Coding]
@@ -100,7 +100,7 @@ flowchart TD
         F --> G[@Knowledge Extractor logs Drift WAL]
     end
     
-    subgraph STANDARD Track (Heavy Architecture)
+    subgraph STANDARD Track Heavy Architecture
         B -->|MEDIUM Contract| H[@Requirement Engineer Clarifies]
         B -->|HIGH Epic| H
         H --> I[@System Architect outputs openspec.md]

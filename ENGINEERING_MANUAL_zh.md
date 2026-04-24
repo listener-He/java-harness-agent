@@ -47,20 +47,20 @@
 graph TD
     User((人类开发者)) -->|自然语言/Shortcut| Gateway[意图网关 Intent Gateway]
     
-    subgraph Agent 微内核调度器 (Microkernel Scheduler)
+    subgraph Agent 微内核调度器 Microkernel Scheduler
         Gateway -->|分类与评级| Matrix{4级风险矩阵}
         Matrix -->|TRIVIAL / LOW| PatchTrack[PATCH 极速轨道]
         Matrix -->|MEDIUM / HIGH| StandardTrack[STANDARD 标准轨道]
         Matrix -->|只读查询| LearnTrack[LEARN / DocQA 轨道]
     end
     
-    subgraph 动态挂载区 (Dynamic Mounting)
+    subgraph 动态挂载区 Dynamic Mounting
         StandardTrack --> Roles[13大角色 Role Matrix]
         StandardTrack --> Skills[15大技能 Master Skills]
         StandardTrack --> Hooks[6大钩子 Hooks]
     end
     
-    subgraph 虚拟文件系统 (RAG File System)
+    subgraph 虚拟文件系统 RAG File System
         Roles -->|读取上下文| KGraph[KNOWLEDGE_GRAPH.md]
         Roles -->|写入持久化| WAL[WAL 日志碎片]
         WAL -->|GC 碎片整理| KGraph
@@ -91,7 +91,7 @@ Agent 接收到用户输入后，第一步必须进行 `[Intent Check]`，将其
 flowchart TD
     A((用户输入)) -->|解析 Intent| B{网关风险评级}
     
-    subgraph PATCH 轨道 (轻量与极速)
+    subgraph PATCH 轨道 轻量与极速
         B -->|TRIVIAL 极速| C[跳过探索与设计]
         B -->|LOW 轻量| D[@Ambiguity Gatekeeper 画出 Focus Card]
         C --> E[@Lead Engineer 极速编码]
@@ -100,7 +100,7 @@ flowchart TD
         F --> G[@Knowledge Extractor 记录漂移 WAL]
     end
     
-    subgraph STANDARD 轨道 (重型架构)
+    subgraph STANDARD 轨道 重型架构
         B -->|MEDIUM 契约| H[@Requirement Engineer 澄清需求]
         B -->|HIGH 史诗| H
         H --> I[@System Architect 产出 openspec.md]
@@ -156,45 +156,46 @@ stateDiagram-v2
         a1(澄清需求) --> a2(画定边界)
     }
     
-    1_Explorer --> 2_Propose: ambiguity_gate.py 通过
+    1_Explorer --> 2_Propose: "ambiguity_gate.py 通过"
     
     state 2_Propose {
         direction LR
         b1(设计 API 契约) --> b2(设计 DB 结构)
     }
     
-    2_Propose --> 3_Review: 产出 openspec.md
+    2_Propose --> 3_Review: "产出 openspec.md"
     
     state 3_Review {
         direction LR
         c1(寻找确认偏误) --> c2(寻找未捕获异常)
     }
     
-    3_Review --> 4_Approval_Gate: 内部批判结束
-    3_Review --> 2_Propose: 发现致命漏洞 (回滚)
+    3_Review --> 4_Approval_Gate: "内部批判结束"
+    3_Review --> 2_Propose: "发现致命漏洞 (回滚)"
     
     state 4_Approval_Gate {
         [*] --> WAITING_APPROVAL
-        WAITING_APPROVAL --> 人类确认继续: Human Input
+        WAITING_APPROVAL --> 人类确认继续: "Human Input"
     }
     
-    4_Approval_Gate --> 5_Implement: 契约绝对冻结
+    4_Approval_Gate --> 5_Implement: "契约绝对冻结"
     
     state 5_Implement {
         direction LR
         d1(复用现有 Utils) --> d2(严格编码)
     }
     
-    5_Implement --> 6_QA_Archive: scope_guard.py 防越界通过
+    5_Implement --> 6_QA_Archive: "scope_guard.py 防越界通过"
     
-    6_QA_Archive --> 5_Implement: shift_left_hook 编译失败 (最多2次回滚)
+    6_QA_Archive --> 5_Implement: "shift_left_hook 编译失败 (最多2次回滚)"
     
     state 6_QA_Archive {
         direction LR
-        e1(执行 Linter) --> e2(安全扫描) --> e3(提取 WAL 碎片)
+        e1(执行 Linter) --> e2(安全扫描)
+        e2 --> e3(提取 WAL 碎片)
     }
     
-    6_QA_Archive --> [*]: writeback_gate.py 校验通过，结束任务
+    6_QA_Archive --> [*]: "writeback_gate.py 校验通过，结束任务"
 ```
 
 ### 🔍 阶段 1: Explorer (探索与需求澄清)
