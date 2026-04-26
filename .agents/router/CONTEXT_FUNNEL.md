@@ -86,7 +86,7 @@ If budgets are exhausted OR stop rules trigger without meeting success criteria,
 ```
 
 #### 5.2 Lifecycle Persistence on Escalation
-Set the intent row in `launch_spec_*.md` to `WAITING_APPROVAL`. Include a link to the relevant artifact (e.g., `openspec.md` or the escalation note).
+Set the intent row in `launch_spec_*.md` to `WAITING_APPROVAL`. Include a link to the relevant artifact (e.g., `<YYYY-MM-DD>_<slug>_openspec.md` or the escalation note).
 
 ---
 

@@ -1,6 +1,6 @@
 # Active Specs (OpenSpec)
 
-This index lists `openspec.md` documents that are currently in progress or recently finished and still frequently referenced.
+This index lists `<YYYY-MM-DD>_<slug>_openspec.md` documents that are currently in progress or recently finished and still frequently referenced.
 
 ## Hard Rules (MUST)
 - When a spec reaches `Archive` and its stable knowledge has been extracted, you MUST move it out of the active list.

@@ -14,7 +14,7 @@ description: "MANDATORY documentation capture during the Archive phase. Defines 
 
 ## 1) Universal Write-back Rules (MUST)
 - **NO DIRECT EDITS:** NEVER edit `api/index.md` or `data/index.md` directly. You MUST write WAL fragments into the respective `wal/` directories.
-- **TRACEABILITY:** Every WAL entry MUST cite the source specification (`openspec.md` or the corresponding delivery capsule).
+- **TRACEABILITY:** Every WAL entry MUST cite the source specification (`<YYYY-MM-DD>_<slug>_openspec.md` or the corresponding delivery capsule).
 - **STABLE FACTS ONLY:** Do not copy-paste the entire spec. Extract only the key, stable facts (e.g., table names, API paths, summaries).
 - **FILENAME CONVENTION:** `YYYYMMDD_<feature_or_change>_<type>_append.md`
 
@@ -35,7 +35,7 @@ description: "MANDATORY documentation capture during the Archive phase. Defines 
 # API WAL Append - {YYYY-MM-DD} - {feature_or_change}
 
 Source spec:
-- `{relative_path_to_openspec.md}`
+- `{relative_path_to_<YYYY-MM-DD>_<slug>_openspec.md}`
 
 Append rows for api/index.md:
 | API (Method + Path) | Summary | Doc Link | Write-back Date |
@@ -61,7 +61,7 @@ Append rows for api/index.md:
 # Data WAL Append - {YYYY-MM-DD} - {feature_or_change}
 
 Source spec:
-- `{relative_path_to_openspec.md}`
+- `{relative_path_to_<YYYY-MM-DD>_<slug>_openspec.md}`
 
 Append rows for data/index.md:
 | Table Name | Purpose | Key Fields / Index Notes | Source Spec |

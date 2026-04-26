@@ -3,7 +3,7 @@
   "roles": {
     "ambiguity_gatekeeper": {
       "artifacts_required": [
-        ".agents/workflow/artifacts/focus_card.md"
+        ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md"
       ],
       "gates": [
         {
@@ -17,21 +17,21 @@
           "script": ".agents/scripts/gates/focus_card_gate.py",
           "args": [
             "--file",
-            ".agents/workflow/artifacts/focus_card.md"
+            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md"
           ]
         }
       ]
     },
     "focus_guard": {
       "artifacts_required": [
-        ".agents/workflow/artifacts/focus_card.md"
+        ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md"
       ],
       "gates": [
         {
           "script": ".agents/scripts/gates/scope_guard.py",
           "args": [
             "--focus-card",
-            ".agents/workflow/artifacts/focus_card.md",
+            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md",
             "--files",
             "{changed_files}"
           ]
@@ -102,7 +102,7 @@
           "script": ".agents/scripts/gates/ambiguity_gate.py",
           "args": [
             "--require",
-            "explore_report.md"
+            "<YYYY-MM-DD>_<slug>_explore_report.md"
           ]
         }
       ]
@@ -113,7 +113,7 @@
           "script": ".agents/scripts/gates/openspec_gate.py",
           "args": [
             "--require",
-            "openspec.md"
+            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md"
           ]
         }
       ]
@@ -124,7 +124,7 @@
           "script": ".agents/scripts/gates/scope_guard.py",
           "args": [
             "--focus-card",
-            ".agents/workflow/artifacts/focus_card.md",
+            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md",
             "--files",
             "{changed_files}"
           ]

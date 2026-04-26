@@ -19,7 +19,7 @@ One-way state machine with hard gates and rollback rules.
 |---|---|---|---|
 | LEARN | Read-only; no launch spec, no lifecycle, no write-back | No | No |
 | PATCH | `(TRIVIAL)` `Implement(Grep Check) → QA(Soft Interrupt?) → Archive(Drift)`<br>`(LOW)` `Explorer → Implement → QA(Soft Interrupt?) → Archive` | No | TRIVIAL: None<br>LOW: Slim Spec |
-| STANDARD | `Explorer → Propose → Review → [GATE] → Implement → QA → Archive` | Yes (MEDIUM/HIGH) | Full `openspec.md` |
+| STANDARD | `Explorer → Propose → Review → [GATE] → Implement → QA → Archive` | Yes (MEDIUM/HIGH) | Full `<YYYY-MM-DD>_<slug>_openspec.md` |
 
 ---
 
@@ -35,7 +35,7 @@ One-way state machine with hard gates and rollback rules.
 2. Read `../llm_wiki/wiki/preferences/index.md`.
 3. Clarify requirements and scope.
 
-**Output:** `explore_report.md` — MUST include a `## Core Context Anchors` section (key wiki links, business vocabulary, engineering red lines).
+**Output:** `<YYYY-MM-DD>_<slug>_explore_report.md` — MUST include a `## Core Context Anchors` section (key wiki links, business vocabulary, engineering red lines).
 
 ---
 
@@ -46,7 +46,7 @@ One-way state machine with hard gates and rollback rules.
 
 **Actions:** Follow the contract template in `../llm_wiki/schema/openspec_schema.md`.
 
-**Output:** `.agents/workflow/runs/openspec.md` and `.agents/workflow/runs/focus_card.md`.
+**Output:** `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` and `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md`.
 - LOW risk: MAY use Slim Spec.
 - MEDIUM / HIGH risk: MUST use full schema.
 
@@ -71,10 +71,10 @@ One-way state machine with hard gates and rollback rules.
 **Purpose:** Stop the engine before code is written against a wrong contract.
 
 **Actions:**
-1. Present an `.agents/workflow/runs/openspec.md` summary to the human.
+1. Present an `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` summary to the human.
 2. Ask for explicit approval to enter implementation.
 
-**Persistence:** Set the intent row in `launch_spec.md` to `WAITING_APPROVAL`. Include a link to `.agents/workflow/runs/openspec.md`.
+**Persistence:** Set the intent row in `launch_spec.md` to `WAITING_APPROVAL`. Include a link to `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md`.
 
 **Risk classification:**
 
@@ -116,7 +116,7 @@ One-way state machine with hard gates and rollback rules.
 ### Phase 6: Archive
 
 **Mounted Roles:** `@Knowledge Extractor`, `@Documentation Curator`, `@Skill Graph Curator`
-**Purpose:** Close the loop and prevent knowledge bloat. Execute seamlessly in the **same session**. Rely on targeted `git diff <files>` or `.agents/workflow/runs/openspec.md` to summarize changes, strictly avoiding re-reading heavy coding history. Follow `ARCHIVE_WAL.md` to move the spec to `.agents/llm_wiki/archive/YYYYMMDD_<feature>_openspec.md`.
+**Purpose:** Close the loop and prevent knowledge bloat. Execute seamlessly in the **same session**. Rely on targeted `git diff <files>` or `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` to summarize changes, strictly avoiding re-reading heavy coding history. Follow `ARCHIVE_WAL.md` to move the spec to `.agents/llm_wiki/archive/<YYYY-MM-DD>_<slug>_openspec.md`.
 
 **Steps (in order):**
 1. Sync docs via `wal-documentation-rules` skill.

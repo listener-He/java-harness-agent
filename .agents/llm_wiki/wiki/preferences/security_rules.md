@@ -1,6 +1,6 @@
 # Security Baseline (Hard Constraints)
 
-This file is a hard "do-not-violate" list for both design (`openspec.md`) and code review.
+This file is a hard "do-not-violate" list for both design (`<YYYY-MM-DD>_<slug>_openspec.md`) and code review.
 
 Hard rule:
 - Any violation MUST be blocked by `guard_hook` or `fail_hook` and rewritten.

@@ -13,10 +13,10 @@ Single entry point. Read this file first on every session start. All links here 
 | **Budget exhausted** | STOP. File an Escalation Card (format in [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)). Do not guess paths or continue reading. |
 | **Approval Gate** | For MEDIUM/HIGH risk changes: STOP after creating the spec, set status to `WAITING_APPROVAL`, and wait for explicit human approval before writing any code. |
 | **Anti-loop** | Max 3 retries for scripts/linters. STRICT MAX 2 retries for compilation/RunCommand fixes. On exceed: STOP and ask human. Never infinite loop. |
-| **Scope Guard** | Do not modify files outside the agreed `.agents/workflow/runs/focus_card.md` scope without explicit human permission. |
-| **Artifact Paths** | ALL runtime artifacts (`openspec.md`, `focus_card.md`) MUST be generated in `.agents/workflow/runs/`. Never generate them in the root directory. Follow `ARCHIVE_WAL.md` during Archive phase to move them. |
-| **Exit Gate (Archive)** | Before yielding the final response to the human, you MUST output an `[Lifecycle: Archive]` block, move `openspec.md` to `.agents/llm_wiki/archive/YYYYMMDD_<feature>_openspec.md`, and write WAL fragments for any new API, Domain, or Logic changed. NEVER say you are done without writing the WAL. |
-| **Task Checklist** | Before entering `Execute` phase, you MUST create `.agents/workflow/runs/current_task.md` with `[ ] Write-back to wiki (WAL)` as the last item to track progress. |
+| **Scope Guard** | Do not modify files outside the agreed `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md` scope without explicit human permission. |
+| **Artifact Paths** | ALL runtime artifacts (e.g., `<YYYY-MM-DD>_<slug>_openspec.md`, `<YYYY-MM-DD>_<slug>_focus_card.md`) MUST be generated in `.agents/workflow/runs/` with a prefix combining the date and a business/scenario slug. Never generate them in the root directory. Follow `ARCHIVE_WAL.md` during Archive phase to move them. |
+| **Exit Gate (Archive)** | Before yielding the final response to the human, you MUST output an `[Lifecycle: Archive]` block, move `<YYYY-MM-DD>_<slug>_openspec.md` to `.agents/llm_wiki/archive/`, and write WAL fragments for any new API, Domain, or Logic changed. NEVER say you are done without writing the WAL. |
+| **Task Checklist** | Before entering `Execute` phase, you MUST create `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_current_task.md` with `[ ] Write-back to wiki (WAL)` as the last item to track progress. |
 
 ---
 
@@ -29,7 +29,7 @@ Before any action (reading files, searching, writing code), the Agent MUST outpu
         [Lifecycle: <Plan|Execute|Validate|Archive>] | [Mounted Role: @<Role>]
 
 <Cognitive_Brake>
-- Role & Scope: As [@RoleX], my authorized file boundary is [focus_card.md / None]. Am I crossing it?
+- Role & Scope: As [@RoleX], my authorized file boundary is [<YYYY-MM-DD>_<slug>_focus_card.md / None]. Am I crossing it?
 - Budget & Context: Wiki reads: [X]/3, Code reads: [Y]/8. Do I need to Grep specific project standards/exceptions first?
 - Architectural Defense: Is this a cross-domain/transactional change? Am I at a STOP gate like Approval or Validation?
 - Next State: What exact artifact, WAL, or validation command will I output/run right now?
@@ -43,7 +43,7 @@ Before any action (reading files, searching, writing code), the Agent MUST outpu
 **Rules:**
 - **CoT Requirement**: The `<Cognitive_Brake>` block is MANDATORY. It forces you to adopt the assigned Role Personas (e.g., as `@Security Sentinel` or `@Focus Guard`) before acting like a Coder.
 - **Language Matching**: The internal reasoning text inside the `<Cognitive_Brake>` MUST be written in the same natural language as the user's most recent prompt (e.g., 简体中文, にほんご, Español,  English) to maximize human readability. The XML tags and protocol headers (e.g., `[Intent Check]`) MUST remain in English for script parsing.
-- **Audience-Aware Documentation**: When generating artifacts (e.g., `openspec.md`, `WAL fragments`, or `explore_report.md`), the Agent MUST distinguish the audience. Machine-facing content (code, schema, paths) MUST be in **English**. Human-facing content (rationale, business logic, summaries) MUST default to the user's natural language (e.g., **Chinese** has priority over English if the user speaks Chinese).
+- **Audience-Aware Documentation**: When generating artifacts (e.g., `<YYYY-MM-DD>_<slug>_openspec.md`, `WAL fragments`, or `<YYYY-MM-DD>_<slug>_explore_report.md`), the Agent MUST distinguish the audience. Machine-facing content (code, schema, paths) MUST be in **English**. Human-facing content (rationale, business logic, summaries) MUST default to the user's natural language (e.g., **Chinese** has priority over English if the user speaks Chinese).
 - If the intent is ambiguous (missing action or object signal): output `[Intent Check] AMBIGUOUS — <reason>` and ask one clarifying question before proceeding.
 - If a special scenario (DEBUG, EPIC, A–E) is matched: include `scenario=<name>` and apply Scenario routing overrides (see [ROUTER.md](.agents/router/ROUTER.md#6-special-scenarios)).
 - You MUST explicitly declare any Phase transition using the `[Lifecycle: ...]` header.
@@ -96,7 +96,7 @@ Session start
 **Never commit runtime state or caches.** The directories below are runtime-only:
 
 - `.agents/router/runs/`
-- `.agents/workflow/runs/` (This includes active `openspec.md` and `focus_card.md`)
+- `.agents/workflow/runs/` (This includes active `<YYYY-MM-DD>_<slug>_openspec.md` and `<YYYY-MM-DD>_<slug>_focus_card.md`)
 - `.agents/events/drift_queue/`
 - Python caches: `__pycache__/`, `*.pyc`
 - Build/IDE artifacts: `target/`, `build/`, `.idea/`, `.vscode/`, `.DS_Store`

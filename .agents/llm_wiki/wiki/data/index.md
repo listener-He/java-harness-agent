@@ -4,7 +4,7 @@ This index is the routing table for database tables, ER notes, and index strateg
 
 ## Hard Rules (MUST)
 - You MUST NOT guess schemas by scanning the entire codebase.
-- During `Archive`, the Agent MUST extract table changes from `openspec.md` and append them to the table below.
+- During `Archive`, the Agent MUST extract table changes from `<YYYY-MM-DD>_<slug>_openspec.md` and append them to the table below.
 
 ## Core Tables
 

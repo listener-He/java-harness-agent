@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 契约防腐体检工具 (Schema Checker)
-Agent 在生成 openspec.md 后，可选调用此脚本检查关键结构是否缺失。
+Agent 在生成 <YYYY-MM-DD>_<slug>_openspec.md 后，可选调用此脚本检查关键结构是否缺失。
 """
 
 import os
@@ -75,6 +75,6 @@ def check_schema(file_path):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python schema_checker.py <path_to_openspec.md>")
+        print("Usage: python schema_checker.py <path_to_<YYYY-MM-DD>_<slug>_openspec.md>")
         sys.exit(1)
     raise SystemExit(check_schema(sys.argv[1]))

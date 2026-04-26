@@ -3,7 +3,7 @@
 This index is the routing table for all externally exposed APIs.
 
 ## Hard Rules (MUST)
-- During `Archive`, the Agent MUST extract API signatures from `openspec.md` and append them into the table(s) below.
+- During `Archive`, the Agent MUST extract API signatures from `<YYYY-MM-DD>_<slug>_openspec.md` and append them into the table(s) below.
 - Do not guess API contracts by scanning the whole codebase. Use the wiki as the source of truth, then validate against code when needed.
 
 ## Core Domain APIs

@@ -21,7 +21,7 @@ This file is the root of the wiki. Use it to navigate by drilling down through i
 - **[API](wiki/api/index.md)**: Exposed APIs and contracts. *(Format: Markdown tables with Method, Path, Auth)*
 - **[Data](wiki/data/index.md)**: Database tables, indexes, ER notes. *(Format: Markdown tables with Store Type, Retention)*
 - **[Architecture](wiki/architecture/index.md)**: Architecture decisions, security baseline, ADRs. *(Format: ADR tracking list)*
-- **[Specs](wiki/specs/index.md)**: Active `openspec.md` documents. *(Ongoing or recently closed proposals)*
+- **[Specs](wiki/specs/index.md)**: Active `<YYYY-MM-DD>_<slug>_openspec.md` documents. *(Ongoing or recently closed proposals)*
 - **[Testing](wiki/testing/index.md)**: Testing standards and evidence requirements. *(Contains objective evidence links)*
 - **[Reviews](wiki/reviews/index.md)**: Review artifacts, PR design reviews, audit reports. *(Status tracking)*
 - **[Preferences](wiki/preferences/index.md)**: Project-specific constraints, security rules, and do-not-do lists. *(Tags: `[Security]`, `[DB]`, etc. If any file exceeds 500 lines, it MUST be split).*

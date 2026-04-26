@@ -10,7 +10,7 @@ Rules:
 
 ## Slim Spec (LOW risk only)
 
-When the change is LOW risk, `openspec.md` MAY be downgraded to a Slim Spec to reduce review fatigue and documentation cost.
+When the change is LOW risk, `<YYYY-MM-DD>_<slug>_openspec.md` MAY be downgraded to a Slim Spec to reduce review fatigue and documentation cost.
 
 Hard rules:
 - The document MUST include the marker `spec_mode: SLIM`.

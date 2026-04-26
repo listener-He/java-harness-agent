@@ -30,7 +30,7 @@ def _write_pointer(path: str, archived_path: str):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--slug", required=True, help="Feature slug, e.g. live_room_batch_schedule_query")
-    parser.add_argument("--date", default=datetime.now().strftime("%Y%m%d"))
+    parser.add_argument("--date", default=datetime.now().strftime("%Y-%m-%d"))
     args = parser.parse_args()
 
     runs_dir = ".agents/workflow/runs"
@@ -38,22 +38,27 @@ def main():
     _ensure_dir(runs_dir)
     _ensure_dir(archive_dir)
 
-    openspec_src = os.path.join(runs_dir, "openspec.md")
-    focus_src = os.path.join(runs_dir, "focus_card.md")
+    openspec_src = os.path.join(runs_dir, f"{args.date}_{args.slug}_openspec.md")
+    focus_src = os.path.join(runs_dir, f"{args.date}_{args.slug}_focus_card.md")
+    current_task_src = os.path.join(runs_dir, f"{args.date}_{args.slug}_current_task.md")
 
     openspec_dst = os.path.join(archive_dir, f"{args.date}_{args.slug}_openspec.md")
     focus_dst = os.path.join(archive_dir, f"{args.date}_{args.slug}_focus_card.md")
+    current_task_dst = os.path.join(archive_dir, f"{args.date}_{args.slug}_current_task.md")
 
     moved_openspec = _move_if_exists(openspec_src, openspec_dst)
     moved_focus = _move_if_exists(focus_src, focus_dst)
+    moved_current_task = _move_if_exists(current_task_src, current_task_dst)
 
     if moved_openspec:
         _write_pointer(openspec_src, openspec_dst)
     if moved_focus:
         _write_pointer(focus_src, focus_dst)
+    if moved_current_task:
+        _write_pointer(current_task_src, current_task_dst)
 
-    if not moved_openspec and not moved_focus:
-        raise SystemExit("No session artifacts found under .agents/workflow/runs/")
+    if not moved_openspec and not moved_focus and not moved_current_task:
+        raise SystemExit(f"No session artifacts found for {args.date}_{args.slug} under .agents/workflow/runs/")
 
 
 if __name__ == "__main__":

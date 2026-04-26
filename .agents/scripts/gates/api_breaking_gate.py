@@ -3,7 +3,7 @@
 """
 Breaking API Change Gate
 
-Reads an openspec.md file and checks whether it declares a breaking change
+Reads an <YYYY-MM-DD>_<slug>_openspec.md file and checks whether it declares a breaking change
 without a required migration guide section.
 
 "Breaking" is defined as any of:
@@ -46,7 +46,7 @@ MIGRATION_SECTION = "## Migration Guide"
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--openspec", required=True, help="Path to openspec.md")
+    parser.add_argument("--openspec", required=True, help="Path to <YYYY-MM-DD>_<slug>_openspec.md")
     args = parser.parse_args()
 
     path = args.openspec
@@ -74,7 +74,7 @@ def main() -> int:
         print(f"- Breaking signals detected: {', '.join(detected)}")
         print(f"- Missing required section: '{BREAKING_SECTION}'")
         print(f"- Missing required section: '{MIGRATION_SECTION}'")
-        print("Action: add '## Breaking Changes' and '## Migration Guide' to openspec.md before Implement.")
+        print("Action: add '## Breaking Changes' and '## Migration Guide' to <YYYY-MM-DD>_<slug>_openspec.md before Implement.")
         return EXIT_FAIL
 
     if has_breaking_section and not has_migration_section:

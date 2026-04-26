@@ -7,7 +7,7 @@ Defines when and how to enforce constraints throughout the lifecycle.
 ## Session Resume Anchors (MUST, in order)
 
 1. Read `router/runs/launch_spec_*.md` — restore from `Status / Phase`.
-2. If `explore_report.md` exists — read its `## Core Context Anchors` section before any heavy navigation.
+2. If `<YYYY-MM-DD>_<slug>_explore_report.md` exists — read its `## Core Context Anchors` section before any heavy navigation.
 
 ---
 
@@ -34,7 +34,7 @@ Defines when and how to enforce constraints throughout the lifecycle.
 **Purpose:**
 - **Architectural Defense (MUST):** Ensure operations spanning multiple DB tables/domains are pushed down to a `@Transactional` Service or Facade layer. Controllers must remain thin.
 - **Standards guard:** Enforce style, custom project exceptions (e.g., `CustomerException`), and required patterns (e.g., `jakarta.validation` vs `javax`).
-- **Domain boundary guard:** Do NOT modify cross-domain files unless explicitly authorized in `.agents/workflow/runs/openspec.md`.
+- **Domain boundary guard:** Do NOT modify cross-domain files unless explicitly authorized in `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md`.
 - **Anti-runaway guard (MUST):** Enforce budgeted navigation + stop rules + escalation protocol (see `../router/CONTEXT_FUNNEL.md`).
 - **Anti-drift guard (MUST):** Maintain a `Focus Card` and enforce scope via `scope_guard.py` (see `../workflow/ROLE_MATRIX.md`).
 - **Fast-Path Impact Guard:** For `TRIVIAL` tasks bypassing `Explorer`, the Agent MUST execute a global `Grep` or `SearchCodebase` to ensure the variable/method being renamed or modified has no hidden or hardcoded dependencies (e.g., XML mappings, reflection).
@@ -69,7 +69,7 @@ Read-only checks (do NOT modify files):
 
 | Gate | Command | When required |
 |---|---|---|
-| OpenSpec schema | `python3 .agents/scripts/wiki/schema_checker.py <path_to_.agents/workflow/runs/openspec.md>` | Every STANDARD task |
+| OpenSpec schema | `python3 .agents/scripts/wiki/schema_checker.py <path_to_.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md>` | Every STANDARD task |
 | Wiki graph lint | `python3 .agents/scripts/wiki/wiki_linter.py` | Every task with write-back |
 | Ambiguity check | `python3 .agents/scripts/gates/ambiguity_gate.py --intent "<intent>" [--anchors-file <file>]` | Every task start |
 | Write-back check | `python3 .agents/scripts/gates/writeback_gate.py --topic "<topic>" --date YYYYMMDD [--require-data]` | PATCH + STANDARD Archive |
@@ -78,7 +78,7 @@ Read-only checks (do NOT modify files):
 | Java comment lint | `python3 .agents/scripts/gates/comment_linter_java.py --path <dir> [--fail-on-missing]` | Java code changes |
 | **WAL compliance** | `python3 .agents/scripts/gates/wal_template_gate.py --wal-dir <dir>` | Every Archive with WAL output |
 | **DB migration** | `python3 .agents/scripts/gates/migration_gate.py --sql-dir <path>` | Scenario B (DDL changes) |
-| **Breaking API** | `python3 .agents/scripts/gates/api_breaking_gate.py --openspec .agents/workflow/runs/openspec.md` | Scenario C (API schema changes) |
+| **Breaking API** | `python3 .agents/scripts/gates/api_breaking_gate.py --openspec .agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` | Scenario C (API schema changes) |
 | **Dependency** | `python3 .agents/scripts/gates/dependency_gate.py --pom <pom.xml>` | Scenario E (pom.xml changes) |
 | Unified runner | `python3 .agents/scripts/gates/run.py --intent <...> --profile <...> --phase <...> --topic <...> --date <YYYYMMDD> [--verify-level quick\|standard\|strict] [--artifact-tags ...]` | Any phase (convenience wrapper) |
 
@@ -111,7 +111,7 @@ python3 .agents/scripts/tools/archive_session_artifacts.py --slug <feature_slug>
 
 #### Explorer Post-Hook: Core Context Anchors (MUST)
 
-The `explore_report.md` produced by the Explorer `post_hook` MUST include a section named `## Core Context Anchors` containing:
+The `<YYYY-MM-DD>_<slug>_explore_report.md` produced by the Explorer `post_hook` MUST include a section named `## Core Context Anchors` containing:
 
 - Key links collected via drill-down (domain / api / data / architecture / preferences / security_rules, etc.)
 - Business vocabulary and invariants (terms, enums, state notes)
@@ -128,7 +128,7 @@ Usage: In Propose / Implement phases, if context is unstable or time has passed,
 **Bound skills:** `code-review-checklist`
 
 **Actions:**
-- **State downgrade:** Move back to the previous phase. Append the failure reason to `.agents/workflow/runs/openspec.md` (or the relevant task artifact). Fix all failed checklist items.
+- **State downgrade:** Move back to the previous phase. Append the failure reason to `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` (or the relevant task artifact). Fix all failed checklist items.
 - **Max retries (3):** If the same phase fails 3 times: STOP and ask for human intervention.
 - **Script retries cap (3):** Per task, each gate script can fail at most 3 times. On exceed: STOP and request human intervention.
 - **Retry state reset:** Auto-cleared when task ends (Archive) or process receives an interruption signal. Explicit reset: `run.py --end-task`.

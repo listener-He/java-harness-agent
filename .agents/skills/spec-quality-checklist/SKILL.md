@@ -15,7 +15,7 @@ description: "Flexible quality gate checklist for AI self-correction. Invoke bef
 - [ ] **Conciseness:** Is there any fluff or redundant AI preamble that can be removed?
 - [ ] **Consistency:** Are terms, variable names, and architectural decisions consistent throughout the text?
 
-## Documentation & Specs (`openspec.md`)
+## Documentation & Specs (`<YYYY-MM-DD>_<slug>_openspec.md`)
 - [ ] **Clear Title:** Does the document clearly state its purpose?
 - [ ] **Executive Summary:** Is there a 2-3 sentence TL;DR at the top mapping back to the Acceptance Criteria (AC)?
 - [ ] **Logical Flow:** Do the sections connect logically (e.g., Context -> Architecture -> Data Model -> API)?
@@ -23,7 +23,7 @@ description: "Flexible quality gate checklist for AI self-correction. Invoke bef
 - [ ] **Formatting:** Are Markdown tables, bold text, and code snippets used correctly?
 - [ ] **Action Items:** Does the spec end with a clear transition to the `Implement` phase?
 
-## Analytical Reports (`explore_report.md` / Root Cause)
+## Analytical Reports (`<YYYY-MM-DD>_<slug>_explore_report.md` / Root Cause)
 - [ ] **Source Attribution:** Are file paths and log snippets clearly referenced?
 - [ ] **Methodology:** Did I explain *how* I arrived at this conclusion?
 - [ ] **Fact vs. Assumption:** Are my hypotheses clearly distinguished from verified facts?

@@ -1,6 +1,6 @@
 # Knowledge Extraction & Anti-Bloat Rules (WAL + Compaction)
 
-Focus: define how the Agent extracts stable knowledge from a single `openspec.md` during `Archive`, writes WAL fragments safely, and prevents index bloat over time.
+Focus: define how the Agent extracts stable knowledge from a single `<YYYY-MM-DD>_<slug>_openspec.md` during `Archive`, writes WAL fragments safely, and prevents index bloat over time.
 
 ---
 
@@ -15,7 +15,7 @@ Focus: define how the Agent extracts stable knowledge from a single `openspec.md
 ---
 
 ## 2. Extraction Protocol (MUST in `Archive`)
-During `Archive` `post_hook`, the Agent MUST extract from the current `openspec.md`:
+During `Archive` `post_hook`, the Agent MUST extract from the current `<YYYY-MM-DD>_<slug>_openspec.md`:
 
 ### 2.1 Domain Extraction
 - Scan: the "Context" / domain sections.
@@ -34,10 +34,10 @@ During `Archive` `post_hook`, the Agent MUST extract from the current `openspec.
 
 ## 3. Archiving & Cleanup (MUST)
 ### 3.1 Move spec to cold storage
-- Move the spec: after extraction, move the session `openspec.md` to:
+- Move the spec: after extraction, move the session `<YYYY-MM-DD>_<slug>_openspec.md` to:
   - `.agents/llm_wiki/archive/`
 - Rename it with a date prefix to avoid collisions:
-  - `YYYYMMDD_<feature>_openspec.md`
+  - `<YYYY-MM-DD>_<slug>_openspec.md`
 
 ### 3.2 Clean the active index
  - update `.agents/llm_wiki/wiki/specs/index.md` by removing the entry from the active list (or moving it into "Recently Archived").
@@ -45,8 +45,8 @@ During `Archive` `post_hook`, the Agent MUST extract from the current `openspec.
 ### 3.3 Keep pointer files in `runs/` (Conservative Mode)
 
 To prevent the next task from accidentally reusing the previous session’s spec/scope, replace:
-- `.agents/workflow/runs/openspec.md`
-- `.agents/workflow/runs/focus_card.md`
+- `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md`
+- `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md`
 
 with read-only pointer files that only contain the archive location.
 

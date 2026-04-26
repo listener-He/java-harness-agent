@@ -11,7 +11,7 @@ This index defines the project's vocabulary. The Agent MUST use these terms duri
 ---
 
 ## Archive Extraction SOP
-If an `openspec.md` introduces new terms, roles, enum values, or state transitions, the Agent MUST extract them here during `Archive`.
+If an `<YYYY-MM-DD>_<slug>_openspec.md` introduces new terms, roles, enum values, or state transitions, the Agent MUST extract them here during `Archive`.
 
 ### Append Template
 ```markdown

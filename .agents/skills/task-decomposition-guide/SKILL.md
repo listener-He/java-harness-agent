@@ -7,7 +7,7 @@ description: "MANDATORY MASTER skill for decomposing large PRDs or EPIC scenario
 
 > **Trigger:** Invoke this guide when analyzing a PRD (Product Requirements Document) or breaking down a massive feature/refactoring (`Scenario EPIC`).
 
-This skill transforms a monolithic requirement into an actionable, structured execution plan (`tasks.md`) that multiple Sub-Agents (or developers) can execute without stepping on each other's toes or blowing up the context window.
+This skill transforms a monolithic requirement into an actionable, structured execution plan (`<YYYY-MM-DD>_<slug>_tasks.md`) that multiple Sub-Agents (or developers) can execute without stepping on each other's toes or blowing up the context window.
 
 ## 🎯 1. The INVEST Quality Gate (Strict Criteria)
 Before finalizing any subtask breakdown, you MUST ensure EVERY generated task satisfies the Agile **INVEST** principles:
@@ -40,7 +40,7 @@ When breaking down an EPIC for multiple Sub-Agents:
 2. **Summarization over Raw Data:** Never pass raw logs or entire codebases between tasks. Task N MUST output a compressed summary (e.g., an interface contract) to pass to Task N+1.
 3. **Asynchronous Handoff:** Use disk storage for handoffs. Have Task N write its output to `.agents/workflow/runs/intermediate_<task_id>.md`, and instruct Task N+1 to read that file.
 
-## 📋 4. Output Template (`tasks.md`)
+## 📋 4. Output Template (`<YYYY-MM-DD>_<slug>_tasks.md`)
 Always output a highly readable Markdown report containing an Overview Panel and the Task Breakdown.
 
 **1. 📊 Overview Panel**

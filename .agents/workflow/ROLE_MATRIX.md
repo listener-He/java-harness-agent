@@ -21,7 +21,7 @@ Executable Checklist:
 - [ ] **Cognitive Check:** Review `.agents/skills/cognitive-bias-checklist/SKILL.md` to avoid 'Framing Effect' or 'Confirmation Bias' when defining the problem.
 - [ ] **Quality Check:** Apply `.agents/skills/spec-quality-checklist/SKILL.md` to ensure the report defines the problem clearly and has actionable next steps.
 Output:
-- `explore_report.md` (containing User Stories and AC).
+- `<YYYY-MM-DD>_<slug>_explore_report.md` (containing User Stories and AC).
 Gate:
 - `ambiguity_gate.py` (Must pass definition of ready).
 
@@ -29,24 +29,24 @@ Gate:
 Purpose:
 - Design the high-level system interactions, database schema (DDL), and design patterns before any code is written. Acts as the "Foreman" in EPIC scenarios.
 Executable Checklist:
-- [ ] **Hard Context Handover:** Read `explore_report.md` and explicitly map your design back to the Acceptance Criteria (AC).
+- [ ] **Hard Context Handover:** Read `<YYYY-MM-DD>_<slug>_explore_report.md` and explicitly map your design back to the Acceptance Criteria (AC).
 - [ ] Evaluate if new dependencies/middleware are required.
-- [ ] Define system boundaries and output the API/Data contract in `openspec.md`.
+- [ ] Define system boundaries and output the API/Data contract in `<YYYY-MM-DD>_<slug>_openspec.md`.
 - [ ] Assess the "Blast Radius" of the proposed changes.
 - [ ] **Cognitive Check:** Review `.agents/skills/cognitive-bias-checklist/SKILL.md` to prevent Confirmation Bias or Anchoring Effect during design.
 - [ ] **Decision Check:** Use `.agents/skills/decision-frameworks/SKILL.md` when evaluating multiple architecture options.
-- [ ] **EPIC Splitter:** If the task is Scenario EPIC, MUST use `.agents/skills/task-decomposition-guide/SKILL.md` to break the design into actionable `tasks.md`.
-- [ ] **Spec Quality Check:** Ensure `openspec.md` passes the structural and clarity checks from `.agents/skills/spec-quality-checklist/SKILL.md` before submission.
-Output:
-- `openspec.md` (Must include an AC mapping section).
+- [ ] **EPIC Splitter:** If the task is Scenario EPIC, MUST use `.agents/skills/task-decomposition-guide/SKILL.md` to break the design into actionable `<YYYY-MM-DD>_<slug>_tasks.md`.
+- [ ] **Spec Quality Check:** Ensure `<YYYY-MM-DD>_<slug>_openspec.md` passes the structural and clarity checks from `.agents/skills/spec-quality-checklist/SKILL.md` before submission.
+**Outputs:**
+- `<YYYY-MM-DD>_<slug>_openspec.md` (Must include an AC mapping section).
 Gate:
 - Approval Gate (Requires human sign-off on the spec).
 
 ### Lead Engineer
-Purpose:
-- Translate the `openspec.md` into concrete, compilable code while strictly adhering to existing project paradigms.
-Executable Checklist:
-- [ ] Write code strictly within the boundaries of `focus_card.md`.
+**Primary Mission:**
+- Translate the `<YYYY-MM-DD>_<slug>_openspec.md` into concrete, compilable code while strictly adhering to existing project paradigms.
+**Behavior Checklist:**
+- [ ] Write code strictly within the boundaries of `<YYYY-MM-DD>_<slug>_focus_card.md`.
 - [ ] **Boundary Exception Protocol:** If out-of-scope files MUST be modified, DO NOT edit them directly. Output a `[Boundary Exception Request]` explaining why, and wait for human approval.
 - [ ] Prioritize reusing existing Utils, Base classes, and patterns over reinventing the wheel.
 - [ ] Ensure all exceptions are properly caught and handled (no swallowed exceptions).
@@ -77,7 +77,7 @@ Executable Checklist:
 - [ ] Challenge the "Happy Path" by identifying at least 2 overlooked Edge Cases.
 - [ ] Use 5-Why analysis from `.agents/skills/decision-frameworks/SKILL.md` to drill down on proposed solutions.
 Output:
-- Refutation notes or requested amendments to `openspec.md`.
+- Refutation notes or requested amendments to `<YYYY-MM-DD>_<slug>_openspec.md`.
 Gate:
 - `ambiguity_gate.py` / LLM peer-review.
 
@@ -87,7 +87,7 @@ Purpose:
 Executable Checklist:
 - [ ] **DEBUG Root Cause Check:** If diagnosing an issue, apply `5-Why Analysis` from `.agents/skills/decision-frameworks/SKILL.md` before making assumptions.
 Output:
-- `focus_card.md` (goal / non-goals / allowed scope / stop rules) OR an escalation card.
+- `<YYYY-MM-DD>_<slug>_focus_card.md` (goal / non-goals / allowed scope / stop rules) OR an escalation card.
 Gate:
 - `ambiguity_gate.py` + `focus_card_gate.py` (FAIL blocks progress).
 
@@ -95,7 +95,7 @@ Gate:
 Purpose:
 - Consolidate all knowledge extraction (Domain, API, Rules) during the Archive phase into a single structured output, preventing role competition.
 Executable Checklist:
-- [ ] Read `targeted git diff` or `openspec.md` (DO NOT read full history).
+- [ ] Read `targeted git diff` or `<YYYY-MM-DD>_<slug>_openspec.md` (DO NOT read full history).
 - [ ] Extract knowledge into a unified structured format categorizing `[Domain]`, `[Interface]`, and `[Rules]` changes.
 Output:
 - Unified WAL fragment containing Domain, API, and Rules updates.
@@ -128,7 +128,7 @@ Gate:
 Purpose:
 - Prevent attention drift and cross-domain edits not authorized by contract.
 Output:
-- Scope constraints in `focus_card.md`.
+- Scope constraints in `<YYYY-MM-DD>_<slug>_focus_card.md`.
 Gate:
 - `scope_guard.py` (FAIL if changed files exceed allowed scope).
 
