@@ -13,8 +13,9 @@
 - AGENTS.md
 
 ## Budgets
-- Wiki budget: 3 docs
-- Code budget: 8 files
+- Wiki budget: 3 docs (hard ceiling: 8)
+- Code budget: 8 files (hard ceiling: 20)
+- Web Search budget: 2 searches (hard ceiling: 6)
 - Stop-Wiki: 3 no-gain reads
 - Stop-Code: 2 non-converging reads
 

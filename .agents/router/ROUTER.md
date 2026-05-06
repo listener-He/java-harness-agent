@@ -159,7 +159,9 @@ For `Change` and `Audit` intents, uncontrolled exploration is forbidden.
 
 - Wiki budget: 3 documents
 - Code budget: 8 files
+- Web Search budget: 2 searches
 - Same-file pagination reads do NOT count.
+- Budgets auto-extend via the two-tier reward mechanism (see [CONTEXT_FUNNEL.md](CONTEXT_FUNNEL.md)). Hard ceilings: Wiki ≤ 8, Code ≤ 20, Web ≤ 6.
 - On budget exhaustion without meeting success criteria: file an Escalation Card (see [CONTEXT_FUNNEL.md](CONTEXT_FUNNEL.md)) and STOP.
 
 ### Rule 4: DocQA actionize is explicit opt-in (MUST)

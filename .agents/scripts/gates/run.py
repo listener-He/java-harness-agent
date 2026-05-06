@@ -212,6 +212,7 @@ def main() -> int:
         "date": args.date,
         "delivery_file": args.delivery_file,
         "changed_files": args.changed_files,
+        "task_id": task_id,
     }
     artifact_tags = _parse_artifact_tags(args.artifact_tags)
 

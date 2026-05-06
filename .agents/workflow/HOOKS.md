@@ -90,6 +90,14 @@ Read-only checks (do NOT modify files):
 - When `bypass_justification.md` is present for a specific gate failure: the runner downgrades FAIL to WARN, allowing the workflow to proceed.
 - Python gates should be treated as guidelines rather than absolute blockers if logic dictates otherwise. Use `WARN` instead of `FAIL` for stylistic mismatches.
 
+**Bypass Lifecycle (MUST):**
+- Every `bypass_justification.md` is valid ONLY for the current task (the task whose `focus_card.md` it references).
+- When the task's Archive phase completes, all bypass files for that task are stale and MUST NOT be reused for subsequent tasks.
+- A bypass file MUST include the header `task_id: <intent>:<profile>:<topic>:<date>` on its first line.
+- A bypass file MUST include the header `expires_after: Archive` on its second line.
+- If a gate detects a bypass file without these headers: downgrade FAIL to WARN as usual, but output a `STALE_BYPASS` warning in the gate report.
+- Stale bypass files (from completed tasks) remaining in `.agents/workflow/runs/` will be flagged by `bypass_audit_gate.py` during Archive.
+
 **Write-back policy (MUST):**
 - For PATCH and STANDARD: write-back is REQUIRED.
   - Domain WAL + API WAL + Rules WAL: always mandatory.
@@ -134,6 +142,16 @@ Usage: In Propose / Implement phases, if context is unstable or time has passed,
 - **Script retries cap (3):** Per task, each gate script can fail at most 3 times. On exceed: STOP and request human intervention.
 - **Retry state reset:** Auto-cleared when task ends (Archive) or process receives an interruption signal. Explicit reset: `run.py --end-task`.
 - **Persistence:** Update the `launch_spec.md` row to `FAILED` and write `Failed_Reason`.
+
+**Compound Failure Decision Matrix (MUST):**
+
+| Scenario | Action |
+|---|---|
+| QA → back to Implement, scope unchanged | Normal rollback. Re-execute Implement within existing Focus Card. |
+| QA → back to Implement, scope needs expansion | STOP. Output `[Boundary Exception Request]`. Do NOT re-enter Implement until human approves expanded scope. |
+| Same phase fails twice with same root cause | STOP. Escalate with root cause evidence. Do NOT attempt a 3rd fix without human input. |
+| Same phase fails twice with different root causes | STOP. The contract may be flawed. Roll back to Propose phase for contract amendment. |
+| Implement → compile failure (shift_left) | Fix and re-compile. MAX 2 RETRIES. If both fail → downgrade to Propose, re-evaluate API/Data contract feasibility. |
 
 ---
 

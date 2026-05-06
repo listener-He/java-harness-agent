@@ -8,9 +8,9 @@ Single entry point. Read this file first on every session start. All links here 
 
 | Constraint | Rule |
 |---|---|
-| **Context Bloat Prevention** | Prefer native Search Sub-Agents (e.g., Trae, Qoder, Claude Code, Gemini CLI, Codex) for codebase scanning. When dispatching tasks to Sub-Agents, you MUST format your prompt using [.agents/llm_wiki/schema/subagent_contract_schema.md](.agents/llm_wiki/schema/subagent_contract_schema.md). If unavailable, STRICTLY enforce Budget Limits (Wiki ≤ 3, Code ≤ 8) as the "Poor Man's Sub-Agent". Pagination doesn't count. |
-| **Reward Mechanism** | (Elastic extension) Output a `<Confidence_Assessment>` block explaining the specific missing concept/symbol to earn a budget reward (+2 wiki / +3 code) before hitting the hard stop (see [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)). |
-| **Budget exhausted** | STOP. File an Escalation Card (format in [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)). Do not guess paths or continue reading. |
+| **Context Bloat Prevention** | Prefer native Search Sub-Agents (e.g., Trae, Qoder, Claude Code, Gemini CLI, Codex) for codebase scanning. When dispatching tasks to Sub-Agents, you MUST format your prompt using [.agents/llm_wiki/schema/subagent_contract_schema.md](.agents/llm_wiki/schema/subagent_contract_schema.md). If unavailable, STRICTLY enforce Budget Limits (Wiki ≤ 3, Code ≤ 8, Web Search ≤ 2) as the "Poor Man's Sub-Agent". Pagination doesn't count. |
+| **Reward Mechanism** | Two-tier budget extension (see [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)): **Tier 1 — Auto-Extension (silent):** Budgets auto-extend when measurable progress triggers fire — no formal block required. Triggers include Progress Signal, Saturation Near-Miss, Wiki-Rot Bypass, and External Dependency. Grants +1~3 wiki / +2~3 code / +1~2 web search per trigger. **Tier 2 — Confidence_Assessment (explicit):** When auto-extensions are exhausted, output a `<Confidence_Assessment>` block explaining the missing concept to earn +2 wiki / +3 code / +2 web search. **Hard Ceilings:** Wiki ≤ 8, Code ≤ 20, Web Search ≤ 6 total. Hit any ceiling → escalate. |
+| **Budget exhausted** | STOP. File an Escalation Card (format in [CONTEXT_FUNNEL.md](.agents/router/CONTEXT_FUNNEL.md)). Do not guess paths or continue reading. Applies to all three budgets: Wiki, Code, and Web Search. |
 | **Approval Gate** | For MEDIUM/HIGH risk changes: STOP after creating the spec, set status to `WAITING_APPROVAL`, and wait for explicit human approval before writing any code. |
 | **Anti-loop** | Max 3 retries for scripts/linters. STRICT MAX 2 retries for compilation/RunCommand fixes. On exceed: STOP and ask human. Never infinite loop. |
 | **Scope Guard** | Do not modify files outside the agreed `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md` scope without explicit human permission. |
@@ -30,7 +30,7 @@ Before any action (reading files, searching, writing code), the Agent MUST outpu
 
 <Cognitive_Brake>
 - Role & Scope: As [@RoleX], my authorized file boundary is [<YYYY-MM-DD>_<slug>_focus_card.md / None]. Am I crossing it?
-- Budget & Context: Wiki reads: [X]/3, Code reads: [Y]/8. Do I need to Grep specific project standards/exceptions first?
+- Budget & Context: Wiki: [X]/3, Code: [Y]/8, Web: [Z]/2. Do I need to Grep specific project standards/exceptions first?
 - Architectural Defense: Is this a cross-domain/transactional change? Am I at a STOP gate like Approval or Validation?
 - Next State: What exact artifact, WAL, or validation command will I output/run right now?
 </Cognitive_Brake>
@@ -49,6 +49,9 @@ Before any action (reading files, searching, writing code), the Agent MUST outpu
 - You MUST explicitly declare any Phase transition using the `[Lifecycle: ...]` header.
 - The `[Mounted Role: ...]` MUST be derived from `.agents/workflow/ROLE_MATRIX.md` based on the current Phase.
 - These lines are the only required headers. Do not add verbose preamble before them.
+
+**Brake Snapshot (MUST at phase transitions):**
+At every lifecycle phase transition, the Agent MUST persist the current `<Cognitive_Brake>` block into `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_brake_snapshot.md`. This is a simple append-only log with a `## Phase: <PhaseName>` marker before each entry. The `brake_check_gate.py` script validates these snapshots for structural completeness.
 
 ---
 

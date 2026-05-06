@@ -21,9 +21,10 @@ No need to output a verbose preflight block to chat unless specifically requeste
 **Hard Limits:**
 - Wiki budget: 3 distinct wiki documents
 - Code budget: 8 distinct workspace files
+- Web Search budget: 2 distinct external searches (`web_search` / `fetch_url`)
 - Same-file pagination reads (different line ranges) do NOT consume additional budget.
 
-**Stop condition:** If any budget is hit, STOP reading and ask the human for guidance or permission to continue.
+**Stop condition:** If any budget is hit and no auto-extension trigger applies, escalate via Rule 5. See Rule 4.5 for Tier 1 auto-extension logic and Rule 4.6 for Tier 2.
 
 ### Rule 1: Start at the root (MUST)
 Context collection MUST begin by reading:
@@ -54,31 +55,88 @@ For `Change` intent, attempt to locate a correct in-repo example before broad re
 - **Integration point acquired**: a concrete usage example of the dependency (e.g., a `Provide/Template` call shape)
 - **Executable chain acquired**: a known-good call chain exists; remaining work is a mechanical extension
 
-#### 4.4 Stop-Wiki (Elastic) and Fallback to Code
+#### 4.4 Stop-Wiki and Stop-Code (Hard Stop Signals)
+
+These rules fire BEFORE auto-extension evaluation. If a hard stop fires, do not auto-extend — escalate immediately.
+
 **Wiki "no-gain" definition**: a wiki read did NOT add constraints that affect DB / API / permissions / flow and did NOT reduce rework risk.
+- If 3 consecutive wiki reads are "no-gain": hard stop — escalate.
+- **Wiki-Rot Fallback**: if the wiki appears outdated, contradictory, or lacks implementation details — STOP reading the wiki and shift to workspace code. Code is the ultimate source of truth. This may trigger a Wiki-Rot Bypass auto-extension (see 4.5).
 
-- If 3 consecutive wiki reads are "no-gain": SHOULD stop wiki navigation.
-- **Wiki-Rot Fallback**: if the wiki appears outdated, contradictory, or lacks implementation details — STOP reading the wiki and shift to workspace code. Code is the ultimate source of truth.
-- **Elastic Extension**: if close to a breakthrough, output a `<Confidence_Assessment>` explaining what specific concept is missing and what the next target is (e.g., `Next_Target: architecture/auth_flow.md`). This grants a +2 document budget extension before forcing a hard stop.
-
-#### 4.5 Stop-Code (Elastic)
-Code reading must shrink scope on each read.
-
+**Code scope shrink rule:**
 - After each code read, update the target file/class/method list — it MUST be smaller or more precise than before.
-- If scope does not shrink for 2 consecutive reads: SHOULD stop reading.
-- **Elastic Extension**: if following a specific call chain (e.g., tracking an interface to its implementation), output a `<Confidence_Assessment>` naming the exact symbol or file needed. This grants a +3 file budget extension before triggering the Escalation Protocol.
+- If scope does not shrink for 2 consecutive reads: hard stop — escalate.
+
+#### 4.5 Auto-Extension Triggers — Tier 1 (Silent, No Block Required)
+
+When the Agent is making measurable progress, budgets auto-extend without requiring a formal `<Confidence_Assessment>` block. The Agent evaluates these triggers after each budget-consuming read and silently increments the effective limit when one fires.
+
+| Trigger | Condition | Grant |
+|---|---|---|
+| **Progress Signal** | Agent has confirmed ≥ 3 distinct facts (with file/line evidence) AND is tracking a specific call chain, symbol trail, or domain concept. Fires once per budget category per session. | Wiki +1 / Code +2 / Web +1 |
+| **Saturation Near-Miss** | Agent has met 2 of the 3 saturation gates from Rule 4.3 (template / integration point / executable chain) and the 3rd gate has a concrete next target. Fires once per session. | Code +2 |
+| **Wiki-Rot Bypass** | Wiki is confirmed outdated or contradictory by workspace code evidence (not by assumption). Agent has already shifted to code as source of truth (Rule 4.4). Fires once per session. | Code +3 / Web +1 |
+| **External Dependency** | The code under investigation calls an external library, framework, or API whose contract/behavior is not documented in-repo and not inferrable from the current code budget. Fires once per session. | Web +2 |
+
+**Constraint:** Each trigger fires at most once per session. Auto-extensions are cumulative with Tier 2 extensions but MUST NOT exceed the Hard Ceilings:
+
+| Budget | Base | Max Auto | Max Tier 2 | Hard Ceiling |
+|---|---|---|---|---|
+| Wiki | 3 | +3 | +2 | 8 |
+| Code | 8 | +7 | +5 | 20 |
+| Web Search | 2 | +2 | +2 | 6 |
+
+#### 4.6 Confidence_Assessment — Tier 2 (Explicit Block)
+
+When auto-extension triggers are exhausted or do not apply, and the Agent is close to a breakthrough, it MAY output a `<Confidence_Assessment>` block to request additional budget.
+
+**Format:**
+```xml
+<Confidence_Assessment>
+- Consumed: wiki X/3, code Y/8, web Z/2
+- Auto-extensions used: [list which Tier 1 triggers have fired, or "none"]
+- Missing concept: [specific concept / symbol / file — not a vague category]
+- Next target: [exact file path, symbol name, or search query]
+- Why blocking: [one sentence]
+</Confidence_Assessment>
+```
+
+**Grant per block:** +2 wiki / +3 code / +2 web search (each can be requested independently — only include the budget(s) you need).
+**Constraint:** Tier 2 can fire at most once per budget category per session. Hard Ceilings still apply.
+
+#### 4.7 Web Search Budget — Rules
+
+Web Search (`web_search`, `fetch_url`) is a distinct budget category for external information not available in-repo.
+
+**Counting Rules:**
+- One unit per distinct `web_search` or `fetch_url` call, regardless of result count.
+- Follow-up searches on the same domain/topic within the same investigation thread count as new units.
+
+**When to use Web Search:**
+- External dependency contract/behavior not documented in-repo (may auto-trigger External Dependency grant).
+- Upstream library changelog / migration guide for dependency upgrade (Scenario E).
+- Reference implementation or algorithm documentation for performance tuning (Scenario D).
+- Security vulnerability database lookup when `secrets_linter.py` flags a dependency.
+
+**When NOT to use Web Search:**
+- Information likely available in the workspace wiki or code.
+- General "research" without a specific, named target.
+- As a substitute for reading in-repo documentation.
+
+**Hard Ceiling:** 6 total (base 2 + Tier 1 max 2 + Tier 2 max 2). Hit ceiling → escalate.
 
 ### Rule 5: Escalation Protocol (MUST)
 If budgets are exhausted OR stop rules trigger without meeting success criteria, request human help — do NOT continue reading.
 
 #### 5.1 Escalation Card Format (Required)
 ```
-- Consumed: wiki X/3, code Y/8
+- Consumed: wiki X/(3+A), code Y/(8+B), web Z/(2+C)  [A,B,C = auto-extensions granted]
+- Auto-extensions used: [list triggers fired, or "none"]
 - Confirmed facts: (≤ 5 bullets)
 - Missing info: (≤ 2 bullets — must be specific)
 - Why blocking: (one sentence)
-- Proposed next targets: (≤ 5 file paths or keywords)
-- Request: wiki +1 OR code +2 (small step)
+- Proposed next targets: (≤ 5 file paths, keywords, or search queries)
+- Request (small step): wiki +1 / code +2 / web +1
 - Fallback if still missing: pick one of:
     - Ask 1 critical question
     - Request a concrete anchor (class / table / entrypoint) from human

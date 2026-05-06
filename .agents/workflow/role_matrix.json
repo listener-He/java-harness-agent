@@ -7,6 +7,10 @@
       ],
       "gates": [
         {
+          "script": ".agents/scripts/gates/consistency_gate.py",
+          "args": []
+        },
+        {
           "script": ".agents/scripts/gates/ambiguity_gate.py",
           "args": [
             "--intent",
@@ -24,7 +28,8 @@
     },
     "focus_guard": {
       "artifacts_required": [
-        ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md"
+        ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md",
+        ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_brake_snapshot.md"
       ],
       "gates": [
         {
@@ -34,6 +39,13 @@
             ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md",
             "--files",
             "{changed_files}"
+          ]
+        },
+        {
+          "script": ".agents/scripts/gates/brake_check_gate.py",
+          "args": [
+            "--snapshot",
+            ".agents/workflow/runs/{date}_{topic}_brake_snapshot.md"
           ]
         }
       ]
@@ -169,6 +181,13 @@
     },
     "knowledge_extractor": {
       "gates": [
+        {
+          "script": ".agents/scripts/gates/bypass_audit_gate.py",
+          "args": [
+            "--task-id",
+            "{task_id}"
+          ]
+        },
         {
           "script": ".agents/scripts/gates/writeback_gate.py",
           "args": [
