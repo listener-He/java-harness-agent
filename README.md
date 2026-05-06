@@ -27,7 +27,7 @@ Unlike traditional Agent frameworks that act as bloated "Macro-kernels," Java Ha
 - **System Calls = Tool Use**: Traps into the kernel via system calls, authenticated by the Role Matrix.
 - **File System = RAG & Wiki**: Mounted on demand, burned after use.
 
-**Java Harness Agent** is an agent-driven backend engineering workflow designed for sustainable software evolution. It deeply integrates **Cognitive Philosophy** (counter-intuitive bias checks, first-principles thinking) and pioneers a **Dual-Track Flow** with a **4-Level Risk Matrix**. Driven by 15 high-density Master Skills, it completely eliminates "runaway code" and "architecture rot" common in traditional Agent development.
+**Java Harness Agent** is an agent-driven backend engineering workflow designed for sustainable software evolution. It deeply integrates **Cognitive Philosophy** (counter-intuitive bias checks, first-principles thinking) and pioneers a **Dual-Track Flow** with a **4-Level Risk Matrix**. Driven by a rich ecosystem of high-density Master Skills, it completely eliminates "runaway code" and "architecture rot" common in traditional Agent development.
 
 ## 📖 Overview
 
@@ -40,7 +40,7 @@ Unlike traditional Agent frameworks that act as bloated "Macro-kernels," Java Ha
 - 🛤️ **Dual-Track & 4-Level Risk Matrix**: Differentiates between TRIVIAL (Fast-path), LOW (PATCH track), and MEDIUM/HIGH (STANDARD full 6-phase), abandoning one-size-fits-all cumbersome processes.
 - 📚 **Microkernel Knowledge Graph**: Completely discards the "black box" of vector databases, utilizing a pure Markdown hierarchical mounting system to ensure 100% context determinism.
 - 🛡️ **Self-Correcting & Gating**: Automatic guard hooks, failure recovery, and mandatory human-in-the-loop checkpoints (Approval Gate).
-- 🔌 **15 Master Skills Ecosystem**: Refined from 30 fragmented, bloated skills down to 15 high-density, scenario-specific core engineering disciplines.
+- 🔌 **Rich Skill Ecosystem**: Organized across 6 categories (Defaults, Role-Required, Business, Engineering Pipeline, Java Standards, QA & Debugging, Workflow, Meta), covering every lifecycle phase.
 
 ---
 
@@ -88,7 +88,6 @@ The Agent is not an isolated "full-stack LLM," but a hardcore virtual team of 13
 * **@Lead Engineer**: "The contract is the law. I only implement `openspec.md`." (Weapon: `javac` Furnace of Truth)
 * **@Focus Guard**: "Your hands reach too far! Pull back inside the Focus Card ward!" (Weapon: `scope_guard.py` Ruler of Discipline)
 * **@Code Reviewer**: "Magic Numbers? N+1 query risks? Rewrite this filthy code!" (Weapon: `Static Linter` Light of Purification)
-* **@Security Sentinel**: "Warning. Hardcoded Secret Key detected. Executing forced meltdown." (Weapon: `secrets_linter.py` Death Ray)
 
 #### 📜 Phase 6: Archive (Memory Persistence)
 * **@Knowledge Extractor (Silent Historian)**: "Empires fall, but History (WAL) is eternal." (Weapon: `writeback_gate.py` Judgment of History)
@@ -102,62 +101,62 @@ The Agent is not an isolated "full-stack LLM," but a hardcore virtual team of 13
 ### System Architecture Diagram
 
 ```mermaid
-flowchart TB
-    subgraph Input["📥 End-User Input"]
-        User[👤 User Request]
-        Shortcut["⚡ Fast Syscall<br/>@read/@patch/@standard"]
+graph TD
+    subgraph Input["End-User Input"]
+        User["User Request"]
+        Shortcut["Fast Syscall: read/patch/standard"]
     end
-    
-    subgraph Kernel["🎯 Kernel Router (Gateway)"]
-        IG[Intent Gateway<br/>Parser & Anti-Bias]
-        Risk{4-Level Risk Matrix}
-        TRIVIAL[TRIVIAL<br/>Fast Path]
-        LOW[LOW<br/>PATCH Track]
-        MEDHIGH[MEDIUM / HIGH<br/>STANDARD Track]
+
+    subgraph Kernel["Kernel Router - Gateway"]
+        IG["Intent Gateway: Parser and Anti-Bias"]
+        Risk{"4-Level Risk Matrix"}
+        TRIVIAL["TRIVIAL: Fast Path"]
+        LOW["LOW: PATCH Track"]
+        MEDHIGH["MEDIUM / HIGH: STANDARD Track"]
     end
-    
-    subgraph Context["🔍 Virtual Memory (Context)"]
-        DirectRead[Register Read<br/>Explicit Scope]
-        Funnel[Page Table Funnel<br/>Sitemap→Index]
-        Budget[OOM Killer<br/>Wiki≤3, Code≤8]
+
+    subgraph Context["Virtual Memory - Context"]
+        DirectRead["Register Read: Explicit Scope"]
+        Funnel["Page Table Funnel: Sitemap to Index"]
+        Budget["OOM Killer: Wiki<=3, Code<=8"]
     end
-    
-    subgraph Knowledge["🧠 File System (RAG/Disk)"]
-        KG[KNOWLEDGE_GRAPH.md<br/>Mount Root]
-        DomainIndex["Partitions<br/>api/data/domain"]
-        Archive[Cold Backup<br/>Archive]
+
+    subgraph Knowledge["File System - RAG/Disk"]
+        KG["KNOWLEDGE_GRAPH.md: Mount Root"]
+        DomainIndex["Partitions: api / data / domain"]
+        Archive["Cold Backup: Archive"]
     end
-    
-    subgraph Lifecycle["⚙️ Process Scheduler"]
-        LaunchSpec[PCB<br/>Launch Spec]
-        Phase1[1_Explorer<br/>Clarify & Decompose]
-        Phase2[2_Propose<br/>Freeze Contract]
-        Phase3[3_Review<br/>Cognitive Critique]
-        ApprovalGate[Kernel Switch<br/>Approval Gate]
-        Phase4[4_Implement<br/>Atomic Execution]
-        Phase5[5_QA<br/>3D Testing]
-        Phase6[6_Archive<br/>WAL Write-back & GC]
+
+    subgraph Lifecycle["Process Scheduler"]
+        LaunchSpec["PCB: Launch Spec"]
+        Phase1["1_Explorer: Clarify and Decompose"]
+        Phase2["2_Propose: Freeze Contract"]
+        Phase3["3_Review: Cognitive Critique"]
+        ApprovalGate["Kernel Switch: Approval Gate"]
+        Phase4["4_Implement: Atomic Execution"]
+        Phase5["5_QA: 3D Testing"]
+        Phase6["6_Archive: WAL Write-back and GC"]
     end
-    
-    subgraph Roles["🎭 Privilege Rings (Ring 0/3)"]
-        SysArchitect[System Architect<br/>Arch Auth]
-        FocusGuard[Focus Guard<br/>Segfault Guard]
-        DocCurator[Doc Curator<br/>FS Write Auth]
+
+    subgraph Roles["Privilege Rings - Ring 0/3"]
+        SysArchitect["System Architect: Arch Auth"]
+        FocusGuard["Focus Guard: Segfault Guard"]
+        DocCurator["Doc Curator: FS Write Auth"]
     end
-    
+
     Input --> IG
     IG --> Risk
     Risk -->|TRIVIAL| TRIVIAL
     Risk -->|LOW| LOW
     Risk -->|MEDIUM/HIGH| MEDHIGH
-    
+
     TRIVIAL --> DirectRead
     LOW --> LaunchSpec
     MEDHIGH --> LaunchSpec
-    
+
     DirectRead --> Funnel
     Funnel --> Budget
-    
+
     LaunchSpec --> Phase1
     Phase1 --> Phase2
     Phase2 --> Phase3
@@ -200,27 +199,44 @@ No more one-size-fits-all red tape. The framework assesses tasks at the Kernel e
 
 ---
 
-## 🔧 15 Master Skills Ecosystem
+## 🔧 Skill Ecosystem
 
-To resolve "skill bloat" and context confusion, the original 30 fragmented skills have been forged into 15 high-density Master Skills, strictly mounted by lifecycle phase:
+The skill ecosystem is organized across multiple categories, each mounted by lifecycle phase and role requirements. Skills are stored under `.agents/skills/` with `trae-skill-index` serving as the global routing table.
 
-### Core Master Skills
+### Default Enabled Skills (Auto-Invoked)
 
-1. **`cognitive-bias-checklist`**: **The Core Brain**. Provides anti-bias checks to prevent AI hallucination and short-sightedness.
-2. **`decision-frameworks`**: Employs 5-Whys root cause analysis and structural decision frameworks.
-3. **`task-decomposition-guide`**: Agile decomposition master. Enforces INVEST criteria and Vertical Slicing.
-4. **`spec-quality-checklist`**: Validates the rigor and completeness of OpenSpec contracts.
-5. **`java-architecture-standards`**: Backend red lines (Layering, POJO models, Anti-corruption layers).
-6. **`java-coding-style`**: Code aesthetics. Enforces Google/Sun standards and defensive functional programming.
-7. **`java-testing-standards`**: 3D testing rule (Happy Path, Exception Path, Edge Cases).
-8. **`mybatis-sql-standard`**: DB Guard. Includes 8 standard audit columns check and Anti-JOIN rules.
-9. **`wal-documentation-rules`**: WAL File System. Standardizes write-backs for API/DB changes to prevent knowledge loss.
-10. **`code-review-checklist`**: Standardizes code review process, ensuring security and maintainability.
-11. **`devops-bug-fix`**: Systematic debugging and issue resolution protocol.
-12. **`linter-severity-standard`**: Defines rules for linting severity and code quality gates.
-13. **`product-manager-expert`**: Bridges the gap between technical implementation and business requirements.
-14. **`skill-graph-manager`**: Orchestrates and manages relationships between various agent skills.
-15. **`trae-skill-index`**: The global routing table for skills.
+| Skill | Phase | Primary Role |
+|---|---|---|
+| `brainstorming` | Explorer / Propose | Requirement Engineer |
+| `task-decomposition-guide` | Propose / Review | System Architect |
+| `writing-plans` | Propose / Implement | System Architect / Lead Engineer |
+| `systematic-debugging` | Implement / QA | Lead Engineer / Code Reviewer |
+| `test-driven-development` | Implement | Lead Engineer |
+| `verify` | QA / Archive | Code Reviewer / Knowledge Extractor |
+| `code-review-checklist` | QA | Code Reviewer |
+| `wal-documentation-rules` | Archive | Knowledge Extractor |
+| `skill-graph-manager` | Any (skills change) | Skill Graph Curator |
+| `java-architecture-standards` | Propose / Implement | System Architect / Lead Engineer |
+| `java-coding-style` | Implement | Lead Engineer |
+| `java-testing-standards` | QA | Code Reviewer |
+| `mybatis-sql-standard` | Propose / Implement | System Architect / Lead Engineer |
+
+### Role-Required Skills (Explicitly Mounted)
+
+| Skill | Required By |
+|---|---|
+| `cognitive-bias-checklist` | Requirement Engineer, System Architect, Devil's Advocate |
+| `spec-quality-checklist` | Requirement Engineer, System Architect, Documentation Curator |
+| `decision-frameworks` | System Architect, Devil's Advocate, Ambiguity Gatekeeper |
+| `linter-severity-standard` | Code Reviewer |
+
+### Engineering Pipeline Skills
+
+`ai-pipeline`, `blueprint`, `architecture-decision-records`, `eval-harness`, `external-research`, `self-improve`, `ai-slop-cleaner`
+
+### Workflow & Collaboration Skills
+
+`dispatching-parallel-agents`, `using-git-worktrees`, `release`, `deepinit`, `remember`
 
 ---
 
@@ -262,8 +278,9 @@ Use explicit commands to force the framework into a specific track:
 |-----------|--------------|--------|-------------|
 | **Cognitive_Brake** | Before any action | Forces LLM reasoning (roles, boundaries, bias reflection) | **Kernel Privilege Check** |
 | **pre_hook** | Before new phase | Load rules + output preflight | **Context Switch** |
-| **guard_hook** | During code edit | Blocks style/auth violations immediately | **Memory Segfault Guard** |
+| **guard_hook** | During code edit | Blocks style/auth violations immediately; runs `secrets_linter.py` | **Memory Segfault Guard** |
 | **Approval Gate** | After Review | Freezes contract, waits for human | **User-to-Kernel Switch** |
+| **shift_left_hook** | After code written | Forces autonomous compile check (`javac` / `mvn compile`); max 2 retries | **Build Sanity Check** |
 | **Archive Write-back** | Task end | Appends stable specs to Wiki Index (WAL) | **fsync (Dirty Page Write)** |
 
 ---

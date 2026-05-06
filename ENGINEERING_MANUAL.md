@@ -9,7 +9,7 @@
 [![Language](https://img.shields.io/badge/language-English-green.svg)](README.md)
 [![中文版](https://img.shields.io/badge/中文版-available-red.svg)](ENGINEERING_MANUAL_zh.md)
 
-**Microkernel • Dual-Track • 13 Roles • 15 Skills • 6 Hooks • Pure Markdown RAG FS**
+**Microkernel • Dual-Track • 13 Roles • Skills Ecosystem • 6 Hooks • Pure Markdown RAG FS**
 
 </div>
 
@@ -33,7 +33,7 @@
 4. [13 Dynamic Roles Matrix Detailed](#4-13-dynamic-roles-matrix-detailed)
 5. [Interrupts & 6 Hooks Sequence](#5-interrupts--6-hooks-sequence)
 6. [Pure Markdown File System & WAL](#6-pure-markdown-file-system--wal)
-7. [15 Master Skills Ecosystem](#7-15-master-skills-ecosystem)
+7. [Skills Ecosystem](#7-skills-ecosystem)
 8. [Scripts Manifest (Syscalls)](#8-scripts-manifest-syscalls)
 9. [Troubleshooting & Degradation](#9-troubleshooting--degradation)
 
@@ -45,27 +45,27 @@ The entire system consists of four core modules: Gateway, Scheduler, Executor, a
 
 ```mermaid
 graph TD
-    User((Human Developer)) -->|Natural Language/Shortcut| Gateway[Intent Gateway]
-    
-    subgraph Agent Microkernel Scheduler
-        Gateway -->|Classification & Risk| Matrix{4-Level Risk Matrix}
+    User((Human Developer)) -->|Natural Language / Shortcut| Gateway[Intent Gateway]
+
+    subgraph Scheduler [Agent Microkernel Scheduler]
+        Gateway -->|Classification and Risk| Matrix{4-Level Risk Matrix}
         Matrix -->|TRIVIAL / LOW| PatchTrack[PATCH Fast-Track]
         Matrix -->|MEDIUM / HIGH| StandardTrack[STANDARD Track]
         Matrix -->|Read-Only| LearnTrack[LEARN / DocQA Track]
     end
-    
-    subgraph Dynamic Mounting Area
+
+    subgraph Mounting [Dynamic Mounting Area]
         StandardTrack --> Roles[13 Roles Matrix]
-        StandardTrack --> Skills[15 Master Skills]
+        StandardTrack --> Skills[Skills Ecosystem]
         StandardTrack --> Hooks[6 Hooks]
     end
-    
-    subgraph Virtual RAG File System
+
+    subgraph RAG_FS [Virtual RAG File System]
         Roles -->|Read Context| KGraph[KNOWLEDGE_GRAPH.md]
         Roles -->|Write Persistence| WAL[WAL Fragments]
         WAL -->|GC Defragmentation| KGraph
     end
-    
+
     PatchTrack --> CodeBase[(Workspace Code)]
     Roles -->|Syscalls / Scripts| CodeBase
     LearnTrack --> KGraph
@@ -88,29 +88,29 @@ When the Agent receives user input, the first step MUST be an `[Intent Check]` t
 Once an intent is confirmed, the system routes the task into two completely different tracks based on the **4-Level Risk Matrix**. Below is the detailed operational flow of these two tracks and the corresponding "Heroes" involved.
 
 ```mermaid
-flowchart TD
-    A((User Input)) -->|"Parse Intent"| B{Gateway Risk Rating}
-    
-    subgraph PATCH Track Lightweight & Fast
-        B -->|"TRIVIAL"| C[Skip Explore & Design]
-        B -->|"LOW"| D[@Ambiguity Gatekeeper draws Focus Card]
-        C --> E[@Lead Engineer Fast Coding]
+graph TD
+    A((User Input)) -->|Parse Intent| B{Gateway Risk Rating}
+
+    subgraph PATCH [PATCH Track - Lightweight and Fast]
+        B -->|TRIVIAL| C[Skip Explore and Design]
+        B -->|LOW| D[Ambiguity Gatekeeper draws Focus Card]
+        C --> E[Lead Engineer Fast Coding]
         D --> E
-        E --> F[@Code Reviewer Code Audit]
-        F --> G[@Knowledge Extractor logs Drift WAL]
+        E --> F[Code Reviewer Code Audit]
+        F --> G[Knowledge Extractor logs Drift WAL]
     end
-    
-    subgraph STANDARD Track Heavy Architecture
-        B -->|"MEDIUM Contract"| H[@Requirement Engineer Clarifies]
-        B -->|"HIGH Epic"| H
-        H --> I[@System Architect outputs openspec.md]
-        I --> J[@Devil's Advocate Destructive Review]
+
+    subgraph STANDARD [STANDARD Track - Heavy Architecture]
+        B -->|MEDIUM Contract| H[Requirement Engineer Clarifies]
+        B -->|HIGH Epic| H
+        H --> I[System Architect outputs openspec.md]
+        I --> J[Devil's Advocate Destructive Review]
         J --> K((Approval Gate HITL))
         K -->|Rejected| I
-        K -->|Approved| L[@Lead Engineer strictly codes by Contract]
-        L --> M[@Focus Guard watches for boundaries]
-        L --> N[@Security Sentinel Security Scan]
-        N --> O[@Knowledge Extractor & @Documentation Curator writes back to Graph]
+        K -->|Approved| L[Lead Engineer strictly codes by Contract]
+        L --> M[Focus Guard watches for boundaries]
+        L --> N[Security Sentinel Security Scan]
+        N --> O[Knowledge Extractor and Documentation Curator writes back to Graph]
     end
 ```
 
@@ -148,54 +148,22 @@ flowchart TD
 In the STANDARD track, tasks MUST pass through a strict 6-phase one-way state machine. Any failure (triggering `fail_hook`) rolls back to the previous phase. In this chapter, we thoroughly dismantle the internal details of every single phase: what skills are mounted, which heroes execute them, and what gates are triggered.
 
 ```mermaid
-stateDiagram-v2
-    [*] --> 1_Explorer: Trigger STANDARD Task
-    
-    state 1_Explorer {
-        direction LR
-        a1(Clarify Requirements) --> a2(Draw Boundaries)
-    }
-    
-    1_Explorer --> 2_Propose: "ambiguity_gate.py PASS"
-    
-    state 2_Propose {
-        direction LR
-        b1(Design API Contract) --> b2(Design DB Schema)
-    }
-    
-    2_Propose --> 3_Review: "Output openspec.md"
-    
-    state 3_Review {
-        direction LR
-        c1(Hunt Confirmation Bias) --> c2(Hunt Unhandled Exceptions)
-    }
-    
-    3_Review --> 4_Approval_Gate: "Internal Critique Complete"
-    3_Review --> 2_Propose: "Fatal Flaw Found (Rollback)"
-    
-    state 4_Approval_Gate {
-        [*] --> WAITING_APPROVAL
-        WAITING_APPROVAL --> Human Confirms Continue: "Human Input"
-    }
-    
-    4_Approval_Gate --> 5_Implement: "Contract Absolutely Frozen"
-    
-    state 5_Implement {
-        direction LR
-        d1(Reuse Existing Utils) --> d2(Strict Coding)
-    }
-    
-    5_Implement --> 6_QA_Archive: "scope_guard.py Boundary PASS"
-    
-    6_QA_Archive --> 5_Implement: "shift_left_hook Compile Fail (Max 2 Rollbacks)"
-    
-    state 6_QA_Archive {
-        direction LR
-        e1(Execute Linter) --> e2(Security Scan)
-        e2 --> e3(Extract WAL Fragments)
-    }
-    
-    6_QA_Archive --> [*]: "writeback_gate.py PASS, Task Complete"
+graph TD
+    Start([Start]) --> Phase1[1_Explorer: Clarify Requirements and Draw Boundaries]
+
+    Phase1 -->|ambiguity_gate.py PASS| Phase2[2_Propose: Design API Contract and DB Schema]
+
+    Phase2 -->|Output openspec.md| Phase3[3_Review: Hunt Confirmation Bias and Unhandled Exceptions]
+
+    Phase3 -->|Internal Critique Complete| Gate4[4_Approval_Gate: WAITING_APPROVAL]
+    Phase3 -->|Fatal Flaw Found - Rollback| Phase2
+
+    Gate4 -->|Human Confirms: Continue| Phase5[5_Implement: Reuse Existing Utils then Strict Coding]
+
+    Phase5 -->|scope_guard.py Boundary PASS| Phase6[6_QA_Archive: Linter then Security Scan then Extract WAL]
+
+    Phase6 -->|writeback_gate.py PASS| End([Task Complete])
+    Phase6 -->|shift_left_hook Compile Fail - Max 2 Rollbacks| Phase5
 ```
 
 ### 🔍 Phase 1: Explorer (Explore & Clarify Requirements)
@@ -249,12 +217,12 @@ stateDiagram-v2
 - **Gate Interception**: Triggers the highly critical `shift_left_hook`. After coding, the LLM **MUST autonomously execute** `javac` or `mvn compile` in the terminal. If it fails, 2 retries are permitted. If it still fails after 2 attempts, the highest system alarm is triggered, the task fails, and human help is called.
 
 ### 📚 Phase 6: QA & Archive (Testing, Scanning, & Knowledge Immortality)
-- **Heroes on Stage**: `@Code Reviewer`, `@Security Sentinel`, `@Knowledge Extractor`, `@Documentation Curator`, `@Skill Graph Curator`
+- **Heroes on Stage**: `@Code Reviewer`, `@Knowledge Extractor`, `@Documentation Curator`, `@Skill Graph Curator`
 - **Mounted Skills**:
   - `code-review-checklist` (Checks for N+1 query risks, etc.)
   - `wal-documentation-rules` (Standardizes knowledge fragment extraction)
 - **Specific Execution Steps**:
-  1. **Code Physical**: Runs `secrets_linter.py` to scan for leaked AWS keys or passwords.
+  1. **Code Physical**: Runs `secrets_linter.py` to scan for leaked AWS keys or passwords (via `guard_hook`).
   2. **Knowledge Distillation**: The Historian steps up. Refusing to re-read long chat logs, he scans the final `git diff` directly, extracts the true domain concepts and API changes, and writes them into `YYYYMMDD_feature_wal.md`.
   3. **Doc Update**: The Curator steps up, updating `README.md` and Javadocs, insisting on writing "Why" instead of "What."
   4. **Knowledge Transfer**: Moves the original `openspec.md` into cold storage at `.agents/llm_wiki/archive/`.
@@ -360,6 +328,8 @@ Below is the Hero Roster for this team. Each hero has their own alignment, uniqu
 - **Hero's Monologue**:
   "I have no emotions, and I do not reason. My sole purpose is to prevent humans or LLMs from making incredibly stupid security mistakes. The moment I sniff an AWS Access Key or a hardcoded password in the code, I sound the alarm and trigger a forced meltdown (FAIL). Don't beg me; it's useless."
 
+> **Note (v2)**: The Security Sentinel role has been demoted from Phase Mounting in STANDARD workflow. `secrets_linter.py` now runs as a fixed `guard_hook` step on every code change. The role definition is retained for Scenario A (Emergency Hotfix) explicit invocation.
+
 ---
 
 ### 📜 Phase 6: Archive (Archiving & Memory Persistence)
@@ -430,16 +400,16 @@ sequenceDiagram
     participant Hook as Hook Engine
     participant Gate as Python Gate Scripts
     participant Human as Human Developer
-    
+
     Note over Agent: Preparing to enter Implement Phase
     Agent->>Hook: Trigger pre_hook
-    Hook-->>Agent: Inject defensive programming rules & budget limits
-    
+    Hook-->>Agent: Inject defensive programming rules and budget limits
+
     Agent->>Agent: Execute coding actions
     Agent->>Hook: Trigger guard_hook
-    Hook->>Gate: Run scope_guard.py
+    Hook->>Gate: Run scope_guard.py and secrets_linter.py
     Gate-->>Agent: Verify boundaries against focus_card.md
-    
+
     Note over Agent: Coding complete, ready to notify user
     Agent->>Hook: Trigger shift_left_hook (CRITICAL)
     Hook->>Agent: Force autonomous javac / mvn compile
@@ -447,10 +417,10 @@ sequenceDiagram
         Agent->>Agent: Self-heal (trigger fail_hook, max 2 retries)
     else Compilation Succeeds
         Agent->>Hook: Trigger post_hook
-        Hook->>Gate: Run code standards & security scans
+        Hook->>Gate: Run code standards and security scans
         Gate-->>Agent: PASS
     end
-    
+
     Agent->>Hook: Trigger loop_hook
     Hook-->>Agent: Read queue, proceed to next Intent
 ```
@@ -468,44 +438,54 @@ To completely eliminate LLM "Context OOM" and "Vector Retrieval (RAG) Hallucinat
 ### 6.2 WAL & GC Flowchart
 
 ```mermaid
-flowchart TD
-    A[QA Phase Complete] --> B[@Knowledge Extractor Scans Git Diff]
+graph TD
+    A[QA Phase Complete] --> B[Knowledge Extractor Scans Git Diff]
     B --> C[Extract Structured Knowledge]
-    C --> D{Categorize & Write WAL}
-    
-    D -->|"API Change"| E[.agents/llm_wiki/wiki/api/wal/xxx.md]
-    D -->|"DB Change"| F[.agents/llm_wiki/wiki/data/wal/xxx.md]
-    D -->|"Arch Change"| G[.agents/llm_wiki/wiki/architecture/wal/xxx.md]
-    
-    H[Human inputs @gc] --> I[Awaken @Librarian]
-    I --> J[Read & Merge all WAL fragments]
-    J --> K[Overwrite main Index.md & Domain Graphs]
+    C --> D{Categorize and Write WAL}
+
+    D -->|API Change| E[.agents/llm_wiki/wiki/api/wal/xxx.md]
+    D -->|DB Change| F[.agents/llm_wiki/wiki/data/wal/xxx.md]
+    D -->|Arch Change| G[.agents/llm_wiki/wiki/architecture/wal/xxx.md]
+
+    H[Human inputs @gc] --> I[Awaken Librarian]
+    I --> J[Read and Merge all WAL fragments]
+    J --> K[Overwrite main Index.md and Domain Graphs]
     K --> L[Clean up old WAL fragments]
 ```
 
 ---
 
-## 7. 15 Master Skills Ecosystem
+## 7. Skills Ecosystem
 
-Traditional Agent Prompts are often a mess. This project distills engineering discipline into 15 highly precise "System Calls" located in `.agents/skills/`:
+Traditional Agent Prompts are often a mess. This project distills engineering discipline into a multi-category skill system, stored under `.agents/skills/` with `trae-skill-index` as the global routing table.
+
+### 7.1 Default Enabled Skills (Auto-Invoked by Lifecycle Phase)
 
 | Category | Skill Name | Core Purpose & Hard Rules | Trigger Timing |
 |---|---|---|---|
-| **🧠 Cognitive Defense** | `cognitive-bias-checklist` | Forces overcoming Confirmation Bias and Halo Effect. Requires 5-Whys root cause analysis. | Before arch decisions/troubleshooting |
-| **🧠 Cognitive Defense** | `decision-frameworks` | First Principles analysis, architectural trade-off evaluation. | Propose phase |
-| **🏗 Arch & Design** | `java-architecture-standards` | Forbids cross-layer calls (e.g., Controller to Mapper). Enforces POJO standards. | Before coding, during Review |
-| **🏗 Arch & Design** | `task-decomposition-guide` | Agile Breakdown Master using INVEST principles. Slices massive features into independent tasks. | EPIC tasks, Propose phase |
-| **🏗 Arch & Design** | `spec-quality-checklist` | Audits structural integrity and executability of `openspec.md`. | Before HITL submission |
-| **💾 Data Guard** | `mybatis-sql-standard` | Enforces 8 audit columns. Forbids physical JOINs of 3+ tables. Bans `SELECT *`. | Designing DB / Writing SQL |
-| **💻 Code & Test** | `java-coding-style` | Merges Google/Sun standards. Enforces defensive programming (null checks, bounds checks). | Implement phase |
-| **💻 Code & Test** | `java-testing-standards` | 3D Testing rules: Happy Path, Exception Branches, Edge Cases. | QA phase |
-| **💻 Code & Test** | `code-review-checklist` | Tech-Lead level review: N+1 risks, memory leaks, SOLID violations. | Review & QA phase |
-| **💻 Code & Test** | `linter-severity-standard` | Unifies severity determinations for Python gate interceptions (FAIL vs WARN). | After running gate scripts |
-| **🛠 Ops & Process** | `devops-bug-fix` | Standardized troubleshooting: Reproduce -> Locate -> Fix -> Prevent. | DEBUG scenarios |
-| **🛠 Ops & Process** | `product-manager-expert` | Requirement analysis and boundary scoping. Eliminates ambiguous words. | Explorer phase |
-| **📚 Graph & Knowledge** | `wal-documentation-rules` | Standardizes WAL fragment format to ensure API/DB changes are permanently recorded. | Archive phase |
-| **📚 Graph & Knowledge** | `skill-graph-manager` | Maintains dependency and consistency among skills. | When skills are added/modified |
-| **📚 Graph & Knowledge** | `trae-skill-index` | Master routing table. Agents use this to decide which specific skill to mount. | Global routing |
+| **Cognitive Defense** | `cognitive-bias-checklist` | Forces overcoming Confirmation Bias and Halo Effect. Requires 5-Whys root cause analysis. | Before arch decisions/troubleshooting |
+| **Cognitive Defense** | `decision-frameworks` | First Principles analysis, architectural trade-off evaluation. | Propose phase |
+| **Arch & Design** | `java-architecture-standards` | Forbids cross-layer calls (e.g., Controller to Mapper). Enforces POJO standards. | Before coding, during Review |
+| **Arch & Design** | `task-decomposition-guide` | Agile Breakdown Master using INVEST principles. Slices massive features into independent tasks. | EPIC tasks, Propose phase |
+| **Arch & Design** | `spec-quality-checklist` | Audits structural integrity and executability of `openspec.md`. | Before HITL submission |
+| **Data Guard** | `mybatis-sql-standard` | Enforces 8 audit columns. Forbids physical JOINs of 3+ tables. Bans `SELECT *`. | Designing DB / Writing SQL |
+| **Code & Test** | `java-coding-style` | Merges Google/Sun standards. Enforces defensive programming (null checks, bounds checks). | Implement phase |
+| **Code & Test** | `java-testing-standards` | 3D Testing rules: Happy Path, Exception Branches, Edge Cases. | QA phase |
+| **Code & Test** | `code-review-checklist` | Tech-Lead level review: N+1 risks, memory leaks, SOLID violations. | Review & QA phase |
+| **Code & Test** | `linter-severity-standard` | Unifies severity determinations for Python gate interceptions (FAIL vs WARN). | After running gate scripts |
+| **Ops & Process** | `systematic-debugging` | Standardized troubleshooting: Reproduce -> Locate -> Fix -> Prevent. | DEBUG scenarios |
+| **Ops & Process** | `product-manager-expert` | Requirement analysis and boundary scoping. Eliminates ambiguous words. | Explorer phase |
+| **Graph & Knowledge** | `wal-documentation-rules` | Standardizes WAL fragment format to ensure API/DB changes are permanently recorded. | Archive phase |
+| **Graph & Knowledge** | `skill-graph-manager` | Maintains dependency and consistency among skills. | When skills are added/modified |
+| **Graph & Knowledge** | `trae-skill-index` | Master routing table. Agents use this to decide which specific skill to mount. | Global routing |
+
+### 7.2 Engineering Pipeline Skills
+
+Designed for AI-driven engineering workflows: `ai-pipeline`, `blueprint`, `architecture-decision-records`, `eval-harness`, `external-research`, `self-improve`, `ai-slop-cleaner`
+
+### 7.3 Workflow & Collaboration Skills
+
+Git worktrees, parallel agents, releases, and knowledge persistence: `dispatching-parallel-agents`, `using-git-worktrees`, `release`, `deepinit`, `remember`, `writing-plans`, `brainstorming`, `verify`, `test-driven-development`, `ultraqa`, `skill-creator`
 
 ---
 
@@ -517,7 +497,7 @@ The Agent's rigor relies on underlying Python scripts. These act as "Privileged 
 *All Gate scripts return exit codes (0 for PASS, non-0 for FAIL).*
 - `ambiguity_gate.py`: Intercepts vague requirements. Triggered post-Explorer.
 - `scope_guard.py`: Validates if `git diff` exceeds `focus_card.md` boundaries. Triggered post-Implement.
-- `secrets_linter.py`: Scans for hardcoded passwords/keys. Triggered in QA (especially emergency patches).
+- `secrets_linter.py`: Scans for hardcoded passwords/keys. Triggered via `guard_hook` on every code change (especially emergency patches).
 - `writeback_gate.py`: Validates if Archive generated WAL fragments correctly (Must contain Domain/API/Rules).
 - `migration_gate.py`: Scans DDL statements for DBA compliance. Forced in Scenario B.
 - `api_breaking_gate.py`: Scans public API changes; FAILS if no migration guide exists. Scenario C.
