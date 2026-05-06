@@ -18,7 +18,7 @@ One-way state machine with hard gates and rollback rules.
 | Profile | Flow | Approval Gate | Spec Required |
 |---|---|---|---|
 | LEARN | Read-only; no launch spec, no lifecycle, no write-back | No | No |
-| PATCH | `(TRIVIAL)` `Implement(Grep Check) → QA(Soft Interrupt?) → Archive(Drift)`<br>`(LOW)` `Explorer → Implement → QA(Soft Interrupt?) → Archive` | No | TRIVIAL: None<br>LOW: Slim Spec |
+| PATCH | `(TRIVIAL)` `Implement(Grep Check) → QA(Soft Interrupt?) → Archive(Drift)`<br>`(LOW)` `Implement → QA(Soft Interrupt?) → Archive` | No | TRIVIAL: None<br>LOW: Slim Spec |
 | STANDARD | `Explorer → Propose → Review → [GATE] → Implement → QA → Archive` | Yes (MEDIUM/HIGH) | Full `<YYYY-MM-DD>_<slug>_openspec.md` |
 
 ---
@@ -83,13 +83,13 @@ One-way state machine with hard gates and rollback rules.
 | HIGH | DB schema/index changes; auth/permission strategy; error code system changes; cross-domain changes; shared utilities; unclear or large blast radius | MUST use `STANDARD` profile. MUST stop at `WAITING_APPROVAL`. Triggers strict Python gates (e.g., `migration_gate.py`). |
 | MEDIUM | New or changed external APIs; core business path changes without DB/auth foundation changes | MUST use `STANDARD` profile. MUST stop at `WAITING_APPROVAL`. |
 | LOW | Small bugfixes with clear blast radius; logic tweaks within a single domain | Uses `PATCH` profile. Requires Slim Spec. **QA Guard:** If no unit tests cover the change, MUST trigger a Soft Interrupt (display Diff to human). |
-| TRIVIAL | Docs only; pure renames/formatting; adding comments; fixing typos | Uses `PATCH` profile. No Spec required. **Impact Guard:** MUST perform a global `Grep` before renaming/changing to ensure no hidden dependencies. **Archive Guard:** MUST write a 1-line summary to `drift_queue` before exit. |
+| TRIVIAL | Docs only; pure renames/formatting; adding comments; fixing typos; 纯防御性/纠正性代码（null check、参数校验、错误码修正、日志补充）且 ≤1 文件、无 API/DB 变更 | Uses `PATCH` profile. No Spec required. **Impact Guard:** MUST perform a global `Grep` before renaming/changing to ensure no hidden dependencies. **Archive Guard:** MUST write a 1-line summary to `drift_queue` before exit. |
 
 ---
 
 ### Phase 4: Implement
 
-**Mounted Roles:** `@Lead Engineer`, `@Focus Guard`, `@Security Sentinel`
+**Mounted Roles:** `@Lead Engineer`, `@Focus Guard`
 **Skills:** `java-architecture-standards`, `java-coding-style`
 
 **Actions:**
@@ -116,10 +116,16 @@ One-way state machine with hard gates and rollback rules.
 
 ### Phase 6: Archive
 
-**Mounted Roles:** `@Knowledge Extractor`, `@Documentation Curator`, `@Delivery Capsule Curator`, `@Skill Graph Curator`, `@Librarian`
-**Purpose:** Close the loop and prevent knowledge bloat. Execute seamlessly in the **same session**. Rely on targeted `git diff <files>` or `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` to summarize changes, strictly avoiding re-reading heavy coding history. Follow `ARCHIVE_WAL.md` to move the spec to `.agents/llm_wiki/archive/<YYYY-MM-DD>_<slug>_openspec.md`.
+**Profile-differentiated behavior:**
 
-**Steps (in order):**
+| Profile | Mounted Roles | Actions |
+|---|---|---|
+| **PATCH** | (no mounted roles) | 1. Move `<YYYY-MM-DD>_<slug>_openspec.md` to `../llm_wiki/archive/`. 2. Write 1-line changelog to `.agents/events/drift_queue/`. 3. Ask human for 1–10 rating; extract preferences. |
+| **STANDARD** | `@Knowledge Extractor`, `@Documentation Curator` | Full WAL write-back (Domain + API + Rules; Data if schema change). Follow steps 1–7 below. |
+
+**On-demand roles:** `@Skill Graph Curator` (仅本次涉及 skill 创建/修改时挂载), `@Librarian` (仅显式 `@gc` / `@librarian` 触发)
+
+**STANDARD Steps (in order):**
 1. Sync docs via `wal-documentation-rules` skill.
 2. Extract stable knowledge into wiki indexes via the reverse funnel in `../router/CONTEXT_FUNNEL.md`.
 3. Move the original spec into `../llm_wiki/archive/`.

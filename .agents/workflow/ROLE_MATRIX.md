@@ -112,6 +112,8 @@ Output:
 Gate:
 - `secrets_linter.py` (default FAIL on high-confidence hits).
 
+**Note (v2):** 此角色已从 Phase Mounting 中移除。`secrets_linter.py` 改为 `guard_hook` 固定步骤执行，不再需要独立角色挂载。保留此角色定义供 Scenario A (Emergency Hotfix) 显式引用。
+
 ### Documentation Curator
 Purpose:
 - Update user-facing docs, READMEs, API endpoints, or Javadocs reflecting the new changes.
@@ -176,17 +178,16 @@ Gate:
 ## 2) Mounting Rules (By Intent/Profile/Phase)
 
 ### Change / PATCH
-- Explorer: `@Ambiguity Gatekeeper`
-- Implement: `@Focus Guard` + `@Security Sentinel`
+- Implement: `@Focus Guard`
 - QA: `@Code Reviewer`
-- Archive: `@Knowledge Extractor`
+- Archive: (no mounted roles — move spec to archive, write drift_queue entry; WAL deferred to milestone)
 
 ### Change / STANDARD
 - Explorer: `@Requirement Engineer`
-- Propose/Review: `@System Architect` + `@Devil's Advocate`
-- Implement: `@Lead Engineer` + `@Focus Guard` + `@Security Sentinel`
+- Propose/Review: `@System Architect` (可选加载 `cognitive-bias-checklist` skill 做 self-critique; `@Devil's Advocate` 保留为非强制角色)
+- Implement: `@Lead Engineer` + `@Focus Guard`
 - QA: `@Code Reviewer`
-- Archive: `@Knowledge Extractor` + `@Documentation Curator` + `@Delivery Capsule Curator` + `@Skill Graph Curator` + `@Librarian`
+- Archive: `@Knowledge Extractor` + `@Documentation Curator` (按需: `@Skill Graph Curator`、`@Librarian`)
 
 ## 3) LLM Cognitive Execution Protocol (MUST)
 

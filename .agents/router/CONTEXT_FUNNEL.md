@@ -152,7 +152,11 @@ Set the intent row in `launch_spec_*.md` to `WAITING_APPROVAL`. Include a link t
 
 Write-back eligibility is defined in [ROUTER.md](ROUTER.md) (by profile and flags).
 
-**Protocol:**
+**Profile split:**
+- **PATCH**: No WAL write-back. Move openspec to `archive/` and write drift_queue entry only. Wiki refresh is deferred to milestone or `@wiki-update`.
+- **STANDARD**: Full WAL write-back as described below.
+
+**Protocol (STANDARD only):**
 1. Read [KNOWLEDGE_GRAPH.md](../llm_wiki/KNOWLEDGE_GRAPH.md) to find the correct mount point.
 2. Do NOT edit shared `index.md` files directly.
 3. Write a WAL fragment into the target domain `wal/` directory.

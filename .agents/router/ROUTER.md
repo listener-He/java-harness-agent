@@ -22,6 +22,7 @@ If the user supplies an explicit shortcut, it MUST override automatic routing.
 | `@patch` / `@quickfix` | PATCH (small change / bugfix) |
 | `@standard` | STANDARD (full lifecycle) |
 | `@gc` / `@librarian` | STANDARD (Forced role: `@Librarian`, triggers WAL Compaction) |
+| `@wiki-update` / `@milestone` | STANDARD (Forced role: `@Knowledge Extractor`, triggers full wiki refresh from recent specs) |
 
 ### Shortcut DSL (Composable)
 
@@ -82,7 +83,7 @@ If the user supplies an explicit shortcut, it MUST override automatic routing.
 | Profile | When to use | Launch spec | Write-back | Approval Gate |
 |---|---|---|---|---|
 | **LEARN** | Understand / explain code | No | No | No |
-| **PATCH** | Small change, LOW risk bugfix | No | Required (WAL) | No |
+| **PATCH** | Small change, LOW risk bugfix | No | No (spec archive only) | No |
 | **STANDARD** | MEDIUM/HIGH risk or wide blast radius | Yes | Required (WAL) | Yes (MEDIUM/HIGH) |
 
 ### LEARN
@@ -93,8 +94,9 @@ If the user supplies an explicit shortcut, it MUST override automatic routing.
 - Minimal artifacts: Slim Spec or Change Log + objective verification evidence.
 - No `Propose → Review → Approval` chain.
 - Hooks still apply.
-- Archive write-back is REQUIRED: Domain WAL + API WAL + Rules WAL at minimum.
-- Abbreviated flow: `1_Explorer → 4_Implement → 5_QA → 6_Archive`
+- Archive: move openspec to `archive/` + write 1-line changelog to `drift_queue`. No Domain/API/Rules WAL required (wiki refresh deferred to milestone or `@wiki-update`).
+- Abbreviated flow (LOW): `4_Implement → 5_QA → 6_Archive` (需求澄清下沉到 Implement 的 Cognitive Brake)
+- Abbreviated flow (TRIVIAL): `4_Implement → 5_QA → 6_Archive`
 
 ### STANDARD
 - Full lifecycle: Explorer → Propose → Review → Approval Gate → Implement → QA → Archive.
@@ -149,7 +151,7 @@ Required sequence:
 3. If no specialist skill can be identified: consult [trae-skill-index](../skills/trae-skill-index/SKILL.md)
 
 ### Rule 3: Change intent → profile by risk
-- TRIVIAL → Profile `PATCH` (No Spec needed, No Approval Gate needed). Direct fast-path: `Implement -> QA -> Archive`. (For typos, format, comments)
+- TRIVIAL → Profile `PATCH` (No Spec needed, No Approval Gate needed). Direct fast-path: `Implement -> QA -> Archive`. (满足 ALL 条件: ≤1 文件; 无 API 签名变更; 无 DB schema 变更; 无新依赖; 纯防御性/纠正性代码如 null check、参数校验、错误码修正、日志补充、注释、格式化、拼写修正)
 - LOW → Profile `PATCH` (Slim Spec allowed, NO Approval Gate needed). Direct fast-path: `Explorer -> Implement -> QA -> Archive`.
 - MEDIUM → Profile `STANDARD` (full schema + Approval Gate)
 - HIGH → Profile `STANDARD` (full schema + Approval Gate + Strict Security/Migration Gates)

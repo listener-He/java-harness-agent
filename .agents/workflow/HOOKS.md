@@ -38,6 +38,7 @@ Defines when and how to enforce constraints throughout the lifecycle.
 - **Anti-runaway guard (MUST):** Enforce budgeted navigation + stop rules + escalation protocol (see `../router/CONTEXT_FUNNEL.md`).
 - **Anti-drift guard (MUST):** Maintain a `Focus Card` and enforce scope via `scope_guard.py` (see `../workflow/ROLE_MATRIX.md`).
 - **Fast-Path Impact Guard:** For `TRIVIAL` tasks bypassing `Explorer`, the Agent MUST execute a global `Grep` or `SearchCodebase` to ensure the variable/method being renamed or modified has no hidden or hardcoded dependencies (e.g., XML mappings, reflection).
+- **Secrets Scan (MUST):** 每次代码变更后执行 `python3 .agents/scripts/gates/secrets_linter.py --paths "<changed_files>"`。FAIL 时阻断流程（已从 `@Security Sentinel` 角色降级为 hook 步骤）。
 
 ---
 
@@ -99,10 +100,14 @@ Read-only checks (do NOT modify files):
 - Stale bypass files (from completed tasks) remaining in `.agents/workflow/runs/` will be flagged by `bypass_audit_gate.py` during Archive.
 
 **Write-back policy (MUST):**
-- For PATCH and STANDARD: write-back is REQUIRED.
+- For **STANDARD**: full write-back is REQUIRED.
   - Domain WAL + API WAL + Rules WAL: always mandatory.
   - Data WAL: mandatory when schema/DDL changes.
-- The Agent MUST NOT mark a change as "done" if write-back gates fail.
+- For **PATCH**: WAL write-back is NOT required.
+  - Move openspec to `../llm_wiki/archive/`.
+  - Write 1-line changelog to `.agents/events/drift_queue/`.
+  - Wiki refresh is deferred to milestone boundaries or explicit `@wiki-update` command.
+- The Agent MUST NOT mark a STANDARD change as "done" if write-back gates fail.
 
 **Optional audit report:**
 ```
