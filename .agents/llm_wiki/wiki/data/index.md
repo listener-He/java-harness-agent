@@ -23,3 +23,18 @@ Append a new row during `Archive` using the template below.
 ```
 
 Anti-bloat rule: if this index grows beyond 50 tables, you MUST split by module (example: `auth_tables.md`, `trade_tables.md`) and keep only top-level links here.
+
+
+---
+
+## WAL Compaction - data - 2026-05-06 15:26:56
+
+
+### 20260424_mingsi_skills_analysis.md
+
+# Mingsi-skills Analysis WAL
+
+- **Date**: 2026-04-24
+- **Domain**: External AI Agent Skills / Prompt Engineering
+- **Concept**: Analyzed `https://github.com/qingjian0/mingsi-skills`
+- **Key Findings**: Mingsi is a structured thinking framework for AI. It uses Complexity Scaling (L1-L3), Critical Thinking (Cognitive Bias Checks), Pragmatism (Assess before thinking), and Closed-loop validation (Quality Gates).

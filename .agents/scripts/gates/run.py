@@ -138,8 +138,13 @@ def _should_run_gate(script: str, rendered_args: list[str], verify_level: str, a
         return False, "skip by verify-level=quick"
 
     # 2) Artifact-based filtering
-    if base == "delivery_capsule_gate.py" and not ctx.get("delivery_file"):
-        return False, "skip: delivery file not provided"
+    if base == "delivery_capsule_gate.py":
+        try:
+            idx = rendered_args.index("--file")
+            if idx + 1 >= len(rendered_args) or not rendered_args[idx + 1].strip():
+                return False, "skip: delivery file not provided"
+        except ValueError:
+            return False, "skip: delivery file not provided"
 
     if base == "writeback_gate.py" and artifact_tags:
         req_types = []
@@ -158,6 +163,10 @@ def _should_run_gate(script: str, rendered_args: list[str], verify_level: str, a
     }
     if base in scenario_gates and scenario_gates[base] not in artifact_tags:
         return False, f"skip: requires artifact-tag '{scenario_gates[base]}'"
+
+    # 3.5) Sub-agent delegation gates: only run when delegation is actually used
+    if base == "subagent_contract_gate.py" and "subagent" not in artifact_tags:
+        return False, "skip: requires artifact-tag 'subagent'"
 
     # 4) Strict mode runs mounted gates as-is
     return True, ""

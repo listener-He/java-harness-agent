@@ -96,17 +96,18 @@ One-way state machine with hard gates and rollback rules.
 1. Execute the `<Cognitive_Brake>` template to establish boundaries (transactional layers, existing exceptions/validations) BEFORE coding.
 2. Implement strictly according to the approved contract. Follow Checkstyle and defensive programming. No uncontrolled improvisation.
 3. Create new tables/schemas only in the WAL data domain (`wiki/data/wal/`), not as root `.sql` scripts.
-4. **STOP (Yield):** Once code is written, you MUST STOP and ask the human for permission to proceed to Phase 5 (QA Test). Do not auto-continue into heavy compilation.
+4. Trigger `shift_left_hook` to ensure basic build/compile sanity (no heavy test suite here).
+5. **STOP (Yield):** After shift-left compile passes, ask the human for permission to proceed to Phase 5 (QA Test).
 
 ---
 
 ### Phase 5: QA Test
 
-**Mounted Roles:** `@Code Reviewer`, `@Documentation Curator`
+**Mounted Roles:** `@Code Reviewer`
 **Skills:** `java-testing-standards`, `code-review-checklist`
 
 **Actions:**
-1. Trigger `shift_left_hook`: Autonomously execute `javac` or Maven/Gradle build commands. Fix all compilation errors (`javax` vs `jakarta`, missing imports).
+1. If shift-left compile was not executed in Phase 4 (or code changed since), trigger `shift_left_hook` to ensure compile sanity before running tests.
 2. Run tests and produce objective evidence (logs, test output, screenshots).
 
 **Failure rule:** If QA fails → roll back to Phase 4. **STRICT MAX RETRIES: 2.** If tests or compilation fail more than 2 times, STOP immediately and ask the human for help. Do not enter an infinite fixing loop.
@@ -115,16 +116,15 @@ One-way state machine with hard gates and rollback rules.
 
 ### Phase 6: Archive
 
-**Mounted Roles:** `@Knowledge Extractor`, `@Documentation Curator`, `@Skill Graph Curator`
+**Mounted Roles:** `@Knowledge Extractor`, `@Documentation Curator`, `@Delivery Capsule Curator`, `@Skill Graph Curator`, `@Librarian`
 **Purpose:** Close the loop and prevent knowledge bloat. Execute seamlessly in the **same session**. Rely on targeted `git diff <files>` or `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` to summarize changes, strictly avoiding re-reading heavy coding history. Follow `ARCHIVE_WAL.md` to move the spec to `.agents/llm_wiki/archive/<YYYY-MM-DD>_<slug>_openspec.md`.
 
 **Steps (in order):**
 1. Sync docs via `wal-documentation-rules` skill.
 2. Extract stable knowledge into wiki indexes via the reverse funnel in `../router/CONTEXT_FUNNEL.md`.
 3. Move the original spec into `../llm_wiki/archive/`.
-4. Trigger WAL Compaction: `python3 .agents/scripts/wiki/compactor.py`
-   - If target `index.md` < 400 lines: append/merge WAL fragments.
-   - If target `index.md` ≥ 400 lines: compactor sets `NEEDS_REFACTOR`. Mount the `Knowledge Architect` role to split the bloated index, update routing links, and pass `wiki_linter.py` before continuing.
+4. Optional (explicit only): Trigger WAL Compaction (e.g., `@gc` / `@librarian`) via `python3 .agents/scripts/wiki/compactor.py`.
+   - Default behavior is WAL-first: write fragments and let a human or explicit librarian run merge them in a low-conflict window.
 5. Process Drift Events: read `.agents/events/drift_queue/` (if events exist), validate discrepancies, generate WAL fragments to heal the wiki.
 6. Ask the human for a 1–10 rating. Extract preferences (rating ≥ 8) or anti-patterns (rating ≤ 5) into `../llm_wiki/wiki/preferences/index.md`.
 7. Re-read the launch spec and dispatch the next `PENDING` / `IN_PROGRESS` intent (loop until queue is empty).

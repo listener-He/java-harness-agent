@@ -30,7 +30,7 @@ EVERY public element MUST have Javadoc. Do not use single-line `//` for structur
 **Class-Level Javadoc (Required for all Controllers, Services, Entities):**
 ```java
 /**
- * 一句话描述该类的核心作用 (One-line description)
+ * One-line description of the class responsibility
  *
  * @author HeHui
  * @date 2026-03-31
@@ -40,10 +40,10 @@ EVERY public element MUST have Javadoc. Do not use single-line `//` for structur
 **Method-Level Javadoc (Required for all public methods):**
 ```java
 /**
- * 方法功能描述 (Method description)
+ * Method description
  *
- * @param request    请求入参描述
- * @param accessUser 当前登录用户上下文
+ * @param request    Request payload description
+ * @param accessUser Current logged-in user context
  *
  * @return {@link ApiResponse}<{@link Void}>
  */
@@ -52,12 +52,12 @@ EVERY public element MUST have Javadoc. Do not use single-line `//` for structur
 **Field-Level Javadoc (Required for ALL Entity/DTO/VO fields):**
 ```java
 /**
- * 账户状态 0停用 1正常 (Must explain enum/dictionary values)
+ * Account status: 0=disabled, 1=active (Must explain enum/dictionary values)
  */
 private Integer accountStatus;
 ```
 
-**Inline Comments:** Use `// 1. 步骤说明` to divide complex logic blocks inside methods.
+**Inline Comments:** Use `// 1. Step description` to divide complex logic blocks inside methods.
 
 ---
 

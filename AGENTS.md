@@ -15,7 +15,7 @@ Single entry point. Read this file first on every session start. All links here 
 | **Anti-loop** | Max 3 retries for scripts/linters. STRICT MAX 2 retries for compilation/RunCommand fixes. On exceed: STOP and ask human. Never infinite loop. |
 | **Scope Guard** | Do not modify files outside the agreed `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md` scope without explicit human permission. |
 | **Artifact Paths** | ALL runtime artifacts (e.g., `<YYYY-MM-DD>_<slug>_openspec.md`, `<YYYY-MM-DD>_<slug>_focus_card.md`) MUST be generated in `.agents/workflow/runs/` with a prefix combining the date and a business/scenario slug. Never generate them in the root directory. Follow `ARCHIVE_WAL.md` during Archive phase to move them. |
-| **Exit Gate (Archive)** | Before yielding the final response to the human, you MUST output an `[Lifecycle: Archive]` block, move `<YYYY-MM-DD>_<slug>_openspec.md` to `.agents/llm_wiki/archive/`, and write WAL fragments for any new API, Domain, or Logic changed. NEVER say you are done without writing the WAL. |
+| **Exit Gate (Archive)** | For any task where write-back is enabled (PATCH/STANDARD): before yielding the final response, you MUST output an `[Lifecycle: Archive]` block, move `<YYYY-MM-DD>_<slug>_openspec.md` to `.agents/llm_wiki/archive/` (if it exists), and write WAL fragments for any new API/Domain/Rules changed. For LEARN/Audit (read-only): output an `[Lifecycle: Archive]` block with “no write-back artifacts” and do not force WAL. |
 | **Task Checklist** | Before entering `Execute` phase, you MUST create `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_current_task.md` with `[ ] Write-back to wiki (WAL)` as the last item to track progress. |
 
 ---

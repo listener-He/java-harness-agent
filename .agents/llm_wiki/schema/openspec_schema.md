@@ -3,8 +3,9 @@
 This is the required contract format for Phase 2 (Propose).
 
 Rules:
-- The proposal document MUST be stored under `.agents/llm_wiki/wiki/specs/`.
-- After creating it, you MUST add a link + 1–2 line summary into `.agents/llm_wiki/wiki/specs/index.md`.
+- During an active workflow, the proposal document MUST be stored under `.agents/workflow/runs/` as `<YYYY-MM-DD>_<slug>_openspec.md`.
+- During `Archive`, the Agent MUST move `<YYYY-MM-DD>_<slug>_openspec.md` into `.agents/llm_wiki/archive/` to keep the wiki stable and reduce merge conflicts.
+- Optional curation: humans (or an explicit librarian run) may later link archived specs from the wiki. Do NOT edit shared wiki indexes as part of normal execution unless explicitly requested.
 
 ---
 

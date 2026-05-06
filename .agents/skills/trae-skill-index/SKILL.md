@@ -9,11 +9,52 @@ Root node of the Skill Knowledge Graph. Navigate here to find the appropriate sp
 
 ---
 
-## 0. Entry & Routing
+## 0. Default Enabled Set
 
-| Skill | Purpose |
+Default Enabled means: preferred for automatic invocation and daily workflow. Everything else is opt-in unless a mounted role checklist requires it.
+
+| Skill | Lifecycle Phase(s) | Primary Role |
+|---|---|---|
+| [brainstorming](../brainstorming/SKILL.md) | Explorer / Propose | Requirement Engineer |
+| [task-decomposition-guide](../task-decomposition-guide/SKILL.md) | Propose / Review | System Architect |
+| [writing-plans](../writing-plans/SKILL.md) | Propose / Implement | System Architect / Lead Engineer |
+| [systematic-debugging](../systematic-debugging/SKILL.md) | Implement / QA | Lead Engineer / Code Reviewer |
+| [test-driven-development](../test-driven-development/SKILL.md) | Implement | Lead Engineer |
+| [verify](../verify/SKILL.md) | QA / Archive | Code Reviewer / Knowledge Extractor |
+| [code-review-checklist](../code-review-checklist/SKILL.md) | QA | Code Reviewer |
+| [wal-documentation-rules](../wal-documentation-rules/SKILL.md) | Archive | Knowledge Extractor |
+| [skill-graph-manager](../skill-graph-manager/SKILL.md) | Any (skills change) | Skill Graph Curator |
+| [java-architecture-standards](../java-architecture-standards/SKILL.md) | Propose / Implement | System Architect / Lead Engineer |
+| [java-coding-style](../java-coding-style/SKILL.md) | Implement | Lead Engineer |
+| [java-testing-standards](../java-testing-standards/SKILL.md) | QA | Code Reviewer |
+| [mybatis-sql-standard](../mybatis-sql-standard/SKILL.md) | Propose / Implement | System Architect / Lead Engineer |
+
+---
+
+## 0.1 Role-Required (Not Default Enabled)
+
+These are invoked because mounted roles explicitly require them (see `.agents/workflow/ROLE_MATRIX.md`).
+
+| Skill | Required By Roles |
 |---|---|
-| [intent-gateway](../intent-gateway/SKILL.md) | Routes any natural-language request into the correct intent and lifecycle profile. Start every new task here. |
+| [cognitive-bias-checklist](../cognitive-bias-checklist/SKILL.md) | Requirement Engineer, System Architect, Devil's Advocate |
+| [spec-quality-checklist](../spec-quality-checklist/SKILL.md) | Requirement Engineer, System Architect, Documentation Curator |
+| [decision-frameworks](../decision-frameworks/SKILL.md) | System Architect, Devil's Advocate, Ambiguity Gatekeeper |
+| [linter-severity-standard](../linter-severity-standard/SKILL.md) | Code Reviewer |
+
+---
+
+## 0.2 Lifecycle Phase Map (Change / STANDARD)
+
+This is the “happy path” routing aligned with mounted roles.
+
+| Phase | Mounted Role(s) | Skills |
+|---|---|---|
+| Explorer | Requirement Engineer | brainstorming → (cognitive-bias-checklist) → (spec-quality-checklist) |
+| Propose / Review | System Architect + Devil's Advocate | task-decomposition-guide → decision-frameworks → (cognitive-bias-checklist) → (spec-quality-checklist) |
+| Implement | Lead Engineer + Focus Guard | writing-plans → java-architecture-standards/java-coding-style/mybatis-sql-standard → systematic-debugging/test-driven-development |
+| QA | Code Reviewer | code-review-checklist → java-testing-standards → verify/ultraqa |
+| Archive | Knowledge Extractor | wal-documentation-rules → verify (evidence summary) |
 
 ---
 
@@ -26,18 +67,17 @@ Root node of the Skill Knowledge Graph. Navigate here to find the appropriate sp
 
 ---
 
-## 2. DevOps Lifecycle
+## 2. Engineering Pipeline
 
 | Skill | Purpose |
 |---|---|
-| [devops-lifecycle-master](../devops-lifecycle-master/SKILL.md) | **MANDATORY** master orchestration skill. Invoke at the start of any feature, design, or bugfix task. |
-| [devops-requirements-analysis](../devops-requirements-analysis/SKILL.md) | PDD & SDD phase — requirements analysis. |
-| [devops-system-design](../devops-system-design/SKILL.md) | System architecture & data modeling (FDD & SDD). |
-| [devops-task-planning](../devops-task-planning/SKILL.md) | Task breakdown and planning. |
-| [devops-testing-standard](../devops-testing-standard/SKILL.md) | TDD phase — testing standards and evidence requirements. |
-| [devops-feature-implementation](../devops-feature-implementation/SKILL.md) | Phase 4 — feature code implementation. |
-| [devops-review-and-refactor](../devops-review-and-refactor/SKILL.md) | Code review and safe feature modification. |
-| [devops-bug-fix](../devops-bug-fix/SKILL.md) | Structured bug diagnosis, reproduction, fix, and verification. |
+| [ai-pipeline](../ai-pipeline/SKILL.md) | End-to-end AI engineering pipeline orchestrator (blueprint → decisions → eval → improve → cleanup). |
+| [blueprint](../blueprint/SKILL.md) | Convert a goal into an executable step plan with dependency awareness. |
+| [architecture-decision-records](../architecture-decision-records/SKILL.md) | Capture architecture decisions as ADR documents. |
+| [eval-harness](../eval-harness/SKILL.md) | Evaluation-driven development harness: pass/fail criteria and regression suites. |
+| [external-research](../external-research/SKILL.md) | Inject actionable improvements via external research when stuck. |
+| [self-improve](../self-improve/SKILL.md) | Tournament-style improvement loop until baseline passes. |
+| [ai-slop-cleaner](../ai-slop-cleaner/SKILL.md) | Regression-safe cleanup of AI-generated code without behavior change. |
 
 ---
 
@@ -45,7 +85,6 @@ Root node of the Skill Knowledge Graph. Navigate here to find the appropriate sp
 
 | Skill | Purpose |
 |---|---|
-| [global-backend-standards](../global-backend-standards/SKILL.md) | **MASTER index** for all backend code generation. Invoke before writing any Java/Spring/MyBatis code. |
 | [java-architecture-standards](../java-architecture-standards/SKILL.md) | MANDATORY MASTER skill for Java backend architecture, API design, and engineering rules. |
 | [java-coding-style](../java-coding-style/SKILL.md) | MANDATORY MASTER skill for Java coding style, strict Javadoc templates, utility class boundaries, and functional programming patterns. |
 | [java-testing-standards](../java-testing-standards/SKILL.md) | MANDATORY MASTER skill for Java Testing & QA, test isolation, mock guidelines, and the 3-scenario coverage rule. |
@@ -53,24 +92,42 @@ Root node of the Skill Knowledge Graph. Navigate here to find the appropriate sp
 
 ---
 
-## 4. Utilities & Checklists
+## 4. QA, Debugging & Review
 
 | Skill | Purpose |
 |---|---|
+| [brainstorming](../brainstorming/SKILL.md) | Explore intent, requirements, and design before any creative work. |
+| [systematic-debugging](../systematic-debugging/SKILL.md) | Systematic investigation before proposing fixes. |
+| [test-driven-development](../test-driven-development/SKILL.md) | Write tests first, then implement; enforce 3-scenario coverage. |
+| [ultraqa](../ultraqa/SKILL.md) | Test → verify → fix → repeat QA loop until acceptance passes. |
+| [verify](../verify/SKILL.md) | Verification-before-completion: evidence-driven validation. |
 | [code-review-checklist](../code-review-checklist/SKILL.md) | **MANDATORY** code review checklist — run before every code delivery. |
 | [cognitive-bias-checklist](../cognitive-bias-checklist/SKILL.md) | Cognitive bias checklist for deep analysis and architectural design. |
 | [decision-frameworks](../decision-frameworks/SKILL.md) | Decision frameworks (SWOT, 5-Why, Decision Matrix) for complex scenarios. |
 | [spec-quality-checklist](../spec-quality-checklist/SKILL.md) | Flexible quality gate checklist for AI self-correction on docs/specs. |
 | [wal-documentation-rules](../wal-documentation-rules/SKILL.md) | MANDATORY documentation capture during the Archive phase (API and Database). |
 | [linter-severity-standard](../linter-severity-standard/SKILL.md) | Linter severity levels (FAIL / WARN / IGNORE) and bypass justification protocol. |
-| [aliyun-oss](../aliyun-oss/SKILL.md) | OSS object storage module usage. |
 
 ---
 
-## 5. Meta Skills
+## 5. Workflow & Collaboration
 
 | Skill | Purpose |
 |---|---|
+| [dispatching-parallel-agents](../dispatching-parallel-agents/SKILL.md) | Dispatch parallel agents for independent tasks. |
+| [using-git-worktrees](../using-git-worktrees/SKILL.md) | Use git worktrees for isolated development. |
+| [writing-plans](../writing-plans/SKILL.md) | Write an implementation plan before coding. |
+| [release](../release/SKILL.md) | Analyze repo release rules and guide release steps. |
+| [deepinit](../deepinit/SKILL.md) | Deep initialization: generate layered AGENTS-style docs for a repo. |
+| [remember](../remember/SKILL.md) | Extract and persist reusable project knowledge. |
+
+---
+
+## 6. Meta Skills
+
+| Skill | Purpose |
+|---|---|
+| [skill-creator](../skill-creator/SKILL.md) | Create new skills and validate skill format. |
 | [skill-graph-manager](../skill-graph-manager/SKILL.md) | **MANDATORY** mechanism for managing the bidirectional Skill Knowledge Graph. Invoke when adding or modifying skills. |
 
 ---

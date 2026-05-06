@@ -241,6 +241,7 @@ These scenarios override the default routing rules. Match the user's request aga
 - **Micro-tasking:** The Agent MUST NOT dispatch massive goals to sub-agents (e.g., "Refactor this module"). It MUST slice the work into `<YYYY-MM-DD>_<slug>_tasks.md`.
 - **Parallel Dispatch:** The Orchestrator Agent MUST dispatch tasks to sub-agents, acting as the scheduler.
 - The Agent delegates work to Sub-agents using high-frequency, short-lifecycle prompts. When dispatching, the Agent MUST use the contract schema defined in [subagent_contract_schema.md](../llm_wiki/schema/subagent_contract_schema.md) to format the prompt.
+- **Delegation Logging (MUST):** Persist each dispatched sub-agent contract prompt into `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_delegation_<id>.md` so deterministic gates can validate contract compliance.
 - **Verification Gate:** The Agent MUST verify the sub-agent's return output against the contract schema before dispatching the next micro-task. Sub-agents are treated as "typewriters", not architects.
 - The `<Cognitive_Brake>` MUST include an evaluation of the "Blast Radius" and "Dependencies".
 

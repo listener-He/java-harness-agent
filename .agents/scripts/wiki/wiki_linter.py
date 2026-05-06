@@ -67,6 +67,8 @@ def check_wiki():
     for f in all_md_files:
         if os.path.sep + "wal" + os.path.sep in f:
             continue
+        if os.path.sep + "archive" + os.path.sep in f:
+            continue
         is_core = any(f.endswith(core) for core in core_files)
         if not is_core and f not in referenced_files:
             orphans.append(f)

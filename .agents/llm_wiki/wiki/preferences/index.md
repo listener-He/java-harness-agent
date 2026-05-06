@@ -30,3 +30,25 @@ During `Archive`, the Agent MUST ask the human for a 1–10 rating.
 - **[{Tags}] [{Level}] {short rule}**: {what to do / what not to do, and why}
 ```
 *Note: `[Tags]` can be `[Security]`, `[Performance]`, `[DB]`, etc. `[Level]` must be `MUST`, `SHOULD`, or `NEVER`.*
+
+
+---
+
+## WAL Compaction - preferences - 2026-05-06 15:26:56
+
+
+### 20260423_runtime_artifacts_paths.md
+
+# WAL: Runtime Artifact Paths (openspec/focus_card)
+
+## What changed
+- Standardize runtime artifact locations: `<YYYY-MM-DD>_<slug>_openspec.md` and `<YYYY-MM-DD>_<slug>_focus_card.md` are generated only under `.agents/workflow/runs/`.
+- Standardize archive behavior: during `Archive`, move session spec to `.agents/llm_wiki/archive/<YYYY-MM-DD>_<slug>_openspec.md` and write WAL fragments before final response.
+
+## Why
+- Prevent root directory clutter and accidental commits of runtime artifacts.
+- Ensure consistent “single source of truth” paths across workflow docs and gate scripts.
+
+## Touch points
+- `AGENTS.md`: adds explicit `Artifact Paths` + strengthens `Exit Gate (Archive)` and examples.
+- `.agents/workflow/LIFECYCLE.md`, `.agents/router/ROUTER.md`, `.agents/workflow/HOOKS.md`: align references to `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` and `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md`.

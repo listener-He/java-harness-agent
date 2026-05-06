@@ -100,7 +100,7 @@ Executable Checklist:
 Output:
 - Unified WAL fragment containing Domain, API, and Rules updates.
 Gate:
-- `writeback_gate.py` (Validates presence of the 3 required sections).
+- `writeback_gate.py` (Validates presence of the 3 required sections) + `wiki_linter.py` (graph sanity).
 
 ### Security Sentinel
 Purpose:
@@ -122,7 +122,18 @@ Executable Checklist:
 Output:
 - Updates to `docs/` or inline Javadocs.
 Gate:
-- `delivery_capsule_gate.py` + `wiki_linter.py`.
+- `wiki_linter.py`.
+
+### Delivery Capsule Curator
+Purpose:
+- Ensure a delivery capsule exists and has the required sections (Standard flow only).
+Output:
+- A delivery capsule markdown file.
+Gate:
+- `delivery_capsule_gate.py`.
+Convention:
+- Default path: `.agents/workflow/runs/<YYYYMMDD>_<topic>_delivery_capsule.md`
+- Template: `.agents/workflow/artifacts/delivery_capsule.md`
 
 ### Focus Guard (Anti-drift)
 Purpose:
@@ -166,16 +177,16 @@ Gate:
 
 ### Change / PATCH
 - Explorer: `@Ambiguity Gatekeeper`
-- Implement: `@Focus Guard`
+- Implement: `@Focus Guard` + `@Security Sentinel`
 - QA: `@Code Reviewer`
 - Archive: `@Knowledge Extractor`
 
 ### Change / STANDARD
 - Explorer: `@Requirement Engineer`
 - Propose/Review: `@System Architect` + `@Devil's Advocate`
-- Implement: `@Lead Engineer` + `@Focus Guard`
+- Implement: `@Lead Engineer` + `@Focus Guard` + `@Security Sentinel`
 - QA: `@Code Reviewer`
-- Archive: `@Knowledge Extractor`
+- Archive: `@Knowledge Extractor` + `@Documentation Curator` + `@Delivery Capsule Curator` + `@Skill Graph Curator` + `@Librarian`
 
 ## 3) LLM Cognitive Execution Protocol (MUST)
 
@@ -193,7 +204,7 @@ In the `<Cognitive_Brake>`, explicitly state the active roles and their required
 ```
 *Example (Phase 6: Archive):*
 ```xml
-- Role Assumption: As @Knowledge Extractor, I must write the unified WAL fragment. As @Documentation Curator, I must finalize the Delivery Capsule.
+- Role Assumption: As @Knowledge Extractor, I must write the unified WAL fragment. As @Delivery Capsule Curator, I must finalize the delivery capsule.
 ```
 
 ## 4) Automation Contract

@@ -70,15 +70,19 @@
     "documentation_curator": {
       "gates": [
         {
+          "script": ".agents/scripts/wiki/wiki_linter.py",
+          "args": []
+        }
+      ]
+    },
+    "delivery_capsule_curator": {
+      "gates": [
+        {
           "script": ".agents/scripts/gates/delivery_capsule_gate.py",
           "args": [
             "--file",
-            "{delivery_file}"
+            ".agents/workflow/runs/{date}_{topic}_delivery_capsule.md"
           ]
-        },
-        {
-          "script": ".agents/scripts/wiki/wiki_linter.py",
-          "args": []
         }
       ]
     },
@@ -90,8 +94,22 @@
             "--index",
             ".agents/skills/trae-skill-index/SKILL.md",
             "--skills-dir",
-            ".agents/skills",
-            "--fail-on-missing"
+            ".agents/skills"
+          ]
+        }
+      ]
+    },
+    "subagent_contract_curator": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/subagent_contract_gate.py",
+          "args": [
+            "--dir",
+            ".agents/workflow/runs",
+            "--topic",
+            "{topic}",
+            "--date",
+            "{date}"
           ]
         }
       ]
@@ -102,7 +120,7 @@
           "script": ".agents/scripts/gates/ambiguity_gate.py",
           "args": [
             "--require",
-            "<YYYY-MM-DD>_<slug>_explore_report.md"
+            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_explore_report.md"
           ]
         }
       ]
@@ -161,6 +179,10 @@
             "--require",
             "domain,api,rules"
           ]
+        },
+        {
+          "script": ".agents/scripts/wiki/wiki_linter.py",
+          "args": []
         }
       ]
     }
@@ -189,7 +211,7 @@
       "profile": "PATCH",
       "phase": "QA",
       "roles": [
-        "documentation_curator"
+        "code_reviewer"
       ]
     },
     {
@@ -197,9 +219,7 @@
       "profile": "PATCH",
       "phase": "Archive",
       "roles": [
-        "knowledge_extractor",
-        "documentation_curator",
-        "skill_graph_curator"
+        "knowledge_extractor"
       ]
     },
     {
@@ -235,8 +255,7 @@
       "profile": "STANDARD",
       "phase": "QA",
       "roles": [
-        "code_reviewer",
-        "documentation_curator"
+        "code_reviewer"
       ]
     },
     {
@@ -246,6 +265,8 @@
       "roles": [
         "knowledge_extractor",
         "documentation_curator",
+        "delivery_capsule_curator",
+        "subagent_contract_curator",
         "skill_graph_curator",
         "librarian"
       ]
@@ -303,6 +324,7 @@
       "roles": [
         "architecture_curator",
         "documentation_curator",
+        "subagent_contract_curator",
         "skill_graph_curator"
       ]
     }

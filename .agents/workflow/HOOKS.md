@@ -21,7 +21,7 @@ Defines when and how to enforce constraints throughout the lifecycle.
 
 **Purpose:** Load the relevant rule sets before the phase begins. Example: before `Implement`, load defensive programming standards and project preferences.
 
-**Required output (MUST):** Decision-First Preflight + budget declaration (see Rule 0.1 and Rules 4/5 in `../router/CONTEXT_FUNNEL.md`).
+**Required output (MUST):** Decision-First Preflight + budget declaration (see Rule 0.1 and Rules 4/5 in `../router/CONTEXT_FUNNEL.md`). This may be internal unless the user explicitly asks to see it; the mandatory `[Intent Check]` and `<Cognitive_Brake>` are always visible.
 
 ---
 
@@ -50,6 +50,7 @@ Prevent delivery of uncompilable code, broken dependencies, or unverified "fast-
 
 **Actions:**
 - The Agent MUST autonomously run `RunCommand` to execute `javac`, `mvn clean compile`, or `gradle build`.
+- Do NOT run a heavy test suite unless the workflow is in Phase 5 (QA Test) or the human explicitly approves.
 - If compilation fails, the Agent MUST fix the error and re-verify. **MAX 2 RETRIES**. If it still fails after 2 attempts, STOP and ask the human for help. Do not enter an infinite loop.
 - **Fast-Path QA Guard (Soft Interrupt):** For `TRIVIAL` and `LOW` risk tasks in the `PATCH` profile, if the modified method/class lacks unit test coverage, the Agent MUST trigger a "Soft Interrupt". The Agent must present the `git diff` to the user and wait 5 seconds (or ask for a quick confirmation) before proceeding to Archive. Do not blindly assume QA is complete without tests.
 

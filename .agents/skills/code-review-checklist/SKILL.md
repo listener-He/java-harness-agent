@@ -53,7 +53,7 @@ description: "MANDATORY Code Review Checklist. Evaluates code against ALL projec
 
 ### 6. Error Handling (`error-code-standard`)
 - [ ] **Abstract Error Codes**: Did you reuse abstract domain codes (e.g., `PARAM_INVALID`, `DATA_DUPLICATED`, `HAS_DEPENDENCY`) instead of creating new ones?
-- [ ] **Dynamic Messages**: Did you override the message? (e.g., `new DomainException(AbstractErrorCode.DATA_DUPLICATED, "角色名称已存在")`).
+- [ ] **Dynamic Messages**: Did you override the message? (e.g., `new DomainException(AbstractErrorCode.DATA_DUPLICATED, "Role name already exists")`).
 - [ ] **No Generic Fails**: Did you always provide a specific error message when reusing an abstract code? (e.g., `new DomainException(AbstractErrorCode.PARAM_INVALID, "Specific reason here")`).
 
 ## 📝 Output Format Requirement
@@ -62,3 +62,34 @@ At the end of your task, append a short checklist summary. Example:
 > - Evaluated code against checkstyle, error codes, and API standards.
 > - *Self-correction*: Found a wildcard import (`import java.util.*;`) and replaced it with explicit imports.
 > - All checks passed.
+
+## Review Workflow (Merged)
+
+### Requesting Review (Merged from `requesting-code-review`)
+
+Use a review request to catch issues early and create an evidence-backed handoff.
+
+- Evidence first, then review
+- Run this checklist yourself before requesting review
+- Share a review packet:
+  - What changed (1–3 bullets)
+  - Scope boundary (in-scope paths only)
+  - Verification evidence (commands/tests run + outcome)
+  - Remaining risks / known gaps
+
+### Receiving Feedback (Merged from `receiving-code-review`)
+
+Treat feedback as technical input to verify, not an order to blindly implement.
+
+Response pattern:
+1. Read the feedback end-to-end
+2. Restate the technical requirement (or ask clarifying questions)
+3. Verify against codebase reality
+4. Evaluate whether it is sound for this codebase
+5. Respond with technical acknowledgment or reasoned pushback
+6. Implement one item at a time and re-verify after each change
+
+Red flags:
+- Implementing before understanding
+- Bundling multiple fixes without verification
+- Accepting suggestions that conflict with repo workflow gates
