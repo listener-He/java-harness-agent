@@ -1,5 +1,7 @@
 # 使用指南（中文）— 在不同 CLI / IDE 中加载规则并跑完整闭环
 
+**导航：**[English](USAGE.md) · [README_zh.md](README_zh.md) · [AGENTS.md](AGENTS.md) · [ENGINEERING_MANUAL_zh.md](ENGINEERING_MANUAL_zh.md)
+
 > 这份文档写给第一次接触“编码 Agent 规则/工作流”的同学：尽量少黑话、可复制粘贴、一步一步来。  
 > 目标：让你在 Trae / Cursor / Claude Code / Codex / Gemini CLI / Qoder / CodeBuddy / Copilot / Windsurf / Aider 等工具里，都能稳定加载本仓库的规则，并用同一套“闭环流程”完成：需求 → 设计 → 实现 → 测试 → 归档。
 

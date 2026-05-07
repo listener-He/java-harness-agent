@@ -9,7 +9,7 @@
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://www.oracle.com/java/)
 [![Lifecycle](https://img.shields.io/badge/Lifecycle-Stable-success.svg)](.agents/workflow/LIFECYCLE.md)
 
-[工程手册](ENGINEERING_MANUAL_zh.md) · [快速开始](#-快速上手)
+[使用指南](USAGE_zh.md) · [工程手册](ENGINEERING_MANUAL_zh.md) · [快速开始](#-快速上手)
 
 <img src="https://fastly.jsdelivr.net/gh/listener-He/java-harness-agent@main/static/image.jpg" width="800" alt="Cover Image"/>
 

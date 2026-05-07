@@ -1,5 +1,7 @@
 # Usage Guide — Load Rules in Your CLI/IDE and Run a Full Loop (EN)
 
+**Nav:** [中文](USAGE_zh.md) · [README.md](README.md) · [AGENTS.md](AGENTS.md) · [ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md)
+
 > This guide is for first-timers who want their coding agent to behave like a disciplined teammate: not a chaotic intern.  
 > Goal: make it easy to load this repo’s rules in multiple tools (CLI + IDE), then use the same end-to-end loop to deliver work: **requirements → design → implementation → tests → archive**.
 
