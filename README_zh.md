@@ -289,6 +289,7 @@ graph TD
 
 - **📘 工程手册（中文版）**：[ENGINEERING_MANUAL_zh.md](ENGINEERING_MANUAL_zh.md) - 详细的中文工程指南与工作流
 - **📘 工程手册（英文版）**：[ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md) - 详细的英文工程指南与工作流
+- **🧭 使用指南（中文）**：[USAGE_zh.md](USAGE_zh.md) - 在不同 CLI/IDE 中加载规则并跑完整闭环
 - **🇺🇸 English README**: [README.md](README.md) - Complete English version of this README
 - **📌 项目规则**：[AGENTS.md](AGENTS.md) - 主规则入口与宪法
 - **🗺️ 知识图谱**：[.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) - 虚拟文件系统根目录

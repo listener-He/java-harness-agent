@@ -289,6 +289,7 @@ Use explicit commands to force the framework into a specific track:
 
 - **📘 Engineering Manual (Chinese)**: [ENGINEERING_MANUAL_zh.md](ENGINEERING_MANUAL_zh.md)
 - **📘 Engineering Manual (English)**: [ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md)
+- **🧭 Usage Guide (English)**: [USAGE.md](USAGE.md) - Load rules in popular CLI/IDEs and run an end-to-end workflow
 - **🇨🇳 Chinese README**: [README_zh.md](README_zh.md)
 - **📌 Project Rules**: [AGENTS.md](AGENTS.md) - Master rule entry & constitution
 - **🗺️ Knowledge Graph**: [.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) - Virtual FS Root
