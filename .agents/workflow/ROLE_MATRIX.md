@@ -6,6 +6,20 @@ Hard rules:
 - For `PATCH` and `STANDARD`, roles MUST produce their required artifacts.
 - “Role output” is enforced by deterministic gate scripts (exit codes).
 - Machine config lives in `role_matrix.json` (SSOT for automation). This file is the human-readable explanation.
+- Roles are lightweight guides, not bureaucratic checklists. Use judgment on which checklist items apply.
+
+## 0) Roles as Sub-Agent Work Units
+
+Each role is a self-contained work unit that can be dispatched to any assistant via the sub-agent contract schema. The human decides which assistant fits which role for a given task.
+
+| Role | Work Type | Typical Phase |
+|---|---|---|
+| System Architect, Requirement Engineer | Reasoning, spec design, risk assessment | Explorer, Propose |
+| Lead Engineer | Code generation from spec, pattern replication | Implement |
+| Ambiguity Gatekeeper | Codebase search, scope discovery | Explorer |
+| Code Reviewer, Knowledge Extractor | Review, synthesis, structured writing | QA, Archive |
+
+Roles produce artifacts (task_brief.md, WAL fragments, gate reports) — these artifacts are the handoff points. Any sub-agent can read the artifact and continue the work.
 
 ## 1) Roles (Executable Checklists / Output / Gate)
 
@@ -126,16 +140,11 @@ Output:
 Gate:
 - `wiki_linter.py`.
 
-### Delivery Capsule Curator
+### Delivery Capsule Curator (OPTIONAL — not required in default flow)
 Purpose:
-- Ensure a delivery capsule exists and has the required sections (Standard flow only).
-Output:
-- A delivery capsule markdown file.
+- When explicitly requested: produce a delivery capsule markdown file.
 Gate:
-- `delivery_capsule_gate.py`.
-Convention:
-- Default path: `.agents/workflow/runs/<YYYYMMDD>_<topic>_delivery_capsule.md`
-- Template: `.agents/workflow/artifacts/delivery_capsule.md`
+- `delivery_capsule_gate.py` (only when delivery capsule is requested).
 
 ### Focus Guard (Anti-drift)
 Purpose:
@@ -189,24 +198,14 @@ Gate:
 - QA: `@Code Reviewer`
 - Archive: `@Knowledge Extractor` + `@Documentation Curator` (按需: `@Skill Graph Curator`、`@Librarian`)
 
-## 3) LLM Cognitive Execution Protocol (MUST)
+## 3) LLM Cognitive Execution Protocol
 
-When transitioning to a new phase, the Agent MUST check the **Mounted Roles** listed in `LIFECYCLE.md` and explicitly embody them inside the `<Cognitive_Brake>` block.
+When transitioning to a new phase, be aware of the mounted roles listed in `LIFECYCLE.md`. State the active roles inline in your scope check:
 
-**If the Role Matrix is ignored or unused:**
-- The LLM defaults to a generic "Coder" persona, which fails to produce required WAL fragments (Domain/API/Rules) or violates scope (Focus Guard).
-- This will cause the deterministic Python gates (e.g., `writeback_gate.py`, `scope_guard.py`) to **FAIL**, blocking the workflow.
+*Phase 4 (Implement):* `→ Scope: UserService.java. Role: @Lead Engineer + @Focus Guard.`
+*Phase 6 (Archive):* `→ Role: @Knowledge Extractor — writing WAL fragments.`
 
-**How the LLM MUST handle multiple roles:**
-In the `<Cognitive_Brake>`, explicitly state the active roles and their required artifacts.
-*Example (Phase 4: Implement):*
-```xml
-- Role Assumption: As @Focus Guard, I will only modify `UserService.java`. As @Lead Engineer, I will ensure proper exception handling and formatting.
-```
-*Example (Phase 6: Archive):*
-```xml
-- Role Assumption: As @Knowledge Extractor, I must write the unified WAL fragment. As @Delivery Capsule Curator, I must finalize the delivery capsule.
-```
+No XML blocks. Keep it one line.
 
 ## 4) Automation Contract
 - The runner reads `role_matrix.json` and decides:

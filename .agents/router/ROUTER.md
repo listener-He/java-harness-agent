@@ -163,12 +163,11 @@ Required sequence:
 ### Rule 3.1: Budgeted Navigation (MUST)
 For `Change` and `Audit` intents, uncontrolled exploration is forbidden.
 
-- Wiki budget: 3 documents
-- Code budget: 8 files
-- Web Search budget: 2 searches
+- Wiki budget: 5 documents (soft guide, not a hard ceiling)
+- Code budget: 12 files (soft guide)
+- Web Search budget: 4 searches (soft guide)
 - Same-file pagination reads do NOT count.
-- Budgets auto-extend via the two-tier reward mechanism (see [CONTEXT_FUNNEL.md](CONTEXT_FUNNEL.md)). Hard ceilings: Wiki ≤ 8, Code ≤ 20, Web ≤ 6.
-- On budget exhaustion without meeting success criteria: file an Escalation Card (see [CONTEXT_FUNNEL.md](CONTEXT_FUNNEL.md)) and STOP.
+- On budget exhaustion: STOP and ask human directly.
 
 ### Rule 4: DocQA actionize is explicit opt-in (MUST)
 DocQA is read-only by default. MUST NOT launch a lifecycle queue unless:
@@ -194,7 +193,6 @@ DocQA is read-only by default. MUST NOT launch a lifecycle queue unless:
 When launching a lifecycle queue:
 1. Persist to `router/runs/launch_spec_{timestamp}.md`
 2. Drive transitions by updating `Status / Phase / Artifact / Failed_Reason`
-3. Optional: `python3 ../scripts/harness/engine.py init "..."` to create and maintain the file
 
 **Status values:** `PENDING` | `IN_PROGRESS` | `WAITING_APPROVAL` | `DONE` | `FAILED`
 
@@ -239,7 +237,7 @@ These scenarios override the default routing rules. Match the user's request aga
 **Engine Behavior:** 
 - The Agent is ALLOWED to execute terminal commands (e.g., tests, log reading) with a higher Retry limit (up to 5 times) to gather evidence.
 - The Agent is FORBIDDEN from modifying business code (`SearchReplace`) during the DEBUG scenario.
-- The `<Cognitive_Brake>` MUST include `[Hypothesis]` and `[Verification]` steps.
+- State hypothesis and verification steps inline in the scope check.
 - Once the root cause is found, the Agent MUST yield to the user or transition to a standard `Change` intent to apply the fix.
 
 ---
@@ -258,7 +256,7 @@ These scenarios override the default routing rules. Match the user's request aga
 - The Agent delegates work to Sub-agents using high-frequency, short-lifecycle prompts. When dispatching, the Agent MUST use the contract schema defined in [subagent_contract_schema.md](../llm_wiki/schema/subagent_contract_schema.md) to format the prompt.
 - **Delegation Logging (MUST):** Persist each dispatched sub-agent contract prompt into `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_delegation_<id>.md` so deterministic gates can validate contract compliance.
 - **Verification Gate:** The Agent MUST verify the sub-agent's return output against the contract schema before dispatching the next micro-task. Sub-agents are treated as "typewriters", not architects.
-- The `<Cognitive_Brake>` MUST include an evaluation of the "Blast Radius" and "Dependencies".
+- State blast radius and dependencies assessment in the scope check.
 
 ---
 
@@ -333,3 +331,4 @@ Then re-route as `Change` intent with the audit as anchor context.
 python3 .agents/scripts/gates/dependency_gate.py --pom <pom.xml>
 ```
 FAIL → block Archive. Bypass requires `bypass_justification.md` with compatibility evidence (test output or changelog excerpt).
+

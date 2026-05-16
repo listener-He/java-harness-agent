@@ -8,7 +8,7 @@ One-way state machine with hard gates and rollback rules.
 
 - Determine the current phase from context; execute the correct next action.
 - Apply hook constraints from [HOOKS.md](HOOKS.md) before moving to the next phase.
-- Maintain `launch_spec_{timestamp}.md` (`Status / Phase / Artifact / Failed_Reason`) for resumability. **When task_brief.md is created, immediately write its full path to the `Artifact` column of the IN_PROGRESS row** — this is the only resume anchor for future sessions.
+- Maintain `launch_spec_{timestamp}.md` (`Status / Phase / Artifact / Failed_Reason`) for resumability. **When task_brief.md is created, immediately write its full path to the `Artifact` column** — this + task_brief.md are the only two state files. No brake_snapshot, no engine_state.json.
 - Never break the one-way flow, hard gates, or anti-runaway rules.
 
 ---
@@ -66,7 +66,7 @@ One-way state machine with hard gates and rollback rules.
 **Actions:**
 1. Select design approach. Emit a **Constraint List** (decisions that bind all downstream work).
 2. Populate Allowed Scope (file list that constrains implementation).
-3. Write `task_brief.md` — the single artifact for both Claude Code and human.
+3. Write `task_brief.md` — the single artifact readable by both AI and human.
 
 **Output — tiered by risk:**
 
@@ -83,7 +83,7 @@ One-way state machine with hard gates and rollback rules.
 状态：IN_PROGRESS | {YYYY-MM-DD} | 风险：{MEDIUM/HIGH}
 launch_spec：.agents/workflow/runs/launch_spec_{timestamp}.md
 
-<!-- MACHINE SECTION — Claude Code reads to constrain implementation -->
+<!-- MACHINE SECTION — AI reads to constrain implementation -->
 ## Allowed Scope
 - {file path 1}
 - {file path 2}
@@ -216,18 +216,9 @@ Do NOT attempt to fix a plan-invalidating discovery by expanding scope. File the
 
 **Profile-differentiated behavior:**
 
-| Profile | Mounted Roles | Actions |
-|---|---|---|
-| **PATCH (LOW)** | (no mounted roles) | 1. Write 1-line changelog to `.agents/events/drift_queue/`. 2. No WAL, no rating. Done. |
-| **PATCH (TRIVIAL)** | (no mounted roles) | 1. Write 1-line changelog to `.agents/events/drift_queue/` (inline). 2. Done. |
-| **STANDARD** | `@Knowledge Extractor`, `@Documentation Curator` | Full WAL write-back (Domain + API + Rules; Data if schema change). Follow steps below. |
+| Profile | Steps |
+|---|---|
+| **PATCH (TRIVIAL/LOW)** | Write 1-line changelog to `.agents/events/drift_queue/`. Done. |
+| **STANDARD** | 1. Write WAL fragments (Domain + API + Rules; Data if schema change). 2. Move `task_brief.md` to `.agents/llm_wiki/archive/`. Done. |
 
-**On-demand roles:** `@Skill Graph Curator` (mounted only when the current task involves skill creation/modification), `@Librarian` (mounted only on explicit `@gc` / `@librarian` trigger)
-
-**STANDARD Steps (in order):**
-1. Write WAL fragments via `wal-documentation-rules` (Domain + API + Rules; Data if schema changed).
-2. Run `writeback_gate.py` — confirm all required WAL types present.
-3. Move `task_brief.md` into `../llm_wiki/archive/`.
-4. Process Drift Events: read `.agents/events/drift_queue/` if events exist.
-5. **Optional:** Ask human for 1–10 rating only if they indicate interest. If given: extract to `preferences/index.md`.
-6. Dispatch next `PENDING` intent from launch_spec (if queue has more items).
+No delivery capsule, no writeback_gate, no drift_queue processing, no rating — unless the task explicitly involves those. Dispatch next PENDING intent from launch_spec if queue has more items.

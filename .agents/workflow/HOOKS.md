@@ -41,7 +41,7 @@ Mismatch or missing → STOP. Report `[Resume Blocked] <reason>`. Ask human to c
 
 **Purpose:** Load the relevant rule sets before the phase begins. Example: before `Implement`, load defensive programming standards and project preferences.
 
-**Required output (MUST):** Decision-First Preflight + budget declaration (see Rule 0.1 and Rules 4/5 in `../router/CONTEXT_FUNNEL.md`). This may be internal unless the user explicitly asks to see it; the mandatory `[Intent Check]` and `<Cognitive_Brake>` are always visible.
+**Required output (MUST):** Be aware of budget guides (see `../router/CONTEXT_FUNNEL.md` Rule 0.1). This is internal — no visible output needed unless asked.
 
 **Local Intelligence Actions (run before reading any files):**
 
@@ -98,63 +98,28 @@ Prevent delivery of uncompilable code, broken dependencies, or unverified "fast-
 
 #### Doc Consistency Gate
 
-Read-only checks (do NOT modify files):
+Read-only checks (do NOT modify files). Only run when relevant — not all gates apply to all tasks.
 
-| Gate | Command | When required |
+| Gate | Command | When |
 |---|---|---|
-| Task brief schema | `python3 .agents/scripts/wiki/schema_checker.py <path_to_.agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md>` | Every STANDARD task |
-| Wiki graph lint | `python3 .agents/scripts/wiki/wiki_linter.py` | Every task with write-back |
-| Ambiguity check | `python3 .agents/scripts/gates/ambiguity_gate.py --intent "<intent>" [--anchors-file <file>]` | Every task start |
-| Write-back check | `python3 .agents/scripts/gates/writeback_gate.py --topic "<topic>" --date YYYYMMDD [--require-data]` | PATCH + STANDARD Archive |
-| Delivery capsule | `python3 .agents/scripts/gates/delivery_capsule_gate.py --file <delivery_capsule.md>` | STANDARD Archive |
-| Secrets scan | `python3 .agents/scripts/gates/secrets_linter.py --paths "<glob...>"` | Every code change |
-| Java comment lint | `python3 .agents/scripts/gates/comment_linter_java.py --path <dir> [--fail-on-missing]` | Java code changes |
-| **WAL compliance** | `python3 .agents/scripts/gates/wal_template_gate.py --wal-dir <dir>` | Every Archive with WAL output |
-| **DB migration** | `python3 .agents/scripts/gates/migration_gate.py --sql-dir <path>` | Scenario B (DDL changes) |
-| **Breaking API** | `python3 .agents/scripts/gates/api_breaking_gate.py --task-brief .agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md` | Scenario C (API schema changes) |
-| **Dependency** | `python3 .agents/scripts/gates/dependency_gate.py --pom <pom.xml>` | Scenario E (pom.xml changes) |
-| Unified runner | `python3 .agents/scripts/gates/run.py --intent <...> --profile <...> --phase <...> --topic <...> --date <YYYYMMDD> [--verify-level quick\|standard\|strict] [--artifact-tags ...]` | Any phase (convenience wrapper) |
+| Task brief schema | `python3 .agents/scripts/wiki/schema_checker.py <path_to_task_brief>` | Every STANDARD task |
+| Wiki graph lint | `python3 .agents/scripts/wiki/wiki_linter.py` | When wiki files changed |
+| Secrets scan | `python3 .agents/scripts/gates/secrets_linter.py --paths "<glob>"` | Every code change |
+| DB migration | `python3 .agents/scripts/gates/migration_gate.py --sql-dir <path>` | Scenario B (DDL changes) |
+| Breaking API | `python3 .agents/scripts/gates/api_breaking_gate.py --task-brief <path>` | Scenario C (API schema changes) |
+| Dependency | `python3 .agents/scripts/gates/dependency_gate.py --pom <pom.xml>` | Scenario E (pom.xml changes) |
 
 **Severity and bypass:**
 - Follow `linter-severity-standard` skill.
 - The Agent is ENCOURAGED to use `quality-checklist` from `.agents/skills/spec-quality-checklist/SKILL.md` to self-correct documents BEFORE running strict python gates.
-- If a gate returns FAIL due to a rule violation (e.g., missing Javadoc on a trivial private method, or a legacy pattern): the Agent MAY generate a `bypass_justification.md` explaining why the rule should be waived in this specific context.
-- When `bypass_justification.md` is present for a specific gate failure: the runner downgrades FAIL to WARN, allowing the workflow to proceed.
-- Python gates should be treated as guidelines rather than absolute blockers if logic dictates otherwise. Use `WARN` instead of `FAIL` for stylistic mismatches.
-
-**Bypass Lifecycle (MUST):**
-- Every `bypass_justification.md` is valid ONLY for the current task (the task whose `task_brief.md` it references).
-- When the task's Archive phase completes, all bypass files for that task are stale and MUST NOT be reused for subsequent tasks.
-- A bypass file MUST include the header `task_id: <intent>:<profile>:<topic>:<date>` on its first line.
-- A bypass file MUST include the header `expires_after: Archive` on its second line.
-- If a gate detects a bypass file without these headers: downgrade FAIL to WARN as usual, but output a `STALE_BYPASS` warning in the gate report.
-- Stale bypass files (from completed tasks) remaining in `.agents/workflow/runs/` will be flagged by `bypass_audit_gate.py` during Archive.
+- Python gates are guidelines, not absolute blockers. Use `WARN` instead of `FAIL` for stylistic mismatches. If a gate fails on a non-critical issue, note it and move on — no bypass file ceremony required.
 
 **Write-back policy (MUST):**
-- For **STANDARD**: full write-back is REQUIRED.
-  - Domain WAL + API WAL + Rules WAL: always mandatory.
-  - Data WAL: mandatory when schema/DDL changes.
-- For **PATCH**: WAL write-back is NOT required.
-  - Move task_brief.md to `../llm_wiki/archive/`.
-  - Write 1-line changelog to `.agents/events/drift_queue/`.
-  - Wiki refresh is deferred to milestone boundaries or explicit `@wiki-update` command.
-- The Agent MUST NOT mark a STANDARD change as "done" if write-back gates fail.
+- **STANDARD**: Write WAL fragments (Domain + API + Rules; Data if schema change). Move task_brief to archive.
+- **PATCH**: Write 1-line changelog to `.agents/events/drift_queue/`. No WAL required. Wiki refresh deferred to milestone.
+- The Agent MUST NOT mark a STANDARD change as "done" if WAL fragments are missing.
 
-**Optional audit report:**
-```
-python .agents/scripts/wiki/zero_residue_audit.py
-```
-Default output: `.agents/workflow/runs/`
-
-#### Archive Cleanup (Conservative Mode)
-
-After Phase 6 (Archive) has extracted WAL and moved the spec into cold storage, archive the session runtime artifacts and leave pointer files:
-
-```bash
-python3 .agents/scripts/tools/archive_session_artifacts.py --slug <feature_slug>
-```
-
-#### Explorer Post-Hook: Core Context Anchors (MUST)
+**Explorer Post-Hook: Core Context Anchors (MUST)**
 
 After Explorer, key context anchors feed into `task_brief.md ## Hard Constraints`:
 - Business vocabulary and invariants (terms, enums, state notes)
@@ -214,4 +179,4 @@ If the workflow gets stuck repeating the same action without converging (e.g., a
 1. STOP repeating the same change.
 2. Run deterministic verification. Identify the exact failing evidence (file path + minimal excerpt).
 3. Report the mismatch and request human intervention.
-4. If the root cause is missing context or ambiguous scope: use the Escalation Card format in `../router/CONTEXT_FUNNEL.md` and set the `launch_spec` row to `WAITING_APPROVAL`.
+4. If the root cause is missing context or ambiguous scope: state what you know, what's missing, and ask the human. Set the `launch_spec` row to `WAITING_APPROVAL`.

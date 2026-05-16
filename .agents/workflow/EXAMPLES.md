@@ -32,7 +32,9 @@ A concrete walkthrough showing how a STANDARD task flows across turns, respectin
 
 **Agent output to human:**
 ```
-[Explore]
+[Intent: Change | Profile: STANDARD | Risk: MEDIUM]
+→ Phase: Explorer
+
 Gap: OrderService has no cancel method.
 Need: cancelOrder(orderId, userId) with ownership + status guard.
 AC: 3 testable criteria.
@@ -72,7 +74,7 @@ Spec: .agents/workflow/runs/2026-05-17_order-cancel_task_brief.md
 ## Turn 3 — Implement
 
 **Agent actions:**
-1. `<Brake>Scope: OrderController + OrderService only. Action: implement cancelOrder. Confidence: HIGH</Brake>`
+1. `→ Scope: OrderController + OrderService. Role: @Lead Engineer + @Focus Guard. Confidence: HIGH`
 2. Reads `task_brief.md` Machine Section: Allowed Scope + AC + Hard Constraints
 3. Implements: `OrderController.cancelOrder()` → `OrderService.cancelOrder()` → uses existing `OrderMapper`
 4. Runs `shift_left_hook` → `mvn compile` passes
@@ -107,18 +109,13 @@ All rows PASS. QA passes.
 ## Turn 5 — Archive
 
 **Agent actions:**
-1. Writes API WAL fragment: `20260517_order_cancel_api_append.md`
-2. Writes Rules WAL fragment: `20260517_order_cancel_rules_append.md`
-3. Runs `writeback_gate.py --slug order-cancel` → PASS
-4. Updates `task_brief.md` header: `状态：DONE`
-5. Moves `task_brief.md` to `llm_wiki/archive/`
-6. Writes 1-line drift entry to `.agents/events/drift_queue/`
+1. Writes WAL fragments: `20260517_order_cancel_api_append.md` + `20260517_order_cancel_rules_append.md`
+2. Moves `task_brief.md` to `llm_wiki/archive/`
 
 **Agent output to human:**
 ```
-[Archive complete]
-WAL written: api_append + rules_append
-Task brief archived.
+→ Phase: Archive. Role: @Knowledge Extractor
+WAL written: api + rules. Task brief archived.
 ```
 
 ---
@@ -127,6 +124,7 @@ Task brief archived.
 
 - **5 turns** for a MEDIUM task: Explorer → Propose/Review → Implement → **YIELD** → QA → Archive
 - **1 explicit stop**: Implement Yield (Turn 3→4) — no Approval Gate for MEDIUM
-- **Single artifact**: `task_brief.md` replaces explore_report + openspec + focus_card
+- **Single artifact**: `task_brief.md` is the only task-level file — no brake snapshot, no delivery capsule, no explore report
 - **Evidence Mapping Table** makes QA objective — no "I think it works"
-- **HIGH risk** adds: Approval Gate (after Propose), full `<Cognitive_Brake>`, Brake Snapshot file, ≥2 ADR alternatives in task_brief Human Section
+- **HIGH risk** adds: Approval Gate (after Propose), ≥2 ADR alternatives in task_brief Human Section
+- **Multi-assistant handoff**: Design/Review/Archive by strong-reasoning assistant → Implement by strong-codegen assistant
