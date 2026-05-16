@@ -8,7 +8,7 @@ are consistent across all protocol files:
 - AGENTS.md
 - .agents/router/CONTEXT_FUNNEL.md
 - .agents/router/ROUTER.md
-- .agents/workflow/artifacts/focus_card.md
+- .agents/workflow/artifacts/task_brief.md
 
 Exit codes:
 - 0: PASS (all files consistent)
@@ -109,7 +109,7 @@ def _extract_router_budgets(text: str) -> dict:
 
 
 def _extract_focus_card_budgets(text: str) -> dict:
-    """Extract budgets from focus_card.md."""
+    """Extract budgets from task_brief.md."""
     result = {}
     # "- Wiki budget: 3 docs (hard ceiling: 8)"
     m_w = re.search(r"Wiki\s+budget:\s*(\d+)", text)
@@ -138,14 +138,14 @@ def main() -> int:
         "AGENTS.md": os.path.join(REPO_ROOT, "AGENTS.md"),
         "CONTEXT_FUNNEL.md": os.path.join(REPO_ROOT, ".agents", "router", "CONTEXT_FUNNEL.md"),
         "ROUTER.md": os.path.join(REPO_ROOT, ".agents", "router", "ROUTER.md"),
-        "focus_card.md": os.path.join(REPO_ROOT, ".agents", "workflow", "artifacts", "focus_card.md"),
+        "task_brief.md": os.path.join(REPO_ROOT, ".agents", "workflow", "artifacts", "task_brief.md"),
     }
 
     extractors = {
         "AGENTS.md": _extract_agents_budgets,
         "CONTEXT_FUNNEL.md": _extract_funnel_budgets,
         "ROUTER.md": _extract_router_budgets,
-        "focus_card.md": _extract_focus_card_budgets,
+        "task_brief.md": _extract_focus_card_budgets,
     }
 
     parsed = {}
@@ -192,13 +192,13 @@ def main() -> int:
                     f"vs AGENTS.md={parsed['AGENTS.md'][key]}"
                 )
 
-    # Validate focus_card.md
+    # Validate task_brief.md
     for key in base_keys + ceiling_keys:
-        if key in parsed.get("focus_card.md", {}) and key in parsed.get("AGENTS.md", {}):
-            if parsed["focus_card.md"][key] != parsed["AGENTS.md"][key]:
+        if key in parsed.get("task_brief.md", {}) and key in parsed.get("AGENTS.md", {}):
+            if parsed["task_brief.md"][key] != parsed["AGENTS.md"][key]:
                 label = base_labels.get(key) or ceiling_labels.get(key) or key
                 errors.append(
-                    f"{label}: focus_card.md={parsed['focus_card.md'][key]} "
+                    f"{label}: task_brief.md={parsed['task_brief.md'][key]} "
                     f"vs AGENTS.md={parsed['AGENTS.md'][key]}"
                 )
 

@@ -94,13 +94,13 @@ If the user supplies an explicit shortcut, it MUST override automatic routing.
 - Minimal artifacts: Slim Spec or Change Log + objective verification evidence.
 - No `Propose → Review → Approval` chain.
 - Hooks still apply.
-- Archive: move openspec to `archive/` + write 1-line changelog to `drift_queue`. No Domain/API/Rules WAL required (wiki refresh deferred to milestone or `@wiki-update`).
-- Abbreviated flow (LOW): `4_Implement → 5_QA → 6_Archive` (需求澄清下沉到 Implement 的 Cognitive Brake)
+- Archive: write 1-line changelog to `drift_queue`. No Domain/API/Rules WAL required (wiki refresh deferred to milestone or `@wiki-update`).
+- Abbreviated flow (LOW): `4_Implement → 5_QA → 6_Archive` (requirement clarification deferred into Implement phase's Cognitive Brake)
 - Abbreviated flow (TRIVIAL): `4_Implement → 5_QA → 6_Archive`
 
 ### STANDARD
 - Full lifecycle: Explorer → Propose → Review → Approval Gate → Implement → QA → Archive.
-- Requires `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` (full schema for MEDIUM/HIGH, Slim Spec for LOW).
+- Requires `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md` (MEDIUM: task_brief with single option; HIGH: task_brief with ≥2 ADR alternatives).
 
 ---
 
@@ -115,6 +115,8 @@ If the user supplies an explicit shortcut, it MUST override automatic routing.
 
 ### Intent Signal Matrix
 
+**Pre-condition:** If a `[Intake]` block was emitted by `requirement-intake`, use its `Intent` and `Profile` as the starting seed for classification. The matrix below may confirm or upgrade (never downgrade) the intake result.
+
 The Agent MUST classify every incoming request against this matrix before taking any action, then output an `[Intent Check]` line (see [AGENTS.md](../../AGENTS.md)).
 
 **Design principle:** Only abstract *development process* signals are defined here. Business domain objects (table names, API paths, service names, feature names, etc.) are intentionally absent — the LLM reads the workspace to identify them independently.
@@ -122,7 +124,7 @@ The Agent MUST classify every incoming request against this matrix before taking
 | Signal type | Purpose | Examples (English) | Examples (Chinese) |
 |---|---|---|---|
 | **Action** | What the developer wants to do — purely process-level verbs | implement, add, create, fix, refactor, optimize, design, migrate, update, remove, delete, integrate, deploy, test, review, build, generate, write, change, modify | 设计, 实现, 修复, 新增, 改造, 优化, 落地, 上线, 测试 |
-| **Process artifact** | Abstract workflow artifacts managed by this harness | hook, gate, lifecycle, router, workflow, wiki, wal, openspec, launch_spec, focus_card, skill, agent, role_matrix, explore_report | 流程, 门控, 生命周期 |
+| **Process artifact** | Abstract workflow artifacts managed by this harness | hook, gate, lifecycle, router, workflow, wiki, wal, task_brief, launch_spec, skill, agent, role_matrix | 流程, 门控, 生命周期 |
 | **Domain object** | Any noun/target from the actual workspace — NOT hardcoded | *(LLM reads code to identify)* | *(LLM reads code to identify)* |
 | **Success/Evidence** | How the developer knows the task is done | pass, deliver, working, verified, evidence, test case, doc, documented, returns | 验收, 通过, 可用, 跑通, 门禁, 测试用例, 文档 |
 
@@ -148,13 +150,15 @@ Do NOT start with full-text search.
 Required sequence:
 1. Read root: [KNOWLEDGE_GRAPH.md](../llm_wiki/KNOWLEDGE_GRAPH.md)
 2. Drill down via: [CONTEXT_FUNNEL.md](CONTEXT_FUNNEL.md)
-3. If no specialist skill can be identified: consult [trae-skill-index](../skills/trae-skill-index/SKILL.md)
+3. If no specialist skill can be identified: consult [skill-index](../skills/skill-index/SKILL.md)
 
 ### Rule 3: Change intent → profile by risk
-- TRIVIAL → Profile `PATCH` (No Spec needed, No Approval Gate needed). Direct fast-path: `Implement -> QA -> Archive`. (满足 ALL 条件: ≤1 文件; 无 API 签名变更; 无 DB schema 变更; 无新依赖; 纯防御性/纠正性代码如 null check、参数校验、错误码修正、日志补充、注释、格式化、拼写修正)
+- TRIVIAL → Profile `PATCH` (No Spec, No Approval Gate, No Brake Snapshot, No rating, No WAL). Direct fast-path: `Implement → QA → Archive(drift_queue only)`. (Meets ALL of: ≤ 1 file; no API signature changes; no DB schema changes; no new dependencies; purely defensive/corrective code such as null checks, parameter validation, error code fixes, log additions, comments, formatting, typo fixes)
+  - MUST still: output `[Intent Check]` line + Micro-Brake, run Grep/SearchCodebase for hidden deps, run `shift_left_hook` (compile), run `secrets_linter.py`.
+  - MUST NOT: create task_brief, write Brake Snapshot, request 1-10 rating.
 - LOW → Profile `PATCH` (Slim Spec allowed, NO Approval Gate needed). Direct fast-path: `Explorer -> Implement -> QA -> Archive`.
-- MEDIUM → Profile `STANDARD` (full schema + Approval Gate)
-- HIGH → Profile `STANDARD` (full schema + Approval Gate + Strict Security/Migration Gates)
+- MEDIUM → Profile `STANDARD` (task_brief, no Approval Gate — FYI only)
+- HIGH → Profile `STANDARD` (task_brief + Approval Gate + Adversarial Review + Strict Security/Migration Gates)
 
 ### Rule 3.1: Budgeted Navigation (MUST)
 For `Change` and `Audit` intents, uncontrolled exploration is forbidden.
@@ -189,28 +193,35 @@ DocQA is read-only by default. MUST NOT launch a lifecycle queue unless:
 
 When launching a lifecycle queue:
 1. Persist to `router/runs/launch_spec_{timestamp}.md`
-2. Drive transitions by updating only `Status / Phase / Failed_Reason`
+2. Drive transitions by updating `Status / Phase / Artifact / Failed_Reason`
 3. Optional: `python3 ../scripts/harness/engine.py init "..."` to create and maintain the file
 
-After QA is done, transition automatically to the Archive phase in the **same session**. Use lightweight targeted commands (like `git diff <specific_files>` based on `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md`) or review `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` to summarize changes for WAL write-back, avoiding heavy context rereads.
+**Status values:** `PENDING` | `IN_PROGRESS` | `WAITING_APPROVAL` | `DONE` | `FAILED`
 
-**Status values:** `PENDING` | `IN_PROGRESS` | `DONE` | `WAITING_APPROVAL` | `FAILED`
+**Artifact binding rule:** When a task moves to `IN_PROGRESS` and a `task_brief.md` is created, write its full path into the `Artifact` column immediately. This is the only mechanism a new session uses to find the active task context — it MUST be set before leaving Explorer/Propose phase.
 
 **Template:**
 ```markdown
 # Launch Spec - {YYYYMMDD_HHMMSS}
 
-## State Machine
-| Intent | Status | Phase | Artifact/Log | Failed_Reason |
+## Task Queue
+| Task | Status | Phase | Artifact | Failed_Reason |
 |---|---|---|---|---|
-| Explore.Req | IN_PROGRESS | 1_Explorer | <YYYY-MM-DD>_<slug>_explore_report.md | - |
-| Propose.API | PENDING | - | - | - |
-| Implement.Code | PENDING | - | - | - |
+| {task description — business language} | IN_PROGRESS | Implement | .agents/workflow/runs/2026-05-17_order-cancel_task_brief.md | — |
+| {task description 2} | PENDING | — | — | — |
+| {task description 3} | DONE | Archive | — | — |
 
 ## Resume Protocol
-- On session interrupt: read this file first and restore from Status/Phase.
-- If any row is WAITING_APPROVAL: stop and wait for human approval, then set back to IN_PROGRESS.
-- If any row is FAILED: stop and report Failed_Reason.
+When starting a new session (MUST, in order):
+1. Read this file → find the row where Status = IN_PROGRESS or WAITING_APPROVAL
+2. Read the Artifact column of that row → get the full path to task_brief.md
+3. Load the task_brief Machine Section (Allowed Scope + AC + Hard Constraints)
+4. Run the Resume Fidelity Check (see HOOKS.md)
+
+Rules:
+- WAITING_APPROVAL: Wait for human approval before changing back to IN_PROGRESS; do not auto-continue
+- FAILED: Report Failed_Reason, wait for human decision; do not auto-retry
+- Artifact column is empty but Status = IN_PROGRESS: session was interrupted during Explorer phase, no task_brief to load; restart from Explorer step 2
 ```
 
 ---
@@ -241,7 +252,7 @@ These scenarios override the default routing rules. Match the user's request aga
 
 **Engine Behavior:**
 - **Contract-driven Delegation:** The Agent MUST NOT write code directly. It assumes the role of "Foreman + QA".
-- The Agent MUST first write a highly detailed `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` (defining API contracts, schemas, etc.).
+- The Agent MUST first write `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md` (HIGH risk: defining API contracts, schemas, ≥2 ADR alternatives in Human Section).
 - **Micro-tasking:** The Agent MUST NOT dispatch massive goals to sub-agents (e.g., "Refactor this module"). It MUST slice the work into `<YYYY-MM-DD>_<slug>_tasks.md`.
 - **Parallel Dispatch:** The Orchestrator Agent MUST dispatch tasks to sub-agents, acting as the scheduler.
 - The Agent delegates work to Sub-agents using high-frequency, short-lifecycle prompts. When dispatching, the Agent MUST use the contract schema defined in [subagent_contract_schema.md](../llm_wiki/schema/subagent_contract_schema.md) to format the prompt.
@@ -290,9 +301,9 @@ FAIL → block Archive. Bypass requires `bypass_justification.md` with DBA sign-
 
 **Required gates (post-hook):**
 ```
-python3 .agents/scripts/gates/api_breaking_gate.py --openspec .agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md
+python3 .agents/scripts/gates/api_breaking_gate.py --task-brief .agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md
 ```
-FAIL → block Implement phase. The Agent MUST document the migration guide in `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` before proceeding.
+FAIL → block Implement phase. The Agent MUST document the migration guide in `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md` before proceeding.
 
 ---
 

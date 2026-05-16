@@ -36,17 +36,37 @@ Use this skill when:
 
 ## Instructions
 
+### Step 0: Task Brief Scope Check (MUST — before any analysis)
+
+Check whether an active task_brief exists for the current task:
+
+```bash
+ls .agents/workflow/runs/*_task_brief.md 2>/dev/null | tail -1
+```
+
+**If a task_brief exists:**
+1. Read its `## Allowed Scope` section.
+2. Set `CLEANUP_BOUNDARY = Allowed Scope file list`.
+3. Every file targeted in Steps 1–4 MUST appear in `CLEANUP_BOUNDARY`.
+4. If a slop smell is found in a file outside `CLEANUP_BOUNDARY`: **log it as out-of-scope** in the final report, do NOT edit it.
+
+**If no task_brief exists:**
+1. Use the user-specified file list or the explicitly requested directory as `CLEANUP_BOUNDARY`.
+2. If neither is specified: ask the user for a scope boundary before proceeding. Do NOT default to the entire repo.
+
+**Out-of-scope slop**: record in report under `## Out-of-Scope Findings` for the user's awareness, but take no action. Do not silently expand scope to fix it.
+
 ### Step 1: Protect Current Behavior First
 
-- Identify what must stay the same.
+- Identify what must stay the same within `CLEANUP_BOUNDARY`.
 - Add or run the narrowest regression tests needed before editing.
 - If tests cannot come first, record the verification plan explicitly before touching code.
 - If eval-harness (Phase 3) has already defined evals and benchmarks, use them as the regression test suite.
 
 ### Step 2: Write a Cleanup Plan Before Code
 
-- Bound the pass to the requested files or feature area.
-- List the concrete smells to remove.
+- Bound the pass to `CLEANUP_BOUNDARY` (from Step 0). Do not list files outside it.
+- List the concrete smells to remove, each with the specific file:line location.
 - Order the work from safest deletion to riskier consolidation.
 
 ### Step 3: Classify the Slop Before Editing
@@ -81,10 +101,12 @@ Do not bundle unrelated refactors into the same edit set.
 ### Step 6: Close with an Evidence-Dense Report
 
 Always report:
+- **Cleanup boundary**: source (task_brief / user-specified / directory) + file count
 - **Changed files**: list of all modified files
-- **Simplifications**: what was removed or consolidated
+- **Simplifications**: what was removed or consolidated, with before/after evidence
 - **Behavior lock / verification run**: which tests were run and their results
 - **Remaining risks**: known issues that were not addressed
+- **Out-of-Scope Findings** (if any): smells detected outside `CLEANUP_BOUNDARY` — listed for user awareness, not acted upon
 
 ## Review Mode (`--review`)
 

@@ -193,6 +193,43 @@ def fail_phase(args):
             
     save_state(state)
 
+def verify_state(args):
+    state = load_state()
+    if not state:
+        print("ℹ️ No active engine state.")
+        return
+    spec_file = state.get("launch_spec_file", "")
+    if not os.path.exists(spec_file):
+        print(f"⚠️  Launch spec missing: {spec_file}")
+        print("   Fix: run `engine.py init` to start fresh, or restore the file manually.")
+        return
+    queue = state.get("queue", [])
+    idx = state.get("current_intent_index", 0)
+    current_intent = queue[idx] if idx < len(queue) else None
+    in_progress_md = []
+    with open(spec_file, "r", encoding="utf-8") as f:
+        for line in f:
+            if not line.startswith("|"):
+                continue
+            parts = [p.strip() for p in line.strip().strip("|").split("|")]
+            if len(parts) != 5 or parts[0] in ("Intent", "---", ""):
+                continue
+            if "IN_PROGRESS" in parts[1]:
+                in_progress_md.append(parts[0])
+    issues = []
+    if current_intent and current_intent not in in_progress_md and idx < len(queue):
+        issues.append(f"JSON says [{current_intent}] is active but markdown row is not IN_PROGRESS")
+    if len(in_progress_md) > 1:
+        issues.append(f"Multiple IN_PROGRESS rows in markdown: {in_progress_md}")
+    if issues:
+        for issue in issues:
+            print(f"⚠️  {issue}")
+        print("   Fix: manually edit the launch spec to align, or re-run `engine.py transition`.")
+    else:
+        intent_label = f"[{current_intent}]" if current_intent else "[queue empty]"
+        print(f"✅ State consistent: {intent_label} | Phase: {state.get('current_phase')} | Retries: {state.get('retries', 0)}/3")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Harness Lifecycle Engine CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -207,7 +244,9 @@ if __name__ == "__main__":
     
     fail_p = subparsers.add_parser("fail", help="Report a failure and trigger fail_hook")
     fail_p.add_argument("reason", help="Failure reason description")
-    
+
+    verify_p = subparsers.add_parser("verify", help="Check JSON state vs launch spec markdown consistency")
+
     args = parser.parse_args()
     
     if args.command == "init":
@@ -218,3 +257,5 @@ if __name__ == "__main__":
         transition_phase(args)
     elif args.command == "fail":
         fail_phase(args)
+    elif args.command == "verify":
+        verify_state(args)

@@ -1,14 +1,20 @@
 ---
 name: eval-harness
-description: "Formal evaluation framework for implementing eval-driven development (EDD) principles. Define pass/fail criteria, measure reliability with pass@k metrics, create regression test suites, and benchmark performance. TRIGGER when: user wants to define success criteria for code, set up evaluation benchmarks, or as Phase 3 of the AI engineering pipeline (after blueprint and ADR, before self-improve)."
+description: "Formal evaluation framework with two operating modes: (A) Early-phase AC Definition — usable at Explorer phase to translate requirements into executable pass/fail criteria before any code is written; (B) Pipeline Evaluation — Phase 3 of the AI engineering pipeline (after blueprint and ADR, before self-improve) to set up benchmarks and measure reliability with pass@k metrics. TRIGGER for either mode: when requirements need to be translated to testable assertions, or when setting up evaluation benchmarks."
 ---
 
 # Eval Harness Skill
 
-A formal evaluation framework implementing eval-driven development (EDD) principles.
+A formal evaluation framework with two modes: early-phase AC definition (Explorer) and pipeline benchmark evaluation (ai-pipeline Phase 3).
 
 ## When to Activate
 
+**Mode A — Early-phase AC Definition (Explorer phase):**
+- Requirements have been captured but Acceptance Criteria are not yet in `Given/When/Then` executable form
+- Use this mode as part of Explorer's AC-as-Tests Translation step (LIFECYCLE.md Step 6)
+- Output: structured AC table that can seed both the task_brief and the pipeline eval definitions
+
+**Mode B — Pipeline Evaluation (ai-pipeline Phase 3):**
 - Setting up eval-driven development (EDD) for AI-assisted workflows
 - Defining pass/fail criteria for task completion
 - Measuring agent reliability with pass@k metrics
@@ -24,7 +30,38 @@ Eval-Driven Development treats evals as the "unit tests of AI development":
 - Track regressions with each change
 - Use pass@k metrics for reliability measurement
 
-## Instructions
+## Mode A: Early-phase AC Definition
+
+Use at Explorer phase when requirements are captured but ACs are not yet executable.
+
+### Step A1: Extract requirement units from context
+
+For each requirement in scope, extract the behavior being promised.
+
+### Step A2: Translate to AC table
+
+```markdown
+| # | Requirement | Given | When | Then | Grader Type | Pass Threshold |
+|---|---|---|---|---|---|---|
+| AC-001 | User can register | no account exists for email | POST /auth/register | HTTP 201 + account row in DB | code (HTTP status + DB query) | pass@1 |
+| AC-002 | Duplicate email rejected | account exists for email | POST /auth/register | HTTP 409 + error code REG_001 | code (HTTP status + body.code) | pass^3 |
+```
+
+**Vague language blocklist** — any AC containing these words MUST be rewritten before proceeding:
+`correct`, `properly`, `appropriately`, `handle`, `reasonable`, `good`, `work`
+
+### Step A3: Output
+
+Write the AC table to `task_brief.md` under `## Acceptance Criteria`. Also write to eval_harness artifact if the pipeline will run:
+```
+<YYYY-MM-DD>_<slug>_eval_harness.md  ← AC table + grader types seeded
+```
+
+The Mode B steps below then fill in benchmark scripts against these ACs.
+
+---
+
+## Mode B: Pipeline Evaluation
 
 ### Step 1: Define Evals (Before Coding)
 

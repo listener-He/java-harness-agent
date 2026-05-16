@@ -98,7 +98,7 @@ Save to:
 - Project skills: `.agents/skills/<skill-name>/SKILL.md`
 
 After saving:
-1. Update the central index: `.agents/skills/trae-skill-index/SKILL.md`
+1. Update the central index: `.agents/skills/skill-index/SKILL.md`
 2. Run the index gate: `skill_index_linter.py` (missing links must be fixed)
 3. Use `skill-graph-manager` to maintain bidirectional related-skill links (requires user approval)
 

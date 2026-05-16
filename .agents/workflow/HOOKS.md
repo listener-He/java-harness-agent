@@ -6,8 +6,28 @@ Defines when and how to enforce constraints throughout the lifecycle.
 
 ## Session Resume Anchors (MUST, in order)
 
-1. Read `router/runs/launch_spec_*.md` — restore from `Status / Phase`.
-2. If `<YYYY-MM-DD>_<slug>_explore_report.md` exists — read its `## Core Context Anchors` section before any heavy navigation.
+1. Read `router/runs/launch_spec_*.md` — find the row where `Status = IN_PROGRESS` or `WAITING_APPROVAL`.
+2. Read the `Artifact` column of that row — this is the full path to the active `task_brief.md`.
+3. Load that specific `task_brief.md` — read `## Allowed Scope`, `## Acceptance Criteria`, `## Hard Constraints`.
+
+**If Artifact column is empty but Status = IN_PROGRESS:** task_brief was not yet created (interrupted during Explorer). Resume from Explorer step 2 — do not guess scope.
+
+**If no IN_PROGRESS row exists:** all tasks are PENDING or DONE. Ask human which task to start next.
+
+### Resume Fidelity Check (MUST, after step 3)
+
+```
+[Resume Fidelity Check]
+launch_spec loaded: YES/NO — IN_PROGRESS row found: YES/NO
+task_brief path from Artifact column: {path or EMPTY}
+task_brief loaded: YES/NO
+  → Allowed Scope: [N files]
+  → Acceptance Criteria: [N ACs]
+  → Status header in task_brief: IN_PROGRESS / DONE (DONE = stale, do not use)
+Phase to resume: [Phase N — from launch_spec Phase column]
+```
+
+Mismatch or missing → STOP. Report `[Resume Blocked] <reason>`. Ask human to confirm correct task. Do NOT reconstruct from memory.
 
 ---
 
@@ -23,6 +43,17 @@ Defines when and how to enforce constraints throughout the lifecycle.
 
 **Required output (MUST):** Decision-First Preflight + budget declaration (see Rule 0.1 and Rules 4/5 in `../router/CONTEXT_FUNNEL.md`). This may be internal unless the user explicitly asks to see it; the mandatory `[Intent Check]` and `<Cognitive_Brake>` are always visible.
 
+**Local Intelligence Actions (run before reading any files):**
+
+| When | Command | Purpose |
+|---|---|---|
+| Explorer phase, scope unknown | `wiki_search.py --query "<intent>"` | Get top-3 wiki docs to read instead of blind drill-down |
+| Explorer phase, Change intent | `failure_memory.py query --intent Change --phase Explorer` | Warn about recurring failure patterns |
+| Before writing Focus Card | `code_index.py --impact-of <target_file>` | Enumerate callers/importers for accurate Allowed Scope |
+| Before writing Focus Card | `code_index.py --what-touches-table <table>` | Find all mappers using a table (Scenario B) |
+
+These commands are zero-cost (read local index files, no token budget consumed).
+
 ---
 
 ### 2. `guard_hook` — Execution Guard
@@ -34,7 +65,7 @@ Defines when and how to enforce constraints throughout the lifecycle.
 **Purpose:**
 - **Architectural Defense (MUST):** Ensure operations spanning multiple DB tables/domains are pushed down to a `@Transactional` Service or Facade layer. Controllers must remain thin.
 - **Standards guard:** Enforce style, custom project exceptions (e.g., `CustomerException`), and required patterns (e.g., `jakarta.validation` vs `javax`).
-- **Domain boundary guard:** Do NOT modify cross-domain files unless explicitly authorized in `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md`.
+- **Domain boundary guard:** Do NOT modify cross-domain files unless explicitly listed in `## Allowed Scope` of the current `task_brief.md`.
 - **Anti-runaway guard (MUST):** Enforce budgeted navigation + stop rules + escalation protocol (see `../router/CONTEXT_FUNNEL.md`).
 - **Anti-drift guard (MUST):** Maintain a `Focus Card` and enforce scope via `scope_guard.py` (see `../workflow/ROLE_MATRIX.md`).
 - **Fast-Path Impact Guard:** For `TRIVIAL` tasks bypassing `Explorer`, the Agent MUST execute a global `Grep` or `SearchCodebase` to ensure the variable/method being renamed or modified has no hidden or hardcoded dependencies (e.g., XML mappings, reflection).
@@ -71,7 +102,7 @@ Read-only checks (do NOT modify files):
 
 | Gate | Command | When required |
 |---|---|---|
-| OpenSpec schema | `python3 .agents/scripts/wiki/schema_checker.py <path_to_.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md>` | Every STANDARD task |
+| Task brief schema | `python3 .agents/scripts/wiki/schema_checker.py <path_to_.agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md>` | Every STANDARD task |
 | Wiki graph lint | `python3 .agents/scripts/wiki/wiki_linter.py` | Every task with write-back |
 | Ambiguity check | `python3 .agents/scripts/gates/ambiguity_gate.py --intent "<intent>" [--anchors-file <file>]` | Every task start |
 | Write-back check | `python3 .agents/scripts/gates/writeback_gate.py --topic "<topic>" --date YYYYMMDD [--require-data]` | PATCH + STANDARD Archive |
@@ -80,7 +111,7 @@ Read-only checks (do NOT modify files):
 | Java comment lint | `python3 .agents/scripts/gates/comment_linter_java.py --path <dir> [--fail-on-missing]` | Java code changes |
 | **WAL compliance** | `python3 .agents/scripts/gates/wal_template_gate.py --wal-dir <dir>` | Every Archive with WAL output |
 | **DB migration** | `python3 .agents/scripts/gates/migration_gate.py --sql-dir <path>` | Scenario B (DDL changes) |
-| **Breaking API** | `python3 .agents/scripts/gates/api_breaking_gate.py --openspec .agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` | Scenario C (API schema changes) |
+| **Breaking API** | `python3 .agents/scripts/gates/api_breaking_gate.py --task-brief .agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md` | Scenario C (API schema changes) |
 | **Dependency** | `python3 .agents/scripts/gates/dependency_gate.py --pom <pom.xml>` | Scenario E (pom.xml changes) |
 | Unified runner | `python3 .agents/scripts/gates/run.py --intent <...> --profile <...> --phase <...> --topic <...> --date <YYYYMMDD> [--verify-level quick\|standard\|strict] [--artifact-tags ...]` | Any phase (convenience wrapper) |
 
@@ -92,7 +123,7 @@ Read-only checks (do NOT modify files):
 - Python gates should be treated as guidelines rather than absolute blockers if logic dictates otherwise. Use `WARN` instead of `FAIL` for stylistic mismatches.
 
 **Bypass Lifecycle (MUST):**
-- Every `bypass_justification.md` is valid ONLY for the current task (the task whose `focus_card.md` it references).
+- Every `bypass_justification.md` is valid ONLY for the current task (the task whose `task_brief.md` it references).
 - When the task's Archive phase completes, all bypass files for that task are stale and MUST NOT be reused for subsequent tasks.
 - A bypass file MUST include the header `task_id: <intent>:<profile>:<topic>:<date>` on its first line.
 - A bypass file MUST include the header `expires_after: Archive` on its second line.
@@ -104,7 +135,7 @@ Read-only checks (do NOT modify files):
   - Domain WAL + API WAL + Rules WAL: always mandatory.
   - Data WAL: mandatory when schema/DDL changes.
 - For **PATCH**: WAL write-back is NOT required.
-  - Move openspec to `../llm_wiki/archive/`.
+  - Move task_brief.md to `../llm_wiki/archive/`.
   - Write 1-line changelog to `.agents/events/drift_queue/`.
   - Wiki refresh is deferred to milestone boundaries or explicit `@wiki-update` command.
 - The Agent MUST NOT mark a STANDARD change as "done" if write-back gates fail.
@@ -125,13 +156,11 @@ python3 .agents/scripts/tools/archive_session_artifacts.py --slug <feature_slug>
 
 #### Explorer Post-Hook: Core Context Anchors (MUST)
 
-The `<YYYY-MM-DD>_<slug>_explore_report.md` produced by the Explorer `post_hook` MUST include a section named `## Core Context Anchors` containing:
-
-- Key links collected via drill-down (domain / api / data / architecture / preferences / security_rules, etc.)
+After Explorer, key context anchors feed into `task_brief.md ## Hard Constraints`:
 - Business vocabulary and invariants (terms, enums, state notes)
-- Explicit engineering red lines (forbidden patterns, permission strategy, idempotency strategy, rollback placeholder)
+- Engineering red lines (forbidden patterns, permission strategy, idempotency strategy)
 
-Usage: In Propose / Implement phases, if context is unstable or time has passed, read this anchor section before any heavy navigation.
+In Propose / Implement phases: read `task_brief.md` Machine Section to restore context. No separate explore_report needed.
 
 ---
 
@@ -142,7 +171,14 @@ Usage: In Propose / Implement phases, if context is unstable or time has passed,
 **Bound skills:** `code-review-checklist`
 
 **Actions:**
-- **State downgrade:** Move back to the previous phase. Append the failure reason to `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` (or the relevant task artifact). Fix all failed checklist items.
+- **Record to failure memory (MUST):** Before rolling back, persist the failure pattern so future sessions can learn from it:
+  ```bash
+  python3 .agents/scripts/local_intel/failure_memory.py record \
+    --intent <intent> --profile <profile> --phase <phase> \
+    --gate <gate_script> --pattern "<one-line failure reason>" \
+    --task-id <task_id>
+  ```
+- **State downgrade:** Move back to the previous phase. Append the failure reason to `task_brief.md` (or state inline if no file exists). Fix all failed checklist items.
 - **Max retries (3):** If the same phase fails 3 times: STOP and ask for human intervention.
 - **Script retries cap (3):** Per task, each gate script can fail at most 3 times. On exceed: STOP and request human intervention.
 - **Retry state reset:** Auto-cleared when task ends (Archive) or process receives an interruption signal. Explicit reset: `run.py --end-task`.

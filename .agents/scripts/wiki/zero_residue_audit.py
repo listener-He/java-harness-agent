@@ -61,6 +61,10 @@ IGNORE_DIRS = {
 
 IGNORE_FILES = {
     ".agents/scripts/wiki/zero_residue_audit.py",
+    # USAGE docs describe cross-IDE setup; .trae/ refs are factual descriptions of Trae IDE's
+    # native rules directory, not stale migration artifacts from this repo's .trae/ → .agents/ move.
+    "USAGE.md",
+    "USAGE_zh.md",
 }
 
 

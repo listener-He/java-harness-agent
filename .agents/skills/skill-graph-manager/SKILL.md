@@ -21,7 +21,7 @@ This skill acts as the automated librarian for the workspace. It ensures that al
 **Action**: Read the new or modified `SKILL.md`. Understand its boundaries, focus, and target audience.
 
 ### Step 2: Propose Bidirectional Links
-**Action**: Consult the central index (`trae-skill-index/SKILL.md`). Identify 2-5 existing skills that are logically related (e.g., predecessor, successor, sibling, or standard constraints).
+**Action**: Consult the central index (`skill-index/SKILL.md`). Identify 2-5 existing skills that are logically related (e.g., predecessor, successor, sibling, or standard constraints).
 - Generate a proposal of which skills should link to the new skill, and which skills the new skill should link to.
 
 ### Step 3: Prompt the User for Approval
@@ -37,7 +37,7 @@ This skill acts as the automated librarian for the workspace. It ensures that al
 **Action**: Once the user approves:
 1. **Update the Target Skill**: Append or update the `## Related Skills` section at the bottom of the new/modified `SKILL.md`.
 2. **Update the Related Skills**: Inject the reverse link into the `## Related Skills` section of the related existing skills.
-3. **Update the Central Index**: Update `trae-skill-index/SKILL.md` to reflect the new graph topology.
+3. **Update the Central Index**: Update `skill-index/SKILL.md` to reflect the new graph topology.
 
 ---
 

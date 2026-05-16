@@ -102,7 +102,7 @@ def check_wiki():
         return EXIT_FAIL
     if oversized_files or orphans:
         print("\n结论: ⚠️ WARN")
-        return 0
+        return 1
     print("\n结论: ✅ OK")
     return 0
 

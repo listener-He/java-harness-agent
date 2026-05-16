@@ -46,6 +46,17 @@ Blueprint should stay tool-agnostic. If git workflows exist, they can be propose
 
 ### Phase 2: Design
 
+**MUST generate ≥2 alternative plan structures before selecting one.** A single-option design is a hidden decision.
+
+For each alternative, capture in ADR format:
+- **Option A / Option B**: name + one-sentence summary
+- **Pros**: why this structure works
+- **Cons**: what it sacrifices
+- **Failure Condition**: the specific situation where this plan structure would collapse
+
+Select one option. State the selection rationale and emit a **Constraint List** (decisions that bind all downstream steps). Propagate the Constraint List into the plan file under `## Hard Constraints`.
+
+Then for the selected plan:
 1. Break the objective into discrete steps (3–12 steps)
 2. For each step, determine:
    - **Dependencies**: which steps must complete first

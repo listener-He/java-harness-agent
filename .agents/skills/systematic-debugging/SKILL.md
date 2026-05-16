@@ -52,6 +52,32 @@ When the user is confused about “what is failing”, do a quick evidence-first
 3. State what is known vs unknown (separate symptoms from hypotheses)
 4. Choose the smallest next probe that can confirm/deny one hypothesis
 
+## Hierarchical Localization Protocol (MUST run before Phase 1)
+
+Before reading ANY file, localize to the smallest scope:
+
+```
+Level 1 — Module: Which package/module boundary is implicated?
+  Signal: error package, import chain, module name in stack trace
+  → Narrow to 1–2 candidate packages before reading files.
+
+Level 2 — File: Which specific class/file?
+  Use: code_index.py --who-calls <method> or --symbol <ClassName>
+  → Narrow to ≤3 candidate files.
+
+Level 3 — Method: Which method/function?
+  Read ONLY the candidate files. Find the method boundary.
+  → Narrow to 1 method before reading its body.
+
+Level 4 — Line: Exact location.
+  Read the method body. Identify the exact line.
+```
+
+**Stop rule:** Do not descend to the next level until the current level is resolved.
+**Budget rule:** Each level costs ≤2 code budget units. Total: ≤8 (within standard budget).
+
+---
+
 ## The Four Phases
 
 You MUST complete each phase before proceeding to the next.
@@ -132,30 +158,35 @@ You MUST complete each phase before proceeding to the next.
    - What settings, config, environment?
    - What assumptions does it make?
 
-### Phase 3: Hypothesis and Testing
+### Phase 3: Hypothesis Falsification (MUST — before any fix)
 
-**Scientific method:**
+**Falsify before fixing.** A hypothesis that cannot be falsified is not a root cause — it is a guess.
 
-1. **Form Single Hypothesis**
-   - State clearly: "I think X is the root cause because Y"
-   - Write it down
-   - Be specific, not vague
+**Protocol:**
 
-2. **Test Minimally**
-   - Make the SMALLEST possible change to test hypothesis
-   - One variable at a time
-   - Don't fix multiple things at once
+1. **State the Hypothesis**
+   Exact form: `"Root cause is [X] because [Y]."`
+   Bad: "I think the null check is missing."
+   Good: "Root cause is that `OrderService.createOrder()` does not validate `userId` before calling `userRepository.findById()`, causing NPE when `userId` is null."
 
-3. **Verify Before Continuing**
-   - Did it work? Yes → Phase 4
-   - Didn't work? Form NEW hypothesis
-   - DON'T add more fixes on top
+2. **Derive a Falsifiable Prediction**
+   `"If the hypothesis is true, then [observable condition Z] should hold."`
+   Example: "If true, then removing the `userId != null` guard should make the test fail at line 127."
 
-4. **When You Don't Know**
-   - Say "I don't understand X"
-   - Don't pretend to know
-   - Ask for help
-   - Research more
+3. **Test the Prediction (without fixing)**
+   Run the failing test in current state. Confirm the prediction is observable.
+   If the prediction does NOT hold → the hypothesis is WRONG. Return to Phase 1.
+
+4. **Only THEN: fix the root cause**
+   The fix must target the exact cause stated in the hypothesis. No bundled changes.
+
+5. **Counterfactual Verification (MUST after fix)**
+   - Step A: Run the originally failing test → MUST pass.
+   - Step B: Revert ONLY the fix → the test MUST fail again.
+   - If Step B doesn't fail: the fix is not the actual cause. Investigate further.
+   This two-step confirms causality, not just correlation.
+
+**When hypothesis fails twice with different root causes:** STOP. The contract or architecture may be wrong. Roll back to Propose phase.
 
 ### Phase 4: Implementation
 

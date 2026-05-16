@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Focus Card Gate
+Task Brief Gate (Content Check)
 
 Exit codes:
 - 0: PASS
@@ -57,7 +57,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if not os.path.exists(args.file):
-        print(f"FAIL: focus card not found: {args.file}")
+        print(f"FAIL: task brief not found: {args.file}")
         return EXIT_FAIL
 
     with open(args.file, "r", encoding="utf-8") as f:
@@ -65,7 +65,7 @@ def main() -> int:
 
     missing = [s for s in REQUIRED_SECTIONS if s not in content]
     if missing:
-        print("FAIL: focus card missing required sections")
+        print("FAIL: task brief missing required sections")
         for s in missing:
             print(f"- {s}")
         return EXIT_FAIL
@@ -86,12 +86,12 @@ def main() -> int:
                 empty_like.append(f"{sec}: placeholder token")
 
     if empty_like:
-        print("FAIL: focus card has empty/placeholder key sections")
+        print("FAIL: task brief has empty/placeholder key sections")
         for x in empty_like:
             print(f"- {x}")
         return EXIT_FAIL
 
-    print("OK: focus card gate pass")
+    print("OK: task brief gate pass")
     return 0
 
 

@@ -1,9 +1,9 @@
 {
-  "version": 1,
+  "version": 2,
   "roles": {
     "ambiguity_gatekeeper": {
       "artifacts_required": [
-        ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md"
+        ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md"
       ],
       "gates": [
         {
@@ -21,22 +21,22 @@
           "script": ".agents/scripts/gates/focus_card_gate.py",
           "args": [
             "--file",
-            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md"
+            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md"
           ]
         }
       ]
     },
     "focus_guard": {
       "artifacts_required": [
-        ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md",
+        ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md",
         ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_brake_snapshot.md"
       ],
       "gates": [
         {
           "script": ".agents/scripts/gates/scope_guard.py",
           "args": [
-            "--focus-card",
-            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md",
+            "--task-brief",
+            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md",
             "--files",
             "{changed_files}"
           ]
@@ -46,6 +46,17 @@
           "args": [
             "--snapshot",
             ".agents/workflow/runs/{date}_{topic}_brake_snapshot.md"
+          ]
+        },
+        {
+          "script": ".agents/scripts/gates/impact_gate.py",
+          "args": [
+            "--task-brief",
+            ".agents/workflow/runs/{date}_{topic}_task_brief.md",
+            "--changed-files",
+            "{changed_files}",
+            "--risk",
+            "{risk}"
           ]
         }
       ]
@@ -104,7 +115,7 @@
           "script": ".agents/scripts/gates/skill_index_linter.py",
           "args": [
             "--index",
-            ".agents/skills/trae-skill-index/SKILL.md",
+            ".agents/skills/skill-index/SKILL.md",
             "--skills-dir",
             ".agents/skills"
           ]
@@ -131,8 +142,8 @@
         {
           "script": ".agents/scripts/gates/ambiguity_gate.py",
           "args": [
-            "--require",
-            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_explore_report.md"
+            "--intent",
+            "{intent_text}"
           ]
         }
       ]
@@ -140,10 +151,10 @@
     "system_architect": {
       "gates": [
         {
-          "script": ".agents/scripts/gates/openspec_gate.py",
+          "script": ".agents/scripts/gates/task_brief_gate.py",
           "args": [
             "--require",
-            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md"
+            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md"
           ]
         }
       ]
@@ -153,8 +164,8 @@
         {
           "script": ".agents/scripts/gates/scope_guard.py",
           "args": [
-            "--focus-card",
-            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md",
+            "--task-brief",
+            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md",
             "--files",
             "{changed_files}"
           ]
@@ -204,6 +215,17 @@
           "args": []
         }
       ]
+    },
+    "patch_archiver": {
+      "gates": [
+        {
+          "script": ".agents/scripts/gates/bypass_audit_gate.py",
+          "args": [
+            "--task-id",
+            "{task_id}"
+          ]
+        }
+      ]
     }
   },
   "mounts": [
@@ -238,7 +260,7 @@
       "profile": "PATCH",
       "phase": "Archive",
       "roles": [
-        "knowledge_extractor"
+        "patch_archiver"
       ]
     },
     {

@@ -15,7 +15,7 @@ description: "Flexible quality gate checklist for AI self-correction. Invoke bef
 - [ ] **Conciseness:** Is there any fluff or redundant AI preamble that can be removed?
 - [ ] **Consistency:** Are terms, variable names, and architectural decisions consistent throughout the text?
 
-## Documentation & Specs (`<YYYY-MM-DD>_<slug>_openspec.md`)
+## Documentation & Specs (`<YYYY-MM-DD>_<slug>_task_brief.md`)
 - [ ] **Clear Title:** Does the document clearly state its purpose?
 - [ ] **Executive Summary:** Is there a 2-3 sentence TL;DR at the top mapping back to the Acceptance Criteria (AC)?
 - [ ] **Logical Flow:** Do the sections connect logically (e.g., Context -> Architecture -> Data Model -> API)?
@@ -23,7 +23,7 @@ description: "Flexible quality gate checklist for AI self-correction. Invoke bef
 - [ ] **Formatting:** Are Markdown tables, bold text, and code snippets used correctly?
 - [ ] **Action Items:** Does the spec end with a clear transition to the `Implement` phase?
 
-## Analytical Reports (`<YYYY-MM-DD>_<slug>_explore_report.md` / Root Cause)
+## Analytical Reports (Inline `[Explore]` Block / Root Cause)
 - [ ] **Source Attribution:** Are file paths and log snippets clearly referenced?
 - [ ] **Methodology:** Did I explain *how* I arrived at this conclusion?
 - [ ] **Fact vs. Assumption:** Are my hypotheses clearly distinguished from verified facts?
@@ -35,3 +35,11 @@ description: "Flexible quality gate checklist for AI self-correction. Invoke bef
 - [ ] **Justification:** Is the chosen approach defended convincingly (e.g., using Cost-Benefit or SWOT)?
 - [ ] **Blast Radius:** Have I explicitly documented the impact on existing systems?
 - [ ] **Rollback Plan:** Is there a clear way to revert this change if it fails?
+
+## Requirements & Acceptance Criteria (Semantic Quality)
+- [ ] **Single Behavior:** Does each requirement unit describe exactly ONE testable behavior? (Split if it contains "and" with two distinct outcomes)
+- [ ] **No Vague Language:** Are words like "correctly", "properly", "handle", "work well", "support" absent? Each AC must name a specific observable output.
+- [ ] **Executable:** Can each AC be written directly as a test assertion? (`assertEquals(...)`, `assertThrows(...)`, HTTP status code, exact field value)
+- [ ] **Falsifiable:** Is there a condition under which the AC would definitively FAIL? (If no failure condition exists, the AC is not testable)
+- [ ] **Conflict-Free:** Do any two ACs contradict each other or contradict existing documented behavior?
+- [ ] **Complete:** Does each AC cover at least: (1) happy path, (2) one error/edge case?

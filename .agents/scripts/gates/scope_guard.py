@@ -4,7 +4,7 @@
 Scope Guard (Anti-drift)
 
 This gate prevents the change set from drifting outside allowed scope.
-It reads Allowed Scope prefixes from a focus card and compares them against changed files.
+It reads Allowed Scope prefixes from a task_brief and compares them against changed files.
 
 Exit codes:
 - 0: PASS
@@ -22,8 +22,8 @@ EXIT_WARN = 1
 EXIT_FAIL = 2
 
 
-def _read_allowed_prefixes(focus_card_path: str) -> list[str]:
-    with open(focus_card_path, "r", encoding="utf-8") as f:
+def _read_allowed_prefixes(task_brief_path: str) -> list[str]:
+    with open(task_brief_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
     in_section = False
@@ -61,16 +61,16 @@ def _git_changed_files() -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--focus-card", required=True)
+    parser.add_argument("--task-brief", required=True)
     parser.add_argument("--files", nargs="*", default=None, help="explicit file list; if omitted, uses git diff")
     parser.add_argument("--allow-prefix", action="append", default=[], help="additional allowed prefixes")
     args = parser.parse_args()
 
-    if not os.path.exists(args.focus_card):
-        print(f"FAIL: focus card not found: {args.focus_card}")
+    if not os.path.exists(args.task_brief):
+        print(f"FAIL: task_brief not found: {args.task_brief}")
         return EXIT_FAIL
 
-    raw_allowed = _read_allowed_prefixes(args.focus_card) + args.allow_prefix
+    raw_allowed = _read_allowed_prefixes(args.task_brief) + args.allow_prefix
     allowed_prefixes: list[str] = []
     allowed_exact: set[str] = set()
     for a in raw_allowed:

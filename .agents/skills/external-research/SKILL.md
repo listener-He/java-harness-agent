@@ -1,25 +1,61 @@
 ---
 name: external-research
-description: "Large-scale external research for breaking through optimization bottlenecks. Searches GitHub, arXiv, technical blogs, and forums for reference implementations, algorithms, and inspiration. Deeply analyzes findings and injects actionable ideas into the improvement pipeline. TRIGGER when: the AI pipeline detects a score plateau (no improvement for 5+ cycles), user says \"research externally\", \"break the bottleneck\", \"find new approaches\", or asks to search for reference implementations or literature. DO NOT TRIGGER when: the pipeline is making steady progress, or the user just wants a quick web search."
+description: "Large-scale external research across four trigger modes: (1) Pipeline plateau — breaking optimization bottlenecks when self-improve stalls; (2) Security/CVE — researching known vulnerabilities, CVE advisories, and security mitigations; (3) Compliance — researching regulatory requirements (GDPR, PCI-DSS, SOC2, etc.) and their technical implications; (4) Competitor/benchmark — researching industry-standard patterns, reference implementations, and design alternatives. TRIGGER for any of these four modes. DO NOT TRIGGER when the pipeline is making steady progress or the user just wants a quick web search."
 ---
 
-# External Research — Breaking Bottlenecks with Outside Knowledge
+# External Research — Outside Knowledge for Stuck or Specialized Problems
 
-When internal codebase analysis and iterative improvement have exhausted their potential, this skill searches the broader world for new ideas. It is the pipeline's way of saying: "We're stuck — let's see what others have figured out."
+Searches the broader world for new ideas, threat intelligence, regulatory guidance, or reference implementations. Four distinct trigger modes with different research strategies.
 
 ## When to Use
 
+**Mode 1: Pipeline Plateau (optimization)**
 - The AI pipeline has plateaued (score not improving for 5+ cycles)
-- User explicitly requests external research ("research externally", "break the bottleneck", "find new approaches")
-- User asks to search for reference implementations or literature on a specific problem
+- User explicitly requests ("research externally", "break the bottleneck", "find new approaches")
 - Self-improve's internal researcher has run out of novel ideas within the codebase
+
+**Mode 2: Security / CVE Research**
+- `requirement-intake` emits `Input-Type: Security` (A6 frame)
+- User reports a potential security vulnerability or references a CVE number
+- Need to understand attack vectors, mitigations, or patch patterns for a known class of vulnerability
+
+**Mode 3: Compliance Research**
+- `requirement-intake` emits `Input-Type: Compliance` (A8 frame)
+- User references a regulation (GDPR, PCI-DSS, SOC2, HIPAA, etc.)
+- Need to map regulatory requirements to technical implementation constraints
+
+**Mode 4: Competitor / Benchmark Research**
+- `requirement-intake` emits `Input-Type: Feedback/Idea` with competitor comparison signal
+- User asks "how does X solve this?" or "what's the industry standard for Y?"
+- Need reference implementations or design patterns from analogous systems
 
 **Do NOT use** when:
 - The pipeline is making steady progress — internal iteration is sufficient
 - The user just wants a quick web search (use WebSearch directly)
 - The task is simple enough that external research would be overkill
 
-## Input
+## Mode Dispatch
+
+Detect the mode from context before selecting a research strategy:
+
+| Signal | Mode |
+|---|---|
+| `[Intake] Input-Type: Security` or CVE ID mentioned | Mode 2: Security/CVE |
+| `[Intake] Input-Type: Compliance` or regulation name mentioned | Mode 3: Compliance |
+| competitor comparison or "industry standard" question | Mode 4: Competitor |
+| pipeline plateau (no score gain 5+ cycles) | Mode 1: Pipeline Plateau |
+
+**Mode 2 research targets:** NVD/CVE database, OWASP advisories, GitHub Security Advisories, language-specific security mailing lists, vendor patches.
+
+**Mode 3 research targets:** Official regulation text, compliance framework documentation (SOC2 Trust Services Criteria, PCI-DSS requirements), NIST publications, industry implementation guides.
+
+**Mode 4 research targets:** GitHub reference implementations, official documentation of analogous systems, technical blog posts from companies with similar architecture, benchmark results.
+
+For Modes 2–4, skip the pipeline-specific Input fields and output a structured findings report to `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_research.md` instead of `idea_output_path`.
+
+---
+
+## Input (Mode 1: Pipeline Plateau)
 
 | Field | Required | Description |
 |---|---|---|

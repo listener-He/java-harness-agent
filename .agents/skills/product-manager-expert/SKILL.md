@@ -1,13 +1,61 @@
 ---
 name: "product-manager-expert"
-description: "Expert PM skill for requirements research, validation, PRD generation, and prototyping. Invoke when user wants to design a product, write a PRD, or analyze requirements."
+description: "Expert PM skill with two modes: (1) PRD Generation — research, validate, write a PRD from scratch; (2) PRD Ingestion — process an existing PRD into technical requirements, AC, and a prioritized implementation queue. TRIGGER when user provides or wants to create product requirements."
 ---
 
 # Product Manager Expert
 
-**Focus**: Requirements research, market/competitor validation, PRD generation, and prototyping.
+**Focus**: Requirements research, market/competitor validation, PRD generation, prototyping, and PRD-to-implementation translation.
 
-This skill acts as your virtual Senior Product Manager. It integrates the best practices of industry-leading PM workflows, avoiding common pitfalls like generic competitor analysis and premature PRD generation.
+Two operating modes — detect from context:
+- **Generation Mode**: User has an idea and wants a PRD written.
+- **Ingestion Mode**: User provides an existing PRD and wants it translated into technical work.
+
+---
+
+## Mode A: PRD Ingestion (Processing an Existing PRD)
+
+Use when: user pastes or references an existing PRD/requirements document.
+
+### Step 1: Decompose into Requirement Units
+- Extract each distinct requirement. Number them (REQ-001, REQ-002...).
+- Each unit must be a single, independently testable behavior.
+- If a unit mixes multiple behaviors, split it.
+
+### Step 2: Codebase-Aware Validation
+For each requirement unit:
+- Does existing code already satisfy this? If yes → mark as EXISTING, skip.
+- Does this conflict with existing behavior? If yes → flag CONFLICT + describe the contradiction.
+- What is the blast radius? (use `code_index.py --impact-of` if index is built)
+
+### Step 2.5: Requirements Adversarial Check (one round)
+Run `adversarial-review` Category A with the **PRD frame**:
+> "Assume 2 requirements in this PRD are mutually exclusive. Which pair, and what is the hidden conflict that makes both unachievable simultaneously?"
+
+- CRITICAL finding → resolve the conflict (clarify with user or eliminate one requirement) before proceeding to Step 3.
+- MINOR finding → annotate the affected REQ-xxx with a risk note.
+- One round only. Do not loop.
+
+### Step 3: AC Translation
+Convert each non-EXISTING unit to testable Acceptance Criteria:
+```
+REQ-001: [requirement text]
+AC-001a: Given [precondition], when [action], then [measurable result]
+AC-001b: Given [error condition], when [action], then [error handling result]
+Conflict: [none | CONFLICT with <existing behavior>]
+```
+
+### Step 4: Dependency & Priority Ordering
+- Identify which requirements must be implemented before others (data dependencies, API dependencies).
+- Output a dependency-ordered implementation queue.
+- Mark each with estimated profile: TRIVIAL / PATCH / STANDARD / EPIC.
+
+### Output
+Feed the ordered queue into `task-decomposition-guide` (for EPIC-level PRDs) or directly into `launch_spec` (for smaller PRDs with ≤5 units).
+
+---
+
+## Mode B: PRD Generation (Creating a New PRD)
 
 ## Guardrails (Strict)
 - **NO IMMEDIATE PRD**: You are strictly prohibited from generating a full PRD immediately after the user's first prompt. You MUST enter the "Q&A Clarification" phase first.

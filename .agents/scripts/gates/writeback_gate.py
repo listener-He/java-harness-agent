@@ -35,7 +35,10 @@ def main() -> int:
     topic = args.topic.strip().lower().replace(" ", "_")
     date = args.date.strip()
 
-    required_types = [x.strip().lower() for x in (args.require or []) if x and x.strip()]
+    required_types = []
+    for x in (args.require or []):
+        if x and x.strip():
+            required_types.extend(t.strip().lower() for t in x.split(","))
     if not required_types:
         required_types = ["domain", "api", "rules"]
     if args.require_data and "data" not in required_types:

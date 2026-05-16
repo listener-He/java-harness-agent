@@ -14,6 +14,36 @@ When the user provides an explicit scope (file path, directory, class/method, or
 - Use the wiki funnel only if background context is still needed after the direct read.
 - Do NOT start with a Knowledge Graph drill-down for this scenario.
 
+### Rule 0.5: Local Search Pre-flight (SHOULD, before manual drill-down)
+When scope is NOT explicit, run local search tools BEFORE opening wiki or code files.
+These tools are pure local — zero network calls, zero token cost.
+
+**Wiki semantic search (BM25):**
+```bash
+python3 .agents/scripts/local_intel/wiki_search.py --query "<intent keywords>" --top 3
+```
+- Returns ranked wiki document paths with excerpts.
+- Use the top result as the starting point instead of `KNOWLEDGE_GRAPH.md → index.md` drill-down.
+- Still counts toward wiki budget when you actually READ the returned file.
+- Skip if the query is too vague (< 3 content words); fall back to Rule 1.
+
+**Code impact query (before writing Focus Card):**
+```bash
+python3 .agents/scripts/local_intel/code_index.py --impact-of <target_file>
+python3 .agents/scripts/local_intel/code_index.py --who-calls <MethodName>
+python3 .agents/scripts/local_intel/code_index.py --what-touches-table <table_name>
+```
+- Use to enumerate callers/importers of the changed file BEFORE writing the Allowed Scope list.
+- Does NOT consume code budget (it reads the index file, not source files directly).
+- Requires `code_index.py --build` to have been run. If index absent: skip and fall back to grep.
+
+**Failure memory query (at session start for Change intent):**
+```bash
+python3 .agents/scripts/local_intel/failure_memory.py query --intent Change --phase <phase>
+```
+- Returns top-5 similar past failures to warn the agent before it repeats them.
+- Output is advisory only — does NOT block execution.
+
 ### Rule 0.1: Budget Preflight (MUST)
 Before any heavy navigation, internally assess the goal and enforce hard resource budgets.
 No need to output a verbose preflight block to chat unless specifically requested.
@@ -144,7 +174,7 @@ If budgets are exhausted OR stop rules trigger without meeting success criteria,
 ```
 
 #### 5.2 Lifecycle Persistence on Escalation
-Set the intent row in `launch_spec_*.md` to `WAITING_APPROVAL`. Include a link to the relevant artifact (e.g., `<YYYY-MM-DD>_<slug>_openspec.md` or the escalation note).
+Set the intent row in `launch_spec_*.md` to `WAITING_APPROVAL`. The `Artifact` column must already contain the `task_brief.md` path — if not, write it now before setting the status.
 
 ---
 
@@ -174,5 +204,5 @@ When generating a new table or altering a schema, the Agent MUST NOT drop a raw 
 ## Hard Constraints
 
 - Links inside `.agents/` MUST use relative paths from the current file.
-- If expertise is unclear: consult [trae-skill-index](../skills/trae-skill-index/SKILL.md).
+- If expertise is unclear: consult [skill-index](../skills/skill-index/SKILL.md).
 - Every `index.md` MUST provide a 1–2 sentence summary for each linked child document.

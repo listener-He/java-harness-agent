@@ -13,15 +13,15 @@ This file is the root of the wiki. Use it to navigate by drilling down through i
 
 ## 1. Philosophy & Templates
 - **[Purpose](purpose.md)**: why this system exists and what it optimizes for.
-- **[OpenSpec Schema](schema/openspec_schema.md)**: the contract template for proposals and designs.
-- **[Skills Index](../skills/trae-skill-index/SKILL.md)**: available specialist skills.
+- **[OpenSpec Schema](schema/task_brief_schema.md)**: the contract template for proposals and designs.
+- **[Skills Index](../skills/skill-index/SKILL.md)**: available specialist skills.
 
 ## 2. Active Domains (Drill-down Indexes)
 - **[Domain](wiki/domain/index.md)**: Business vocabulary, states, invariants. *(e.g., Auth, Payment, User states)*
 - **[API](wiki/api/index.md)**: Exposed APIs and contracts. *(Format: Markdown tables with Method, Path, Auth)*
 - **[Data](wiki/data/index.md)**: Database tables, indexes, ER notes. *(Format: Markdown tables with Store Type, Retention)*
 - **[Architecture](wiki/architecture/index.md)**: Architecture decisions, security baseline, ADRs. *(Format: ADR tracking list)*
-- **[Specs](wiki/specs/index.md)**: Active `<YYYY-MM-DD>_<slug>_openspec.md` documents. *(Ongoing or recently closed proposals)*
+- **[Specs](wiki/specs/index.md)**: Active `<YYYY-MM-DD>_<slug>_task_brief.md` documents. *(Ongoing or recently closed proposals)*
 - **[Testing](wiki/testing/index.md)**: Testing standards and evidence requirements. *(Contains objective evidence links)*
 - **[Reviews](wiki/reviews/index.md)**: Review artifacts, PR design reviews, audit reports. *(Status tracking)*
 - **[Preferences](wiki/preferences/index.md)**: Project-specific constraints, security rules, and do-not-do lists. *(Tags: `[Security]`, `[DB]`, etc. If any file exceeds 500 lines, it MUST be split).*

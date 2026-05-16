@@ -21,7 +21,7 @@ Executable Checklist:
 - [ ] **Cognitive Check:** Review `.agents/skills/cognitive-bias-checklist/SKILL.md` to avoid 'Framing Effect' or 'Confirmation Bias' when defining the problem.
 - [ ] **Quality Check:** Apply `.agents/skills/spec-quality-checklist/SKILL.md` to ensure the report defines the problem clearly and has actionable next steps.
 Output:
-- `<YYYY-MM-DD>_<slug>_explore_report.md` (containing User Stories and AC).
+- Inline `[Explore]` block in response (MEDIUM/HIGH) or inline reasoning (TRIVIAL/LOW). No file output.
 Gate:
 - `ambiguity_gate.py` (Must pass definition of ready).
 
@@ -29,24 +29,24 @@ Gate:
 Purpose:
 - Design the high-level system interactions, database schema (DDL), and design patterns before any code is written. Acts as the "Foreman" in EPIC scenarios.
 Executable Checklist:
-- [ ] **Hard Context Handover:** Read `<YYYY-MM-DD>_<slug>_explore_report.md` and explicitly map your design back to the Acceptance Criteria (AC).
+- [ ] **Hard Context Handover:** Read `<YYYY-MM-DD>_<slug>_task_brief.md` Machine Section (Allowed Scope + AC + Hard Constraints) before writing any design.
 - [ ] Evaluate if new dependencies/middleware are required.
-- [ ] Define system boundaries and output the API/Data contract in `<YYYY-MM-DD>_<slug>_openspec.md`.
+- [ ] Define system boundaries and populate the task_brief.md with API/Data contract details.
 - [ ] Assess the "Blast Radius" of the proposed changes.
 - [ ] **Cognitive Check:** Review `.agents/skills/cognitive-bias-checklist/SKILL.md` to prevent Confirmation Bias or Anchoring Effect during design.
 - [ ] **Decision Check:** Use `.agents/skills/decision-frameworks/SKILL.md` when evaluating multiple architecture options.
 - [ ] **EPIC Splitter:** If the task is Scenario EPIC, MUST use `.agents/skills/task-decomposition-guide/SKILL.md` to break the design into actionable `<YYYY-MM-DD>_<slug>_tasks.md`.
-- [ ] **Spec Quality Check:** Ensure `<YYYY-MM-DD>_<slug>_openspec.md` passes the structural and clarity checks from `.agents/skills/spec-quality-checklist/SKILL.md` before submission.
+- [ ] **Spec Quality Check:** Ensure `<YYYY-MM-DD>_<slug>_task_brief.md` passes the structural and clarity checks from `.agents/skills/spec-quality-checklist/SKILL.md` before submission.
 **Outputs:**
-- `<YYYY-MM-DD>_<slug>_openspec.md` (Must include an AC mapping section).
+- `<YYYY-MM-DD>_<slug>_task_brief.md` (MEDIUM/HIGH; must include AC list and Allowed Scope).
 Gate:
-- Approval Gate (Requires human sign-off on the spec).
+- Approval Gate (HIGH risk only — requires human sign-off before Implement).
 
 ### Lead Engineer
 **Primary Mission:**
-- Translate the `<YYYY-MM-DD>_<slug>_openspec.md` into concrete, compilable code while strictly adhering to existing project paradigms.
+- Translate the `<YYYY-MM-DD>_<slug>_task_brief.md` Machine Section into concrete, compilable code while strictly adhering to existing project paradigms.
 **Behavior Checklist:**
-- [ ] Write code strictly within the boundaries of `<YYYY-MM-DD>_<slug>_focus_card.md`.
+- [ ] Write code strictly within the boundaries of `## Allowed Scope` in `task_brief.md`.
 - [ ] **Boundary Exception Protocol:** If out-of-scope files MUST be modified, DO NOT edit them directly. Output a `[Boundary Exception Request]` explaining why, and wait for human approval.
 - [ ] Prioritize reusing existing Utils, Base classes, and patterns over reinventing the wheel.
 - [ ] Ensure all exceptions are properly caught and handled (no swallowed exceptions).
@@ -77,7 +77,7 @@ Executable Checklist:
 - [ ] Challenge the "Happy Path" by identifying at least 2 overlooked Edge Cases.
 - [ ] Use 5-Why analysis from `.agents/skills/decision-frameworks/SKILL.md` to drill down on proposed solutions.
 Output:
-- Refutation notes or requested amendments to `<YYYY-MM-DD>_<slug>_openspec.md`.
+- Refutation notes or requested amendments to `<YYYY-MM-DD>_<slug>_task_brief.md`.
 Gate:
 - `ambiguity_gate.py` / LLM peer-review.
 
@@ -87,15 +87,15 @@ Purpose:
 Executable Checklist:
 - [ ] **DEBUG Root Cause Check:** If diagnosing an issue, apply `5-Why Analysis` from `.agents/skills/decision-frameworks/SKILL.md` before making assumptions.
 Output:
-- `<YYYY-MM-DD>_<slug>_focus_card.md` (goal / non-goals / allowed scope / stop rules) OR an escalation card.
+- Inline `[Explore]` block in response (MEDIUM/HIGH) OR an escalation card. No separate file.
 Gate:
-- `ambiguity_gate.py` + `focus_card_gate.py` (FAIL blocks progress).
+- `ambiguity_gate.py` (FAIL blocks progress).
 
 ### Knowledge Extractor
 Purpose:
 - Consolidate all knowledge extraction (Domain, API, Rules) during the Archive phase into a single structured output, preventing role competition.
 Executable Checklist:
-- [ ] Read `targeted git diff` or `<YYYY-MM-DD>_<slug>_openspec.md` (DO NOT read full history).
+- [ ] Read `targeted git diff` or `<YYYY-MM-DD>_<slug>_task_brief.md` (DO NOT read full history).
 - [ ] Extract knowledge into a unified structured format categorizing `[Domain]`, `[Interface]`, and `[Rules]` changes.
 Output:
 - Unified WAL fragment containing Domain, API, and Rules updates.
@@ -141,7 +141,7 @@ Convention:
 Purpose:
 - Prevent attention drift and cross-domain edits not authorized by contract.
 Output:
-- Scope constraints in `<YYYY-MM-DD>_<slug>_focus_card.md`.
+- Allowed Scope section in `<YYYY-MM-DD>_<slug>_task_brief.md`.
 Gate:
 - `scope_guard.py` (FAIL if changed files exceed allowed scope).
 

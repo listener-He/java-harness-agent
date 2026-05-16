@@ -57,7 +57,7 @@ def _check_intent(intent: str) -> tuple[int, list[str]]:
     process_object_signals = [
         # Workflow process artifacts
         "hook", "hooks", "gate", "gates", "lifecycle", "router", "workflow",
-        "wiki", "wal", "launch_spec", "focus_card", "openspec", "explore_report",
+        "wiki", "wal", "launch_spec", "task_brief",
         "skill", "skills", "role_matrix", "agent", "agents",
         # Chinese equivalents
         "流程", "门控", "生命周期",

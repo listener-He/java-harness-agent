@@ -9,6 +9,35 @@ description: "MANDATORY MASTER skill for decomposing large PRDs or EPIC scenario
 
 This skill transforms a monolithic requirement into an actionable, structured execution plan (`<YYYY-MM-DD>_<slug>_tasks.md`) that multiple Sub-Agents (or developers) can execute without stepping on each other's toes or blowing up the context window.
 
+---
+
+## 🔍 0. Pre-Decomposition: Scope Validation
+
+**Before splitting anything:**
+
+### 0a. PRD Input — Run product-manager-expert first
+If the input is a PRD (multi-requirement document), do NOT decompose directly.
+1. Run `product-manager-expert` Mode A (PRD Ingestion) to extract + validate requirement units.
+2. Use the validated, conflict-free requirement list as input to this skill.
+3. Reason: decomposing an unvalidated PRD embeds hidden conflicts into the task graph.
+
+### 0b. EPIC Scenario — Run adversarial check first
+If the input is a single large feature (EPIC), run `adversarial-review` Category C with the **EPIC frame**:
+> "Assume the task decomposition has a hidden sequential dependency that makes parallel execution impossible. Which two tasks, and what shared state forces the ordering?"
+
+- CRITICAL finding → resolve the dependency structure before finalizing the task graph.
+- MINOR finding → annotate affected tasks with `[Dep-Risk]` in the output.
+- One round only.
+
+### 0c. Complexity Estimation via Code Impact
+If `code_index.json` is built, run `code_index.py --impact-of <target_file>` for the primary change file.
+Use the impact count to calibrate effort estimates:
+- impact ≤ 5 files → Simple (2h)
+- impact 6–15 files → Medium (4h)
+- impact > 15 files → Complex (8h+) — consider further vertical slicing.
+
+---
+
 ## 🎯 1. The INVEST Quality Gate (Strict Criteria)
 Before finalizing any subtask breakdown, you MUST ensure EVERY generated task satisfies the Agile **INVEST** principles:
 - **I (Independent):** Can this task be worked on without waiting for 3 other tasks to finish? Minimize blocking dependencies.

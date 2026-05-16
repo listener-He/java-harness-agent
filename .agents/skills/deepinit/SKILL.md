@@ -1,13 +1,23 @@
 ---
 name: deepinit
-description: Deep codebase initialization with hierarchical AGENTS.md documentation
+description: "Deep codebase initialization. Two outputs: (1) hierarchical AGENTS.md files for human navigation; (2) a machine-readable context_brief.md that other skills (brainstorming, greenfield-scaffold, requirement-intake) can load directly as structured context. TRIGGER when initializing a new repo, onboarding an agent to an unfamiliar codebase, or when requirement-intake needs codebase context and no context_brief.md exists."
 ---
 
-# deepinit
+# deepinit — Deep Codebase Initialization
 
-# Deep Init Skill
+Two outputs for two audiences:
+- **AGENTS.md files**: human-navigable documentation, hierarchical, one per directory
+- **`context_brief.md`**: machine-readable structured context for agent skill consumption
 
-Creates comprehensive, hierarchical AGENTS.md documentation across the entire codebase.
+Both are generated in one pass. The `context_brief.md` is the primary output for downstream skills.
+
+## Core Concept
+
+AGENTS.md files serve as **AI-readable documentation** that helps agents understand:
+- What each directory contains
+- How components relate to each other
+- Special instructions for working in that area
+- Dependencies and relationships
 
 ## Core Concept
 
@@ -304,6 +314,65 @@ Reusable React components organized by feature and complexity.
 <!-- MANUAL: -->
 ```
 
+## Step 6: Generate context_brief.md (MUST — final step)
+
+After all AGENTS.md files are written and validated, synthesize a single machine-readable `context_brief.md` under `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_context_brief.md`.
+
+This file is consumed by: `requirement-intake`, `brainstorming`, `greenfield-scaffold`, `adversarial-review` (Category C), and any skill that needs codebase context without navigating the full file tree.
+
+### context_brief.md Template
+
+```markdown
+# Context Brief — {repo-name}
+Generated: {YYYY-MM-DD} | Source: deepinit
+
+## 1. Codebase Identity
+- **Language / Framework**: {e.g., Java 17 / Spring Boot 3.x}
+- **Architecture style**: {e.g., Layered MVC, Hexagonal, Microservice}
+- **Entry points**: {main classes or modules where execution starts}
+- **Build tool**: {Maven / Gradle / etc.}
+
+## 2. Domain Entities
+| Entity | Location | Core Attributes | Lifecycle States |
+|---|---|---|---|
+| {EntityName} | {package.ClassName} | {key fields} | {states if stateful, else N/A} |
+
+## 3. API Surface
+| Method | Path | Auth | Module | Notes |
+|---|---|---|---|---|
+| {GET/POST/...} | {/path} | {role/public} | {controller class} | {one-line summary} |
+
+## 4. Constraint List (Engineering Red Lines)
+These are invariants extracted from the codebase that MUST be preserved by any change:
+- {constraint 1 — e.g., "All DB writes must go through @Transactional service layer"}
+- {constraint 2 — e.g., "No direct SQL in controllers"}
+- {constraint 3}
+
+## 5. Key Dependencies (non-obvious)
+| Dependency | Version | Purpose | Notes |
+|---|---|---|---|
+| {lib} | {ver} | {why it's used} | {any known quirks} |
+
+## 6. Test Coverage Summary
+- **Test framework**: {JUnit 5 / Mockito / etc.}
+- **Coverage approach**: {unit / integration / both}
+- **Known gaps**: {areas without tests, if detectable}
+
+## 7. Open Questions (for requirement-intake)
+Things that could not be determined from static analysis — a consuming skill should resolve these:
+- {question 1 — e.g., "Authentication strategy not visible from code alone"}
+- {question 2}
+```
+
+### Quality rules for context_brief.md
+
+- Each Domain Entity row requires an actual class path (`package.ClassName`) — no guesses
+- Constraint List entries must be falsifiable: "X must always Y" not "try to do Y"
+- If a section cannot be populated from the codebase (e.g., no REST controllers found): write `None detected` — do NOT leave blank or fabricate
+- Max 3 Open Questions — if more are needed, surface only the highest-impact ones
+
+---
+
 ## Triggering Update Mode
 
 When running on an existing codebase with AGENTS.md files:
@@ -313,6 +382,7 @@ When running on an existing codebase with AGENTS.md files:
 3. Analyze current directory state
 4. Generate diff between existing and current
 5. Apply updates while preserving manual sections
+6. Regenerate `context_brief.md` to reflect current state — always overwrite, never merge
 
 ## Performance Considerations
 
@@ -320,3 +390,4 @@ When running on an existing codebase with AGENTS.md files:
 - **Batch small directories** - Process multiple at once
 - **Skip unchanged** - If directory hasn't changed, skip regeneration
 - **Parallel writes** - Multiple agents writing different files simultaneously
+- `context_brief.md` is always generated last, after all AGENTS.md files are complete — it synthesizes across them

@@ -1,79 +1,177 @@
 ---
 name: "wal-documentation-rules"
-description: "MANDATORY documentation capture during the Archive phase. Defines how to extract stable API and Database facts into Write-Ahead Log (WAL) fragments to keep the LLM Wiki synced without merge conflicts."
+description: "MANDATORY documentation capture during the Archive phase. Defines how to extract stable knowledge into Write-Ahead Log (WAL) fragments (domain, api, rules + optional data) to keep the LLM Wiki synced without merge conflicts."
 ---
 
 # Write-Ahead Log (WAL) Documentation Capture
 
-> **Trigger:** Invoke this skill during the **Archive Phase** (Lifecycle Phase 6) whenever there are changes to external API contracts or the Database schema.
+> **Trigger:** Invoke during the **Archive Phase** (STANDARD tasks only). NOT invoked for PATCH tasks (hotfix-only changes with no new domain knowledge).
 
-## 0) Single Source of Truth (SSOT)
-- Routing / profiles / shortcuts / write-back switches: `.agents/router/ROUTER.md`
-- Navigation + write-back methodology: `.agents/router/CONTEXT_FUNNEL.md`
+## When to Write WAL
+
+| Task Type | WAL Required? |
+|---|---|
+| STANDARD Archive (new feature, refactor, design) | YES — mandatory |
+| PATCH Archive (hotfix, typo, config tweak) | NO — skip WAL entirely |
+
+If unsure, check the task's `_task_brief.md`: if `task_type: PATCH`, skip this skill.
+
+---
+
+## 0. Single Source of Truth
+
 - WAL + compaction policy: `.agents/workflow/ARCHIVE_WAL.md`
-
-## 1) Universal Write-back Rules (MUST)
-- **NO DIRECT EDITS:** NEVER edit `api/index.md` or `data/index.md` directly. You MUST write WAL fragments into the respective `wal/` directories.
-- **TRACEABILITY:** Every WAL entry MUST cite the source specification (`<YYYY-MM-DD>_<slug>_openspec.md` or the corresponding delivery capsule).
-- **STABLE FACTS ONLY:** Do not copy-paste the entire spec. Extract only the key, stable facts (e.g., table names, API paths, summaries).
-- **FILENAME CONVENTION:** `YYYYMMDD_<feature_or_change>_<type>_append.md`
+- Write-back verification tool: `.agents/scripts/tools/writeback_gate.py`
+- Routing and navigation: `.agents/router/ROUTER.md`
 
 ---
 
-## 📝 Scenario A: API Contract Changes
+## 1. Universal Write-back Rules (MUST)
 
-**When to capture:**
-- New/changed external endpoint (method/path)
-- Request/response schema changes
-- Auth/Permission changes on endpoints
+- **NO DIRECT INDEX EDITS:** NEVER edit any `index.md` files directly during automated runs. Write only WAL fragment files.
+- **TRACEABILITY:** Every WAL fragment MUST cite its source spec: `<YYYY-MM-DD>_<slug>_task_brief.md`.
+- **STABLE FACTS ONLY:** Extract minimal stable facts. Do not copy-paste entire spec sections.
+- **FACT PROVENANCE:** Every fact row in a WAL fragment MUST include a `[Confidence]` and `[Evidence]` annotation:
+  - `[Confidence: HIGH]` — verified by tests or explicit specification
+  - `[Confidence: MEDIUM]` — inferred from code reading or implicit behavior; assumption stated
+  - `[Confidence: LOW]` — based on single observation or undocumented behavior; mark as `⚠ Verify`
+  - `[Evidence: file:line]` — the source location that supports this fact
+  - Example row: `| OrderStatus | NEW, PROCESSING, DONE, CANCELLED | OrderService.java:87 [Confidence: HIGH] [Evidence: OrderServiceTest.java:42] |`
+- **FILENAME CONVENTION:** `.agents/llm_wiki/wiki/{domain}/wal/YYYYMMDD_{topic}_{type}_append.md`
+  - `{domain}`: `domain`, `api`, `rules`, or `data`
+  - `{type}`: matches domain name — e.g., `domain_append`, `api_append`, `rules_append`, `data_append`
+  - Example: `20240315_user_auth_domain_append.md`
 
-**Output Location:**
-`.agents/llm_wiki/wiki/api/wal/`
+---
 
-**WAL Template (API Append Block):**
+## 2. Three Mandatory WAL Types (STANDARD Archive)
+
+### WAL Type 1 — Domain (`domain_append`)
+
+**When to write:** New terms, enums, roles, bounded-context concepts appear in the spec.
+
+**Output location:** `.agents/llm_wiki/wiki/domain/wal/`
+
+**Template:**
 ```markdown
-# API WAL Append - {YYYY-MM-DD} - {feature_or_change}
+# Domain WAL Append - {YYYY-MM-DD} - {topic}
 
-Source spec:
-- `{relative_path_to_<YYYY-MM-DD>_<slug>_openspec.md}`
+Source spec: `{relative_path_to_task_brief.md}`
 
-Append rows for api/index.md:
-| API (Method + Path) | Summary | Doc Link | Write-back Date |
-|---|---|---|---|
-| {METHOD} {PATH} | {one-line summary} | `[{spec_doc_name}]` | {YYYY-MM-DD} |
+## New / Updated Terms
+
+| Term | Definition | Context / Usage | Confidence | Evidence |
+|---|---|---|---|---|
+| {term} | {one-line definition} | {which module or flow uses it} | HIGH/MEDIUM/LOW | file:line |
+
+## New / Updated Enums
+
+| Enum | Values | Notes | Confidence | Evidence |
+|---|---|---|---|---|
+| {EnumName} | `VALUE_A`, `VALUE_B` | {when each applies} | HIGH/MEDIUM/LOW | file:line |
 ```
-*(Note: `Doc Link` is the source of truth. Do not generate a separate per-endpoint detail page here.)*
 
 ---
 
-## 🗄️ Scenario B: Database Model Changes
+### WAL Type 2 — API (`api_append`)
 
-**When to capture:**
-- Create/drop a table
-- Column changes (add/remove/type/semantics)
-- Index or Relationship changes (FK semantics)
+**When to write:** New or changed external endpoints (method/path), request/response schema changes, auth/permission changes on endpoints.
 
-**Output Location:**
-`.agents/llm_wiki/wiki/data/wal/`
+**Output location:** `.agents/llm_wiki/wiki/api/wal/`
 
-**WAL Template (Data Append Block):**
+**Template:**
 ```markdown
-# Data WAL Append - {YYYY-MM-DD} - {feature_or_change}
+# API WAL Append - {YYYY-MM-DD} - {topic}
 
-Source spec:
-- `{relative_path_to_<YYYY-MM-DD>_<slug>_openspec.md}`
+Source spec: `{relative_path_to_task_brief.md}`
 
-Append rows for data/index.md:
-| Table Name | Purpose | Key Fields / Index Notes | Source Spec |
+## New / Changed Endpoints
+
+| API (Method + Path) | Summary | Auth Required | Write-back Date |
 |---|---|---|---|
-| {table_name} | {one-line purpose} | `{key fields + index notes}` | `[{spec_doc_name}]` |
+| {METHOD} {/path/action} | {one-line summary} | {role or token type} | {YYYY-MM-DD} |
 
-Optional relationship note (text ER):
-{table_a} (N) -> {table_b} (1)
+## Request / Response Notes (if schema changed)
+
+- {endpoint}: request adds `{fieldName}: {type}` — {reason}
+- {endpoint}: response removes `{fieldName}` — {reason}
 ```
-*(Note: Relationship notes should describe ONLY the changed key relationships. Avoid generating massive global ER diagrams.)*
 
 ---
 
-## 3) Merge Policy (Out of Scope for this Skill)
-This skill does not auto-merge the WAL fragments to the main index to avoid Git conflicts in team collaboration. The merging is handled by the `.agents/workflow/ARCHIVE_WAL.md` compaction policy (usually triggered by `@Librarian`).
+### WAL Type 3 — Rules (`rules_append`)
+
+**When to write:** New business rules, constraints, invariants, or validation logic are codified that did not exist before.
+
+**Output location:** `.agents/llm_wiki/wiki/rules/wal/`
+
+**Template:**
+```markdown
+# Rules WAL Append - {YYYY-MM-DD} - {topic}
+
+Source spec: `{relative_path_to_task_brief.md}`
+
+## New / Updated Rules
+
+| Rule ID | Description | Enforcement Point | Violation Behavior | Confidence | Evidence |
+|---|---|---|---|---|---|
+| RULE-{NNN} | {what must/must not happen} | {controller / service / DB} | {DomainException code or DB constraint} | HIGH/MEDIUM/LOW | file:line |
+```
+
+---
+
+### WAL Type 4 — Data (`data_append`) — OPTIONAL
+
+**When to write:** Only when the database schema changes (create/drop table, add/remove/change columns, index changes). Skip if no schema change.
+
+**Output location:** `.agents/llm_wiki/wiki/data/wal/`
+
+**Template:**
+```markdown
+# Data WAL Append - {YYYY-MM-DD} - {topic}
+
+Source spec: `{relative_path_to_task_brief.md}`
+
+## Table Changes
+
+| Table Name | Change Type | Key Fields / Index Notes | Notes |
+|---|---|---|---|
+| {table_name} | CREATE / ALTER / DROP | {key fields, indexes} | {purpose or migration note} |
+
+## Relationship Notes (text ER, changed only)
+
+{table_a} (N) -> {table_b} (1) via {foreign_key_column}
+```
+
+---
+
+## 3. Verification Step (MUST before closing Archive)
+
+After writing all WAL fragments, run the gate check:
+
+```bash
+python3 .agents/scripts/tools/writeback_gate.py --slug <feature_slug>
+```
+
+Expected output: all required WAL types listed as `PRESENT`. If any mandatory type is `MISSING`, write the missing fragment before proceeding.
+
+Do NOT close the Archive phase until the gate passes.
+
+---
+
+## 4. Anti-Patterns (NEVER do these)
+
+| Anti-Pattern | Why It Fails |
+|---|---|
+| Writing raw `.sql` migration files to the project root | Bypasses WAL traceability; causes merge conflicts in team repos |
+| Editing `index.md` directly during automated runs | Creates Git conflicts and breaks compaction integrity |
+| Writing WAL for PATCH tasks | Pollutes the wiki with trivial entries; PATCH = no WAL |
+| Copy-pasting entire spec sections into WAL | WAL must be distilled facts, not raw spec content |
+| Skipping `writeback_gate.py` verification | Silent missing WAL; downstream consumers get stale data |
+| Using freeform filenames (no convention) | Makes compaction impossible; files cannot be auto-discovered |
+
+---
+
+## 5. Merge Policy (Out of Scope for this Skill)
+
+This skill writes only fragment files. It does NOT merge WAL into stable `index.md` files. Merging is handled by the compaction policy in `.agents/workflow/ARCHIVE_WAL.md`, triggered separately (usually by `@Librarian` or `compactor.py`).

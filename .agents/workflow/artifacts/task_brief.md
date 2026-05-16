@@ -1,4 +1,4 @@
-# Focus Card
+# Task Brief
 
 ## Goal
 - Build and verify workflow hardening gates for agents process.

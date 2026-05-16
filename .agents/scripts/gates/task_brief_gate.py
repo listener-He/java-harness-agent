@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-OpenSpec Gate (Deterministic)
+Task Brief Gate (Deterministic)
 
-Validates that an OpenSpec exists and conforms to the schema checker.
+Validates that a task_brief exists and conforms to the schema checker.
 
 Exit codes:
 - 0: PASS
@@ -30,13 +30,13 @@ def _schema_checker_path() -> str:
     return os.path.abspath(os.path.join(here, "..", "wiki", "schema_checker.py"))
 
 
-def _run_schema_checker(openspec_path: str) -> tuple[int, list[str]]:
+def _run_schema_checker(task_brief_path: str) -> tuple[int, list[str]]:
     checker = _schema_checker_path()
     if not os.path.exists(checker):
         return EXIT_WARN, [f"schema checker missing: {checker}"]
 
     proc = subprocess.run(
-        [sys.executable, checker, openspec_path],
+        [sys.executable, checker, task_brief_path],
         cwd=_repo_root(),
         capture_output=True,
         text=True,
@@ -60,20 +60,20 @@ def main() -> int:
 
     path = args.require
     if not os.path.exists(path):
-        print("FAIL: openspec gate")
-        print(f"- openspec not found: {path}")
+        print("FAIL: task_brief gate")
+        print(f"- task_brief not found: {path}")
         return EXIT_FAIL
 
     code, details = _run_schema_checker(path)
     if code == 0:
-        print("OK: openspec gate pass")
+        print("OK: task_brief gate pass")
         return 0
     if code == EXIT_WARN:
-        print("WARN: openspec gate")
+        print("WARN: task_brief gate")
         for d in details:
             print(f"- {d}")
         return EXIT_WARN
-    print("FAIL: openspec gate")
+    print("FAIL: task_brief gate")
     for d in details:
         print(f"- {d}")
     return EXIT_FAIL
@@ -81,4 +81,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

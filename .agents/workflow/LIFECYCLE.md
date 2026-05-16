@@ -8,18 +8,22 @@ One-way state machine with hard gates and rollback rules.
 
 - Determine the current phase from context; execute the correct next action.
 - Apply hook constraints from [HOOKS.md](HOOKS.md) before moving to the next phase.
-- Maintain `launch_spec_{timestamp}.md` (`Status / Phase / Failed_Reason`) for resumability.
+- Maintain `launch_spec_{timestamp}.md` (`Status / Phase / Artifact / Failed_Reason`) for resumability. **When task_brief.md is created, immediately write its full path to the `Artifact` column of the IN_PROGRESS row** — this is the only resume anchor for future sessions.
 - Never break the one-way flow, hard gates, or anti-runaway rules.
 
 ---
 
 ## Execution Profiles
 
-| Profile | Flow | Approval Gate | Spec Required |
+| Profile | Flow | Approval Gate | Artifact |
 |---|---|---|---|
-| LEARN | Read-only; no launch spec, no lifecycle, no write-back | No | No |
-| PATCH | `(TRIVIAL)` `Implement(Grep Check) → QA(Soft Interrupt?) → Archive(Drift)`<br>`(LOW)` `Implement → QA(Soft Interrupt?) → Archive` | No | TRIVIAL: None<br>LOW: Slim Spec |
-| STANDARD | `Explorer → Propose → Review → [GATE] → Implement → QA → Archive` | Yes (MEDIUM/HIGH) | Full `<YYYY-MM-DD>_<slug>_openspec.md` |
+| LEARN | Read-only; no lifecycle, no write-back | No | None |
+| PATCH (TRIVIAL) | `Implement(Grep Check) → QA → Archive(Drift)` | No | None |
+| PATCH (LOW) | `Explorer(inline) → Implement → QA → Archive` | No | 1-line drift note |
+| STANDARD (MEDIUM) | `Explorer(inline) → Propose(task_brief) → Review → Implement → QA → Archive` | No | `task_brief.md` |
+| STANDARD (HIGH) | `Explorer(inline+) → Propose(task_brief) → Review(adversarial) → [GATE] → Implement → QA → Archive` | Yes | `task_brief.md` |
+
+**Friction principle:** generate artifacts only when their cross-session value exceeds the cost of writing them. A single-session MEDIUM task with 3 ACs does not need 8 files.
 
 ---
 
@@ -28,62 +32,138 @@ One-way state machine with hard gates and rollback rules.
 ### Phase 1: Explorer
 
 **Mounted Roles:** `@Ambiguity Gatekeeper`, `@Requirement Engineer`, `@Focus Guard`
-**Skills:** `product-manager-expert`, `task-decomposition-guide`
+**Skills:** `requirement-intake` (pre-phase), `product-manager-expert`, `task-decomposition-guide`, `adversarial-review` (Category A — HIGH only)
 
-**Actions:**
-1. Run `pre_hook`.
-2. Read `../llm_wiki/wiki/preferences/index.md`.
-3. Clarify requirements and scope.
+**Core reasoning steps (MUST — internalized, not bureaucratized):**
 
-**Output:** `<YYYY-MM-DD>_<slug>_explore_report.md` — MUST include a `## Core Context Anchors` section (key wiki links, business vocabulary, engineering red lines).
+1. Run `pre_hook`. Read `../llm_wiki/wiki/preferences/index.md`.
+2. **Specification Inference:** What does the codebase currently *guarantee* in the affected area?
+   State: `Current: [X]. Required: [Y]. Delta: [Z].` — the gap IS the true scope.
+3. **Contradiction Detection (ongoing):** Does each new fact contradict a prior fact? Resolution rule: code > wiki; explicit > implicit. Flag immediately, never overwrite silently.
+4. **AC-as-Tests Translation (MUST):** Convert every requirement unit to:
+   `Given [precondition], when [action], then [observable, measurable result].`
+   Vague language ("handle correctly", "work properly") is BLOCKED.
+5. **AC-Driven Impact Check:** Run `code_index.py --impact-of <target_file>` using the files identified by AC translation. Record hidden scope in `Hidden Scope` section.
+6. **Adversarial Check (HIGH risk only, one round):** Run `adversarial-review` Category A. CRITICAL → revise before proceeding. MINOR → annotate AC.
+
+**Output — tiered by risk:**
+
+| Risk | Output |
+|---|---|
+| TRIVIAL / LOW | No file. Steps 2–4 executed inline as reasoning. |
+| MEDIUM | Inline `[Explore]` block in response: Spec Gap + AC list + Hidden Scope. Feeds directly into task_brief Machine Section. |
+| HIGH | Same inline block + Adversarial findings. All content feeds into task_brief. No separate explore_report file. |
+
+**On-demand only:** Human explicitly asks "show me your analysis" → show inline analysis in response. Never write a standalone explore_report.md file.
 
 ---
 
 ### Phase 2: Propose
 
 **Mounted Roles:** `@System Architect`
-**Skills:** `java-architecture-standards`, `task-decomposition-guide`
+**Skills:** `brainstorming`, `java-architecture-standards`, `task-decomposition-guide`
 
-**Actions:** Follow the contract template in `../llm_wiki/schema/openspec_schema.md`.
+**Actions:**
+1. Select design approach. Emit a **Constraint List** (decisions that bind all downstream work).
+2. Populate Allowed Scope (file list that constrains implementation).
+3. Write `task_brief.md` — the single artifact for both Claude Code and human.
 
-**Output:** `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` and `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md`.
-- LOW risk: MAY use Slim Spec.
-- MEDIUM / HIGH risk: MUST use full schema.
+**Output — tiered by risk:**
+
+| Risk | Alternatives Required | Artifact |
+|---|---|---|
+| LOW | None | No file. State approach inline. |
+| MEDIUM | 1 option + explicit rationale | `<YYYY-MM-DD>_<slug>_task_brief.md` |
+| HIGH | ≥2 ADR alternatives with Pros / Cons / Failure Condition | `<YYYY-MM-DD>_<slug>_task_brief.md` (fuller Human Section) |
+
+**`task_brief.md` format (header + two sections):**
+
+```markdown
+# {任务名} — Task Brief
+状态：IN_PROGRESS | {YYYY-MM-DD} | 风险：{MEDIUM/HIGH}
+launch_spec：.agents/workflow/runs/launch_spec_{timestamp}.md
+
+<!-- MACHINE SECTION — Claude Code reads to constrain implementation -->
+## Allowed Scope
+- {file path 1}
+- {file path 2}
+
+## Acceptance Criteria
+- AC-001: Given [precondition], when [action], then [measurable result]
+- AC-002: ...
+
+## Hard Constraints
+- {constraint 1 — e.g., "所有DB写入必须经过@Transactional Service层"}
+- {constraint 2}
+
+<!-- HUMAN SECTION — 中文，业务语言 -->
+## 做什么 / 为什么
+**现状：** {用业务语言描述当前代码保证了什么}
+**需要：** {需要的行为}
+**范围：** {一句话说明范围}
+
+## 怎么做
+{选定的设计方案 + 理由。HIGH 风险：包含方案对比摘要和淘汰原因。}
+
+## 需要你确认的  ← 仅 HIGH 风险出现；MEDIUM 省略
+- [ ] {需要人类决策的问题}
+```
+
+**Bidirectional binding rules (MUST sync when writing files):**
+1. When creating `task_brief.md` → immediately write its path into the `Artifact` column of the corresponding row in `launch_spec.md`
+2. When a task reaches Archive → change the task_brief header `Status` to `DONE`, then archive
+3. If the two are not synced → cross-session resume is unreliable
+
+**Language rule:** Machine Section uses English (file paths, class names, constraints). Human Section uses Chinese (or the user's language). Do not mix languages within the same section.
 
 ---
 
 ### Phase 3: Review
 
 **Mounted Roles:** `@System Architect`
-**Skills:** `code-review-checklist`, `java-architecture-standards`
+**Skills:** `code-review-checklist`, `java-architecture-standards`, `adversarial-review` (HIGH only)
 
 **Review matrix:**
-- Engineering & API: `java-architecture-standards`
-- DB & SQL: `mybatis-sql-standard`
-- Style & Util: `java-coding-style`
+
+| Risk | Review scope |
+|---|---|
+| MEDIUM | `code-review-checklist` + `java-architecture-standards` |
+| HIGH | Above + `adversarial-review` Category B (ONE round, scenario-specific frame) |
 
 **Failure rule:** If review fails → trigger `fail_hook` → roll back to Phase 2.
+**Adversarial CRITICAL finding** → roll back to Phase 2. Do NOT re-run adversarial on the revised proposal.
 
 ---
 
 ### Approval Gate (Human-in-the-Loop)
 
-**Purpose:** Stop the engine before code is written against a wrong contract.
+**Purpose:** Stop the engine before code is written against a wrong contract. **HIGH risk only.**
 
 **Actions:**
-1. Present an `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md` summary to the human.
+1. Present the `task_brief.md` **Human Section** to the human (Chinese, business language).
 2. Ask for explicit approval to enter implementation.
 
-**Persistence:** Set the intent row in `launch_spec.md` to `WAITING_APPROVAL`. Include a link to `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md`.
+**Approval responses:**
+
+| Response | Action |
+|---|---|
+| Full approval ("LGTM", "proceed", "approved") | Enter Phase 4 immediately |
+| Partial approval ("API-OK, DB needs revision") | Record approved sections in `launch_spec.md` under `Approved-Sections`. Roll back ONLY the rejected sections to Phase 2. Proceed to implement approved sections only. |
+| Full rejection ("rework this") | Roll back to Phase 2 (Propose). State which assumption changed. Do NOT re-run adversarial review on the revised proposal. |
+| No response / timeout | Do NOT proceed. Remain at `WAITING_APPROVAL`. |
+
+**For partial approval:** annotate each task_brief section with `[APPROVED]` or `[PENDING-REVISION: <reason>]` before entering Phase 4. Phase 4 MUST implement only `[APPROVED]` sections and explicitly skip `[PENDING-REVISION]` ones.
+
+**Persistence:** Set the intent row in `launch_spec.md` to `WAITING_APPROVAL`. Include a link to `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md`.
 
 **Risk classification:**
 
 | Level | Examples | Rules |
 |---|---|---|
-| HIGH | DB schema/index changes; auth/permission strategy; error code system changes; cross-domain changes; shared utilities; unclear or large blast radius | MUST use `STANDARD` profile. MUST stop at `WAITING_APPROVAL`. Triggers strict Python gates (e.g., `migration_gate.py`). |
-| MEDIUM | New or changed external APIs; core business path changes without DB/auth foundation changes | MUST use `STANDARD` profile. MUST stop at `WAITING_APPROVAL`. |
+| HIGH | DB schema/index changes; auth/permission strategy; error code system changes; cross-domain changes; shared utilities; unclear or large blast radius | STANDARD profile. MUST stop at `WAITING_APPROVAL`. Adversarial Review required. Strict Python gates. |
+| MEDIUM | New or changed external APIs; core business path changes without DB/auth foundation changes | STANDARD profile. No Approval Gate — proceed after Review. Show summary to human as FYI, not a gate. |
 | LOW | Small bugfixes with clear blast radius; logic tweaks within a single domain | Uses `PATCH` profile. Requires Slim Spec. **QA Guard:** If no unit tests cover the change, MUST trigger a Soft Interrupt (display Diff to human). |
-| TRIVIAL | Docs only; pure renames/formatting; adding comments; fixing typos; 纯防御性/纠正性代码（null check、参数校验、错误码修正、日志补充）且 ≤1 文件、无 API/DB 变更 | Uses `PATCH` profile. No Spec required. **Impact Guard:** MUST perform a global `Grep` before renaming/changing to ensure no hidden dependencies. **Archive Guard:** MUST write a 1-line summary to `drift_queue` before exit. |
+| TRIVIAL | Docs only; pure renames/formatting; adding comments; fixing typos; purely defensive/corrective code (null checks, parameter validation, error code fixes, log additions) with ≤ 1 file and no API/DB changes | Uses `PATCH` profile. No Spec required. **Impact Guard:** MUST perform a global `Grep` before renaming/changing to ensure no hidden dependencies. **Archive Guard:** MUST write a 1-line summary to `drift_queue` before exit. |
 
 ---
 
@@ -93,11 +173,27 @@ One-way state machine with hard gates and rollback rules.
 **Skills:** `java-architecture-standards`, `java-coding-style`
 
 **Actions:**
-1. Execute the `<Cognitive_Brake>` template to establish boundaries (transactional layers, existing exceptions/validations) BEFORE coding.
-2. Implement strictly according to the approved contract. Follow Checkstyle and defensive programming. No uncontrolled improvisation.
+1. Read `task_brief.md` **Machine Section** (Allowed Scope + AC + Hard Constraints) before touching any file.
+2. Implement strictly within Allowed Scope. No file outside it without explicit human permission.
 3. Create new tables/schemas only in the WAL data domain (`wiki/data/wal/`), not as root `.sql` scripts.
-4. Trigger `shift_left_hook` to ensure basic build/compile sanity (no heavy test suite here).
-5. **STOP (Yield):** After shift-left compile passes, ask the human for permission to proceed to Phase 5 (QA Test).
+4. Trigger `shift_left_hook` (compile sanity). No heavy test suite here.
+5. **STOP (Yield):** After compile passes, ask human for permission to proceed to QA.
+
+**Plan Invalidation Protocol (MUST — if discovery contradicts task_brief):**
+
+If a core assumption in task_brief Machine Section proves wrong (not a missing dependency, a structural flaw):
+
+```
+[Plan Invalidation]
+Discovery: [what was found — file:line or test output]
+Invalidated Assumption: [the specific constraint in task_brief that this contradicts]
+Impact: [which ACs are now unreliable]
+Proposed Action: ROLLBACK_TO_PROPOSE | ROLLBACK_TO_EXPLORER
+```
+
+Normal dependency insertion (table X needed before service Y) → insert task, continue. Plan Invalidation is for structural contradictions only.
+
+Do NOT attempt to fix a plan-invalidating discovery by expanding scope. File the `[Plan Invalidation]` block and wait for human decision.
 
 ---
 
@@ -107,10 +203,12 @@ One-way state machine with hard gates and rollback rules.
 **Skills:** `java-testing-standards`, `code-review-checklist`
 
 **Actions:**
-1. If shift-left compile was not executed in Phase 4 (or code changed since), trigger `shift_left_hook` to ensure compile sanity before running tests.
-2. Run tests and produce objective evidence (logs, test output, screenshots).
+1. Trigger `shift_left_hook` if compile has not run since last code change.
+2. Run tests. Produce objective evidence (test output, logs).
 
-**Failure rule:** If QA fails → roll back to Phase 4. **STRICT MAX RETRIES: 2.** If tests or compilation fail more than 2 times, STOP immediately and ask the human for help. Do not enter an infinite fixing loop.
+**Evidence Mapping Table (ultraqa):** Required when ACs ≥ 4 OR risk = HIGH. For simpler cases (≤ 3 ACs, MEDIUM/LOW): run tests and report pass/fail inline — no table required.
+
+**Failure rule:** QA fails → roll back to Phase 4. **MAX RETRIES: 2.** On third failure: STOP, ask human. No infinite loop.
 
 ---
 
@@ -120,17 +218,16 @@ One-way state machine with hard gates and rollback rules.
 
 | Profile | Mounted Roles | Actions |
 |---|---|---|
-| **PATCH** | (no mounted roles) | 1. Move `<YYYY-MM-DD>_<slug>_openspec.md` to `../llm_wiki/archive/`. 2. Write 1-line changelog to `.agents/events/drift_queue/`. 3. Ask human for 1–10 rating; extract preferences. |
-| **STANDARD** | `@Knowledge Extractor`, `@Documentation Curator` | Full WAL write-back (Domain + API + Rules; Data if schema change). Follow steps 1–7 below. |
+| **PATCH (LOW)** | (no mounted roles) | 1. Write 1-line changelog to `.agents/events/drift_queue/`. 2. No WAL, no rating. Done. |
+| **PATCH (TRIVIAL)** | (no mounted roles) | 1. Write 1-line changelog to `.agents/events/drift_queue/` (inline). 2. Done. |
+| **STANDARD** | `@Knowledge Extractor`, `@Documentation Curator` | Full WAL write-back (Domain + API + Rules; Data if schema change). Follow steps below. |
 
-**On-demand roles:** `@Skill Graph Curator` (仅本次涉及 skill 创建/修改时挂载), `@Librarian` (仅显式 `@gc` / `@librarian` 触发)
+**On-demand roles:** `@Skill Graph Curator` (mounted only when the current task involves skill creation/modification), `@Librarian` (mounted only on explicit `@gc` / `@librarian` trigger)
 
 **STANDARD Steps (in order):**
-1. Sync docs via `wal-documentation-rules` skill.
-2. Extract stable knowledge into wiki indexes via the reverse funnel in `../router/CONTEXT_FUNNEL.md`.
-3. Move the original spec into `../llm_wiki/archive/`.
-4. Optional (explicit only): Trigger WAL Compaction (e.g., `@gc` / `@librarian`) via `python3 .agents/scripts/wiki/compactor.py`.
-   - Default behavior is WAL-first: write fragments and let a human or explicit librarian run merge them in a low-conflict window.
-5. Process Drift Events: read `.agents/events/drift_queue/` (if events exist), validate discrepancies, generate WAL fragments to heal the wiki.
-6. Ask the human for a 1–10 rating. Extract preferences (rating ≥ 8) or anti-patterns (rating ≤ 5) into `../llm_wiki/wiki/preferences/index.md`.
-7. Re-read the launch spec and dispatch the next `PENDING` / `IN_PROGRESS` intent (loop until queue is empty).
+1. Write WAL fragments via `wal-documentation-rules` (Domain + API + Rules; Data if schema changed).
+2. Run `writeback_gate.py` — confirm all required WAL types present.
+3. Move `task_brief.md` into `../llm_wiki/archive/`.
+4. Process Drift Events: read `.agents/events/drift_queue/` if events exist.
+5. **Optional:** Ask human for 1–10 rating only if they indicate interest. If given: extract to `preferences/index.md`.
+6. Dispatch next `PENDING` intent from launch_spec (if queue has more items).

@@ -1,6 +1,6 @@
 # Knowledge Extraction & Anti-Bloat Rules (WAL + Compaction)
 
-Focus: define how the Agent extracts stable knowledge from a single `<YYYY-MM-DD>_<slug>_openspec.md` during `Archive`, writes WAL fragments safely, and prevents index bloat over time.
+Focus: define how the Agent extracts stable knowledge from `<YYYY-MM-DD>_<slug>_task_brief.md` during `Archive`, writes WAL fragments safely, and prevents index bloat over time.
 
 ---
 
@@ -15,7 +15,7 @@ Focus: define how the Agent extracts stable knowledge from a single `<YYYY-MM-DD
 ---
 
 ## 2. Extraction Protocol (MUST in `Archive`)
-During `Archive` `post_hook`, the Agent MUST extract from the current `<YYYY-MM-DD>_<slug>_openspec.md`:
+During `Archive` `post_hook`, the Agent MUST extract from the current `<YYYY-MM-DD>_<slug>_task_brief.md`:
 
 ### 2.1 Domain Extraction
 - Scan: the "Context" / domain sections.
@@ -34,10 +34,10 @@ During `Archive` `post_hook`, the Agent MUST extract from the current `<YYYY-MM-
 
 ## 3. Archiving & Cleanup (MUST)
 ### 3.1 Move spec to cold storage
-- Move the spec: after extraction, move the session `<YYYY-MM-DD>_<slug>_openspec.md` to:
+- Move the spec: after extraction, move the session `<YYYY-MM-DD>_<slug>_task_brief.md` to:
   - `.agents/llm_wiki/archive/`
 - Rename it with a date prefix to avoid collisions:
-  - `<YYYY-MM-DD>_<slug>_openspec.md`
+  - `<YYYY-MM-DD>_<slug>_task_brief.md`
 
 ### 3.2 Clean the active index
  - update `.agents/llm_wiki/wiki/specs/index.md` by removing the entry from the active list (or moving it into "Recently Archived").
@@ -45,10 +45,9 @@ During `Archive` `post_hook`, the Agent MUST extract from the current `<YYYY-MM-
 ### 3.3 Keep pointer files in `runs/` (Conservative Mode)
 
 To prevent the next task from accidentally reusing the previous session’s spec/scope, replace:
-- `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_openspec.md`
-- `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_focus_card.md`
+- `.agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md`
 
-with read-only pointer files that only contain the archive location.
+with a read-only pointer file that only contains the archive location.
 
 Use the provided tool:
 
