@@ -27,4 +27,4 @@ Anti-bloat rule: if this index grows beyond 50 tables, you MUST split by module 
 ---
 
 ## WAL Fragments
-See `wal/20260506_wal_compaction_data.md` for archived WAL compaction records (mingsi-skills external analysis). Use `@wiki-update` to refresh this index from recent archived specs.
+No fragments yet. Use `@wiki-update` to refresh this index from recent archived specs.

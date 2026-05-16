@@ -30,35 +30,46 @@ def check_wiki():
     # 匹配 [文本](链接) 和 [[链接]]
     link_pattern = re.compile(r'\[.*?\]\((.*?\.md)(?:#.*?)?\)')
     wikilink_pattern = re.compile(r'\[\[(.*?\.md)(?:\|.*?)?\]\]')
+    # 匹配反引号代码体中的文件引用 (例: `wal/xxx.md`)
+    # 仅匹配含路径分隔符的引用，避免将概念性引用（如 `index.md`）误报为死链
+    inline_ref_pattern = re.compile(r'`([^`]*/[/.a-zA-Z0-9_\-]+\.md)`')
 
     for file_path in all_md_files:
         with open(file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
-            
+
         # Check size (500 行防膨胀预警)
         if len(lines) > 500:
             oversized_files.append((file_path, len(lines)))
-            
-        # Check links
-        content = "".join(lines)
-        links = link_pattern.findall(content) + wikilink_pattern.findall(content)
-        
-        base_dir = os.path.dirname(file_path)
-        for link in links:
-            if link.startswith('http'):
-                continue
-            
-            # 解析相对路径
-            target_path = os.path.normpath(os.path.join(base_dir, link))
-            if not os.path.exists(target_path):
-                # 尝试当作相对于 WIKI_DIR 的绝对路径
-                alt_path = os.path.normpath(os.path.join(WIKI_DIR, link.lstrip('/')))
-                if os.path.exists(alt_path):
-                    target_path = alt_path
-                else:
-                    dead_links.append((file_path, link))
+
+        # WAL fragments are historical records — their links point to repo-root paths
+        # and are not expected to resolve from within the wal/ directory. Skip link checks.
+        in_wal = (os.path.sep + "wal" + os.path.sep) in file_path
+
+        # Check links (skip for wal/ files)
+        if not in_wal:
+            content = "".join(lines)
+            links = link_pattern.findall(content) + wikilink_pattern.findall(content) + inline_ref_pattern.findall(content)
+
+            base_dir = os.path.dirname(file_path)
+            for link in links:
+                if link.startswith('http'):
                     continue
-            referenced_files.add(target_path)
+                # Skip links that are clearly template placeholders
+                if '{' in link or '<' in link:
+                    continue
+
+                # 解析相对路径
+                target_path = os.path.normpath(os.path.join(base_dir, link))
+                if not os.path.exists(target_path):
+                    # 尝试当作相对于 WIKI_DIR 的绝对路径
+                    alt_path = os.path.normpath(os.path.join(WIKI_DIR, link.lstrip('/')))
+                    if os.path.exists(alt_path):
+                        target_path = alt_path
+                    else:
+                        dead_links.append((file_path, link))
+                        continue
+                referenced_files.add(target_path)
 
     # Check orphans (没有被其他文件引用，且不是核心索引文件的 md)
     # WAL fragments are intentionally append-only and may be unreferenced until compaction.

@@ -27,4 +27,4 @@ Anti-bloat rule: if this table exceeds 50 rows, you MUST split it into per-modul
 ---
 
 ## WAL Fragments
-See `wal/20260506_wal_compaction_api.md` for archived WAL compaction records (all N/A — no API changes during skills workflow). Use `@wiki-update` to refresh this index from recent archived specs.
+No fragments yet. Use `@wiki-update` to refresh this index from recent archived specs.

@@ -23,4 +23,4 @@ Anti-bloat rule: if the vocabulary exceeds 30 concepts, you MUST split into per-
 ---
 
 ## WAL Fragments
-See `wal/20260506_wal_compaction_domain.md` for archived WAL compaction records from the skills import/align/consolidate workflow. Use `@wiki-update` to refresh this index from recent archived specs.
+No fragments yet. Use `@wiki-update` to refresh this index from recent archived specs.

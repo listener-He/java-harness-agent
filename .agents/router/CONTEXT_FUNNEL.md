@@ -113,7 +113,7 @@ Write-back eligibility is defined in [ROUTER.md](ROUTER.md) (by profile and flag
 3. Write a WAL fragment into the target domain `wal/` directory.
    - Example (API): `../llm_wiki/wiki/api/wal/YYYYMMDD_feature_x_api_append.md`
    - Example (Data/DB): `../llm_wiki/wiki/data/wal/YYYYMMDD_feature_x_db_schema.md` (DO NOT write `.sql` files into the project root `sql/` directory).
-4. Merge and splitting are performed in a low-conflict window (typically by a human or by the compactor script when explicitly triggered).
+4. Merge and splitting are performed in a low-conflict window (by human or via `python3 .agents/scripts/wiki/wiki_compactor.py`).
 5. If an index exceeds the hard size limit: it MUST be split (see `ARCHIVE_WAL.md`).
 
 **Few-Shot Example (DB Change Archive):**

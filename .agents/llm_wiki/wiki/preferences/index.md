@@ -40,15 +40,5 @@ During `Archive`, the Agent MUST ask the human for a 1–10 rating.
 
 ---
 
-## WAL Compaction — preferences — 2026-05-06 15:26:56
-
-### 20260423_runtime_artifacts_paths.md
-
-**What changed:**
-Standardize runtime artifact locations: `<YYYY-MM-DD>_<slug>_openspec.md` and `<YYYY-MM-DD>_<slug>_focus_card.md` are generated only under `.agents/workflow/runs/`. During `Archive`, move session spec to `.agents/llm_wiki/archive/<YYYY-MM-DD>_<slug>_openspec.md` and write WAL fragments before final response.
-
-**Why:**
-Prevent root directory clutter and accidental commits of runtime artifacts. Ensure consistent "single source of truth" paths across workflow docs and gate scripts.
-
-**Touch points:**
-`AGENTS.md`, `.agents/workflow/LIFECYCLE.md`, `.agents/router/ROUTER.md`, `.agents/workflow/HOOKS.md` — align references to `.agents/workflow/runs/` paths.
+## WAL Fragments
+- [20260506_wal_compaction_preferences.md](wal/20260506_wal_compaction_preferences.md) — Runtime artifact path standardization
