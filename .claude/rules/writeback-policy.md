@@ -1,73 +1,40 @@
-# Knowledge Extraction & Anti-Bloat Rules (WAL + Compaction)
+# Write-back Policy — WAL & Anti-Bloat
 
-Focus: define how the Agent extracts stable knowledge from `<YYYY-MM-DD>_<slug>_task_brief.md` during `Archive`, writes WAL fragments safely, and prevents index bloat over time.
+## Language Rule
 
----
+- **Machine-facing** (code snippets, schemas, paths, script names): **English**
+- **Human-facing** (explanations, rationale, context, summaries): **User's primary language** (Chinese for this project)
 
-## 1. Core Objectives
-- De-duplication: consolidate repeated knowledge into a single stable place.
-- Slimming: split documents when they exceed hard limits.
-- Cold/Hot separation: after extraction, move specs to cold storage.
-- **Language Preference (Audience separation):**
-  - **Machine-facing content** (e.g., Code snippets, schemas, YAML, directory structures, script names) MUST be kept in **English**.
-  - **Human-facing content** (e.g., explanations, context, rationale, mitigation strategies, and summaries) MUST be written in the **User's primary language** (e.g., if Chinese, use Chinese; English is the fallback).
+## WAL Fragment Naming
 
----
+```
+.claude/wiki/wiki/<domain>/wal/YYYYMMDD_<slug>_<category>.md
+```
 
-## 2. Extraction Protocol (MUST in `Archive`)
-During `Archive` `post_hook`, the Agent MUST extract from the current `<YYYY-MM-DD>_<slug>_task_brief.md`:
+Domains: `domain/`, `api/`, `data/`, `preferences/`, `architecture/`, `testing/`, `reviews/`
 
-### 2.1 Domain Extraction
-- Scan: the "Context" / domain sections.
-- Action (WAL write-back): if new terms/enums/roles appear, write a short definition into `.claude/wiki/wiki/domain/wal/` as a fragment file (example: `YYYYMMDD_feature_x_domain_append.md`).
-- Hard rule: DO NOT directly edit shared `index.md` files during automated runs.
+## Archive Location
 
-### 2.2 Data Extraction
-- Scan: the "Data Model" section.
-- Action (WAL write-back): write table summaries (table name, key fields, index strategy) into `.claude/wiki/wiki/data/wal/` as a fragment file (example: `YYYYMMDD_feature_x_data_append.md`).
+Completed task_briefs move to: `.claude/wiki/archive/<YYYY-MM-DD>_<slug>_task_brief.md`
 
-### 2.3 API Extraction
-- Scan: the "API Contract" section.
-- Action (WAL write-back): write new/changed API signatures (Method + Path + short request/response note) into `.claude/wiki/wiki/api/wal/` as a fragment file (example: `YYYYMMDD_feature_x_api_append.md`).
-
----
-
-## 3. Archiving & Cleanup (MUST)
-### 3.1 Move spec to cold storage
-- Move the spec: after extraction, move the session `<YYYY-MM-DD>_<slug>_task_brief.md` to:
-  - `.claude/wiki/archive/`
-- Rename it with a date prefix to avoid collisions:
-  - `<YYYY-MM-DD>_<slug>_task_brief.md`
-
-### 3.2 Clean the active index
-- Update `.claude/wiki/wiki/specs/index.md` by removing the entry from the active list (or moving it into "Recently Archived").
-
-### 3.3 Keep pointer files in `runs/` (Conservative Mode)
-
-To prevent the next task from accidentally reusing the previous session's spec/scope, replace:
-- `.claude/runs/task-briefs/<YYYY-MM-DD>_<slug>_task_brief.md`
-
-with a read-only pointer file that only contains the archive location.
-
-Use the provided tool:
-
+After extraction, replace the active `task_brief.md` in `runs/task-briefs/` with a pointer file:
 ```bash
 python3 .claude/scripts/tools/archive_session_artifacts.py --slug <feature_slug>
 ```
 
-### 3.5 Merge (Low-conflict Window)
-- Goal: merge WAL fragments into stable `index.md` files and reorganize them if needed.
-- Approach:
-  - Human merges periodically; or
-  - Use an optional merge script (example: `.claude/scripts/wiki/compactor.py`) only when explicitly triggered.
+## Anti-Bloat: 500-line Hard Limit
 
----
+When any wiki index file exceeds 500 lines:
+1. Split content into focused sub-documents per topic
+2. Rewrite original `index.md` as a lean routing graph (links + 1-2 line summaries)
+3. If top-level structure changes, update `KNOWLEDGE_GRAPH.md`
 
-## 4. Anti-Bloat Hard Limits
+Gate: `python3 .claude/scripts/wiki/wiki_linter.py` — FAIL if dead links or any file > 500 lines.
 
-### 500-line Split Rule (MUST)
-When merging knowledge, if any target file exceeds 500 lines, you MUST split it:
-1. Create subdirectories per business module and new `index.md` files.
-2. Move content into the sub-indexes.
-3. Keep the original file as a router with links only.
-4. If top-level structure changes, update `.claude/wiki/KNOWLEDGE_GRAPH.md`.
+## Extraction Rules
+
+- Do NOT directly edit shared `index.md` files during automated runs. Write to `wal/` fragments.
+- WAL fragments are merged later by the Librarian (via `@gc`).
+- STANDARD tasks: WAL write-back is MANDATORY (Domain + API + Rules; Data if schema change).
+- PATCH tasks: no WAL required. Wiki refresh deferred to `@wiki-update`.
+- New tables/schemas go into WAL data domain (`wiki/data/wal/`) as Markdown with DDL code blocks — NOT as root `.sql` files.
