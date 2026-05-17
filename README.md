@@ -103,25 +103,25 @@ CLAUDE.md                      # Single entry point
 
 ## Workflow Process (STANDARD)
 
-The STANDARD lifecycle implements a **BDD → TDD → BDD** closed loop:
+The STANDARD lifecycle implements a **PDD → BDD → SDD/SPEC → TDD → BDD** closed loop:
 
+- **PDD (Plan-Driven Development)** at the front: task dependencies, parallelism constraints, and success metrics are declared before any code exists
 - **BDD (Behavior-Driven Development)** at both ends: Explorer writes executable specs in `Given/When/Then` format; QA verifies behavior against those same specs
-- **SDD (Specification-Driven Development)** throughout: every phase is anchored to the `task_brief.md` contract
+- **SDD/SPEC (Specification-Driven Development)** throughout: every phase is anchored to the `task_brief.md` contract
 - **TDD (Test-Driven Development)** at the core: failing tests derived from ACs drive implementation
 
 ```
-         ┌──── BDD ────┐                                     ┌──── BDD ────┐
-         │ 写可执行规格  │                                     │ 行为验证     │
-         │ Given/When/  │    ┌── SDD (契约驱动) ──┐           │ AC↔测试↔结果 │
-         │   Then       │    │                     │           │              │
-         ▼              ▼    ▼                     ▼           ▼              ▼
+         ┌── PDD ──┐  ┌──── BDD ────┐                                     ┌──── BDD ────┐
+         │依赖+并行  │  │ 写可执行规格  │                                     │ 行为验证     │
+         │ DAG      │  │ Given/When/  │    ┌── SDD (契约驱动) ──┐           │ AC↔测试↔结果 │
+         ▼          ▼  ▼              ▼    ▼                     ▼           ▼              ▼
 Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Implement ─→ QA ─→ Archive
           │              │          │                        │          │        │
           需求澄清     架构设计   设计审查                TDD实现    测试验证  知识沉淀
-          │              │          │                        │          │        │
-          ▼              ▼          ▼                        ▼          ▼        ▼
-       Spec Gap     task_brief  Approved              Red→Green   Evidence   WAL
-       + AC list    (契约)      Contract              →Refactor   Mapping    fragments
+          │              │          │    │                  │          │        │
+          ▼              ▼          ▼    ▼                  ▼          ▼        ▼
+       Spec Gap     task_brief  Plan   Approved        Red→Green   Evidence   WAL
+       + AC list    +依赖+并行  Review Contract         →Refactor   Mapping    +偏差回顾
 ```
 
 ### Phase 1: Explorer — 需求澄清 + BDD 规格编写
@@ -143,11 +143,12 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 |------|--------|
 | **Roles** | `@System Architect` |
 | **Skills** | `brainstorming`, `java-architecture-standards`, `task-decomposition-guide`, `decision-frameworks`, `cognitive-bias-checklist` |
-| **Activities** | ① Generate ≥2 design alternatives (HIGH: ADR format with Pros/Cons/Failure Conditions) |
-| | ② Select approach → emit **Constraint List** (binding decisions for all downstream work) |
-| | ③ Define **Allowed Scope** — explicit file whitelist that constrains implementation |
-| | ④ Write `task_brief.md` — the **universal contract**: |
-| | &nbsp;&nbsp;&nbsp; • Machine Section (English): Allowed Scope + ACs + Hard Constraints |
+| **Activities** | ① **PDD — Plan as First-Class Artifact**: Declare task dependencies, draw dependency graph (DAG) when ≥3 tasks; set parallelism constraints (soft limit: 3) |
+| | ② Generate ≥2 design alternatives (HIGH: ADR format with Pros/Cons/Failure Conditions) |
+| | ③ Select approach → emit **Constraint List** (binding decisions for all downstream work) |
+| | ④ Define **Allowed Scope** — explicit file whitelist that constrains implementation |
+| | ⑤ Write `task_brief.md` — the **universal contract**: |
+| | &nbsp;&nbsp;&nbsp; • Machine Section (English): Allowed Scope + ACs + Task Dependencies + Hard Constraints |
 | | &nbsp;&nbsp;&nbsp; • Human Section (Chinese): 做什么/为什么 + 怎么做 + 待确认项 |
 | **Output** | `task_brief.md` — single artifact shared by all agents and humans |
 
@@ -158,9 +159,10 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 | **Roles** | `@System Architect` |
 | **Skills** | `code-review-checklist`, `java-architecture-standards`, `adversarial-review` (HIGH), `spec-quality-checklist` |
 | **Activities** | ① Review design against project standards and architecture constraints |
-| | ② Adversarial critique Category B (HIGH only): "are we solving it the right way?" — ONE round |
-| | ③ **Approval Gate** (HIGH only): present Human Section in business language → wait for explicit sign-off |
-| | ④ CRITICAL finding → rollback to Phase 2. MINOR → annotate ACs, proceed |
+| | ② **Plan Review Checklist (PDD)**: Completeness → Consistency → Feasibility → Risk Coverage → Dependency Soundness (≥3 tasks) |
+| | ③ Adversarial critique Category B (HIGH only): "are we solving it the right way?" — ONE round |
+| | ④ **Approval Gate** (HIGH only): present Human Section in business language → wait for explicit sign-off |
+| | ⑤ CRITICAL finding → rollback to Phase 2. MINOR → annotate ACs, proceed |
 | **Output** | Approved `task_brief.md` (HIGH) or FYI summary (MEDIUM) |
 
 ### Phase 4: Implement — TDD 驱动实现 (TDD-Driven Implementation)
@@ -198,9 +200,10 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 | **Skills** | `wal-documentation-rules`, `verify` |
 | **Activities** | ① Extract stable knowledge from completed task_brief |
 | | ② Write **WAL fragments** into domain directories: `api/wal/`, `data/wal/`, `domain/wal/` |
-| | ③ Move `task_brief.md` to `wiki/archive/` (cold storage) |
-| | ④ Dispatch next PENDING task from `launch_spec.md` if queue not empty |
-| **Output** | WAL fragments (domain + api + rules; data if schema changed), archived task_brief |
+| | ③ **Plan Deviation Reflection (PDD)**: Compare planned vs actual — scope drift, dependency accuracy, plan invalidations, AC coverage; write `plan_deviation.md` for significant deviations |
+| | ④ Move `task_brief.md` to `wiki/archive/` (cold storage) |
+| | ⑤ Dispatch next PENDING task from `launch_spec.md` if queue not empty |
+| **Output** | WAL fragments (domain + api + rules; data if schema changed), plan deviation record, archived task_brief |
 
 ---
 
@@ -276,9 +279,12 @@ Every user request is classified into an **intent** and routed to a **profile**:
 | Mechanism | What It Does |
 |-----------|-------------|
 | **Context Funnel** | Structured navigation from root index → domain index → specific document; prevents blind searching |
+| **Dependency Graph (DAG)** | Tasks declare upstream dependencies in `launch_spec.md`; dispatch is gated on dependency satisfaction |
 | **Scope Guard** | Enforces that code changes stay within declared Allowed Scope |
 | **Shift-Left Hook** | Runs compile after every code change; max 2 retries before human escalation |
 | **Secrets Lint** | Scans changed files for secrets after every edit |
+| **Plan Review Checklist** | Completeness, Consistency, Feasibility, Risk Coverage, Dependency Soundness — must pass before exiting Review (≥3 tasks) |
+| **Plan Deviation Reflection** | Compare planned vs actual at Archive — scope drift, dependency accuracy, AC coverage |
 | **Hook System** | pre_hook (phase entry), guard_hook (during edit), shift_left_hook (after edit), post_hook (phase exit), fail_hook (rollback), loop_hook (queue loop) |
 | **Local Intelligence** | BM25 wiki search, Java symbol index, failure memory — zero-cost context before file navigation |
 | **Gate Scripts** | Deterministic Python scripts that block or warn on quality/security/compliance issues |
@@ -289,9 +295,9 @@ Every user request is classified into an **intent** and routed to a **profile**:
 
 1. **Read [CLAUDE.md](CLAUDE.md)** — the single entry point.
 2. The AI assistant will classify your request and route it to the correct profile.
-3. For complex changes, the framework produces a `task_brief.md` as the shared contract between you and the assistant.
+3. For STANDARD tasks, the framework creates a `launch_spec.md` with task dependency graph and a `task_brief.md` as the shared contract between you and the assistant.
 4. For HIGH risk changes, you will be asked for explicit approval before code is written.
-5. Completed tasks have their knowledge extracted into the wiki for future sessions.
+5. After implementation, plan deviation is measured (PDD) and completed tasks have their knowledge extracted into the wiki for future sessions.
 
 ---
 
