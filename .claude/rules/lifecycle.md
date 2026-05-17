@@ -8,7 +8,8 @@ One-way state machine with hard gates and rollback rules.
 
 - Determine the current phase from context; execute the correct next action.
 - Apply hook constraints from [hooks.md](hooks.md) before moving to the next phase.
-- Maintain `launch_spec_{timestamp}.md` (`Status / Phase / Artifact / Failed_Reason`) for resumability. **When task_brief.md is created, immediately write its full path to the `Artifact` column.** Only two state files exist: `launch_spec_*.md` and `task_brief.md`.
+- Maintain `launch_spec_{timestamp}.md` (`Status / Phase / Depends On / Artifact / Failed_Reason`) for resumability and dependency tracking. **When task_brief.md is created, immediately write its full path to the `Artifact` column.** Only two state files exist: `launch_spec_*.md` and `task_brief.md`.
+- **PDD**: Declare task dependencies and parallelism constraints in launch_spec. A task whose `Depends On` are not all `DONE` MUST NOT enter Implement. Respect the max parallel tasks soft limit.
 - Never break the one-way flow, hard gates, or anti-runaway rules.
 
 ---
@@ -64,9 +65,10 @@ One-way state machine with hard gates and rollback rules.
 **Skills:** `brainstorming`, `java-architecture-standards`, `task-decomposition-guide`
 
 **Actions:**
-1. **SDD/SPEC — Contract-First Design**: Select design approach. Emit a **Constraint List** (decisions that bind all downstream work). The `task_brief.md` IS the specification — no code is written until the spec is complete.
-2. Populate Allowed Scope (file list that constrains implementation).
-3. Write `task_brief.md` — the single artifact readable by both AI and human. This is Specification-Driven Development (SDD): the spec is the contract that governs all subsequent phases.
+1. **PDD — Plan as First-Class Artifact**: Declare task dependencies and parallelism constraints BEFORE writing the spec. Each task MUST list its upstream dependencies. When ≥3 tasks exist in a launch_spec, draw a dependency graph (DAG). Tasks without mutual dependencies MAY run in parallel (soft limit: 3).
+2. **SDD/SPEC — Contract-First Design**: Select design approach. Emit a **Constraint List** (decisions that bind all downstream work). The `task_brief.md` IS the specification — no code is written until the spec is complete.
+3. Populate Allowed Scope (file list that constrains implementation).
+4. Write `task_brief.md` — the single artifact readable by both AI and human. This is Specification-Driven Development (SDD): the spec is the contract that governs all subsequent phases.
 
 **Output — tiered by risk:**
 
@@ -91,6 +93,10 @@ launch_spec: .claude/runs/launch-specs/launch_spec_{timestamp}.md
 ## Acceptance Criteria
 - AC-001: Given [precondition], when [action], then [measurable result]
 - AC-002: ...
+
+## Task Dependencies
+- Depends on: {task description} — Status: {DONE / IN_PROGRESS / PENDING}
+- Blocks: {task description} (optional)
 
 ## Hard Constraints
 - {constraint 1 — e.g., "All DB writes must go through @Transactional Service layer"}
@@ -129,6 +135,16 @@ launch_spec: .claude/runs/launch-specs/launch_spec_{timestamp}.md
 |---|---|
 | MEDIUM | `code-review-checklist` + `java-architecture-standards` |
 | HIGH | Above + `adversarial-review` Category B (ONE round, scenario-specific frame) |
+
+**Plan Review Checklist (PDD — MUST pass before exiting Review for ≥3 tasks in launch_spec):**
+
+| Check | Question | Fail → |
+|---|---|---|
+| **Completeness** | Are all ACs covered by at least one task? Are all files declared in Allowed Scope? | Add missing coverage |
+| **Consistency** | Do task dependencies form a DAG (no cycles)? Do constraints conflict across tasks? | Resolve conflicts |
+| **Feasibility** | Can each task be completed within its constraints? Is scope realistic? | Adjust scope or split tasks |
+| **Risk Coverage** | Are all risks identified in Explorer addressed? Is the rollback path clear? | Add risk mitigations |
+| **Dependency Soundness** | Are all upstream dependencies resolvable? Can tasks proceed without deadlock? | Fix dependency graph |
 
 **Failure rule:** If review fails → trigger `fail_hook` → roll back to Phase 2.
 **Adversarial CRITICAL finding** → roll back to Phase 2. Do NOT re-run adversarial on the revised proposal.
@@ -217,9 +233,22 @@ Do NOT attempt to fix a plan-invalidating discovery by expanding scope. File the
 
 | Profile | Steps |
 |---|---|
-| **STANDARD** | 1. Write WAL fragments (Domain + API + Rules; Data if schema change). 2. Move `task_brief.md` to `.claude/wiki/archive/`. Done. |
+| **STANDARD** | 1. Write WAL fragments (Domain + API + Rules; Data if schema change). 2. Plan Deviation Reflection (see below). 3. Move `task_brief.md` to `.claude/wiki/archive/`. Done. |
 
 No delivery capsule, no writeback_gate, no rating — unless the task explicitly involves those. Dispatch next PENDING intent from launch_spec if queue has more items.
+
+**Plan Deviation Reflection (PDD — STANDARD only, after WAL write-back):**
+
+Before archiving, compare the plan vs. actual execution:
+
+| Metric | Check |
+|---|---|
+| **Scope Drift** | Were any files modified outside Allowed Scope? (If yes: document why in WAL `[Rules]` fragment) |
+| **Dependency Accuracy** | Did any task execute out of declared dependency order? (If yes: record in failure_memory) |
+| **Plan Invalidations** | Were any `[Plan Invalidation]` blocks raised during Implement? (If yes: annotate task_brief with resolution before archiving) |
+| **AC Coverage** | Did all ACs pass, or were any deferred? Record deferred ACs. |
+
+Output a 1-line `[Plan Deviation]` summary in the Archive response. If deviation is significant (≥2 extra files, ≥1 cycle break, ≥1 deferred AC), write a brief `plan_deviation.md` fragment into `.claude/wiki/wiki/process/wal/`.
 
 ---
 

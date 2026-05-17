@@ -200,7 +200,7 @@ DocQA is read-only by default. MUST NOT launch a lifecycle queue unless:
 
 When launching a lifecycle queue:
 1. Persist to `runs/launch-specs/launch_spec_{timestamp}.md`
-2. Drive transitions by updating `Status / Phase / Artifact / Failed_Reason`
+2. Drive transitions by updating `Status / Phase / Depends On / Artifact / Failed_Reason`
 
 **Status values:** `PENDING` | `IN_PROGRESS` | `WAITING_APPROVAL` | `DONE` | `FAILED`
 
@@ -211,22 +211,32 @@ When launching a lifecycle queue:
 # Launch Spec - {YYYYMMDD_HHMMSS}
 
 ## Task Queue
-| Task | Status | Phase | Artifact | Failed_Reason |
-|---|---|---|---|---|
-| {task description — business language} | IN_PROGRESS | {phase} | {full path to task_brief.md, or — if not yet created} | — |
-| {task description 2} | PENDING | — | — | — |
+| # | Task | Status | Phase | Depends On | Artifact | Failed_Reason |
+|---|---|---|---|---|---|---|
+| 1 | {task description — business language} | IN_PROGRESS | {phase} | — | {full path to task_brief.md, or — if not yet created} | — |
+| 2 | {task description 2} | PENDING | — | #1 | — | — |
+
+## Parallelism
+- **Max parallel tasks**: 3 (soft limit)
+- **Currently parallelizable**: {list task # pairs that can run concurrently}
+- **Dependency graph** (when ≥3 tasks):
+  ```
+  #1 ──→ #2 ──→ #3
+        └─→ #4
+  ```
 
 ## Resume Protocol
 When starting a new session (MUST, in order):
 1. Read this file → find the row where Status = IN_PROGRESS or WAITING_APPROVAL
 2. Read the Artifact column of that row → get the full path to task_brief.md
-3. Load the task_brief Machine Section (Allowed Scope + AC + Hard Constraints)
+3. Load the task_brief Machine Section (Allowed Scope + AC + Hard Constraints + Task Dependencies)
 4. Run the Resume Fidelity Check (see ../rules/hooks.md)
 
 Rules:
 - WAITING_APPROVAL: Wait for human approval before changing back to IN_PROGRESS; do not auto-continue
 - FAILED: Report Failed_Reason, wait for human decision; do not auto-retry
 - Artifact column is empty but Status = IN_PROGRESS: session was interrupted during Explorer phase, no task_brief to load; restart from Explorer step 2
+- A task whose Depends On tasks are not all DONE MUST remain PENDING. Only dispatch tasks with all dependencies satisfied.
 ```
 
 ---

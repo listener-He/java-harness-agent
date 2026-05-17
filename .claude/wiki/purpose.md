@@ -4,7 +4,16 @@ This wiki exists to help an AI agent produce correct engineering outcomes with m
 
 ## Methodological Foundations
 
-This framework composes three software development methodologies into one lifecycle:
+This framework composes four software development methodologies into one lifecycle:
+
+### PDD (Plan-Driven Development)
+**What**: Plan first, then execute. The plan is a first-class artifact — not an afterthought or a loose backlog. Every task carries explicit dependency declarations, parallelism constraints, and success metrics before any code is written.
+**Core artifacts**: `launch_spec.md` (task queue with dependency graph) + `task_brief.md` (per-task contract with dependency declarations).
+**Where in lifecycle**:
+- **Phase 2 (Propose)**: Task dependencies and parallelism constraints declared. Dependency graph drawn when ≥3 tasks exist.
+- **Phase 3 (Review)**: Plan Review Checklist verifies completeness, consistency, feasibility, risk coverage, and dependency soundness.
+- **Phase 6 (Archive)**: Plan Deviation Reflection compares planned vs. actual — scope drift, dependency accuracy, plan invalidations, and AC coverage.
+**Relationship to SDD/SPEC**: SDD/SPEC is PDD's contract-encoding mechanism. PDD says "plan it first"; SDD/SPEC says "encode the plan as a machine-readable contract."
 
 ### BDD (Behavior-Driven Development)
 **What**: Define expected behavior before writing any code, using a shared language that both business and engineering can read.
@@ -34,11 +43,13 @@ This framework composes three software development methodologies into one lifecy
 ### How They Compose
 
 ```
-BDD (Explorer)  →  SDD/SPEC (Propose → Review)  →  TDD (Implement)  →  BDD (QA)
-  写可执行规格         task_brief 契约                Red→Green→Refactor   行为验证
+PDD (Propose)   →  SDD/SPEC (Propose → Review)  →  TDD (Implement)  →  BDD (QA)
+  依赖+并行规划        task_brief 契约             Red→Green→Refactor   行为验证
+        ↑                                              |
+        └── BDD (Explorer: 写可执行规格) ────────────────┘
 ```
 
-BDD defines *what* behavior is expected. SPEC locks it into a *contract*. TDD enforces *how* implementation satisfies the contract. BDD at QA *proves* the contract was fulfilled. No methodology works in isolation — the lifecycle is the composition.
+PDD establishes *what* to plan and *how* dependencies interlock. SDD/SPEC encodes the plan into a *contract*. BDD defines *what* behavior the contract must satisfy via executable specs. TDD enforces *how* implementation satisfies the contract. BDD at QA *proves* the contract was fulfilled. No methodology works in isolation — the lifecycle is the composition.
 
 ---
 

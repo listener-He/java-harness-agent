@@ -6,17 +6,18 @@ Single entry point for all AI coding assistants. Read this file first on every s
 
 ---
 
-## Methodological Anchor (BDD → SDD/SPEC → TDD → BDD)
+## Methodological Anchor (PDD → BDD → SDD/SPEC → TDD → BDD)
 
-This framework composes three methodologies into one lifecycle. Understand them before executing any phase:
+This framework composes four methodologies into one lifecycle. Understand them before executing any phase:
 
 | Methodology | Role in Lifecycle | Where |
 |---|---|---|
+| **PDD** (Plan-Driven Development) | Plan first, then execute. The plan is a first-class artifact: task dependencies, parallelism constraints, and success metrics are explicitly declared before any code exists. SDD/SPEC is PDD's contract-encoding mechanism. | Phase 2 (plan design), Phase 3 (plan review), Phase 6 (plan deviation reflection) |
 | **BDD** (Behavior-Driven Development) | Define expected behavior as executable specs in `Given/When/Then` format before any code exists | Phase 1 (write specs), Phase 5 (verify behaviors) |
 | **SDD / SPEC** (Specification-Driven Development) | A contract-first approach — `task_brief.md` is the universal spec that governs all downstream work. No code until spec is complete. | Phase 2 (write spec), Phase 3 (review spec), Phase 4 (implement from spec) |
 | **TDD** (Test-Driven Development) | Write failing test from ACs first (RED), implement minimum code to pass (GREEN), refactor (REFACTOR). Tests are derived from BDD specs, not invented by implementer. | Phase 4 (RED → GREEN → REFACTOR) |
 
-**Composition**: BDD defines *what* behavior is expected → SPEC locks it into a *contract* → TDD enforces *how* implementation satisfies the contract → BDD at QA *proves* the contract was fulfilled. See [purpose.md](.claude/wiki/purpose.md) for full explanation.
+**Composition**: PDD establishes *what* to plan and *how* dependencies interlock → SDD/SPEC encodes the plan into a *contract* → BDD defines *what* behavior the contract must satisfy → TDD enforces *how* implementation satisfies the contract → BDD at QA *proves* the contract was fulfilled. See [purpose.md](.claude/wiki/purpose.md) for full explanation.
 
 ### Maintenance Intent (Non-Code Operations)
 

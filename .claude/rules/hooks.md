@@ -64,6 +64,7 @@ Load `wal-documentation-rules` skill.
 | DB migration | `python3 .claude/scripts/gates/migration_gate.py --sql-dir <path>` | Scenario B (DDL changes) |
 | Breaking API | `python3 .claude/scripts/gates/api_breaking_gate.py --task-brief <path>` | Scenario C (API schema changes) |
 | Dependency | `python3 .claude/scripts/gates/dependency_gate.py --pom <pom.xml>` | Scenario E (pom.xml changes) |
+| Plan review (PDD) | Checklist — see lifecycle.md Phase 3 Plan Review Checklist | Every STANDARD task with ≥3 tasks in launch_spec |
 
 - Follow `linter-severity-standard` skill for severity handling.
 - Run `.claude/skills/spec-quality-checklist/SKILL.md` to self-correct documents BEFORE running Python gates.
@@ -119,7 +120,8 @@ Load `code-review-checklist` skill.
 
 **Actions:**
 - Read `launch_spec_{timestamp}.md` and resume the next `PENDING` / `IN_PROGRESS` intent.
-- Identify tasks that can run in parallel (e.g., `Propose.API` with `Propose.Data`).
+- Identify tasks that can run in parallel using the `## Parallelism` section and dependency graph. Tasks whose `Depends On` are all `DONE` are eligible for dispatch.
+- Respect the max parallel tasks soft limit. Do not dispatch more than the limit concurrently.
 - Dispatch the next intent into the correct lifecycle phase. Repeat until the queue is empty.
 
 ---
