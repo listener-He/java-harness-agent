@@ -1,136 +1,74 @@
-# Hooks — Guards, Rollbacks, and Loop
+# Hooks & Gates Reference
+
+Real Claude Code hooks are configured in `.claude/settings.json`. This file documents what each lifecycle phase needs in terms of validation and gates — the agent executes these at the appropriate moments.
 
 ---
 
-## Hook Definitions
+## Automated Hooks (settings.json)
 
-### 1. `pre_hook` — Pre-Phase Gate
-
-**Trigger:** Before entering any new phase.
-
-Load `java-architecture-standards` skill. Check budget guides (see `routing.md` Rule 0.1).
-
-**Local Intelligence Actions (run before reading any files):**
-
-| When | Command |
-|---|---|
-| Explorer phase, scope unknown | `python3 .claude/scripts/local_intel/wiki_search.py --query "<intent>"` |
-| Explorer phase, Change intent | `python3 .claude/scripts/local_intel/failure_memory.py query --intent Change --phase Explorer` |
-| Before writing Allowed Scope | `python3 .claude/scripts/local_intel/code_index.py --impact-of <target_file>` |
-| Before writing Allowed Scope (DB scenario) | `python3 .claude/scripts/local_intel/code_index.py --what-touches-table <table>` |
-
----
-
-### 2. `guard_hook` — Execution Guard
-
-**Trigger:** While generating code or writing SQL.
-
-Load `java-coding-style` skill. Enforce all of the following:
-
-- Push operations spanning multiple DB tables/domains to a `@Transactional` Service or Facade layer. Controllers MUST remain thin.
-- Enforce style, custom project exceptions (e.g., `CustomerException`), and required patterns (e.g., `jakarta.validation` vs `javax`).
-- Do NOT modify cross-domain files unless explicitly listed in `## Allowed Scope` of the current `task_brief.md`.
-- Enforce budgeted navigation + stop rules + escalation protocol (see `routing.md`).
-- Enforce scope via `scope_guard.py`. Do not drift outside the declared Allowed Scope.
-- For `TRIVIAL` tasks: execute a global `Grep` or `SearchCodebase` before renaming or modifying anything — confirm no hidden dependencies (XML mappings, reflection).
-- After every code change: run `python3 .claude/scripts/gates/secrets_linter.py --paths "<changed_files>"`. FAIL blocks the flow.
-
----
-
-### 2.5 `shift_left_hook` — Active Verification (MUST)
-
-**Trigger:** Immediately after writing/modifying code, BEFORE reporting completion to the user.
-
-**Actions:**
-- Run `javac`, `mvn clean compile`, or `gradle build`. Fix compile errors and re-verify. MAX 2 RETRIES — on third failure, STOP and ask the human.
-- Do NOT run the full test suite unless in Phase 5 (QA) or the human explicitly approves.
-- For `TRIVIAL` / `LOW` / `PATCH` tasks: if the modified method/class has no unit test coverage, trigger a Soft Interrupt — present `git diff` to the user and wait for confirmation before proceeding to Archive.
-
----
-
-### 3. `post_hook` — Post-Phase Audit
-
-**Trigger:** After a phase completes, before transitioning to the next.
-
-Load `wal-documentation-rules` skill.
-
-**Doc Consistency Gate** (read-only — do NOT modify files; run only when relevant):
-
-| Gate | Command | When |
+| Hook | Trigger | Action |
 |---|---|---|
-| Task brief schema | `python3 .claude/scripts/wiki/schema_checker.py <path_to_task_brief>` | Every STANDARD task |
-| Wiki graph lint | `python3 .claude/scripts/wiki/wiki_linter.py` | When wiki files changed |
-| Secrets scan | `python3 .claude/scripts/gates/secrets_linter.py --paths "<glob>"` | Every code change |
-| DB migration | `python3 .claude/scripts/gates/migration_gate.py --sql-dir <path>` | Scenario B (DDL changes) |
-| Breaking API | `python3 .claude/scripts/gates/api_breaking_gate.py --task-brief <path>` | Scenario C (API schema changes) |
-| Dependency | `python3 .claude/scripts/gates/dependency_gate.py --pom <pom.xml>` | Scenario E (pom.xml changes) |
-| Plan review (PDD) | Checklist — see lifecycle.md Phase 3 Plan Review Checklist | Every STANDARD task with ≥3 tasks in launch_spec |
+| PostToolUse | After every Edit/Write | `secrets_linter.py` on changed file |
+| UserPromptSubmit | Before every user prompt | `failure_memory.py query` (if cache exists) |
 
-- Follow `linter-severity-standard` skill for severity handling.
-- Run `.claude/skills/spec-quality-checklist/SKILL.md` to self-correct documents BEFORE running Python gates.
-- Python gates are not absolute blockers: use `WARN` for stylistic mismatches; move on if the issue is non-critical.
-
-**Write-back (MUST):**
-- STANDARD: Write WAL fragments (Domain + API + Rules; Data if schema change). Move task_brief to archive. MUST NOT mark done if WAL fragments are missing.
-- PATCH: No WAL required.
-
-**After Explorer phase — populate `task_brief.md ## Hard Constraints` with:**
-- Business vocabulary and invariants (terms, enums, state transitions)
-- Engineering red lines (forbidden patterns, permission strategy, idempotency strategy)
-
-In Propose / Implement phases: restore context from `task_brief.md` Machine Section only.
+These run automatically. The agent does not need to invoke them manually.
 
 ---
 
-### 4. `fail_hook` — Failure Rollback
+## Phase Gates (Agent-Executed)
 
-**Trigger:** Any test, review, or compile failure.
+### Explorer → Propose
 
-Load `code-review-checklist` skill.
+- Run `python3 .claude/scripts/local_intel/failure_memory.py query --intent Change --phase Explorer` to surface past failures
+- Run `python3 .claude/scripts/local_intel/code_index.py --impact-of <target>` to enumerate callers before writing Allowed Scope
+- MEDIUM/HIGH: Convert requirements to Given/When/Then ACs — vague language blocked
 
-**Actions:**
-- Record failure pattern before rolling back:
-  ```bash
-  python3 .claude/scripts/local_intel/failure_memory.py record \
-    --intent <intent> --profile <profile> --phase <phase> \
-    --gate <gate_script> --pattern "<one-line failure reason>" \
-    --task-id <task_id>
-  ```
-- Move back to the previous phase. Append the failure reason to `task_brief.md`. Fix all failed checklist items.
-- Same phase fails 3 times: STOP and ask for human intervention.
-- Same gate script fails 3 times per task: STOP and request human intervention.
-- Retry state resets automatically at Archive. Explicit reset: `python3 .claude/scripts/run.py --end-task`.
-- Update the `launch_spec.md` row to `FAILED` and write `Failed_Reason`.
+### Propose → Implement
 
-**Compound Failure Decision Matrix (MUST):**
+- Run `python3 .claude/scripts/gates/task_brief_gate.py --require <path>` (task_brief structural validation)
+- HIGH risk: Approval Gate — present Human Section, wait for explicit approval
+
+### Implement → QA
+
+- `shift_left`: Run `mvn compile -q` after each code change. MAX 2 retries.
+- Run `python3 .claude/scripts/gates/scope_guard.py --task-brief <path> --files "<list>"` after each change
+- TRIVIAL/LOW: if no unit tests cover the change, present `git diff` to user before proceeding
+- Do NOT run full test suite here (that's QA)
+
+### QA
+
+- Run tests. Produce objective evidence (test output).
+- ACs ≥ 4 or risk = HIGH: map each Given/When/Then AC → test method → expected → actual → status
+
+### QA → Archive
+
+- Run `python3 .claude/scripts/gates/secrets_linter.py --paths "<changed files>"`
+
+---
+
+## Scenario-Specific Gates
+
+| Scenario | Gate |
+|---|---|
+| B (DB Migration) | `python3 .claude/scripts/gates/migration_gate.py --sql-dir <path>` |
+| C (Breaking API) | `python3 .claude/scripts/gates/api_breaking_gate.py --task-brief <path>` |
+| E (Dependency) | `python3 .claude/scripts/gates/dependency_gate.py --pom <pom.xml>` |
+
+---
+
+## Failure Protocol
+
+On any gate failure:
+1. Record: `python3 .claude/scripts/local_intel/failure_memory.py record --intent <intent> --profile <profile> --phase <phase> --gate <script> --pattern "<reason>" --task-id <id>`
+2. Fix and re-run. MAX 2 retries per phase.
+3. Same phase fails 3 times: STOP and ask human.
+
+## Compound Failure Decision Matrix
 
 | Scenario | Action |
 |---|---|
-| QA → back to Implement, scope unchanged | Normal rollback. Re-execute Implement within existing Allowed Scope. |
-| QA → back to Implement, scope needs expansion | STOP. Output `[Boundary Exception Request]`. Do NOT re-enter Implement until human approves expanded scope. |
-| Same phase fails twice with same root cause | STOP. Escalate with root cause evidence. Do NOT attempt a 3rd fix without human input. |
-| Same phase fails twice with different root causes | STOP. Roll back to Propose phase for contract amendment. |
-| Implement → compile failure (shift_left) | Fix and re-compile. MAX 2 RETRIES. Both fail → downgrade to Propose, re-evaluate API/Data contract feasibility. |
-
----
-
-### 5. `loop_hook` — Queue Loop
-
-**Trigger:** After Archive completes, or immediately after launching a queue.
-
-**Actions:**
-- Read `launch_spec_{timestamp}.md` and resume the next `PENDING` / `IN_PROGRESS` intent.
-- Identify tasks that can run in parallel using the `## Parallelism` section and dependency graph. Tasks whose `Depends On` are all `DONE` are eligible for dispatch.
-- Respect the max parallel tasks soft limit. Do not dispatch more than the limit concurrently.
-- Dispatch the next intent into the correct lifecycle phase. Repeat until the queue is empty.
-
----
-
-## Non-Convergence Fallback (MUST)
-
-If the workflow repeats the same action without converging:
-
-1. STOP repeating the same change.
-2. Identify the exact failing evidence (file path + minimal excerpt).
-3. Report the mismatch and request human intervention.
-4. If root cause is missing context or ambiguous scope: state what you know, what's missing, and ask one direct question. Set the `launch_spec` row to `WAITING_APPROVAL`.
+| QA → back to Implement, scope unchanged | Normal rollback within existing Allowed Scope |
+| QA → back to Implement, scope needs expansion | STOP. Output `[Boundary Exception Request]`. Wait for approval. |
+| Same phase fails twice, same root cause | STOP. Escalate with evidence. |
+| Same phase fails twice, different root causes | STOP. Roll back to Propose for contract amendment. |
+| Implement → compile failure (shift_left) | Fix, max 2 retries. Both fail → downgrade to Propose. |

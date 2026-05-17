@@ -28,6 +28,17 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f .claude/runs/cache/failure_memory.json ] && [ -s .claude/runs/cache/failure_memory.json ]; then python3 .claude/scripts/local_intel/failure_memory.py query --intent Change --phase Explorer 2>/dev/null || true; fi"
+          }
+        ]
+      }
     ]
   }
 }

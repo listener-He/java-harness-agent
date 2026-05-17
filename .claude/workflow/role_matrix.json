@@ -1,91 +1,23 @@
 {
-  "version": 2,
+  "version": 3,
   "roles": {
     "ambiguity_gatekeeper": {
-      "artifacts_required": [
-        ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md"
-      ],
       "gates": [
         {
-          "script": ".agents/scripts/gates/consistency_gate.py",
-          "args": []
-        },
-        {
-          "script": ".agents/scripts/gates/ambiguity_gate.py",
-          "args": [
-            "--intent",
-            "{intent_text}"
-          ]
-        },
-        {
-          "script": ".agents/scripts/gates/focus_card_gate.py",
-          "args": [
-            "--file",
-            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md"
-          ]
-        }
-      ]
-    },
-    "focus_guard": {
-      "artifacts_required": [
-        ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md",
-        ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_brake_snapshot.md"
-      ],
-      "gates": [
-        {
-          "script": ".agents/scripts/gates/scope_guard.py",
-          "args": [
-            "--task-brief",
-            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md",
-            "--files",
-            "{changed_files}"
-          ]
-        },
-        {
-          "script": ".agents/scripts/gates/brake_check_gate.py",
-          "args": [
-            "--snapshot",
-            ".agents/workflow/runs/{date}_{topic}_brake_snapshot.md"
-          ]
-        },
-        {
-          "script": ".agents/scripts/gates/impact_gate.py",
-          "args": [
-            "--task-brief",
-            ".agents/workflow/runs/{date}_{topic}_task_brief.md",
-            "--changed-files",
-            "{changed_files}",
-            "--risk",
-            "{risk}"
-          ]
-        }
-      ]
-    },
-    "architecture_curator": {
-      "gates": [
-        {
-          "script": ".agents/scripts/gates/writeback_gate.py",
-          "args": [
-            "--topic",
-            "{topic}",
-            "--date",
-            "{date}",
-            "--require",
-            "architecture"
-          ]
+          "script": ".claude/scripts/gates/ambiguity_gate.py",
+          "args": ["--intent", "{intent_text}"]
         }
       ]
     },
     "security_sentinel": {
       "gates": [
         {
-          "script": ".agents/scripts/gates/secrets_linter.py",
+          "script": ".claude/scripts/gates/secrets_linter.py",
           "args": [
             "--paths",
             "src/main/resources/**/*.yml",
             "src/main/resources/**/*.yaml",
-            "src/main/resources/**/*.properties",
-            ".agents/**/*.md"
+            "src/main/resources/**/*.properties"
           ]
         }
       ]
@@ -93,57 +25,18 @@
     "documentation_curator": {
       "gates": [
         {
-          "script": ".agents/scripts/wiki/wiki_linter.py",
+          "script": ".claude/scripts/wiki/wiki_linter.py",
           "args": []
-        }
-      ]
-    },
-    "delivery_capsule_curator": {
-      "gates": [
-        {
-          "script": ".agents/scripts/gates/delivery_capsule_gate.py",
-          "args": [
-            "--file",
-            ".agents/workflow/runs/{date}_{topic}_delivery_capsule.md"
-          ]
         }
       ]
     },
     "skill_graph_curator": {
       "gates": [
         {
-          "script": ".agents/scripts/gates/skill_index_linter.py",
+          "script": ".claude/scripts/gates/skill_index_linter.py",
           "args": [
-            "--index",
-            ".agents/skills/skill-index/SKILL.md",
-            "--skills-dir",
-            ".agents/skills"
-          ]
-        }
-      ]
-    },
-    "subagent_contract_curator": {
-      "gates": [
-        {
-          "script": ".agents/scripts/gates/subagent_contract_gate.py",
-          "args": [
-            "--dir",
-            ".agents/workflow/runs",
-            "--topic",
-            "{topic}",
-            "--date",
-            "{date}"
-          ]
-        }
-      ]
-    },
-    "requirement_engineer": {
-      "gates": [
-        {
-          "script": ".agents/scripts/gates/ambiguity_gate.py",
-          "args": [
-            "--intent",
-            "{intent_text}"
+            "--index", ".claude/skills/skill-index/SKILL.md",
+            "--skills-dir", ".claude/skills"
           ]
         }
       ]
@@ -151,23 +44,18 @@
     "system_architect": {
       "gates": [
         {
-          "script": ".agents/scripts/gates/task_brief_gate.py",
-          "args": [
-            "--require",
-            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md"
-          ]
+          "script": ".claude/scripts/gates/task_brief_gate.py",
+          "args": ["--require", ".claude/runs/task-briefs/<YYYY-MM-DD>_<slug>_task_brief.md"]
         }
       ]
     },
     "lead_engineer": {
       "gates": [
         {
-          "script": ".agents/scripts/gates/scope_guard.py",
+          "script": ".claude/scripts/gates/scope_guard.py",
           "args": [
-            "--task-brief",
-            ".agents/workflow/runs/<YYYY-MM-DD>_<slug>_task_brief.md",
-            "--files",
-            "{changed_files}"
+            "--task-brief", ".claude/runs/task-briefs/<YYYY-MM-DD>_<slug>_task_brief.md",
+            "--files", "{changed_files}"
           ]
         }
       ]
@@ -175,17 +63,15 @@
     "code_reviewer": {
       "gates": [
         {
-          "script": ".agents/scripts/gates/linter.py",
-          "args": [
-            "--strict"
-          ]
+          "script": ".claude/scripts/gates/linter.py",
+          "args": ["--strict"]
         }
       ]
     },
     "librarian": {
       "gates": [
         {
-          "script": ".agents/scripts/wiki/wiki_linter.py",
+          "script": ".claude/scripts/wiki/wiki_linter.py",
           "args": []
         }
       ]
@@ -193,37 +79,16 @@
     "knowledge_extractor": {
       "gates": [
         {
-          "script": ".agents/scripts/gates/bypass_audit_gate.py",
+          "script": ".claude/scripts/gates/writeback_gate.py",
           "args": [
-            "--task-id",
-            "{task_id}"
+            "--topic", "{topic}",
+            "--date", "{date}",
+            "--require", "domain,api,rules"
           ]
         },
         {
-          "script": ".agents/scripts/gates/writeback_gate.py",
-          "args": [
-            "--topic",
-            "{topic}",
-            "--date",
-            "{date}",
-            "--require",
-            "domain,api,rules"
-          ]
-        },
-        {
-          "script": ".agents/scripts/wiki/wiki_linter.py",
+          "script": ".claude/scripts/wiki/wiki_linter.py",
           "args": []
-        }
-      ]
-    },
-    "patch_archiver": {
-      "gates": [
-        {
-          "script": ".agents/scripts/gates/bypass_audit_gate.py",
-          "args": [
-            "--task-id",
-            "{task_id}"
-          ]
         }
       ]
     }
@@ -231,143 +96,45 @@
   "mounts": [
     {
       "intent": "Change",
-      "profile": "PATCH",
-      "phase": "Explorer",
-      "roles": [
-        "ambiguity_gatekeeper",
-        "focus_guard"
-      ]
-    },
-    {
-      "intent": "Change",
-      "profile": "PATCH",
-      "phase": "Implement",
-      "roles": [
-        "focus_guard",
-        "security_sentinel"
-      ]
-    },
-    {
-      "intent": "Change",
-      "profile": "PATCH",
-      "phase": "QA",
-      "roles": [
-        "code_reviewer"
-      ]
-    },
-    {
-      "intent": "Change",
-      "profile": "PATCH",
-      "phase": "Archive",
-      "roles": [
-        "patch_archiver"
-      ]
-    },
-    {
-      "intent": "Change",
       "profile": "STANDARD",
       "phase": "Explorer",
-      "roles": [
-        "ambiguity_gatekeeper",
-        "requirement_engineer",
-        "focus_guard"
-      ]
+      "roles": ["ambiguity_gatekeeper", "requirement_engineer"]
     },
     {
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "Propose",
-      "roles": [
-        "system_architect"
-      ]
+      "roles": ["system_architect"]
     },
     {
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "Implement",
-      "roles": [
-        "lead_engineer",
-        "focus_guard",
-        "security_sentinel"
-      ]
+      "roles": ["lead_engineer", "security_sentinel"]
     },
     {
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "QA",
-      "roles": [
-        "code_reviewer"
-      ]
+      "roles": ["code_reviewer"]
     },
     {
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "Archive",
-      "roles": [
-        "knowledge_extractor",
-        "documentation_curator",
-        "delivery_capsule_curator",
-        "subagent_contract_curator",
-        "skill_graph_curator",
-        "librarian"
-      ]
+      "roles": ["knowledge_extractor", "documentation_curator", "skill_graph_curator", "librarian"]
     },
     {
-      "intent": "Workflow",
-      "profile": "PATCH",
-      "phase": "Explorer",
-      "roles": [
-        "ambiguity_gatekeeper",
-        "focus_guard"
-      ]
-    },
-    {
-      "intent": "Workflow",
+      "intent": "Change",
       "profile": "PATCH",
       "phase": "Implement",
-      "roles": [
-        "focus_guard",
-        "security_sentinel"
-      ]
+      "roles": ["security_sentinel"]
     },
     {
-      "intent": "Workflow",
+      "intent": "Change",
       "profile": "PATCH",
-      "phase": "Archive",
-      "roles": [
-        "architecture_curator",
-        "documentation_curator",
-        "skill_graph_curator"
-      ]
-    },
-    {
-      "intent": "Workflow",
-      "profile": "STANDARD",
-      "phase": "Explorer",
-      "roles": [
-        "ambiguity_gatekeeper",
-        "focus_guard"
-      ]
-    },
-    {
-      "intent": "Workflow",
-      "profile": "STANDARD",
-      "phase": "Implement",
-      "roles": [
-        "focus_guard",
-        "security_sentinel"
-      ]
-    },
-    {
-      "intent": "Workflow",
-      "profile": "STANDARD",
-      "phase": "Archive",
-      "roles": [
-        "architecture_curator",
-        "documentation_curator",
-        "subagent_contract_curator",
-        "skill_graph_curator"
-      ]
+      "phase": "QA",
+      "roles": ["code_reviewer"]
     }
   ]
 }

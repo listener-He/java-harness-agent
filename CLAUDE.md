@@ -79,47 +79,22 @@ The `task_brief.md` Machine Section (Allowed Scope + ACs + Hard Constraints) is 
 
 ---
 
-## Mandatory First Output
+## Session Start
 
-Before any action, output a single classification line. No XML blocks.
+- Read CLAUDE.md. Lazy-load rule/wiki files only when needed.
+- If resuming an interrupted session: read `.claude/runs/launch-specs/launch_spec_*.md` and restore from Phase.
+- If the user provides explicit file paths or code snippets: read them directly. No ceremony.
+- If the intent is ambiguous: ask one clarifying question, then proceed.
 
-```
-[Intent: Change | Profile: STANDARD | Risk: MEDIUM]
-```
+### When to classify explicitly
 
-**Rules:**
-- **STANDARD only** — PATCH and LEARN skip this line entirely. Act directly.
-- If the intent is ambiguous: ask one clarifying question before proceeding.
-- If a special scenario is matched (DEBUG, EPIC, A–E): append `| Scenario: <name>`.
-- Phase transitions use `→ Phase: Implement` inline (no separate `[Lifecycle]` header).
-
-**Scope & confidence check (STANDARD only, inline, no block):**
-```
-→ Scope: OrderController, OrderService. Confidence: HIGH | MEDIUM — assumption: [X] | LOW — blocking: [Y]
-```
-
-For LOW confidence: STOP and ask. For MEDIUM: state the assumption, proceed. For HIGH: proceed directly.
-
-PATCH/TRIVIAL: no scope check line needed. Reasoning is inline with the action.
-
----
-
-## Initial Action Decision Tree
+Only emit a classification line when the task is **MEDIUM or HIGH risk** and needs a task_brief:
 
 ```
-Session start
-├─ Rule 0: Workflow Initialization
-│   └─ Read CLAUDE.md. Lazy-load other docs only when needed.
-├─ Rule -1: Input Normalization
-│   └─ No @shortcut AND input > one-liner? → Apply requirement-intake skill.
-│   └─ @shortcut or simple one-liner? → Skip intake, proceed directly.
-├─ Rule 1: User provided explicit file path / class / snippet?
-│   └─ YES → Read it directly. Skip wiki funnel.
-├─ Rule 2: Resuming an interrupted session?
-│   └─ YES → Read .claude/runs/launch-specs/launch_spec_*.md. Restore from Phase.
-└─ Rule 3: Exploring without explicit scope?
-    └─ YES → Start at KNOWLEDGE_GRAPH.md and drill down.
+[Risk: HIGH | Scenario: B] → task_brief required
 ```
+
+Routine interactions (reading files, explaining code, simple edits, PATCH-level fixes) — act directly. No classification line.
 
 ---
 
