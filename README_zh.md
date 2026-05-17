@@ -25,19 +25,19 @@ CLAUDE.md                      # 唯一入口
 │   ├── hooks.md               # 前置/守卫/左移/后置/失败/循环钩子
 │   ├── safety-constraints.md  # 硬约束、提交策略
 │   └── writeback-policy.md    # WAL 片段写回、防膨胀规则
-├── agents/                    # 各生命周期阶段的角色定义
-│   ├── ambiguity-gatekeeper.md   # 歧义守门员
-│   ├── requirement-engineer.md   # 需求工程师
-│   ├── system-architect.md       # 系统架构师
-│   ├── lead-engineer.md           # 首席工程师
-│   ├── focus-guard.md             # 专注守卫
-│   ├── code-reviewer.md           # 代码审查员
-│   ├── knowledge-extractor.md     # 知识提取器
-│   ├── documentation-curator.md   # 文档管理员
-│   ├── skill-graph-curator.md     # 技能图谱管理员
-│   ├── knowledge-architect.md     # 知识架构师
-│   ├── librarian.md              # 图书管理员
-│   └── security-sentinel.md      # 安全哨兵
+├── agents/                    # 角色定义 — 每个 Agent 是挂载到特定阶段+门禁的人格化角色
+│   ├── ambiguity-gatekeeper.md   # 歧义守门员 · Ambiguity Gatekeeper — 阻断模糊输入，强制执行"就绪定义"三要素（动作动词 + 可识别目标 + 可度量结果）。探索超过 3 步未收敛即终止。工作阶段：Explorer 前。
+│   ├── requirement-engineer.md   # 需求工程师 · Requirement Engineer — 将原始用户需求翻译为 Given/When/Then 可测试验收标准。挑战模糊形容词（"快"、"好"），为每条需求定义快乐路径 + 2 个边界场景，最终执行认知偏差检查。工作阶段：Explorer。
+│   ├── system-architect.md       # 系统架构师 · System Architect — 在编码前设计技术方案，产出 task_brief.md（允许范围 + 验收标准 + 硬约束 + 任务依赖 DAG）。HIGH 风险时生成 ≥2 个 ADR 备选方案（含优缺点/失败条件）。EPIC 场景担任 Foreman。工作阶段：Propose → Review。
+│   ├── lead-engineer.md          # 首席工程师 · Lead Engineer — 将 task_brief Machine Section 转化为可编译、可测试的代码。遵循 TDD：RED（基于 AC 写失败测试）→ GREEN（最小实现）→ REFACTOR（清理重构）。严格遵循允许范围，每次变更后执行编译检查（最多重试 2 次）。工作阶段：Implement。
+│   ├── focus-guard.md            # 专注守卫 · Focus Guard — 范围边界强制执行。确保所有代码变更不超出 task_brief 允许范围。不审查代码质量，只检查边界合规。越界变更被阻止并输出 [Scope Violation]；必要的跨边界修改需发起 [Boundary Exception Request] 等待人工审批。工作阶段：Implement（伴随守卫）。
+│   ├── code-reviewer.md          # 代码审查员 · Code Reviewer — Tech-Lead 级代码审查，对照五维评分标准：正确性、安全性、性能、设计与可维护性、代码风格。输出 CRITICAL（阻断合并）/ MAJOR（应修复）/ MINOR（锦上添花）三级报告，附 file:line 精确定位。工作阶段：QA。
+│   ├── knowledge-extractor.md    # 知识提取器 · Knowledge Extractor — 从完成的代码变更中提取稳定知识，归类为 Domain（领域概念）、API（接口契约）、Rules（约束模式）、Data（数据模型）四个维度，写入 wal/ 目录为 WAL 碎片。不直接编辑共享的 index.md，合并工作留给 Librarian。工作阶段：Archive。
+│   ├── documentation-curator.md  # 文档管理员 · Documentation Curator — 维护面向用户的文档（README、Javadoc、API 文档）与代码保持同步。处理新增/变更/废弃的公开 API，遵循 Javadoc 规范（@param, @return, @throws）。不负责 wiki/WAL 内容。工作阶段：Archive。
+│   ├── skill-graph-curator.md    # 技能图谱管理员 · Skill Graph Curator — 维护技能索引一致性。确保每个技能目录有 SKILL.md、每份 SKILL.md 在索引中有记录。检测死链、重复项、孤立技能。执行 skill_index_linter 门禁。工作阶段：Archive。
+│   ├── knowledge-architect.md    # 知识架构师 · Knowledge Architect — 当 wiki 索引文件超过 500 行上限时，执行去重→按主题拆分→创建聚焦子文档→将父索引重写为精简路由图。必要时更新 KNOWLEDGE_GRAPH.md。工作阶段：Maintenance（由 GC 溢出触发）。
+│   ├── librarian.md              # 图书管理员 · Librarian — Wiki 健康维护者。收集分散的 WAL 碎片→合并到稳定的领域索引→垃圾回收已合并的碎片。发现索引超 500 行时自动调用 Knowledge Architect 拆分。触发方式：@gc / @librarian。工作阶段：Maintenance。
+│   └── security-sentinel.md      # 安全哨兵 · Security Sentinel — 确定性安全门禁。运行自动化扫描（secrets_linter.py）检测硬编码凭据、令牌、密钥、云凭证。仅报告客观通过/失败结果，不做主观安全审计。每次 Archive 前 + Scenario A（紧急热修复）触发。
 ├── skills/
 │   ├── adversarial-review/          # 单轮对抗性审查（A/B/C 三类框架）
 │   ├── ai-pipeline/                 # 编排完整 AI 工程流水线（规划→评估→改进→归档）
