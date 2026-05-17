@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 .claude/scripts/gates/*)",
+      "Bash(python3 .claude/scripts/wiki/*)",
+      "Bash(python3 .claude/scripts/tools/*)",
+      "Bash(python3 .claude/scripts/local_intel/*)",
+      "Bash(python3 .claude/scripts/harness/*)",
+      "Bash(mvn *)",
+      "Bash(gradle *)",
+      "Bash(javac *)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ],
+    "deny": []
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/scripts/gates/secrets_linter.py --paths \"$(echo $CLAUDE_TOOL_INPUT | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get(\"file_path\",\"\"))' 2>/dev/null)\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

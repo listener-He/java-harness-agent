@@ -1,318 +1,305 @@
-<div align="center">
+# Java Harness Agent
 
-# Java Harness Agent 🚀
-
-**面向后端研发的 Agent 驱动"微内核"操作系统**
+一套面向 AI 编程助手的行为约束框架，用于实现结构化、可持续的软件工程流程。它通过规则、角色、技能和生命周期阶段，引导 AI 助手完成从需求接收到代码生成、测试验证到知识归档的完整开发流程。
 
 [![English](https://img.shields.io/badge/English-available-red.svg)](README.md)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://www.oracle.com/java/)
-[![Lifecycle](https://img.shields.io/badge/Lifecycle-Stable-success.svg)](.agents/workflow/LIFECYCLE.md)
-
-[使用指南](USAGE_zh.md) · [工程手册](ENGINEERING_MANUAL_zh.md) · [快速开始](#-快速上手)
-
-<img src="https://fastly.jsdelivr.net/gh/listener-He/java-harness-agent@main/static/image.jpg" width="800" alt="Cover Image"/>
-
-</div>
-
-## ⚠️ 核心定位声明
-
-> **"学习 Agent，越学越像在重新理解操作系统。历史不会重复，但会押韵！"**
-
-这是一个**机器对机器（M2M）的基础设施**。它是一个**认知线束 (Cognitive Harness)**——由人类设计，但**专供大语言模型（LLM）阅读、解析和执行**的工程协议。
-
-与传统臃肿的"宏内核"（Macro-kernel）Agent 框架不同，Java Harness Agent 采用了极其克制的**微内核 OS 哲学**：
-- **进程 = 意图边界**：同进程共享内存，跨意图必须显式通信（WAL 写回）。
-- **RAM = 上下文窗口**：Agent 最稀缺的资源，由架构严格调度寄存器与磁盘换页。
-- **系统调用 = Tool Use**：必须通过系统调用陷入内核（Harness），由角色矩阵代为鉴权与执行。
-- **文件系统 = RAG 与 Wiki**：廉价的大容量磁盘按需挂载，用完即焚。
-
-**Java Harness Agent** 是一套专为可持续软件演进打造的 Agent 驱动后端开发流程。它深度融入了 **认知哲学**（反直觉偏见、第一性原理思考），并首创了 **双轨制 (Dual-Track)** 与 **4级风险矩阵 (4-Level Risk Matrix)**。通过丰富的高密度 Master 技能生态，彻底杜绝了传统 Agent 开发中的"失控狂奔"与"代码腐败"现象。
-
-## 📖 项目简介
-
-**Java Harness Agent** 将"契约优先"的 OpenSpec 设计理念与微内核架构深度融合。通过意图网关、双轨制生命周期、无向量知识图谱（LLM Wiki）以及认知刹车系统，实现了可持续演进、可断点续传、可自我纠偏的工程闭环。
-
-### ✨ 核心特性
-
-- 🎯 **OS级意图驱动**：自然语言 → 结构化意图队列 → 进程级任务调度
-- 🧠 **认知哲学**：内置认知偏见纠正与 5-Whys 决策框架，强制 Agent 在动手前"三思"（Cognitive Brake）
-- 🛤️ **双轨制与4级风险矩阵**：区分 TRIVIAL（极速通道）、LOW（PATCH 轨道）、MEDIUM/HIGH（STANDARD 完整6阶段），告别一刀切的繁琐流程
-- 📚 **微内核知识图谱**：彻底摒弃向量数据库的"黑盒"检索，采用纯 Markdown 的分层挂载系统，确保 100% 的上下文确定性
-- 🛡️ **自我纠偏与门控**：自动守卫钩子、失败恢复、强制的人类介入检查点（Approval Gate）
-- 🔌 **丰富技能生态**：横跨默认可启用、角色必须、业务、工程流水线、Java 标准、QA 与调试、工作流、元技能等类别，全覆盖生命周期各阶段
 
 ---
 
-## 💰 Token 经济学与成本模型
+## 这是什么
 
-鉴于 Java Harness Agent 是一个强约束的 Agent 框架，它的架构将成本从**"试错与盲目搜索"**转移到了**"前期规划与门控防御"**上，从而使复杂任务的全局成本变得极其稳定和可预期。
+本仓库**不是**一个 Java 库或应用程序。它是位于人类开发者和 AI 编程助手之间的一套协议和工具集，用于约束助手的行为，从而产出正确、可追溯、可审查的工程结果。
 
-### 1. 哪里产生了额外的"思考税" (The Thinking Tax)
-- 每次对话，Agent 都必须输出 `<Cognitive_Brake>` 并阅读强制性的系统上下文（如 `LIFECYCLE.md`, `AGENTS.md`）。这导致每一轮都会产生大约 **~500 个输出 Token 和 ~2000 个输入 Token** 的硬性基线损耗。
-- 尤其是融入了 **认知框架**后，Agent 必须先进行自我反思（防偏见），这增加了几百 Token 的开销，但省下了后续由于方向错误导致的几万 Token 的重写成本。
-
-### 2. ROI 盘点：三种工程模式的终极对比
-
-| 开发范式 | 行为特征 | 输入 Tokens | 输出 Tokens | 隐性成本与风险 | 最终评价 |
-|----------|----------|--------------|---------------|----------------------|---------|
-| **纯对话 / Copilot** | 缺乏上下文，直接生成代码。 | ~5k | ~1k | **极高的返工率**。忘记加事务、漏字段。需要人类反复写 Prompt 去纠正。 | Token 极省，但极其消耗人类时间。 |
-| **宏内核 Auto-Agent** | 盲目扫库，所有技能一次性加载，遇到编译报错陷入死循环重试。 | **10万+** | 10k+ | **灾难级损耗**。因上下文过载和死循环，迅速烧光 Token 预算。 | 不可控，高风险。 |
-| **微内核 Harness Agent** | 缴纳适量的"思考税"，利用双轨制与漏斗限流，在高风险操作前强制停下。 | **~30k** | **~6k** | **成本确定且可控**。架构错误在前期被人类拦截，语法错误被左移验证消化。 | **甜点位 (The Sweet Spot)**。用可控的 Token 消耗换取了高质量交付。 |
+入口文件：**[CLAUDE.md](CLAUDE.md)** — 每次会话启动时首先阅读。
 
 ---
 
-## 🏗️ 架构总览：微内核 OS 哲学
+## 目录结构
 
-### 核心思想
-
-**Java Harness Agent 解决的三大根本问题:**
-
-1. **上下文膨胀失控 (OOM)**: LLM 在大型代码库中盲目搜索导致 Token 浪费 → 通过纯文本挂载文件系统与"即用即焚"解决
-2. **需求漂移与越权修改 (越权)**: Agent 自由发挥导致跨域污染 → 通过微内核意图网关 + 严格的角色矩阵守卫解决
-3. **知识碎片化与不可持续 (内存泄漏)**: 对话记忆丢失、索引膨胀 → 通过 WAL 写回日志与敏捷的垃圾回收 (GC) 机制解决
-
-### 🎭 13 大虚拟英雄图鉴 (The Virtual Team)
-
-Agent 并不是一个孤立运作的大模型，而是一个由 13 位性格迥异的"虚拟英雄"组成的硬核团队。在执行任务时，大模型必须动态挂载这些角色，并使用他们专属的武器（Python 门禁脚本）来捍卫系统纪律。
-
-#### 🛡️ 阶段 1: Explorer (迷雾探索期)
-* **@Requirement Engineer (需求工程师)**: "不要给我发'优化一下'这种垃圾词汇。告诉我你的边界，或者闭嘴！" (武器: `ambiguity_gate.py`)
-* **@Ambiguity Gatekeeper (歧义守门员)**: "等一下，你确定你要全局 grep 吗？先画好 `focus_card.md` 的红线！" (武器: `focus_card.md` 结界)
-
-#### 🏛️ 阶段 2 & 3: Propose & Review (架构设计与残酷审查期)
-* **@System Architect (系统架构师)**: "爆炸半径在我的计算之内。按我的 `openspec.md` 蓝图开工！" (武器: `Approval Gate` 人类召唤阵)
-* **@Devil's Advocate (魔鬼代言人)**: "哦，架构师大人，你真的觉得这逻辑能扛得住高并发死锁吗？" (武器: `cognitive-bias-checklist`)
-
-#### ⚔️ 阶段 4 & 5: Implement & QA (编码与无情测试期)
-* **@Lead Engineer (首席工程师)**: "契约就是法律。我不创造，我只按 `openspec.md` 实现代码。" (武器: `javac` 真理熔炉)
-* **@Focus Guard (专注守卫)**: "你的手伸得太长了！把手缩回 Focus Card 结界里！" (武器: `scope_guard.py` 惩戒戒尺)
-* **@Code Reviewer (代码审查员)**: "魔法数字？N+1 查询风险？把这些肮脏的代码给我重写！" (武器: `Static Linter` 净化之光)
-
-#### 📜 阶段 6: Archive (归档与记忆沉淀期)
-* **@Knowledge Extractor (沉默的史官)**: "帝国必将陨落，唯有历史 (WAL) 永存。" (武器: `writeback_gate.py` 历史审判)
-* **@Documentation Curator (人类之友)**: "请多给人类一点关怀。注释要写 Why，而不是 What。" (武器: `README & Javadoc`)
-* **@Skill Graph Curator (强迫症馆长)**: "索引一旦错乱，整个世界都会迷路。" (武器: `skill_index_linter.py`)
-
-#### 🌌 后台守护进程 (Garbage Collection)
-* **@Librarian (深夜清道夫)**: "嘘……不要吵醒我，除非你带来了 `@gc` 的指令来合并碎片。" (武器: `librarian_gc.py`)
-* **@Knowledge Architect (城市规划师)**: "这篇文档超过 400 行了！大模型路过会脑容量爆炸的！必须拆分！" (武器: 结构重组)
-
-### 系统架构图
-
-```mermaid
-graph TD
-    subgraph Input["终端用户输入"]
-        User["用户指令"]
-        Shortcut["快捷系统调用: read/patch/standard"]
-    end
-
-    subgraph Kernel["微内核路由层 - Kernel Router"]
-        IG["Intent Gateway: 意图解析与防偏见引擎"]
-        Risk{"4级风险矩阵判定"}
-        TRIVIAL["TRIVIAL: 极速通道"]
-        LOW["LOW: PATCH 轨道"]
-        MEDHIGH["MEDIUM / HIGH: STANDARD 轨道"]
-    end
-
-    subgraph Context["虚拟内存管理 - Memory/Context"]
-        DirectRead["寄存器直读: Scope 明确时"]
-        Funnel["页表映射漏斗: Sitemap to Index"]
-        Budget["OOM 杀手: Wiki<=3, Code<=8"]
-    end
-
-    subgraph Knowledge["外部文件系统 - RAG/Disk"]
-        KG["KNOWLEDGE_GRAPH.md: 挂载根目录"]
-        DomainIndex["分区表: api / data / domain"]
-        Archive["冷备份区: Archive"]
-    end
-
-    subgraph Lifecycle["进程调度引擎 - Process Scheduler"]
-        LaunchSpec["进程控制块 PCB: Launch Spec"]
-        Phase1["1_Explorer: 澄清与拆解"]
-        Phase2["2_Propose: 冻结契约"]
-        Phase3["3_Review: 认知批判审查"]
-        ApprovalGate["内核态切换: Approval Gate"]
-        Phase4["4_Implement: 原子实现"]
-        Phase5["5_QA: 三维测试验证"]
-        Phase6["6_Archive: WAL 写回与释放"]
-    end
-
-    subgraph Roles["系统权限环 - Ring 0 / Ring 3"]
-        SysArchitect["System Architect: 架构权限"]
-        FocusGuard["Focus Guard: 内存越界守卫"]
-        DocCurator["Doc Curator: 文件系统写权限"]
-    end
-
-    Input --> IG
-    IG --> Risk
-    Risk -->|TRIVIAL| TRIVIAL
-    Risk -->|LOW| LOW
-    Risk -->|MEDIUM/HIGH| MEDHIGH
-
-    TRIVIAL --> DirectRead
-    LOW --> LaunchSpec
-    MEDHIGH --> LaunchSpec
-
-    DirectRead --> Funnel
-    Funnel --> Budget
-
-    LaunchSpec --> Phase1
-    Phase1 --> Phase2
-    Phase2 --> Phase3
-    Phase3 --> ApprovalGate
-    ApprovalGate --> Phase4
-    Phase4 --> Phase5
-    Phase5 --> Phase6
-    Phase6 --> LaunchSpec
+```
+CLAUDE.md                      # 唯一入口
+.claude/
+├── rules/                     # 路由、生命周期、钩子、安全约束、写回策略
+│   ├── routing.md             # 意图分类、执行模式、上下文漏斗
+│   ├── lifecycle.md           # 6 阶段生命周期状态机
+│   ├── hooks.md               # 前置/守卫/左移/后置/失败/循环钩子
+│   ├── safety-constraints.md  # 硬约束、提交策略
+│   └── writeback-policy.md    # WAL 片段写回、防膨胀规则
+├── agents/                    # 各生命周期阶段的角色定义
+│   ├── ambiguity-gatekeeper.md   # 歧义守门员
+│   ├── requirement-engineer.md   # 需求工程师
+│   ├── system-architect.md       # 系统架构师
+│   ├── lead-engineer.md           # 首席工程师
+│   ├── focus-guard.md             # 专注守卫
+│   ├── code-reviewer.md           # 代码审查员
+│   ├── knowledge-extractor.md     # 知识提取器
+│   ├── documentation-curator.md   # 文档管理员
+│   ├── skill-graph-curator.md     # 技能图谱管理员
+│   ├── knowledge-architect.md     # 知识架构师
+│   ├── librarian.md              # 图书管理员
+│   └── security-sentinel.md      # 安全哨兵
+├── skills/
+│   ├── adversarial-review/          # 单轮对抗性审查（A/B/C 三类框架）
+│   ├── ai-pipeline/                 # 编排完整 AI 工程流水线（规划→评估→改进→归档）
+│   ├── ai-slop-cleaner/             # 回归安全清理：移除死代码、合并重复、降低复杂度
+│   ├── architecture-decision-records/ # 将架构决策记录为结构化 ADR
+│   ├── blueprint/                   # 将目标转化为多会话、逐步执行的构建计划
+│   ├── brainstorming/               # 将想法/需求转化为含 ADR 格式备选方案的设计
+│   ├── code-review-checklist/       # 交付前强制代码审查，对照全部项目标准
+│   ├── cognitive-bias-checklist/    # 防止设计决策中的幻觉和过度自信
+│   ├── decision-frameworks/         # SWOT、5-Why、第一性原理用于根因分析和架构选择
+│   ├── deepinit/                    # 深度代码库初始化：分层 CLAUDE.md + 机器可读 context_brief.md
+│   ├── dispatching-parallel-agents/ # 将独立并行工作流分发给隔离的子 Agent
+│   ├── eval-harness/                # 形式化评估：AC 定义（Explorer）和 pass@k 基准（Pipeline）
+│   ├── external-research/           # 外部调研：流水线瓶颈、CVE、合规、竞品对标
+│   ├── greenfield-scaffold/         # 从零开始协议：领域模型→API→DB→包结构→脚手架
+│   ├── incident-response/           # 生产事故分诊、根因调查、事后复盘
+│   ├── java-architecture-standards/ # 强制：三层架构、API 设计、POJO、反 JOIN、错误码
+│   ├── java-coding-style/           # 强制：Checkstyle、Javadoc、工具类边界、函数式模式
+│   ├── java-testing-standards/      # 强制：测试隔离、Mock 规范、三场景覆盖规则
+│   ├── linter-severity-standard/    # 门禁脚本的 FAIL/WARN/IGNORE 严重级别标准
+│   ├── local-code-intelligence/     # 零成本本地工具：BM25 wiki 搜索、符号索引、失败记忆
+│   ├── migration-planner/           # A→B 迁移，带行为等价测试套件
+│   ├── mybatis-sql-standard/        # 反 JOIN、索引利用、隐式类型转换预防
+│   ├── product-manager-expert/      # PRD 生成和 PRD 消化→技术需求+验收标准
+│   ├── release/                     # 验证发布前门禁，指导分步发布执行
+│   ├── remember/                    # 将发现的知识归入正确的持久化层
+│   ├── requirement-intake/          # 将原始输入（PRD、想法、bug）规范化为结构化意图+范围+AC
+│   ├── security-review-checklist/   # 密钥、授权、IDOR、数据泄露、依赖安全清单
+│   ├── self-improve/                # 基于锦标赛的进化改进循环，带平台期检测
+│   ├── skill-creator/               # 为可重复工作流创建或更新 SKILL.md
+│   ├── skill-graph-manager/         # 强制：维护双向技能知识图谱
+│   ├── skill-index/                 # 所有工作区技能的中央导航
+│   ├── spec-quality-checklist/      # AI 生成文档的自纠门禁（Python 门禁脚本之前运行）
+│   ├── stakeholder-conflict-resolver/ # 检测并解决多方利益冲突的需求
+│   ├── systematic-debugging/        # 强制：任何修复前必须完成根因调查
+│   ├── task-decomposition-guide/    # 通过 INVEST 准则和垂直切片分解大型 PRD/EPIC
+│   ├── test-driven-development/     # 在实现前从 AC 编写失败测试
+│   ├── ultraqa/                     # 结构化 QA 循环，含证据映射表（AC↔测试↔结果）
+│   ├── using-git-worktrees/         # 隔离的 git worktree，用于并行或高风险工作
+│   ├── verify/                      # 归档前端到端的 AC 验证，含通过/失败证据
+│   ├── wal-documentation-rules/     # 强制：在 Archive 阶段将稳定知识提取为 WAL 片段
+│   └── writing-plans/               # 将规格分解为检查点驱动的实现计划
+├── wiki/                      # 知识图谱（基于文件系统，无向量数据库）
+│   ├── KNOWLEDGE_GRAPH.md     # 根索引
+│   ├── purpose.md             # 设计哲学
+│   ├── schema/                # 契约模板（task_brief、subagent_contract）
+│   └── wiki/                  # 领域、API、数据、架构、规格、测试、审查、偏好
+├── scripts/
+│   ├── gates/                 # 确定性门禁脚本（scope_guard、secrets_linter 等）
+│   ├── wiki/                  # Wiki 维护（压缩、检查、schema 校验）
+│   ├── tools/                 # 引导、归档、GC 辅助
+│   ├── local_intel/           # 零成本本地搜索（wiki_search、code_index、failure_memory）
+│   └── harness/               # 引擎
+├── workflow/
+│   ├── role_matrix.json       # 角色到阶段的挂载表
+│   ├── EXAMPLES.md            # STANDARD 任务的端到端示例
+│   └── artifacts/             # 产物模板
+├── runs/                      # 运行时产物（task-briefs、launch-specs、缓存）
+└── settings.json              # 权限和钩子配置
 ```
 
 ---
 
-## 🚦 核心工作流：双轨制与 4 级风险矩阵
+## 工作流过程（STANDARD）
 
-不再是一刀切的繁杂流程。框架在内核入口处（Router）对任务进行定性，分配到不同的处理轨道：
+STANDARD 生命周期实现 **BDD → TDD → BDD** 闭环：
 
-### 4 级风险矩阵 (Risk Matrix)
+- **BDD（行为驱动开发）**在两端：Explorer 以 Given/When/Then 编写可执行规格；QA 基于同一规格验证行为
+- **SDD（规格驱动开发）**贯穿全流程：每个阶段锚定 `task_brief.md` 契约
+- **TDD（测试驱动开发）**在核心：从 AC 衍生失败测试驱动实现
 
-| 风险等级 | 判定特征 | 授权策略 | 测试要求 | 回滚成本 |
-|---------|----------|----------|----------|----------|
-| **TRIVIAL** | 纯查询、打日志、修拼写、读代码 | **免授权 (Auto-Approve)** | 无强制要求 | 零 |
-| **LOW** | 单一方法的 Bugfix、内部重构，不改接口，不改表 | **隐式授权 (PATCH)** | 单元测试 | 极低 |
-| **MEDIUM** | 新增 API、表字段扩充、跨模块调用 | **显式授权 (Approval Gate)** | 集成与契约测试 | 高 |
-| **HIGH** | 核心主干流修改、状态机变更、权限拦截器重写 | **高级显式授权 + 架构审查** | 全量回归测试 | 灾难性 |
-
-### 双轨制 (Dual-Track Flow)
-
-#### 1. PATCH 轨道 (针对 TRIVIAL & LOW)
-**极速通道，拒绝官僚主义。**
-- 跳过冗长的 `Propose` 和 `Review` 阶段。
-- 不生成笨重的 `openspec.md`，仅在 `.agents/workflow/runs/` 中生成轻量级的 `focus_card.md`。
-- 直接进入代码修改与测试。
-- 极低的 Token 消耗，适合高频的小型迭代。
-
-#### 2. STANDARD 轨道 (针对 MEDIUM & HIGH)
-**重型装甲，捍卫工程底线。**
-- 严格遵循完整的 6 阶段生命周期 (Explorer → Propose → Review → Implement → QA → Archive)。
-- 强制生成 `openspec.md` 并触发 **Approval Gate**，必须由人类审核架构契约后才能写代码。
-- 引入认知批判框架，对架构设计进行深度拷问。
-
----
-
-## 🔧 技能生态 (Skill Ecosystem)
-
-技能生态系统按类别组织，由生命周期阶段和角色需求分别挂载。技能文件存放于 `.agents/skills/` 下，`trae-skill-index` 为全局路由表。
-
-### 默认启用技能 (Auto-Invoked)
-
-| 技能 | 阶段 | 主角色 |
-|---|---|---|
-| `brainstorming` | Explorer / Propose | Requirement Engineer |
-| `task-decomposition-guide` | Propose / Review | System Architect |
-| `writing-plans` | Propose / Implement | System Architect / Lead Engineer |
-| `systematic-debugging` | Implement / QA | Lead Engineer / Code Reviewer |
-| `test-driven-development` | Implement | Lead Engineer |
-| `verify` | QA / Archive | Code Reviewer / Knowledge Extractor |
-| `code-review-checklist` | QA | Code Reviewer |
-| `wal-documentation-rules` | Archive | Knowledge Extractor |
-| `skill-graph-manager` | 技能变更时 | Skill Graph Curator |
-| `java-architecture-standards` | Propose / Implement | System Architect / Lead Engineer |
-| `java-coding-style` | Implement | Lead Engineer |
-| `java-testing-standards` | QA | Code Reviewer |
-| `mybatis-sql-standard` | Propose / Implement | System Architect / Lead Engineer |
-
-### 角色必须技能 (Role-Required)
-
-| 技能 | 被需求角色 |
-|---|---|
-| `cognitive-bias-checklist` | Requirement Engineer, System Architect, Devil's Advocate |
-| `spec-quality-checklist` | Requirement Engineer, System Architect, Documentation Curator |
-| `decision-frameworks` | System Architect, Devil's Advocate, Ambiguity Gatekeeper |
-| `linter-severity-standard` | Code Reviewer |
-
-### 工程流水线技能
-
-`ai-pipeline`, `blueprint`, `architecture-decision-records`, `eval-harness`, `external-research`, `self-improve`, `ai-slop-cleaner`
-
-### 工作流与协作技能
-
-`dispatching-parallel-agents`, `using-git-worktrees`, `release`, `deepinit`, `remember`
-
----
-
-## 🚀 快速上手
-
-### 3 分钟入门指南
-
-#### 第一步：阅读"宪法" ⚡
-从 [AGENTS.md](AGENTS.md) 开始 - 它是定义执行纪律的主入口，包含硬约束和 OS 挂载规则。
-- **OOM 杀手**: Wiki ≤ 3 文档, Code ≤ 8 文件（超限立即触发 Escalation 抛出异常）。
-- **认知刹车 (Cognitive Brake)**: 在任何操作前必须输出该 XML 块，强制校验当前所在的进程、边界和预算。
-
-#### 第二步：发起系统调用 (Shortcuts DSL) 🎯
-使用显式的命令强制切入对应轨道：
-
-```text
-@read / @learn     → 进入只读进程（TRIVIAL 级，无副作用）
-@patch / @quickfix → 挂载 PATCH 轨道（LOW 级，轻量级修复）
-@standard          → 挂载 STANDARD 轨道（MEDIUM/HIGH，全生命周期重型组装）
+```
+         ┌──── BDD ────┐                                     ┌──── BDD ────┐
+         │ 写可执行规格  │                                     │ 行为验证     │
+         │ Given/When/  │    ┌── SDD (契约驱动) ──┐           │ AC↔测试↔结果 │
+         │   Then       │    │                     │           │              │
+         ▼              ▼    ▼                     ▼           ▼              ▼
+输入 ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Implement ─→ QA ─→ Archive
+         │              │          │                       │          │         │
+        需求澄清      架构设计   设计审查               TDD实现    测试验证   知识沉淀
+         │              │          │                       │          │         │
+         ▼              ▼          ▼                       ▼          ▼         ▼
+      Spec Gap     task_brief  Approved              Red→Green   Evidence   WAL
+      + AC list     (契约)     Contract              →Refactor   Mapping    fragments
 ```
 
-**示例：**
-```text
-@learn --scope src/foo/bar.ts -- explain this file
-@patch --risk low --test "mvn test" -- fix NPE in createOrder
-@standard --risk high -- implement tenant permission checks for order list API
-```
+### Phase 1: Explorer — 需求澄清 + BDD 规格编写
 
-#### 第三步：理解断点续传 (Breakpoint Resume) 🔄
-- Launch Spec 持久化在 `router/runs/launch_spec_*.md` (相当于 PCB 进程控制块)。
-- 会话中断或休眠后，唤醒的第一动作是读取该文件恢复状态。
-- 如果卡在 `WAITING_APPROVAL`，Agent 会等待您检查完 `openspec.md` 并说"同意"后，才会进入内核态执行代码。
+| 项目 | 详情 |
+|------|------|
+| **角色** | `@Ambiguity Gatekeeper`, `@Requirement Engineer`, `@Focus Guard` |
+| **技能** | `requirement-intake`, `brainstorming`, `product-manager-expert`, `task-decomposition-guide` |
+| **活动** | ① 通过意图信号矩阵分类输入 → 确定风险等级（TRIVIAL/LOW/MEDIUM/HIGH） |
+| | ② **规格推断**：`Current: [X]. Required: [Y]. Delta: [Z]` — 差距即真正的范围 |
+| | ③ **BDD — AC 测试化翻译（强制）**：将每条需求转为 `Given [precondition], when [action], then [observable, measurable result]` — 模糊表述（"正确处理"、"正常工作"）被阻止 |
+| | ④ 影响分析：`code_index.py --impact-of <target>` → 识别隐藏依赖 |
+| | ⑤ 对抗性审查 Category A（仅 HIGH）："我们在解决正确的问题吗？" |
+| **产出** | Spec Gap + AC 清单（Given/When/Then 格式）+ Hidden Scope → 输入 task_brief Machine Section |
+
+### Phase 2: Propose — 架构设计与 Spec
+
+| 项目 | 详情 |
+|------|------|
+| **角色** | `@System Architect` |
+| **技能** | `brainstorming`, `java-architecture-standards`, `task-decomposition-guide`, `decision-frameworks`, `cognitive-bias-checklist` |
+| **活动** | ① 生成 ≥2 个设计备选方案（HIGH：ADR 格式，含优缺点/失败条件） |
+| | ② 选定方案 → 发出 **约束清单**（约束所有下游工作的决策） |
+| | ③ 定义 **Allowed Scope** — 显式文件白名单，约束实现范围 |
+| | ④ 撰写 `task_brief.md` — **通用契约**： |
+| | &nbsp;&nbsp;&nbsp; • Machine Section（英文）：Allowed Scope + ACs + Hard Constraints |
+| | &nbsp;&nbsp;&nbsp; • Human Section（中文）：做什么/为什么 + 怎么做 + 待确认项 |
+| **产出** | `task_brief.md` — 所有 Agent 和人类共享的唯一产物 |
+
+### Phase 3: Review — 设计审查
+
+| 项目 | 详情 |
+|------|------|
+| **角色** | `@System Architect` |
+| **技能** | `code-review-checklist`, `java-architecture-standards`, `adversarial-review`（HIGH）, `spec-quality-checklist` |
+| **活动** | ① 对照项目标准和架构约束审查设计 |
+| | ② 对抗性批判 Category B（仅 HIGH）："我们以正确的方式解决吗？" — 仅一轮 |
+| | ③ **Approval Gate**（仅 HIGH）：以业务语言展示 Human Section → 等待显式签字 |
+| | ④ CRITICAL 发现 → 回滚到 Phase 2。MINOR → 标注 AC，继续 |
+| **产出** | 已批准的 `task_brief.md`（HIGH）或 FYI 摘要（MEDIUM） |
+
+### Phase 4: Implement — TDD 驱动实现
+
+| 项目 | 详情 |
+|------|------|
+| **角色** | `@Lead Engineer`, `@Focus Guard` |
+| **技能** | `test-driven-development`, `java-architecture-standards`, `java-coding-style`, `mybatis-sql-standard`, `writing-plans` |
+| **活动** | ① 阅读 `task_brief.md` Machine Section — Allowed Scope + ACs + Hard Constraints |
+| | ② **RED**：从 AC 编写失败测试（在写任何实现代码前必须看到测试失败） |
+| | ③ **GREEN**：在 Allowed Scope 内实现 — `scope_guard.py` 强制边界 |
+| | ④ **REFACTOR**：应用编码风格，提取魔法数字，确保 SOLID 合规 |
+| | ⑤ 左移：每次变更后 `mvn compile` + `secrets_linter.py`（最多重试 2 次） |
+| | ⑥ **YIELD**：停止并请求人类许可进入 QA |
+| **产出** | 已修改的源文件，通过的测试，编译通过 |
+
+### Phase 5: QA — 测试验证 + BDD 行为验证
+
+| 项目 | 详情 |
+|------|------|
+| **角色** | `@Code Reviewer` |
+| **技能** | `java-testing-standards`, `code-review-checklist`, `ultraqa`, `security-review-checklist`（HIGH） |
+| **活动** | ① 确保编译通过（`shift_left_hook`） |
+| | ② 运行测试套件 → 验证所有 AC 通过 |
+| | ③ **BDD — 证据映射表**（AC ≥ 4 或 HIGH 风险）：每个 Given/When/Then AC 映射到测试方法 → 预期 → 实际 → 状态 — 确保 Phase 1 声明的每一条行为都得到验证 |
+| | ④ 代码审查：N+1 检查、边界条件、魔法数字、SOLID 合规 |
+| | ⑤ 最多重试 2 次 → 第 3 次失败：停止，请求人类介入 |
+| **产出** | 测试证据，审查报告（所有 AC PASS） |
+
+### Phase 6: Archive — 知识沉淀
+
+| 项目 | 详情 |
+|------|------|
+| **角色** | `@Knowledge Extractor`, `@Documentation Curator`, `@Skill Graph Curator` |
+| **技能** | `wal-documentation-rules`, `verify` |
+| **活动** | ① 从完成的 task_brief 中提取稳定知识 |
+| | ② 将 **WAL 片段**写入领域目录：`api/wal/`, `data/wal/`, `domain/wal/` |
+| | ③ 将 `task_brief.md` 移至 `wiki/archive/`（冷存储） |
+| | ④ 如果队列非空，从 `launch_spec.md` 分派下一个 PENDING 任务 |
+| **产出** | WAL 片段（domain + api + rules；如有 schema 变更则 + data），归档的 task_brief |
 
 ---
 
-## 🛡️ 自我纠偏与门控机制
+## 维护工作流（非代码操作）
 
-| 机制 | 触发点 | 产生效果 | OS 隐喻 |
-|------|--------|----------|----------|
-| **Cognitive_Brake** | 任何行动前 | 迫使LLM在行动前，显式推理角色、边界、预算和反思偏见 | **内核特权级检查** |
-| **pre_hook** | 进入新阶段前 | 加载相关规则集 + 输出决策清单 | **进程上下文切换** |
-| **guard_hook** | 实现/改动过程中 | 风格不合规、越权立即阻断；执行 `secrets_linter.py` 安全扫描 | **内存越界保护 (Segfault)** |
-| **Approval Gate** | Review 通过后 | "冻结契约"，由人类授权是否进入实现 | **用户态切内核态确认** |
-| **shift_left_hook** | 代码写完后 | 强制自主编译检查（`javac` / `mvn compile`）；最多重试2次 | **构建完整性校验** |
-| **Archive 写回** | 任务结束 | 将 Spec 提取的稳定知识追加到 Wiki 索引（WAL） | **脏页写回磁盘 (fsync)** |
+当用户请求纯知识/wiki 维护类操作（整理、提取、扫描、拆分、GC），任务路由到 **MAINTENANCE** 模式 — 无代码阶段、无 task_brief、无编译检查。
+
+### WAL Compaction (GC) — 碎片整理
+
+**触发**: `@gc`, `@librarian`, 或 "整理 wiki", "合并碎片", "做 GC"
+
+| 步骤 | 操作 | 角色 |
+|------|------|------|
+| ① 聚合 | `librarian_gc.py --aggregate` — 收集所有未合并的 WAL 碎片 | `@Librarian` |
+| ② 合并 | 将聚合的知识合并到正确的领域索引文件 | `@Librarian` |
+| ③ 清理 | `librarian_gc.py --clean` — 删除已合并的碎片 | `@Librarian` |
+| ④ 检查 | 如有文件超过 500 行 → 触发文档拆分 | `@Knowledge Architect` |
+| **门禁** | `wiki_linter.py` — 无死链 | — |
+
+### Wiki Refresh — 知识提取与沉淀
+
+**触发**: `@wiki-update`, `@milestone`, 或 "提取知识", "沉淀 wiki", "刷新知识库"
+
+| 步骤 | 操作 | 角色 |
+|------|------|------|
+| ① 差异 | `git diff` 识别自上次更新以来的变更 | `@Knowledge Extractor` |
+| ② 提取 | 将稳定知识提取为结构化 WAL 碎片：[Domain], [API], [Rules] (+ [Data] 如有 schema) | `@Knowledge Extractor` |
+| ③ 写入 | 写入碎片到 `wiki/domain/wal/`, `wiki/api/wal/` 等 | `@Knowledge Extractor` |
+| **门禁** | `writeback_gate.py`（3 个必需章节）+ `wiki_linter.py` | — |
+
+### Document Split — 文档拆分（防膨胀）
+
+**触发**: wiki 文件超过 500 行，或 "拆分文档", "index 太大"
+
+| 步骤 | 操作 | 角色 |
+|------|------|------|
+| ① 检查 | 验证文件超过 500 行限制；未超过则中止 | `@Knowledge Architect` |
+| ② 去重 | 移除膨胀文件中的重复条目 | `@Knowledge Architect` |
+| ③ 拆分 | 按主题拆分为专注的子文档 | `@Knowledge Architect` |
+| ④ 重写 | 将原文件重写为精简的路由索引（仅含链接） | `@Knowledge Architect` |
+| **门禁** | `wiki_linter.py` — 无死链，无文件仍超过 500 行 | — |
+
+### Project Scan — 项目扫描
+
+**触发**: "扫描项目", "审计代码库", "分析代码结构"
+
+| 步骤 | 操作 | 角色 |
+|------|------|------|
+| ① 索引 | `code_index.py --build` — 重建符号索引 | Explorer (inline) |
+| ② 搜索 | `wiki_search.py` — 找出相关 wiki 上下文 | Explorer (inline) |
+| ③ 记忆 | `failure_memory.py query` — 找出历史失败记录 | Explorer (inline) |
+| ④ 报告 | 生成结构化扫描报告（目录、模块、关键符号、风险） | Explorer (inline) |
 
 ---
 
-## 📖 相关文档
+## 执行模式
 
-- **📘 工程手册（中文版）**：[ENGINEERING_MANUAL_zh.md](ENGINEERING_MANUAL_zh.md) - 详细的中文工程指南与工作流
-- **📘 工程手册（英文版）**：[ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md) - 详细的英文工程指南与工作流
-- **🧭 使用指南（中文）**：[USAGE_zh.md](USAGE_zh.md) - 在不同 CLI/IDE 中加载规则并跑完整闭环
-- **🇺🇸 English README**: [README.md](README.md) - Complete English version of this README
-- **📌 项目规则**：[AGENTS.md](AGENTS.md) - 主规则入口与宪法
-- **🗺️ 知识图谱**：[.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) - 虚拟文件系统根目录
+每个用户请求被分类为**意图**并路由到对应的**执行模式**：
 
----
-
-## 🤝 贡献指南
-
-欢迎参与共同打造这个纯粹的 M2M 工程基建！
-1. **先阅读**：深刻理解 [ENGINEERING_MANUAL_zh.md](ENGINEERING_MANUAL_zh.md) 中的微内核理念。
-2. **遵循生命周期**：所有针对架构自身的修改，必须走 `STANDARD` 轨道。
-3. **保持克制**：我们追求技能的高密度与正交性，拒绝随意添加"面条式"的单一指令技能。
+| 模式 | 适用场景 | 生命周期 | 写回 | 产物 |
+|------|---------|---------|------|------|
+| **LEARN** | 阅读/理解代码 | 无 | 否 | 无 |
+| **PATCH** (TRIVIAL) | 拼写、日志、空检查（≤1 文件） | `Implement → QA → Archive` | 否 | 无 |
+| **PATCH** (LOW) | 小型 bug 修复、内部重构 | `Explorer → Implement → QA → Archive` | 否 | Slim Spec |
+| **STANDARD** (MEDIUM) | 功能开发、新 API、跨模块调用 | 完整 6 阶段（无门禁） | 是 (WAL) | `task_brief.md` |
+| **STANDARD** (HIGH) | 核心流程、DB schema、认证、破坏性 API | 完整 6 阶段 + Approval Gate | 是 (WAL) | `task_brief.md` + ADR |
+| **MAINTENANCE** | Wiki GC、知识提取、文档拆分、项目扫描 | 角色特定（见维护工作流） | 是 (WAL/合并) | WAL 碎片、合并后的索引、扫描报告 |
 
 ---
 
-## 📄 许可证
+## 关键机制
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
+| 机制 | 作用 |
+|------|------|
+| **上下文漏斗** | 结构化导航：根索引 → 领域索引 → 具体文档；杜绝盲目搜索 |
+| **Scope Guard** | 强制代码修改不超出声明的允许范围 |
+| **Shift-Left Hook** | 每次代码修改后运行编译检查；最多重试 2 次，超出则上报人类 |
+| **Secrets Lint** | 每次编辑后扫描变更文件中的密钥泄露 |
+| **钩子系统** | pre_hook（进入阶段）、guard_hook（编辑中）、shift_left_hook（编辑后）、post_hook（退出阶段）、fail_hook（回滚）、loop_hook（队列循环） |
+| **Local Intelligence** | BM25 wiki 搜索、Java 符号索引、失败记忆 — 导航文件前的零成本上下文获取 |
+| **Gate Scripts** | 确定性 Python 脚本，阻断或警告质量/安全/合规问题 |
 
-<div align="center">
+---
 
-**为可持续的、不膨胀的智能后端开发而构建 ❤️**
+## 快速上手
 
-[⬆ 返回顶部](#java-harness-agent-)
+1. **阅读 [CLAUDE.md](CLAUDE.md)** — 唯一入口文件。
+2. AI 助手会自动对你的请求进行分类并路由到正确模式。
+3. 复杂变更会产生 `task_brief.md` 作为你和助手之间的共享契约。
+4. HIGH 风险变更会在编码前要求你显式确认。
+5. 完成任务的知识会被提取到 wiki 中供后续会话使用。
 
-</div>
+---
+
+## 相关文档
+
+- [CLAUDE.md](CLAUDE.md) — 项目入口
+- [README.md](README.md) — English version
+- [.claude/workflow/EXAMPLES.md](.claude/workflow/EXAMPLES.md) — STANDARD 任务端到端示例
+- [.claude/wiki/KNOWLEDGE_GRAPH.md](.claude/wiki/KNOWLEDGE_GRAPH.md) — 知识图谱根节点
+- [.claude/skills/skill-index/SKILL.md](.claude/skills/skill-index/SKILL.md) — 技能导航
+- [.claude/wiki/purpose.md](.claude/wiki/purpose.md) — 设计哲学

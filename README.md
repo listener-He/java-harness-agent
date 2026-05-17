@@ -1,318 +1,305 @@
-<div align="center">
+# Java Harness Agent
 
-# Java Harness Agent 🚀
-
-**An Agent-Driven "Microkernel" Operating System for Backend Engineering**
+An AI agent harness framework for structured, sustainable software engineering. It defines a set of rules, roles, skills, and lifecycle phases that guide coding assistants through development tasks — from requirement intake to code generation, testing, and knowledge archival.
 
 [![简体中文](https://img.shields.io/badge/中文版-available-red.svg)](README_zh.md)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://www.oracle.com/java/)
-[![Lifecycle](https://img.shields.io/badge/Lifecycle-Stable-success.svg)](.agents/workflow/LIFECYCLE.md)
-
-[Usage Guide](USAGE.md) · [Engineering Manual](ENGINEERING_MANUAL.md) · [Quick Start](#-quick-start)
-
-<img src="https://fastly.jsdelivr.net/gh/listener-He/java-harness-agent@main/static/image.jpg" width="800" alt="Cover Image"/>
-
-</div>
-
-## ⚠️ Critical Positioning Statement
-
-> **"Learning Agent architecture is like re-learning Operating Systems. History doesn't repeat, but it rhymes!"**
-
-This repository is a **machine-to-machine (M2M) infrastructure**. It is a **Cognitive Harness**—an executable protocol designed *by* humans, but read, interpreted, and executed *exclusively by* Large Language Models (LLMs).
-
-Unlike traditional Agent frameworks that act as bloated "Macro-kernels," Java Harness Agent adopts an extremely restrained **Microkernel OS Philosophy**:
-- **Process = Intent Boundary**: Cross-intent requires explicit communication (WAL Write-back).
-- **RAM = Context Window**: Strictly scheduled by the architecture.
-- **System Calls = Tool Use**: Traps into the kernel via system calls, authenticated by the Role Matrix.
-- **File System = RAG & Wiki**: Mounted on demand, burned after use.
-
-**Java Harness Agent** is an agent-driven backend engineering workflow designed for sustainable software evolution. It deeply integrates **Cognitive Philosophy** (counter-intuitive bias checks, first-principles thinking) and pioneers a **Dual-Track Flow** with a **4-Level Risk Matrix**. Driven by a rich ecosystem of high-density Master Skills, it completely eliminates "runaway code" and "architecture rot" common in traditional Agent development.
-
-## 📖 Overview
-
-**Java Harness Agent** fuses the "Contract-First" OpenSpec design philosophy with a Microkernel architecture. Through its Intent Gateway, Dual-Track Lifecycle, Vector-less Knowledge Graph (LLM Wiki), and Cognitive Brakes, it achieves a sustainable, interruptible, and self-correcting engineering closed-loop.
-
-### ✨ Key Features
-
-- 🎯 **OS-Level Intent Driven**: Natural language → Structured intent queues → Process-level task scheduling
-- 🧠 **Cognitive Philosophy**: Built-in cognitive bias correction and 5-Whys decision frameworks, forcing the Agent to "think thrice" (Cognitive Brake) before acting.
-- 🛤️ **Dual-Track & 4-Level Risk Matrix**: Differentiates between TRIVIAL (Fast-path), LOW (PATCH track), and MEDIUM/HIGH (STANDARD full 6-phase), abandoning one-size-fits-all cumbersome processes.
-- 📚 **Microkernel Knowledge Graph**: Completely discards the "black box" of vector databases, utilizing a pure Markdown hierarchical mounting system to ensure 100% context determinism.
-- 🛡️ **Self-Correcting & Gating**: Automatic guard hooks, failure recovery, and mandatory human-in-the-loop checkpoints (Approval Gate).
-- 🔌 **Rich Skill Ecosystem**: Organized across 6 categories (Defaults, Role-Required, Business, Engineering Pipeline, Java Standards, QA & Debugging, Workflow, Meta), covering every lifecycle phase.
 
 ---
 
-## 💰 Token Economics & Cost Model
+## What It Is
 
-Given that Java Harness Agent is a strongly-constrained framework, its architecture shifts costs from **"Trial & Error / Blind Search"** to **"Upfront Planning & Gating Defenses"**, resulting in highly predictable and stable overall costs for complex tasks.
+This repository is **not** a Java library or application. It is a protocol and toolset that sits between a human developer and an AI coding assistant. It constrains the assistant's behavior to produce correct, traceable, and reviewable engineering outcomes.
 
-### 1. The "Thinking Tax"
-- Each turn requires the LLM to output the `<Cognitive_Brake>` and read mandatory system contexts. This adds a fixed baseline "thinking tax" of **~500 Output Tokens and ~2000 Input Tokens** per interaction.
-- With the integration of the **Cognitive Framework**, the Agent must first self-reflect (anti-bias check), adding a few hundred tokens upfront but saving tens of thousands of tokens otherwise wasted on architectural rewrites.
-
-### 2. The ROI: Comparing 3 Paradigms
-
-| Paradigm | Behavior | Input Tokens | Output Tokens | Hidden Costs / Risks | Verdict |
-|----------|----------|--------------|---------------|----------------------|---------|
-| **Pure Chat / Copilot** | Jumps straight to coding with limited context. | ~5k | ~1k | **High Rework Rate.** Misses transaction boundaries, forgets existing enums. Requires human prompt corrections. | Cheap in Tokens, Expensive in Human Time. |
-| **Macro-kernel Auto-Agent** | Blindly searches, loads all skills at once, loops endlessly on compile errors. | **100k+** | 10k+ | **Disastrous.** Burns through budget via massive context bloat and infinite loops. | Unpredictable & Dangerous. |
-| **Microkernel Harness Agent** | Pays the "Thinking Tax", utilizes Dual-Track and funnel throttling, STOPs at high-risk gates. | **~30k** | **~6k** | **Highly predictable.** Architectural errors intercepted early; syntax errors digested by Shift-Left Validation. | **The Sweet Spot.** Optimized for high-quality delivery with controlled spend. |
+Entry point: **[CLAUDE.md](CLAUDE.md)** — read first on every session start.
 
 ---
 
-## 🏗️ Architecture: Microkernel OS Philosophy
+## Structure
 
-### Core Philosophy
-
-**Three Fundamental Problems Solved:**
-
-1. **Context Bloat (OOM)**: LLM blind searching wastes tokens → Solved via pure-text mounted File System and "burn-after-reading".
-2. **Requirement Drift (Privilege Escalation)**: Agent free-play corrupts contracts → Solved via Microkernel Intent Gateway + strict Role Matrix guards.
-3. **Knowledge Fragmentation (Memory Leaks)**: Conversation memory loss → Solved via WAL (Write-Ahead Logging) write-backs and agile Garbage Collection (GC).
-
-### 🎭 The 13 Virtual Heroes (Role Matrix)
-
-The Agent is not an isolated "full-stack LLM," but a hardcore virtual team of 13 heroes with vastly different personalities. The LLM must dynamically mount these roles and use their exclusive weapons (Python Gate Scripts) to defend system discipline.
-
-#### 🛡️ Phase 1: Explorer (The Fog of War)
-* **@Requirement Engineer**: "Do not send me garbage words like 'optimize'. Give me boundaries, or stay quiet!" (Weapon: `ambiguity_gate.py`)
-* **@Ambiguity Gatekeeper**: "Wait, you want to global grep? Draw the `focus_card.md` red lines first!" (Weapon: `focus_card.md` Rune)
-
-#### 🏛️ Phase 2 & 3: Propose & Review (Architecture & The Crucible)
-* **@System Architect**: "The blast radius is calculated. Build according to my `openspec.md` blueprint!" (Weapon: `Approval Gate` Summoning Circle)
-* **@Devil's Advocate**: "Oh Architect, do you really think this logic survives high concurrency deadlocks?" (Weapon: `cognitive-bias-checklist`)
-
-#### ⚔️ Phase 4 & 5: Implement & QA (Coding & Relentless Testing)
-* **@Lead Engineer**: "The contract is the law. I only implement `openspec.md`." (Weapon: `javac` Furnace of Truth)
-* **@Focus Guard**: "Your hands reach too far! Pull back inside the Focus Card ward!" (Weapon: `scope_guard.py` Ruler of Discipline)
-* **@Code Reviewer**: "Magic Numbers? N+1 query risks? Rewrite this filthy code!" (Weapon: `Static Linter` Light of Purification)
-
-#### 📜 Phase 6: Archive (Memory Persistence)
-* **@Knowledge Extractor (Silent Historian)**: "Empires fall, but History (WAL) is eternal." (Weapon: `writeback_gate.py` Judgment of History)
-* **@Documentation Curator (Friend of Humanity)**: "Show humans some care. Comments must explain Why, not What." (Weapon: `README & Javadoc`)
-* **@Skill Graph Curator (OCD Librarian)**: "Once the index is messed up, the whole world loses its way." (Weapon: `skill_index_linter.py`)
-
-#### 🌌 Background Daemons (Garbage Collection)
-* **@Librarian (Midnight Scavenger)**: "Shh... Do not wake me unless you bring the `@gc` command to merge fragments." (Weapon: `librarian_gc.py`)
-* **@Knowledge Architect (Urban Planner)**: "This document exceeds 400 lines! LLMs will suffer OOM reading this! Split it!" (Weapon: Structural Reorganization)
-
-### System Architecture Diagram
-
-```mermaid
-graph TD
-    subgraph Input["End-User Input"]
-        User["User Request"]
-        Shortcut["Fast Syscall: read/patch/standard"]
-    end
-
-    subgraph Kernel["Kernel Router - Gateway"]
-        IG["Intent Gateway: Parser and Anti-Bias"]
-        Risk{"4-Level Risk Matrix"}
-        TRIVIAL["TRIVIAL: Fast Path"]
-        LOW["LOW: PATCH Track"]
-        MEDHIGH["MEDIUM / HIGH: STANDARD Track"]
-    end
-
-    subgraph Context["Virtual Memory - Context"]
-        DirectRead["Register Read: Explicit Scope"]
-        Funnel["Page Table Funnel: Sitemap to Index"]
-        Budget["OOM Killer: Wiki<=3, Code<=8"]
-    end
-
-    subgraph Knowledge["File System - RAG/Disk"]
-        KG["KNOWLEDGE_GRAPH.md: Mount Root"]
-        DomainIndex["Partitions: api / data / domain"]
-        Archive["Cold Backup: Archive"]
-    end
-
-    subgraph Lifecycle["Process Scheduler"]
-        LaunchSpec["PCB: Launch Spec"]
-        Phase1["1_Explorer: Clarify and Decompose"]
-        Phase2["2_Propose: Freeze Contract"]
-        Phase3["3_Review: Cognitive Critique"]
-        ApprovalGate["Kernel Switch: Approval Gate"]
-        Phase4["4_Implement: Atomic Execution"]
-        Phase5["5_QA: 3D Testing"]
-        Phase6["6_Archive: WAL Write-back and GC"]
-    end
-
-    subgraph Roles["Privilege Rings - Ring 0/3"]
-        SysArchitect["System Architect: Arch Auth"]
-        FocusGuard["Focus Guard: Segfault Guard"]
-        DocCurator["Doc Curator: FS Write Auth"]
-    end
-
-    Input --> IG
-    IG --> Risk
-    Risk -->|TRIVIAL| TRIVIAL
-    Risk -->|LOW| LOW
-    Risk -->|MEDIUM/HIGH| MEDHIGH
-
-    TRIVIAL --> DirectRead
-    LOW --> LaunchSpec
-    MEDHIGH --> LaunchSpec
-
-    DirectRead --> Funnel
-    Funnel --> Budget
-
-    LaunchSpec --> Phase1
-    Phase1 --> Phase2
-    Phase2 --> Phase3
-    Phase3 --> ApprovalGate
-    ApprovalGate --> Phase4
-    Phase4 --> Phase5
-    Phase5 --> Phase6
-    Phase6 --> LaunchSpec
+```
+CLAUDE.md                      # Single entry point
+.claude/
+├── rules/                     # Routing, lifecycle, hooks, safety constraints, write-back policy
+│   ├── routing.md             # Intent classification, profiles, context funnel
+│   ├── lifecycle.md           # 6-phase lifecycle state machine
+│   ├── hooks.md               # Pre/guard/shift-left/post/fail/loop hooks
+│   ├── safety-constraints.md  # Hard constraints, commit policy
+│   └── writeback-policy.md    # WAL fragment write-back, anti-bloat rules
+├── agents/                    # Role definitions for each lifecycle phase
+│   ├── ambiguity-gatekeeper.md
+│   ├── requirement-engineer.md
+│   ├── system-architect.md
+│   ├── lead-engineer.md
+│   ├── focus-guard.md
+│   ├── code-reviewer.md
+│   ├── knowledge-extractor.md
+│   ├── documentation-curator.md
+│   ├── skill-graph-curator.md
+│   ├── knowledge-architect.md
+│   ├── librarian.md
+│   └── security-sentinel.md
+├── skills/
+│   ├── adversarial-review/          # One-round isolated critique with adversarial injection (A/B/C frames)
+│   ├── ai-pipeline/                 # Orchestrate full AI engineering pipeline (plan → eval → improve → archive)
+│   ├── ai-slop-cleaner/             # Regression-safe cleanup: remove dead code, merge duplicates, reduce complexity
+│   ├── architecture-decision-records/ # Capture architectural decisions as structured ADRs
+│   ├── blueprint/                   # Turn an objective into a step-by-step multi-session construction plan
+│   ├── brainstorming/               # Explore idea/requirement into design with ADR-format alternatives
+│   ├── code-review-checklist/       # Mandatory pre-delivery code review against all project standards
+│   ├── cognitive-bias-checklist/    # Prevent hallucinations and overconfidence during design decisions
+│   ├── decision-frameworks/         # SWOT, 5-Why, First Principles for root cause and architecture selection
+│   ├── deepinit/                    # Deep codebase init: hierarchical CLAUDE.md + machine-readable context_brief.md
+│   ├── dispatching-parallel-agents/ # Dispatch isolated sub-agents for independent parallel workstreams
+│   ├── eval-harness/                # Formal evaluation: AC definition (Explorer) and pass@k benchmarks (Pipeline)
+│   ├── external-research/           # Web research for: pipeline plateau, CVE, compliance, competitor benchmarking
+│   ├── greenfield-scaffold/         # From-scratch protocol: domain model → API → DB → package → scaffold
+│   ├── incident-response/           # Production emergency triage, root cause investigation, post-mortem
+│   ├── java-architecture-standards/ # Mandatory: 3-Layer arch, API design, POJO, anti-JOIN, error codes
+│   ├── java-coding-style/           # Mandatory: Checkstyle, Javadoc, utility class boundaries, functional patterns
+│   ├── java-testing-standards/      # Mandatory: test isolation, mock guidelines, 3-scenario coverage rule
+│   ├── linter-severity-standard/    # FAIL/WARN/IGNORE severity rubric for gate scripts
+│   ├── local-code-intelligence/     # Zero-cost local tools: BM25 wiki search, symbol index, failure memory
+│   ├── migration-planner/           # A→B migration with behavioral equivalence test suite
+│   ├── mybatis-sql-standard/        # Anti-JOIN, index utilization, implicit type conversion prevention
+│   ├── product-manager-expert/      # PRD generation and PRD ingestion → technical requirements + AC
+│   ├── release/                     # Validates pre-release gates, guides step-by-step release execution
+│   ├── remember/                    # Classify discovered knowledge into correct persistence layer
+│   ├── requirement-intake/          # Normalize raw input (PRD, idea, bug) into structured intent+scope+AC
+│   ├── security-review-checklist/   # Secrets, authZ, IDOR, data exposure, dependency safety checklist
+│   ├── self-improve/                # Tournament-based evolutionary improvement loop with plateau detection
+│   ├── skill-creator/               # Create or update SKILL.md for repeatable workflows
+│   ├── skill-graph-manager/         # Mandatory: maintain bidirectional Skill Knowledge Graph
+│   ├── skill-index/                 # Central navigator for all workspace skills
+│   ├── spec-quality-checklist/      # Self-correction gate for AI-generated docs before Python gate scripts
+│   ├── stakeholder-conflict-resolver/ # Detect and resolve mutually exclusive stakeholder requirements
+│   ├── systematic-debugging/        # Mandatory root-cause investigation before any fix
+│   ├── task-decomposition-guide/    # Decompose large PRDs/EPICs via INVEST criteria and Vertical Slicing
+│   ├── test-driven-development/     # Write failing tests from ACs before implementation
+│   ├── ultraqa/                     # Structured QA loop with Evidence Mapping Table (AC ↔ Test ↔ Result)
+│   ├── using-git-worktrees/         # Isolated git worktrees for parallel or HIGH risk work
+│   ├── verify/                      # End-to-end AC verification with pass/fail evidence before Archive
+│   ├── wal-documentation-rules/     # Mandatory: extract stable knowledge into WAL fragments at Archive
+│   └── writing-plans/               # Decompose spec into checkpoint-driven implementation plan
+├── wiki/                      # Knowledge graph (file-system-based, no vector DB)
+│   ├── KNOWLEDGE_GRAPH.md     # Root index
+│   ├── purpose.md             # Design philosophy
+│   ├── schema/                # Contract templates (task_brief, subagent_contract)
+│   └── wiki/                  # Domain, API, Data, Architecture, Specs, Testing, Reviews, Preferences
+├── scripts/
+│   ├── gates/                 # Deterministic gate scripts (scope_guard, secrets_linter, etc.)
+│   ├── wiki/                  # Wiki maintenance (compactor, linter, schema checker)
+│   ├── tools/                 # Bootstrap, archive, GC helpers
+│   ├── local_intel/           # Zero-cost local search (wiki_search, code_index, failure_memory)
+│   └── harness/               # Engine
+├── workflow/
+│   ├── role_matrix.json       # Role-to-phase mount table
+│   ├── EXAMPLES.md            # Walkthrough of a STANDARD task
+│   └── artifacts/             # Artifact templates
+├── runs/                      # Runtime artifacts (task-briefs, launch-specs, cache)
+└── settings.json              # Permissions and hooks configuration
 ```
 
 ---
 
-## 🚦 Core Workflow: Dual-Track & 4-Level Risk Matrix
+## Workflow Process (STANDARD)
 
-No more one-size-fits-all red tape. The framework assesses tasks at the Kernel entry point (Router) and routes them to different tracks:
+The STANDARD lifecycle implements a **BDD → TDD → BDD** closed loop:
 
-### 4-Level Risk Matrix
+- **BDD (Behavior-Driven Development)** at both ends: Explorer writes executable specs in `Given/When/Then` format; QA verifies behavior against those same specs
+- **SDD (Specification-Driven Development)** throughout: every phase is anchored to the `task_brief.md` contract
+- **TDD (Test-Driven Development)** at the core: failing tests derived from ACs drive implementation
 
-| Risk Level | Characteristics | Authorization | Testing | Rollback Cost |
-|------------|-----------------|---------------|---------|---------------|
-| **TRIVIAL** | Queries, logging, typos, reading | **Auto-Approve** | Optional | Zero |
-| **LOW** | Single-method bugfix, internal refactor (no API/DB change) | **Implicit (PATCH)** | Unit Tests | Very Low |
-| **MEDIUM** | New APIs, DB column additions, cross-module calls | **Explicit (Approval Gate)** | Integration | High |
-| **HIGH** | Core flow modifications, state machine changes | **Explicit + Arch Review** | Full Regression | Disastrous |
-
-### Dual-Track Flow
-
-#### 1. PATCH Track (For TRIVIAL & LOW)
-**The Fast Path. Zero bureaucracy.**
-- Skips the lengthy `Propose` and `Review` phases.
-- No heavy `openspec.md` generated; uses a lightweight `focus_card.md`.
-- Straight to implementation and testing.
-- Extremely low token cost, ideal for high-frequency, small iterations.
-
-#### 2. STANDARD Track (For MEDIUM & HIGH)
-**Heavy Armor. Defending the engineering baseline.**
-- Strictly follows the full 6-phase lifecycle (Explorer → Propose → Review → Implement → QA → Archive).
-- Mandates the generation of `openspec.md` and triggers the **Approval Gate** (Human-in-the-loop) before writing any code.
-- Injects cognitive critique to interrogate the architectural design.
-
----
-
-## 🔧 Skill Ecosystem
-
-The skill ecosystem is organized across multiple categories, each mounted by lifecycle phase and role requirements. Skills are stored under `.agents/skills/` with `trae-skill-index` serving as the global routing table.
-
-### Default Enabled Skills (Auto-Invoked)
-
-| Skill | Phase | Primary Role |
-|---|---|---|
-| `brainstorming` | Explorer / Propose | Requirement Engineer |
-| `task-decomposition-guide` | Propose / Review | System Architect |
-| `writing-plans` | Propose / Implement | System Architect / Lead Engineer |
-| `systematic-debugging` | Implement / QA | Lead Engineer / Code Reviewer |
-| `test-driven-development` | Implement | Lead Engineer |
-| `verify` | QA / Archive | Code Reviewer / Knowledge Extractor |
-| `code-review-checklist` | QA | Code Reviewer |
-| `wal-documentation-rules` | Archive | Knowledge Extractor |
-| `skill-graph-manager` | Any (skills change) | Skill Graph Curator |
-| `java-architecture-standards` | Propose / Implement | System Architect / Lead Engineer |
-| `java-coding-style` | Implement | Lead Engineer |
-| `java-testing-standards` | QA | Code Reviewer |
-| `mybatis-sql-standard` | Propose / Implement | System Architect / Lead Engineer |
-
-### Role-Required Skills (Explicitly Mounted)
-
-| Skill | Required By |
-|---|---|
-| `cognitive-bias-checklist` | Requirement Engineer, System Architect, Devil's Advocate |
-| `spec-quality-checklist` | Requirement Engineer, System Architect, Documentation Curator |
-| `decision-frameworks` | System Architect, Devil's Advocate, Ambiguity Gatekeeper |
-| `linter-severity-standard` | Code Reviewer |
-
-### Engineering Pipeline Skills
-
-`ai-pipeline`, `blueprint`, `architecture-decision-records`, `eval-harness`, `external-research`, `self-improve`, `ai-slop-cleaner`
-
-### Workflow & Collaboration Skills
-
-`dispatching-parallel-agents`, `using-git-worktrees`, `release`, `deepinit`, `remember`
-
----
-
-## 🚀 Quick Start
-
-### 3-Minute Onboarding Guide
-
-#### Step 1: Read the "Constitution" ⚡
-Start with [AGENTS.md](AGENTS.md) - the master entry point defining execution discipline and OS mounting rules.
-- **OOM Killer**: Wiki ≤ 3 docs, Code ≤ 8 files (Trigger Escalation if exceeded).
-- **Cognitive Brake**: Mandatory XML block before any action to enforce Process, Scope, Budget, and bias reflection.
-
-#### Step 2: Make a System Call (Shortcuts DSL) 🎯
-Use explicit commands to force the framework into a specific track:
-
-```text
-@read / @learn     → Enter Read-Only Process (TRIVIAL, no side effects)
-@patch / @quickfix → Mount PATCH Track (LOW, lightweight fix)
-@standard          → Mount STANDARD Track (MEDIUM/HIGH, full heavy lifecycle)
+```
+         ┌──── BDD ────┐                                     ┌──── BDD ────┐
+         │ 写可执行规格  │                                     │ 行为验证     │
+         │ Given/When/  │    ┌── SDD (契约驱动) ──┐           │ AC↔测试↔结果 │
+         │   Then       │    │                     │           │              │
+         ▼              ▼    ▼                     ▼           ▼              ▼
+Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Implement ─→ QA ─→ Archive
+          │              │          │                        │          │        │
+          需求澄清     架构设计   设计审查                TDD实现    测试验证  知识沉淀
+          │              │          │                        │          │        │
+          ▼              ▼          ▼                        ▼          ▼        ▼
+       Spec Gap     task_brief  Approved              Red→Green   Evidence   WAL
+       + AC list    (契约)      Contract              →Refactor   Mapping    fragments
 ```
 
-**Example:**
-```text
-@learn --scope src/foo/bar.ts -- explain this file
-@patch --risk low --test "mvn test" -- fix NPE in createOrder
-@standard --risk high -- implement tenant permission checks for order list API
-```
+### Phase 1: Explorer — 需求澄清 + BDD 规格编写
 
-#### Step 3: Understand Breakpoint Resume 🔄
-- Launch Spec is persisted at `router/runs/launch_spec_*.md` (Acts as the PCB - Process Control Block).
-- First action after session interruption: read this file to restore state.
-- If stuck at `WAITING_APPROVAL`, the Agent will wait for you to review `openspec.md` and say "Approved" before switching to kernel mode to write code.
+| Item | Detail |
+|------|--------|
+| **Roles** | `@Ambiguity Gatekeeper`, `@Requirement Engineer`, `@Focus Guard` |
+| **Skills** | `requirement-intake`, `brainstorming`, `product-manager-expert`, `task-decomposition-guide` |
+| **Activities** | ① Classify input via intent signal matrix → determine risk level (TRIVIAL/LOW/MEDIUM/HIGH) |
+| | ② **Specification Inference**: `Current: [X]. Required: [Y]. Delta: [Z]` — the gap is the true scope |
+| | ③ **BDD — AC-as-Tests Translation (MUST)** : convert every requirement to `Given [precondition], when [action], then [observable, measurable result]` — vague language ("handle correctly", "work properly") is BLOCKED |
+| | ④ Impact analysis: `code_index.py --impact-of <target>` → identify hidden dependencies |
+| | ⑤ Adversarial review Category A (HIGH only): "are we solving the right problem?" |
+| **Output** | Spec Gap + AC list (Given/When/Then) + Hidden Scope → feeds into task_brief Machine Section |
+
+### Phase 2: Propose — 架构设计与 Spec (Architecture Design & Specification)
+
+| Item | Detail |
+|------|--------|
+| **Roles** | `@System Architect` |
+| **Skills** | `brainstorming`, `java-architecture-standards`, `task-decomposition-guide`, `decision-frameworks`, `cognitive-bias-checklist` |
+| **Activities** | ① Generate ≥2 design alternatives (HIGH: ADR format with Pros/Cons/Failure Conditions) |
+| | ② Select approach → emit **Constraint List** (binding decisions for all downstream work) |
+| | ③ Define **Allowed Scope** — explicit file whitelist that constrains implementation |
+| | ④ Write `task_brief.md` — the **universal contract**: |
+| | &nbsp;&nbsp;&nbsp; • Machine Section (English): Allowed Scope + ACs + Hard Constraints |
+| | &nbsp;&nbsp;&nbsp; • Human Section (Chinese): 做什么/为什么 + 怎么做 + 待确认项 |
+| **Output** | `task_brief.md` — single artifact shared by all agents and humans |
+
+### Phase 3: Review — 设计审查 (Design Review)
+
+| Item | Detail |
+|------|--------|
+| **Roles** | `@System Architect` |
+| **Skills** | `code-review-checklist`, `java-architecture-standards`, `adversarial-review` (HIGH), `spec-quality-checklist` |
+| **Activities** | ① Review design against project standards and architecture constraints |
+| | ② Adversarial critique Category B (HIGH only): "are we solving it the right way?" — ONE round |
+| | ③ **Approval Gate** (HIGH only): present Human Section in business language → wait for explicit sign-off |
+| | ④ CRITICAL finding → rollback to Phase 2. MINOR → annotate ACs, proceed |
+| **Output** | Approved `task_brief.md` (HIGH) or FYI summary (MEDIUM) |
+
+### Phase 4: Implement — TDD 驱动实现 (TDD-Driven Implementation)
+
+| Item | Detail |
+|------|--------|
+| **Roles** | `@Lead Engineer`, `@Focus Guard` |
+| **Skills** | `test-driven-development`, `java-architecture-standards`, `java-coding-style`, `mybatis-sql-standard`, `writing-plans` |
+| **Activities** | ① Read `task_brief.md` Machine Section — Allowed Scope + ACs + Hard Constraints |
+| | ② **RED**: Write failing tests derived from ACs (must see test failure before writing code) |
+| | ③ **GREEN**: Implement within Allowed Scope — `scope_guard.py` enforces boundary |
+| | ④ **REFACTOR**: Apply coding style, extract magic numbers, ensure SOLID compliance |
+| | ⑤ Shift-left: `mvn compile` + `secrets_linter.py` after every change (max 2 retries) |
+| | ⑥ **YIELD**: Stop and ask human for permission to proceed to QA |
+| **Output** | Modified source files, passing tests, compile-clean |
+
+### Phase 5: QA — 测试验证 + BDD 行为验证
+
+| Item | Detail |
+|------|--------|
+| **Roles** | `@Code Reviewer` |
+| **Skills** | `java-testing-standards`, `code-review-checklist`, `ultraqa`, `security-review-checklist` (HIGH) |
+| **Activities** | ① Ensure compile is clean (`shift_left_hook`) |
+| | ② Run test suite → verify all ACs pass |
+| | ③ **BDD — Evidence Mapping Table** (AC ≥ 4 or HIGH risk): every Given/When/Then AC mapped to test method → expect → actual → status — ensures every behavior declared in Phase 1 is verified |
+| | ④ Code review: N+1 checks, boundary conditions, magic numbers, SOLID compliance |
+| | ⑤ MAX 2 retries on failure → 3rd failure: STOP, ask human |
+| **Output** | Test evidence, review report (all ACs PASS) |
+
+### Phase 6: Archive — 知识沉淀 (Knowledge Persistence)
+
+| Item | Detail |
+|------|--------|
+| **Roles** | `@Knowledge Extractor`, `@Documentation Curator`, `@Skill Graph Curator` |
+| **Skills** | `wal-documentation-rules`, `verify` |
+| **Activities** | ① Extract stable knowledge from completed task_brief |
+| | ② Write **WAL fragments** into domain directories: `api/wal/`, `data/wal/`, `domain/wal/` |
+| | ③ Move `task_brief.md` to `wiki/archive/` (cold storage) |
+| | ④ Dispatch next PENDING task from `launch_spec.md` if queue not empty |
+| **Output** | WAL fragments (domain + api + rules; data if schema changed), archived task_brief |
 
 ---
 
-## 🛡️ Self-Correction & Gating Mechanisms
+## Maintenance Workflows (Non-Code Operations)
 
-| Mechanism | Trigger Point | Effect | OS Metaphor |
-|-----------|--------------|--------|-------------|
-| **Cognitive_Brake** | Before any action | Forces LLM reasoning (roles, boundaries, bias reflection) | **Kernel Privilege Check** |
-| **pre_hook** | Before new phase | Load rules + output preflight | **Context Switch** |
-| **guard_hook** | During code edit | Blocks style/auth violations immediately; runs `secrets_linter.py` | **Memory Segfault Guard** |
-| **Approval Gate** | After Review | Freezes contract, waits for human | **User-to-Kernel Switch** |
-| **shift_left_hook** | After code written | Forces autonomous compile check (`javac` / `mvn compile`); max 2 retries | **Build Sanity Check** |
-| **Archive Write-back** | Task end | Appends stable specs to Wiki Index (WAL) | **fsync (Dirty Page Write)** |
+When the user requests pure knowledge/wiki maintenance (整理, 提取, 扫描, 拆分, GC), the task routes to the **MAINTENANCE** profile — no code phases, no task_brief, no compile checks.
+
+### WAL Compaction (GC)
+
+**Trigger**: `@gc`, `@librarian`, or "整理 wiki", "合并碎片", "做 GC"
+
+| Step | Action | Role |
+|------|--------|------|
+| ① Aggregate | `librarian_gc.py --aggregate` — collect all unmerged WAL fragments | `@Librarian` |
+| ② Merge | Merge aggregated knowledge into correct domain index files | `@Librarian` |
+| ③ Clean | `librarian_gc.py --clean` — delete merged fragments | `@Librarian` |
+| ④ Check | If any file exceeds 500 lines → trigger Document Split | `@Knowledge Architect` |
+| **Gate** | `wiki_linter.py` — no dead links | — |
+
+### Wiki Refresh
+
+**Trigger**: `@wiki-update`, `@milestone`, or "提取知识", "沉淀 wiki", "刷新知识库"
+
+| Step | Action | Role |
+|------|--------|------|
+| ① Diff | `git diff` to identify recent changes since last update | `@Knowledge Extractor` |
+| ② Extract | Extract stable knowledge into WAL fragments: [Domain], [API], [Rules] (+ [Data] if schema) | `@Knowledge Extractor` |
+| ③ Write | Write fragments into `wiki/domain/wal/`, `wiki/api/wal/`, etc. | `@Knowledge Extractor` |
+| **Gate** | `writeback_gate.py` (3 required sections) + `wiki_linter.py` | — |
+
+### Document Split
+
+**Trigger**: Any wiki file exceeds 500 lines, or "拆分文档", "index 太大"
+
+| Step | Action | Role |
+|------|--------|------|
+| ① Check | Verify file exceeds 500-line limit; abort if not | `@Knowledge Architect` |
+| ② Deduplicate | Remove repeated entries within the bloated file | `@Knowledge Architect` |
+| ③ Split | Split into focused sub-documents by topic | `@Knowledge Architect` |
+| ④ Rewrite | Rewrite original as a lean routing index with links | `@Knowledge Architect` |
+| **Gate** | `wiki_linter.py` — no dead links, no file still exceeds 500 | — |
+
+### Project Scan
+
+**Trigger**: "扫描项目", "审计代码库", "分析代码结构"
+
+| Step | Action | Role |
+|------|--------|------|
+| ① Index | `code_index.py --build` — rebuild symbol index | Explorer (inline) |
+| ② Search | `wiki_search.py` — surface relevant wiki context | Explorer (inline) |
+| ③ Memory | `failure_memory.py query` — surface past failures | Explorer (inline) |
+| ④ Report | Produce structured scan report (directories, modules, key symbols, risks) | Explorer (inline) |
 
 ---
 
-## 📖 Related Documentation
+## Execution Profiles
 
-- **📘 Engineering Manual (Chinese)**: [ENGINEERING_MANUAL_zh.md](ENGINEERING_MANUAL_zh.md)
-- **📘 Engineering Manual (English)**: [ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md)
-- **🧭 Usage Guide (English)**: [USAGE.md](USAGE.md) - Load rules in popular CLI/IDEs and run an end-to-end workflow
-- **🇨🇳 Chinese README**: [README_zh.md](README_zh.md)
-- **📌 Project Rules**: [AGENTS.md](AGENTS.md) - Master rule entry & constitution
-- **🗺️ Knowledge Graph**: [.agents/llm_wiki/KNOWLEDGE_GRAPH.md](.agents/llm_wiki/KNOWLEDGE_GRAPH.md) - Virtual FS Root
+Every user request is classified into an **intent** and routed to a **profile**:
 
----
-
-## 🤝 Contributing
-
-Welcome to co-build this pure M2M engineering infrastructure!
-1. **Read First**: Deeply understand the Microkernel philosophy in [ENGINEERING_MANUAL.md](ENGINEERING_MANUAL.md).
-2. **Follow Lifecycle**: Architectural changes must go through the `STANDARD` track.
-3. **Restraint**: We pursue high density and orthogonality in skills. Refuse adding "spaghetti" single-instruction skills.
+| Profile | Use case | Lifecycle | Write-back | Artifact |
+|---------|----------|-----------|------------|----------|
+| **LEARN** | Read/explain code | None | No | None |
+| **PATCH** (TRIVIAL) | Typos, logging, null checks (≤1 file) | `Implement → QA → Archive` | No | None |
+| **PATCH** (LOW) | Small bugfix, internal refactor | `Explorer → Implement → QA → Archive` | No | Slim Spec |
+| **STANDARD** (MEDIUM) | Feature, new API, cross-module | Full 6-phase (no gate) | Yes (WAL) | `task_brief.md` |
+| **STANDARD** (HIGH) | Core flow, DB schema, auth, breaking API | Full 6-phase + Approval Gate | Yes (WAL) | `task_brief.md` + ADR |
+| **MAINTENANCE** | Wiki GC, knowledge extract, document split, project scan | Role-specific (see Maintenance Workflows) | Yes (WAL/merged) | WAL fragments, merged indexes, scan report |
 
 ---
 
-## 📄 License
+## Key Mechanisms
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+| Mechanism | What It Does |
+|-----------|-------------|
+| **Context Funnel** | Structured navigation from root index → domain index → specific document; prevents blind searching |
+| **Scope Guard** | Enforces that code changes stay within declared Allowed Scope |
+| **Shift-Left Hook** | Runs compile after every code change; max 2 retries before human escalation |
+| **Secrets Lint** | Scans changed files for secrets after every edit |
+| **Hook System** | pre_hook (phase entry), guard_hook (during edit), shift_left_hook (after edit), post_hook (phase exit), fail_hook (rollback), loop_hook (queue loop) |
+| **Local Intelligence** | BM25 wiki search, Java symbol index, failure memory — zero-cost context before file navigation |
+| **Gate Scripts** | Deterministic Python scripts that block or warn on quality/security/compliance issues |
 
-<div align="center">
+---
 
-**Built with ❤️ for sustainable, non-bloating backend development**
+## Quick Start
 
-[⬆ Back to Top](#java-harness-agent-)
+1. **Read [CLAUDE.md](CLAUDE.md)** — the single entry point.
+2. The AI assistant will classify your request and route it to the correct profile.
+3. For complex changes, the framework produces a `task_brief.md` as the shared contract between you and the assistant.
+4. For HIGH risk changes, you will be asked for explicit approval before code is written.
+5. Completed tasks have their knowledge extracted into the wiki for future sessions.
 
-</div>
+---
+
+## Related Documentation
+
+- [CLAUDE.md](CLAUDE.md) — project entry point
+- [README_zh.md](README_zh.md) — Chinese version
+- [.claude/workflow/EXAMPLES.md](.claude/workflow/EXAMPLES.md) — walkthrough of a STANDARD task
+- [.claude/wiki/KNOWLEDGE_GRAPH.md](.claude/wiki/KNOWLEDGE_GRAPH.md) — knowledge graph root
+- [.claude/skills/skill-index/SKILL.md](.claude/skills/skill-index/SKILL.md) — skill navigator
+- [.claude/wiki/purpose.md](.claude/wiki/purpose.md) — design philosophy

@@ -43,3 +43,4 @@ __pycache__/
 
 ### Local Intelligence (runtime indexes, not committed) ###
 .agents/local_intel/
+.claude/runs/
