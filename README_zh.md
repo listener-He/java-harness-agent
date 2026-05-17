@@ -103,25 +103,25 @@ CLAUDE.md                      # 唯一入口
 
 ## 工作流过程（STANDARD）
 
-STANDARD 生命周期实现 **BDD → TDD → BDD** 闭环：
+STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环：
 
+- **PDD（计划驱动开发）**在最前端：任务依赖、并行约束、成功指标在编码前已声明
 - **BDD（行为驱动开发）**在两端：Explorer 以 Given/When/Then 编写可执行规格；QA 基于同一规格验证行为
-- **SDD（规格驱动开发）**贯穿全流程：每个阶段锚定 `task_brief.md` 契约
+- **SDD/SPEC（规格驱动开发）**贯穿全流程：每个阶段锚定 `task_brief.md` 契约
 - **TDD（测试驱动开发）**在核心：从 AC 衍生失败测试驱动实现
 
 ```
-         ┌──── BDD ────┐                                     ┌──── BDD ────┐
-         │ 写可执行规格  │                                     │ 行为验证     │
-         │ Given/When/  │    ┌── SDD (契约驱动) ──┐           │ AC↔测试↔结果 │
-         │   Then       │    │                     │           │              │
-         ▼              ▼    ▼                     ▼           ▼              ▼
+         ┌── PDD ──┐  ┌──── BDD ────┐                                     ┌──── BDD ────┐
+         │依赖+并行  │  │ 写可执行规格  │                                     │ 行为验证     │
+         │ DAG      │  │ Given/When/  │    ┌── SDD (契约驱动) ──┐           │ AC↔测试↔结果 │
+         ▼          ▼  ▼              ▼    ▼                     ▼           ▼              ▼
 输入 ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Implement ─→ QA ─→ Archive
          │              │          │                       │          │         │
         需求澄清      架构设计   设计审查               TDD实现    测试验证   知识沉淀
-         │              │          │                       │          │         │
-         ▼              ▼          ▼                       ▼          ▼         ▼
-      Spec Gap     task_brief  Approved              Red→Green   Evidence   WAL
-      + AC list     (契约)     Contract              →Refactor   Mapping    fragments
+         │              │          │    │                  │          │         │
+         ▼              ▼          ▼    ▼                  ▼          ▼         ▼
+      Spec Gap     task_brief  Plan   Approved        Red→Green   Evidence   WAL
+      + AC list     +依赖+并行  Review Contract         →Refactor   Mapping    +偏差回顾
 ```
 
 ### Phase 1: Explorer — 需求澄清 + BDD 规格编写
@@ -143,11 +143,12 @@ STANDARD 生命周期实现 **BDD → TDD → BDD** 闭环：
 |------|------|
 | **角色** | `@System Architect` |
 | **技能** | `brainstorming`, `java-architecture-standards`, `task-decomposition-guide`, `decision-frameworks`, `cognitive-bias-checklist` |
-| **活动** | ① 生成 ≥2 个设计备选方案（HIGH：ADR 格式，含优缺点/失败条件） |
-| | ② 选定方案 → 发出 **约束清单**（约束所有下游工作的决策） |
-| | ③ 定义 **Allowed Scope** — 显式文件白名单，约束实现范围 |
-| | ④ 撰写 `task_brief.md` — **通用契约**： |
-| | &nbsp;&nbsp;&nbsp; • Machine Section（英文）：Allowed Scope + ACs + Hard Constraints |
+| **活动** | ① **PDD — 计划作为一等产物**：声明任务依赖，≥3 个任务时绘制依赖图（DAG）；设定并行约束（软上限：3） |
+| | ② 生成 ≥2 个设计备选方案（HIGH：ADR 格式，含优缺点/失败条件） |
+| | ③ 选定方案 → 发出 **约束清单**（约束所有下游工作的决策） |
+| | ④ 定义 **Allowed Scope** — 显式文件白名单，约束实现范围 |
+| | ⑤ 撰写 `task_brief.md` — **通用契约**： |
+| | &nbsp;&nbsp;&nbsp; • Machine Section（英文）：Allowed Scope + ACs + Task Dependencies + Hard Constraints |
 | | &nbsp;&nbsp;&nbsp; • Human Section（中文）：做什么/为什么 + 怎么做 + 待确认项 |
 | **产出** | `task_brief.md` — 所有 Agent 和人类共享的唯一产物 |
 
@@ -158,9 +159,10 @@ STANDARD 生命周期实现 **BDD → TDD → BDD** 闭环：
 | **角色** | `@System Architect` |
 | **技能** | `code-review-checklist`, `java-architecture-standards`, `adversarial-review`（HIGH）, `spec-quality-checklist` |
 | **活动** | ① 对照项目标准和架构约束审查设计 |
-| | ② 对抗性批判 Category B（仅 HIGH）："我们以正确的方式解决吗？" — 仅一轮 |
-| | ③ **Approval Gate**（仅 HIGH）：以业务语言展示 Human Section → 等待显式签字 |
-| | ④ CRITICAL 发现 → 回滚到 Phase 2。MINOR → 标注 AC，继续 |
+| | ② **Plan Review Checklist（PDD）**：完整性 → 一致性 → 可行性 → 风险覆盖 → 依赖合理性（≥3 个任务） |
+| | ③ 对抗性批判 Category B（仅 HIGH）："我们以正确的方式解决吗？" — 仅一轮 |
+| | ④ **Approval Gate**（仅 HIGH）：以业务语言展示 Human Section → 等待显式签字 |
+| | ⑤ CRITICAL 发现 → 回滚到 Phase 2。MINOR → 标注 AC，继续 |
 | **产出** | 已批准的 `task_brief.md`（HIGH）或 FYI 摘要（MEDIUM） |
 
 ### Phase 4: Implement — TDD 驱动实现
@@ -198,9 +200,10 @@ STANDARD 生命周期实现 **BDD → TDD → BDD** 闭环：
 | **技能** | `wal-documentation-rules`, `verify` |
 | **活动** | ① 从完成的 task_brief 中提取稳定知识 |
 | | ② 将 **WAL 片段**写入领域目录：`api/wal/`, `data/wal/`, `domain/wal/` |
-| | ③ 将 `task_brief.md` 移至 `wiki/archive/`（冷存储） |
-| | ④ 如果队列非空，从 `launch_spec.md` 分派下一个 PENDING 任务 |
-| **产出** | WAL 片段（domain + api + rules；如有 schema 变更则 + data），归档的 task_brief |
+| | ③ **Plan Deviation Reflection（PDD）**：对比计划与实际执行 — 范围漂移、依赖准确性、计划作废、AC 覆盖；显著偏差写入 `plan_deviation.md` |
+| | ④ 将 `task_brief.md` 移至 `wiki/archive/`（冷存储） |
+| | ⑤ 如果队列非空，从 `launch_spec.md` 分派下一个 PENDING 任务 |
+| **产出** | WAL 片段（domain + api + rules；如有 schema 变更则 + data），计划偏差记录，归档的 task_brief |
 
 ---
 
@@ -276,9 +279,12 @@ STANDARD 生命周期实现 **BDD → TDD → BDD** 闭环：
 | 机制 | 作用 |
 |------|------|
 | **上下文漏斗** | 结构化导航：根索引 → 领域索引 → 具体文档；杜绝盲目搜索 |
+| **依赖图（DAG）** | 任务在 `launch_spec.md` 中声明上游依赖；分派受依赖满足度门控 |
 | **Scope Guard** | 强制代码修改不超出声明的允许范围 |
 | **Shift-Left Hook** | 每次代码修改后运行编译检查；最多重试 2 次，超出则上报人类 |
 | **Secrets Lint** | 每次编辑后扫描变更文件中的密钥泄露 |
+| **Plan Review Checklist** | 完整性、一致性、可行性、风险覆盖、依赖合理性 — 退出 Review 前必须通过（≥3 个任务） |
+| **Plan Deviation Reflection** | Archive 时对比计划与实际 — 范围漂移、依赖准确性、AC 覆盖 |
 | **钩子系统** | pre_hook（进入阶段）、guard_hook（编辑中）、shift_left_hook（编辑后）、post_hook（退出阶段）、fail_hook（回滚）、loop_hook（队列循环） |
 | **Local Intelligence** | BM25 wiki 搜索、Java 符号索引、失败记忆 — 导航文件前的零成本上下文获取 |
 | **Gate Scripts** | 确定性 Python 脚本，阻断或警告质量/安全/合规问题 |
@@ -289,9 +295,9 @@ STANDARD 生命周期实现 **BDD → TDD → BDD** 闭环：
 
 1. **阅读 [CLAUDE.md](CLAUDE.md)** — 唯一入口文件。
 2. AI 助手会自动对你的请求进行分类并路由到正确模式。
-3. 复杂变更会产生 `task_brief.md` 作为你和助手之间的共享契约。
+3. STANDARD 任务会创建 `launch_spec.md`（含任务依赖图）和 `task_brief.md` 作为共享契约。
 4. HIGH 风险变更会在编码前要求你显式确认。
-5. 完成任务的知识会被提取到 wiki 中供后续会话使用。
+5. 实现完成后度量计划偏差（PDD），并将稳定知识提取到 wiki 中供后续会话使用。
 
 ---
 
