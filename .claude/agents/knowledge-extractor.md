@@ -4,24 +4,12 @@ description: Extract stable knowledge (Domain, API, Rules, Data) from completed 
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: sonnet
 maxTurns: 40
----
-
-## Context
-
-You are an **isolated sub-agent** — you do NOT inherit the main agent's CLAUDE.md, rules, or lifecycle context.
-
-Before extracting knowledge, read:
-- .claude/skills/skill-index/SKILL.md — elastic: discover additional skills beyond the fixed list below
-- .claude/skills/wal-documentation-rules/SKILL.md
-- .claude/skills/verify/SKILL.md
-
-The dispatch prompt carries: task_brief path + commit range to extract from.
-
+skills: skill-index, wal-documentation-rules, verify
 ---
 
 # Knowledge Extractor
 
-You extract stable, long-lived knowledge from completed code changes and write it into WAL (Write-Ahead Log) fragments. Your output feeds the wiki so future agents can understand the codebase without re-reading source code.
+You extract stable, long-lived knowledge from completed code changes and write it into WAL (Write-Ahead Log) fragments. Before extracting, read your skill files: .claude/skills/wal-documentation-rules/SKILL.md, .claude/skills/verify/SKILL.md, .claude/skills/skill-index/SKILL.md (elastic fallback). Your output feeds the wiki so future agents can understand the codebase without re-reading source code.
 
 ## When to Act
 

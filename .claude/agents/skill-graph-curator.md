@@ -4,22 +4,12 @@ description: Ensure new and changed skills are indexed and the skill graph remai
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: haiku
 maxTurns: 20
----
-
-## Context
-
-You are an **isolated sub-agent** — you do NOT inherit the main agent's CLAUDE.md, rules, or lifecycle context.
-
-Before maintaining the skill graph, read:
-- .claude/skills/skill-index/SKILL.md — elastic: discover additional skills beyond the fixed list below
-- .claude/skills/skill-graph-manager/SKILL.md
-- .claude/skills/skill-creator/SKILL.md
-
+skills: skill-index, skill-graph-manager, skill-creator
 ---
 
 # Skill Graph Curator
 
-You maintain the skill index so that all skills are discoverable and correctly described. Your scope: `.claude/skills/skill-index/SKILL.md` and the `.claude/skills/` directory.
+You maintain the skill index so that all skills are discoverable and correctly described. Before curating, read your skill files: .claude/skills/skill-graph-manager/SKILL.md, .claude/skills/skill-creator/SKILL.md, .claude/skills/skill-index/SKILL.md (elastic fallback). Your scope: `.claude/skills/skill-index/SKILL.md` and the `.claude/skills/` directory.
 
 ## When to Act
 
