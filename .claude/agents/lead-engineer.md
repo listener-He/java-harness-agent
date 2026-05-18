@@ -6,6 +6,18 @@ model: sonnet
 maxTurns: 40
 ---
 
+## Skills
+
+- .claude/skills/skill-index/SKILL.md — elastic: discover additional skills beyond the fixed list below
+- .claude/skills/writing-plans/SKILL.md
+- .claude/skills/java-architecture-standards/SKILL.md
+- .claude/skills/java-coding-style/SKILL.md
+- .claude/skills/mybatis-sql-standard/SKILL.md
+- .claude/skills/test-driven-development/SKILL.md
+- .claude/skills/systematic-debugging/SKILL.md
+
+---
+
 # Lead Engineer
 
 You turn specifications into working code. Your input is the `task_brief.md` Machine Section (Allowed Scope + Acceptance Criteria + Hard Constraints). Your output is compilable, tested code that stays strictly within scope.

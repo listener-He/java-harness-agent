@@ -50,32 +50,36 @@ This framework treats all AI assistants as sub-agents dispatched via a shared co
 
 Each layer is a self-contained work unit that can be dispatched to any sub-agent via the [sub-agent contract schema](.claude/wiki/schema/subagent_contract_schema.md).
 
-### Agent Invocation Modes
+### Agent Invocation — Two-Tier Architecture
 
-Agents in `.claude/agents/` operate in two distinct modes:
-
-| Mode | How | Context available | When to use |
+| Tier | Agents | Context | How to Invoke |
 |---|---|---|---|
-| **Mounted Role** | Main agent reads the `.md` file and adopts the role inline | Full CLAUDE.md + rules context | Lifecycle phases (Explorer, Implement, QA) — agent = persona overlay |
-| **True Sub-Agent** | Spawned via `Agent` tool in an isolated context | Only the agent file itself | Parallel EPIC tasks, isolated heavy operations |
+| **Mounted Roles** | system-architect, lead-engineer | Full CLAUDE.md + rules + lifecycle + skill-index | Main agent reads the `.md` and adopts the role inline |
+| **Isolated Sub-Agents** | All others (code-reviewer, requirement-engineer, documentation-curator, knowledge-extractor, knowledge-architect, librarian, ambiguity-gatekeeper, focus-guard, security-sentinel, skill-graph-curator) | Only their own `.md` file | Spawned via `Agent` tool in isolated context |
 
-**Critical:** True sub-agents do NOT see CLAUDE.md, lifecycle.md, or rules. Their `.md` file must be self-contained. Current agents in this project are designed as **Mounted Roles** — they assume lifecycle context is present. Do not dispatch them as true isolated sub-agents without first embedding the required context.
+**Mounted Roles** share the main agent's full context — they inherit CLAUDE.md, lifecycle.md, safety-constraints, and skill-index. Reserved for roles that require deep codebase understanding and continuous access to project standards (architecture design, code implementation).
+
+**Isolated Sub-Agents** are self-contained. Their `.md` file must embed all required context. Each isolated agent's `## Context` section declares which skills and constraints it depends on. Dispatch them for well-scoped, predictable tasks with clear inputs and outputs.
 
 ### Dispatch Protocol
 
-When dispatching work to a sub-agent:
-1. Format the prompt using the contract schema — include allowed scope, constraints, and expected output format
-2. Sub-agents do NOT inherit the main agent's context, roles, or wiki — the contract is their sole source of truth
-3. If the sub-agent has native agent tooling, prefer that over manual contract formatting
+**For Mounted Roles:** Main agent reads the role's `.md` file and adopts the persona inline. No separate dispatch needed — the role acts within the current conversation context.
 
-### Handoff Between Sub-Agents
+**For Isolated Sub-Agents:** Spawn via `Agent` tool. The dispatch prompt must include:
+1. The `task_brief.md` Machine Section (Allowed Scope + ACs + Hard Constraints) — the universal contract
+2. Any task-specific inputs (file paths, commit ranges, etc.)
+3. Expected output format
 
-When one sub-agent finishes and another takes over:
-1. Incoming sub-agent reads `.claude/runs/launch-specs/launch_spec_*.md` → finds the IN_PROGRESS row
+The sub-agent reads its own `.md` for skill references and workflow — the dispatch prompt only carries task-specific information.
+
+### Handoff Between Agents
+
+When one agent finishes and another takes over:
+1. Incoming agent reads `.claude/runs/launch-specs/launch_spec_*.md` → finds the IN_PROGRESS row
 2. Reads the `task_brief.md` from the Artifact column
 3. Resumes from the Phase in the launch spec
 
-The `task_brief.md` Machine Section (Allowed Scope + ACs + Hard Constraints) is the universal contract — any sub-agent can read it and know exactly what to do.
+The `task_brief.md` Machine Section (Allowed Scope + ACs + Hard Constraints) is the universal contract — any agent can read it and know exactly what to do.
 
 ---
 
