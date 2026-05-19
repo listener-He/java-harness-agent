@@ -19,13 +19,11 @@
 ```
 CLAUDE.md                      # 唯一入口
 .claude/
-├── rules/                     # 路由、生命周期、派遣、钩子、安全约束、写回策略
-│   ├── routing.md             # 执行模式、风险分级、特殊场景、快捷词
-│   ├── lifecycle.md           # 各阶段细节（Explorer → Propose → Review → Implement → QA → Archive）
-│   ├── dispatch.md            # Agent 调用方式（内联角色 vs 子智能体派遣）+ 跨会话交接
-│   ├── hooks.md               # 各阶段门禁清单；settings.json 定义自动触发的钩子
-│   ├── safety-constraints.md  # 硬约束、提交策略
-│   └── writeback-policy.md    # WAL 片段写回、防膨胀规则
+├── rules/                     # 路由、生命周期、钩子、派遣、安全、写回、技能优先级
+│   ├── lifecycle.md           # 执行模式 + 风险分级 + 各阶段细节（Explorer → Propose → Review → Implement → QA → Archive）+ 阶段门禁与钩子
+│   ├── policy.md              # 硬约束 + 提交策略 + WAL 写回 + Agent 派遣（内联角色 vs 子智能体）
+│   ├── dispatch-template.md   # 子智能体 prompt 标准骨架（每次派遣必须使用）
+│   └── skill-precedence.md    # 同一触发窗口多个 MANDATORY 技能冲突时的优先级仲裁
 ├── agents/                    # 角色目录 — 每个 .md 含 Claude Code frontmatter（name/description/tools/model），可通过 Agent 工具调用
 │   ├── ambiguity-gatekeeper.md   # 歧义守门员 · Ambiguity Gatekeeper — 阻断模糊输入，强制执行"就绪定义"三要素（动作动词 + 可识别目标 + 可度量结果）。探索超过 3 步未收敛即终止。工作阶段：Explorer 前。
 │   ├── requirement-engineer.md   # 需求工程师 · Requirement Engineer — 将原始用户需求翻译为 Given/When/Then 可测试验收标准。挑战模糊形容词（"快"、"好"），为每条需求定义快乐路径 + 2 个边界场景，最终执行认知偏差检查。工作阶段：Explorer。
@@ -280,6 +278,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 
 | 机制 | 作用 |
 |------|------|
+| **行为原则** | `CLAUDE.md` 中四条跨场景 LLM 准则（先思考再编码、简洁优先、外科手术式修改、目标驱动执行）—— 在 mode/profile 选择前对每轮对话生效 |
 | **上下文漏斗** | 结构化导航：根索引 → 领域索引 → 具体文档；杜绝盲目搜索 |
 | **依赖图（DAG）** | 任务在 `launch_spec.md` 中声明上游依赖；分派受依赖满足度门控 |
 | **Scope Guard** | 强制代码修改不超出声明的允许范围 |

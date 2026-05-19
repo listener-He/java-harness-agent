@@ -19,13 +19,11 @@ Entry point: **[CLAUDE.md](CLAUDE.md)** — read first on every session start.
 ```
 CLAUDE.md                      # Single entry point
 .claude/
-├── rules/                     # Routing, lifecycle, dispatch, hooks, safety, write-back
-│   ├── routing.md             # Profiles, risk classification, special scenarios, shortcuts
-│   ├── lifecycle.md           # Phase details (Explorer → Propose → Review → Implement → QA → Archive)
-│   ├── dispatch.md            # Agent invocation (inline role adoption vs sub-agent dispatch) + handoff
-│   ├── hooks.md               # Per-phase gate checklist; settings.json defines auto-fired hooks
-│   ├── safety-constraints.md  # Hard constraints, commit policy
-│   └── writeback-policy.md    # WAL fragment write-back, anti-bloat rules
+├── rules/                     # Routing, lifecycle, hooks, dispatch, safety, write-back, skill precedence
+│   ├── lifecycle.md           # Profiles + risk classification + phase details (Explorer → Propose → Review → Implement → QA → Archive) + per-phase gates and hooks
+│   ├── policy.md              # Hard constraints + commit policy + WAL write-back + agent dispatch (inline role adoption vs sub-agent)
+│   ├── dispatch-template.md   # Canonical sub-agent prompt skeleton (mandatory for every dispatch)
+│   └── skill-precedence.md    # Conflict resolution when multiple MANDATORY skills target the same trigger window
 ├── agents/                    # Role catalog — each .md has Claude Code frontmatter (name/description/tools/model) and is invokable via the Agent tool
 │   ├── ambiguity-gatekeeper.md   # Gate: blocks work on vague input. Enforces "definition of ready" (action verb + target + measurable outcome). Stops runaway exploration >3 unconverging steps. Phase: before Explorer.
 │   ├── requirement-engineer.md   # Translates raw user requests → testable ACs in Given/When/Then. Challenges vague adjectives ("fast", "better"). Defines happy path + 2 edge cases per requirement. Runs cognitive bias check before finalizing. Phase: Explorer.
@@ -280,6 +278,7 @@ Every user request is classified into an **intent** and routed to a **profile**:
 
 | Mechanism | What It Does |
 |-----------|-------------|
+| **Behavioral Principles** | Four cross-cutting LLM rules in `CLAUDE.md` (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution) — applied to every turn before mode/profile selection |
 | **Context Funnel** | Structured navigation from root index → domain index → specific document; prevents blind searching |
 | **Dependency Graph (DAG)** | Tasks declare upstream dependencies in `launch_spec.md`; dispatch is gated on dependency satisfaction |
 | **Scope Guard** | Enforces that code changes stay within declared Allowed Scope |
