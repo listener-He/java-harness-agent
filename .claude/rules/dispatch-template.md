@@ -30,6 +30,13 @@ Why this exists: sub-agents do NOT inherit `CLAUDE.md`, project rules, memory, o
 - Commit range / line numbers (if applicable): <…>
 - Other inputs: <…>
 
+## Memory Snapshot (sub-agent does NOT inherit auto-memory — main agent copies relevant entries here)
+- type=user: <key user identity / role / preferences that affect this task, or "none">
+- type=feedback: <feedback rules the sub-agent must honor, e.g. "no single-file directory creation", or "none">
+- type=project: <ongoing-work facts relevant to this task, or "none">
+
+If a section has no relevant entries, write "none" — do not delete the section.
+
 ## Hard Limits (apply to YOU, the sub-agent — your context does NOT inherit them)
 - MAX 3 retries per gate/linter run.
 - MAX 2 retries for compile failures.
@@ -61,6 +68,7 @@ This prompt was built from: .claude/rules/dispatch-template.md
 Before doing anything, check the incoming prompt has these sections (header lines):
 - `## Task Contract` with all three subsections: Allowed Scope, Acceptance Criteria, Hard Constraints
 - `## Inputs`
+- `## Memory Snapshot`
 - `## Hard Limits`
 - `## Expected Output`
 

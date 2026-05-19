@@ -1,6 +1,6 @@
 ---
 name: "requirement-intake"
-description: "Input normalization layer. Classifies ANY raw input (PRD, idea, bug report, signal, security finding, compliance doc, feedback) into a structured intent+scope+AC format before routing. TRIGGER before Intent Signal Matrix when input has no @shortcut and is longer than a one-liner."
+description: "FRONT-DOOR CLASSIFIER (runs INLINE on the main agent, never dispatched). Tags raw input as one of PRD / Idea / Bug / Signal / Performance / Security / Compliance / Feedback and emits an [Intake] block telling the main agent WHERE TO ROUTE — to product-manager-expert (PRD), systematic-debugging (Bug/Signal), requirement-engineer (Idea/Feedback/Compliance/Security), or Explorer (everything else). DOES NOT translate to ACs itself — that is requirement-engineer's job. TRIGGER when input has no @shortcut and is longer than one line."
 ---
 
 # Requirement Intake — Input Normalization Layer

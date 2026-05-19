@@ -10,7 +10,8 @@ This file is intentionally English-only to maximize agent execution reliability.
 
 ## Templates
 - **[Task Brief Schema](task_brief_schema.md)**: the proposal contract. It can also carry optional handoff sections (API contract + acceptance criteria) when collaboration is needed.
-- **[Sub-Agent Contract Schema](subagent_contract_schema.md)**: the minimal executable contract template for dispatching tasks to sub-agents (e.g., Trae, Qoder, search).
+
+Sub-agent dispatch contract (Claude Code internal `Agent` tool) lives in [../../rules/dispatch-template.md](../../rules/dispatch-template.md), not under `schema/`.
 
 ## Process Links (Do not duplicate rules here)
 - **[Routing + Lifecycle + Hooks](../../rules/lifecycle.md)**: profiles, phase responsibilities, Approval Gate, and guard/fail/loop constraints (max retries, domain boundary, HITL).

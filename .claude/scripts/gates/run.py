@@ -164,10 +164,6 @@ def _should_run_gate(script: str, rendered_args: list[str], verify_level: str, a
     if base in scenario_gates and scenario_gates[base] not in artifact_tags:
         return False, f"skip: requires artifact-tag '{scenario_gates[base]}'"
 
-    # 3.5) Sub-agent delegation gates: only run when delegation is actually used
-    if base == "subagent_contract_gate.py" and "subagent" not in artifact_tags:
-        return False, "skip: requires artifact-tag 'subagent'"
-
     # 4) Strict mode runs mounted gates as-is
     return True, ""
 

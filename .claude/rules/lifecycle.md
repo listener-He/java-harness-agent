@@ -96,6 +96,7 @@ These override the default risk classification. When a scenario specifies a **Re
 | "整理/合并 wiki", `@gc` | Librarian | Aggregate → Merge → Clean → Lint |
 | "提取/沉淀知识", `@wiki-update` | Knowledge Extractor | Diff → Extract → WAL fragments → Lint |
 | "萃取 wiki / 清理过期", `@distill` | Librarian | Scan → Plan → Human-approve → Execute → Lint |
+| "看能力 / 我有哪些 agent", `@capabilities` / `@cap` | Documentation Curator | Regenerate `.claude/CAPABILITIES.md` |
 | "拆分文档", index > 500 lines | Knowledge Architect | Check → Deduplicate → Split → Rewrite index |
 | "扫描项目", "审计代码库" | Explorer (inline) | Scan → Index → Report |
 
@@ -110,6 +111,7 @@ Maintenance tasks have no code phases (no Explorer/Propose/Implement/QA). Detail
 | `@standard` | STANDARD | Force task_brief + lifecycle, even if heuristics suggest PATCH |
 | `@gc` / `@librarian` | MAINTENANCE | Librarian compact flow |
 | `@distill` | MAINTENANCE | Librarian distill flow (scan → human approval → execute) |
+| `@capabilities` / `@cap` | MAINTENANCE | Documentation Curator regenerates `.claude/CAPABILITIES.md` |
 | `@wiki-update` / `@milestone` | MAINTENANCE | Knowledge Extractor flow |
 
 Flags: `--risk low|medium|high`, `--launch`, `--no-launch`, `--test "<cmd>"`, `--yes` (auto-confirm).
@@ -154,12 +156,69 @@ Tests are derived from BDD ACs, not invented by implementer.
 ## Phase Details
 
 ### Phase 1: Explorer
-1. Infer specification gap: `Current: [X]. Required: [Y]. Delta: [Z].`
-2. Convert requirements to Given/When/Then ACs
-3. Run `code_index.py --impact-of <target>` to discover hidden scope
-4. HIGH risk: run adversarial review Category A. CRITICAL → revise. MINOR → annotate AC.
 
-**Output:** MEDIUM/HIGH → inline `[Explore]` block (Spec Gap + ACs + Hidden Scope). TRIVIAL/LOW → reasoning inline only. Never write a standalone explore_report.md.
+> **Asymmetric division of labor.** Heavy reasoning (parsing long input, AC transcription, adversarial review) is dispatched to sub-agents to keep the main agent's context clean. Interactive actions (`AskUserQuestion`, echo confirmation) stay on the main agent — sub-agents do NOT have access to `AskUserQuestion`, that is the hard boundary.
+
+#### 1.0 Dispatch decision (three-step triage)
+
+**Step A — Triage**
+
+| Raw-input condition | Next |
+|---|---|
+| `@vibe` / `@patch` / single-domain & < 200 chars | Main agent inline. Skip Steps B & C. |
+| ≥ 200 chars OR contains a PRD/spec block OR `@standard` is set | Step B (classifier first) |
+| Spans ≥ 3 domains OR EPIC scope | Step B (classifier first) |
+
+**Step B — Classify, then dispatch by input type**
+
+Run `requirement-intake` skill INLINE on the main agent (this skill never dispatches — it is the front-door classifier). It emits an `[Intake]` block with `Input-Type` and `Route`. Then dispatch by Input-Type:
+
+| `[Intake] Input-Type` | Dispatch |
+|---|---|
+| PRD | Run `product-manager-expert` Mode A (Ingestion) → `task-decomposition-guide` |
+| Idea / Feedback / Compliance | Dispatch **`requirement-engineer`** sub-agent |
+| Security | Dispatch **`requirement-engineer`** + apply `security-review-checklist` |
+| Bug / Signal | Switch to Scenario DEBUG → `systematic-debugging` (skip Phase 1) |
+| Performance | LEARN baseline first; re-classify as Change after data is collected |
+
+Why this split: `requirement-intake` is a thin classifier (Inline). `product-manager-expert` is heavy PRD work (PRD only). `requirement-engineer` is the AC transcription engine for non-PRD inputs. Three names, three contracts, no overlap.
+
+**Step C — Additional layered dispatches (compose on top of Step B)**
+
+| Condition | Additional dispatch |
+|---|---|
+| Risk = HIGH | `adversarial-review` Category A |
+| EPIC / spans ≥ 3 domains | `system-architect` (Foreman) for slicing |
+| Multi-stakeholder conflict signaled by intake | `stakeholder-conflict-resolver` |
+
+Sub-agents do NOT inherit `CLAUDE.md` / rules / memory. Every dispatch MUST include the `## Memory Snapshot` section from [dispatch-template.md](dispatch-template.md), copying any `type=user` and `type=feedback` entries relevant to the task.
+
+#### 1.1 Sub-agent return contract (requirement-engineer)
+
+When dispatched, `requirement-engineer` MUST return this exact structured block. The main agent parses it before proceeding.
+
+```
+[Intent Summary]: <one-line restatement of what the user wants>
+[ACs]: <numbered Given/When/Then list>
+[Ambiguities]: <vague terms, missing info, unbounded scope; or "none">
+[Must-Ask Questions]: <questions the main agent MUST raise via AskUserQuestion; or "none">
+[Optional Questions]: <worth asking but not blocking; or "none">
+[Scope Hint]: <files / modules likely in Allowed Scope, comma-separated; or "unknown">
+```
+
+The main agent MUST raise every `Must-Ask` question through `AskUserQuestion` before entering Phase 2. Skipping is not allowed.
+
+#### 1.2 Phase 1 steps
+
+1. **Dispatch decision** (per 1.0): inline or sub-agent.
+2. **Specification gap**: `Current: [X]. Required: [Y]. Delta: [Z].`
+3. **Collect ACs**: from sub-agent return OR derive inline.
+4. **Ask Must-Ask questions** via `AskUserQuestion` (main agent only).
+5. **`code_index.py --impact-of <target>`**: discover hidden scope.
+6. **HIGH risk**: dispatch `adversarial-review` Category A. CRITICAL → revise AC. MINOR → annotate AC.
+7. **Echo confirmation** (main agent only): use `AskUserQuestion` to confirm: "I understand you want **X**; AC is **Y**; we are NOT doing **Z**. Correct?" Receive explicit "yes" before Phase 2.
+
+**Output:** MEDIUM/HIGH → inline `[Explore]` block (Spec Gap + ACs + Hidden Scope + Echo-Confirmed=Yes). TRIVIAL/LOW → reasoning inline only, no echo required. Never write a standalone explore_report.md.
 
 ### Phase 2: Propose
 1. Design solution (MEDIUM: 1 option + rationale; HIGH: ≥2 ADR with Pros/Cons/Failure Conditions)

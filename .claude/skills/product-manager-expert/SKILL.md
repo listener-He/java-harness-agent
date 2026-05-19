@@ -1,6 +1,6 @@
 ---
 name: "product-manager-expert"
-description: "Expert PM skill with two modes: (1) PRD Generation — research, validate, write a PRD from scratch; (2) PRD Ingestion — process an existing PRD into technical requirements, AC, and a prioritized implementation queue. TRIGGER when user provides or wants to create product requirements."
+description: "PRD-ONLY heavy PM skill. Mode A (Ingestion): codebase-aware validation + adversarial conflict check + AC translation + dependency ordering — feeds task-decomposition-guide. Mode B (Generation): Q&A clarification → market research → structured PRD draft → Mermaid prototypes. TRIGGER ONLY when requirement-intake tags input as PRD, or when user explicitly asks to write a PRD. For non-PRD input (Idea/Feedback/Compliance) use requirement-engineer instead; for Bug/Signal use systematic-debugging."
 ---
 
 # Product Manager Expert

@@ -55,7 +55,6 @@ WIKI_FILES = [
     ".claude/wiki/KNOWLEDGE_GRAPH.md",
     ".claude/wiki/purpose.md",
     ".claude/wiki/schema/task_brief_schema.md",
-    ".claude/wiki/schema/subagent_contract_schema.md",
 ]
 
 WORKFLOW_FILES = [
