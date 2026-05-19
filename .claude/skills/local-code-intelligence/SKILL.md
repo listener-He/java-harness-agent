@@ -50,7 +50,7 @@ python3 .claude/scripts/local_intel/wiki_search.py --rebuild
 - Take the top result path and read it directly — this replaces 1-2 manual drill-down steps.
 - The file you actually READ still counts toward wiki budget; the search itself does not.
 
-**Index location:** `.claude/local_intel/wiki_bm25.json` (gitignored, rebuilt on demand)
+**Index location:** `.claude/runs/local_intel/wiki_bm25.json` (gitignored, rebuilt on demand)
 
 ---
 
@@ -91,7 +91,7 @@ files to the scope list (or explicitly document why they're excluded).
 `impact_gate.py` (mounted by `focus_guard` role) uses this index automatically.
 If the index is absent, the gate downgrades to WARN (non-blocking).
 
-**Index location:** `.claude/local_intel/code_index.json` (gitignored, rebuild with `--build`)
+**Index location:** `.claude/runs/local_intel/code_index.json` (gitignored, rebuild with `--build`)
 
 ---
 
@@ -128,7 +128,7 @@ the `fail_hook` definition in `HOOKS.md`.
 At Explorer phase start (Change intent), query for similar failures. Output is
 advisory — include any top matches in the `<Cognitive_Brake>` as warnings.
 
-**Storage:** `.claude/local_intel/failure_memory.json` (gitignored, max 500 records FIFO)
+**Storage:** `.claude/runs/local_intel/failure_memory.json` (gitignored, max 500 records FIFO)
 
 ---
 
@@ -144,8 +144,8 @@ python3 .claude/scripts/local_intel/wiki_search.py --status
 python3 .claude/scripts/local_intel/code_index.py --status
 ```
 
-Add to `.claude/scripts/tools/bootstrap.sh` or run manually after large refactors.
-Indexes are stored in `.claude/local_intel/` (gitignored).
+Add to `.claude/scripts/tools/bootstrap.py` or run manually after large refactors.
+Indexes are stored in `.claude/runs/local_intel/` (gitignored).
 
 ---
 

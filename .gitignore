@@ -1,8 +1,5 @@
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -41,6 +38,8 @@ build/
 __pycache__/
 *.pyc
 
-### Local Intelligence (runtime indexes, not committed) ###
-.agents/local_intel/
+### Runtime artifacts (not committed) ###
+# .claude/runs/ also covers local_intel indexes (BM25, code index, failure memory)
 .claude/runs/
+# Local-only Claude Code settings overrides
+.claude/settings.local.json
