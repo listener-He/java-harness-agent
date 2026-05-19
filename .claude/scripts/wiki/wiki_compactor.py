@@ -7,9 +7,9 @@ Merges wal/ fragments into their parent domain index.md files.
 Designed for low-conflict windows (human-triggered or CI).
 
 Protocol:
-  1. Scan each domain's wal/ directory for unapplied fragments.
+  1. Scan each domain's wal/ directory for fragments.
   2. Append each fragment's content after the domain index's ## WAL Fragments section.
-  3. Move processed fragments to wal/applied/.
+  3. Delete processed fragments (git history preserves them).
   4. If a fragment fails to parse, move it to wal/archive/ with a warning.
 
 Usage:
@@ -26,11 +26,11 @@ from datetime import datetime
 from pathlib import Path
 
 WIKI_ROOT = ".claude/wiki/wiki"
-DOMAINS = ["api", "data", "domain", "architecture", "specs", "testing", "reviews", "preferences"]
+DOMAINS = ["api", "data", "domain", "architecture", "preferences"]
 
 
 def _find_fragments(domain: str) -> list[Path]:
-    """Return unapplied .md fragments in domain's wal/ dir, excluding applied/ and archive/ subdirs."""
+    """Return .md fragments in domain's wal/ dir (top-level only, excludes archive/ subdir)."""
     wal_dir = Path(WIKI_ROOT) / domain / "wal"
     if not wal_dir.exists():
         return []
@@ -111,7 +111,7 @@ def compact_domain(domain: str, dry_run: bool = False) -> int:
             new_lines = _append_fragment(index_lines, fragment)
             with open(index_path, "w", encoding="utf-8") as f:
                 f.writelines(new_lines)
-            _move_fragment(fragment, "applied")
+            fragment.unlink()
             index_lines = new_lines  # update for next fragment in same domain
 
         count += 1

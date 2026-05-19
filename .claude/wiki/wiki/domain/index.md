@@ -1,6 +1,6 @@
 # Domain Index (Vocabulary & State)
 
-This index defines the project's vocabulary. The Agent MUST use these terms during `Explorer` and `Propose` to avoid domain drift.
+Business vocabulary, state machines, and invariants. Drilled into during Explorer/Propose to avoid term drift.
 
 ## Core Concepts & State Machines
 
@@ -8,19 +8,6 @@ This index defines the project's vocabulary. The Agent MUST use these terms duri
 |---|---|---|---|
 | (Example) Opportunity | A sales opportunity representing a potential deal | Lead, Account, Deal | `[opportunity_states.md]` |
 
----
-
-## Archive Extraction SOP
-If an `<YYYY-MM-DD>_<slug>_task_brief.md` introduces new terms, roles, enum values, or state transitions, the Agent MUST extract them here during `Archive`.
-
-### Append Template
-```markdown
-| {term} | {1–2 sentence definition and boundary} | {Related Concepts / Synonyms} | `[{details_doc}]` |
-```
-
-Anti-bloat rule: if the vocabulary exceeds 30 concepts, you MUST split into per-line dictionaries (example: `dictionary_xxx.md`) and keep this file as a router.
-
----
+> Append rule: WAL fragment → `wal/YYYYMMDD_<slug>_domain.md`. Format enforced by `wal_template_gate.py`. Split into per-line dictionaries when > 30 concepts.
 
 ## WAL Fragments
-No fragments yet. Use `@wiki-update` to refresh this index from recent archived specs.

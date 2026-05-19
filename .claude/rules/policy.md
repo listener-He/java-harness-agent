@@ -38,7 +38,7 @@ Single source of truth for: safety/commit rules, WAL write-back, agent invocatio
 .claude/wiki/wiki/<domain>/wal/YYYYMMDD_<slug>_<category>.md
 ```
 
-Domains: `domain/`, `api/`, `data/`, `preferences/`, `architecture/`, `testing/`, `reviews/`
+Domains: `domain/`, `api/`, `data/`, `preferences/`, `architecture/`
 
 ## Archive Location
 

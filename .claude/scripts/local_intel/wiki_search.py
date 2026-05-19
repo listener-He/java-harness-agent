@@ -33,6 +33,10 @@ INDEX_PATH = ".claude/runs/local_intel/wiki_bm25.json"
 WIKI_ROOT = ".claude/wiki"
 SKIP_DIRS = {"wal", "archive", "__pycache__"}
 
+# Below this corpus size, BM25 has too little signal vs. plain substring match.
+# Fall back to substring search; switch to BM25 only once the wiki accumulates content.
+BM25_MIN_CORPUS = 50
+
 # BM25 hyperparameters (Robertson & Zaragoza, 2009)
 K1 = 1.5
 B = 0.75
@@ -133,6 +137,23 @@ def search(query: str, idx: dict, top_k: int = 5) -> list[dict]:
     return results
 
 
+def _substring_fallback(query: str, top_k: int) -> list[dict]:
+    """Pure-Python case-insensitive substring search. Used when corpus is too small for BM25
+    to discriminate — zero external dependencies, works in any environment."""
+    docs = _collect_docs()
+    q = query.lower()
+    results = []
+    for path, content in docs.items():
+        pos = content.lower().find(q)
+        if pos >= 0:
+            start = max(0, pos - 30)
+            excerpt = content[start:start + 150].replace("\n", " ").strip()
+            results.append({"path": path, "score": 1.0, "excerpt": excerpt})
+            if len(results) >= top_k:
+                break
+    return results
+
+
 def load_or_build(force: bool = False) -> dict:
     if not force and os.path.exists(INDEX_PATH):
         with open(INDEX_PATH, "r", encoding="utf-8") as f:
@@ -171,7 +192,10 @@ def main() -> int:
         parser.print_help()
         return 1
 
-    results = search(args.query, idx, args.top)
+    if idx["N"] < BM25_MIN_CORPUS:
+        results = _substring_fallback(args.query, args.top)
+    else:
+        results = search(args.query, idx, args.top)
 
     if args.as_json:
         print(json.dumps(results))

@@ -95,6 +95,7 @@ These override the default risk classification. When a scenario specifies a **Re
 |---|---|---|
 | "整理/合并 wiki", `@gc` | Librarian | Aggregate → Merge → Clean → Lint |
 | "提取/沉淀知识", `@wiki-update` | Knowledge Extractor | Diff → Extract → WAL fragments → Lint |
+| "萃取 wiki / 清理过期", `@distill` | Librarian | Scan → Plan → Human-approve → Execute → Lint |
 | "拆分文档", index > 500 lines | Knowledge Architect | Check → Deduplicate → Split → Rewrite index |
 | "扫描项目", "审计代码库" | Explorer (inline) | Scan → Index → Report |
 
@@ -107,7 +108,8 @@ Maintenance tasks have no code phases (no Explorer/Propose/Implement/QA). Detail
 | `@read` / `@learn` | LEARN | Read-only; never write code, never run gates |
 | `@vibe` / `@patch` / `@quickfix` | PATCH | Act directly; skip Explorer/Propose/WAL even if heuristics suggest LOW |
 | `@standard` | STANDARD | Force task_brief + lifecycle, even if heuristics suggest PATCH |
-| `@gc` / `@librarian` | MAINTENANCE | Librarian flow |
+| `@gc` / `@librarian` | MAINTENANCE | Librarian compact flow |
+| `@distill` | MAINTENANCE | Librarian distill flow (scan → human approval → execute) |
 | `@wiki-update` / `@milestone` | MAINTENANCE | Knowledge Extractor flow |
 
 Flags: `--risk low|medium|high`, `--launch`, `--no-launch`, `--test "<cmd>"`, `--yes` (auto-confirm).
