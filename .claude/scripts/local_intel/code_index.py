@@ -36,7 +36,7 @@ import re
 import sys
 from pathlib import Path
 
-INDEX_PATH = ".claude/local_intel/code_index.json"
+INDEX_PATH = ".claude/runs/local_intel/code_index.json"
 DEFAULT_SRC = ["src/main/java", "src/test/java"]
 DEFAULT_MAPPER = ["src/main/resources/mapper", "src/main/resources/mappers"]
 

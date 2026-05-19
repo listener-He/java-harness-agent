@@ -8,7 +8,7 @@ Accumulates gate failures, phase rollbacks, and LLM self-reported errors.
 At session start, the pre_hook queries similar past failures to warn the agent
 before it makes the same mistake.
 
-Storage: .claude/local_intel/failure_memory.json (gitignored)
+Storage: .claude/runs/local_intel/failure_memory.json (gitignored via .claude/runs/)
 Max records: 500 (FIFO eviction)
 
 Usage:
@@ -38,7 +38,7 @@ import os
 import sys
 from datetime import datetime
 
-MEMORY_PATH = ".claude/local_intel/failure_memory.json"
+MEMORY_PATH = ".claude/runs/local_intel/failure_memory.json"
 MAX_RECORDS = 500
 
 
@@ -145,6 +145,44 @@ def stats() -> dict:
     }
 
 
+def summary(days: int = 30, min_count: int = 2, top: int = 5) -> list[dict]:
+    """Aggregate recurring failures over the last `days` days.
+
+    Returns entries with count >= min_count, sorted by count desc, capped at top.
+    """
+    from datetime import timedelta
+
+    data = _load()
+    cutoff = datetime.now() - timedelta(days=days)
+    buckets: dict[tuple, dict] = {}
+
+    for r in data["failures"]:
+        try:
+            ts = datetime.fromisoformat(r.get("ts", ""))
+        except ValueError:
+            continue
+        if ts < cutoff:
+            continue
+        key = (r.get("phase", "?"), r.get("gate", ""), r.get("pattern", "?"))
+        if key not in buckets:
+            buckets[key] = {
+                "phase": key[0],
+                "gate": key[1],
+                "pattern": key[2],
+                "count": 0,
+                "last_ts": ts,
+            }
+        buckets[key]["count"] += 1
+        if ts > buckets[key]["last_ts"]:
+            buckets[key]["last_ts"] = ts
+
+    recurring = [b for b in buckets.values() if b["count"] >= min_count]
+    recurring.sort(key=lambda b: (-b["count"], b["last_ts"].timestamp() * -1))
+    for b in recurring:
+        b["last_ts"] = b["last_ts"].strftime("%Y-%m-%d")
+    return recurring[:top]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Local cross-session failure pattern memory"
@@ -174,6 +212,14 @@ def main() -> int:
 
     st = sub.add_parser("stats", help="Show failure statistics")
     st.add_argument("--json", action="store_true", dest="as_json")
+
+    sm = sub.add_parser("summary",
+                        help="Top recurring failures over last N days (for hook injection)")
+    sm.add_argument("--days", type=int, default=30)
+    sm.add_argument("--min-count", type=int, default=2,
+                    help="only include patterns that recurred at least N times")
+    sm.add_argument("--top", type=int, default=5)
+    sm.add_argument("--json", action="store_true", dest="as_json")
 
     args = parser.parse_args()
 
@@ -210,6 +256,19 @@ def main() -> int:
             print("By phase:", s["by_phase"])
             print("Top gates:", s["top_gates"])
             print("Top patterns:", s["top_patterns"])
+        return 0
+
+    if args.cmd == "summary":
+        items = summary(args.days, args.min_count, args.top)
+        if args.as_json:
+            print(json.dumps(items))
+            return 0 if items else 1
+        if not items:
+            return 1
+        for it in items:
+            gate_part = f"/{it['gate']}" if it['gate'] else ""
+            print(f"- ×{it['count']} {it['phase']}{gate_part}: "
+                  f"{it['pattern']} (last {it['last_ts']})")
         return 0
 
     parser.print_help()

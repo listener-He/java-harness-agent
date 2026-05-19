@@ -29,7 +29,7 @@ import re
 import sys
 from pathlib import Path
 
-INDEX_PATH = ".claude/local_intel/wiki_bm25.json"
+INDEX_PATH = ".claude/runs/local_intel/wiki_bm25.json"
 WIKI_ROOT = ".claude/wiki"
 SKIP_DIRS = {"wal", "archive", "__pycache__"}
 

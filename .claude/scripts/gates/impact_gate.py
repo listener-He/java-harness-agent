@@ -28,7 +28,7 @@ from pathlib import Path
 EXIT_WARN = 1
 EXIT_FAIL = 2
 
-INDEX_PATH = ".claude/local_intel/code_index.json"
+INDEX_PATH = ".claude/runs/local_intel/code_index.json"
 CODE_INDEX_SCRIPT = ".claude/scripts/local_intel/code_index.py"
 
 
