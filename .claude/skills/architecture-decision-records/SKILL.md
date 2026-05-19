@@ -97,9 +97,7 @@ When a user asks "why did we choose X?":
 docs/
 └── adr/
     ├── README.md              ← index of all ADRs
-    ├── 0001-use-nextjs.md
-    ├── 0002-postgres-over-mongo.md
-    ├── 0003-rest-over-graphql.md
+    ├── NNNN-<slug>.md         ← one file per decision (e.g. 0001-use-nextjs.md)
     └── template.md            ← blank template for manual use
 ```
 
@@ -110,9 +108,8 @@ docs/
 
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
-| [0001](0001-use-nextjs.md) | Use Next.js as frontend framework | accepted | 2026-01-15 |
-| [0002](0002-postgres-over-mongo.md) | PostgreSQL over MongoDB for primary datastore | accepted | 2026-01-20 |
-| [0003](0003-rest-over-graphql.md) | REST API over GraphQL | accepted | 2026-02-01 |
+| [<NNNN>](<NNNN>-<slug>.md) | <Decision title> | accepted \| superseded \| deprecated | YYYY-MM-DD |
+| ... | ... | ... | ... |
 ```
 
 ## Decision Detection Signals

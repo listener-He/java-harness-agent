@@ -6,6 +6,7 @@
       "Bash(python3 .claude/scripts/tools/*)",
       "Bash(python3 .claude/scripts/local_intel/*)",
       "Bash(python3 .claude/scripts/harness/*)",
+      "Bash(.claude/scripts/harness/*)",
       "Bash(mvn *)",
       "Bash(gradle *)",
       "Bash(javac *)",
@@ -24,18 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/scripts/gates/secrets_linter.py --paths \"$(echo $CLAUDE_TOOL_INPUT | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get(\"file_path\",\"\"))' 2>/dev/null)\" 2>/dev/null || true"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [ -f .claude/runs/cache/failure_memory.json ] && [ -s .claude/runs/cache/failure_memory.json ]; then python3 .claude/scripts/local_intel/failure_memory.py query --intent Change --phase Explorer 2>/dev/null || true; fi"
+            "command": ".claude/scripts/harness/post_tool_use_hook.sh"
           }
         ]
       }

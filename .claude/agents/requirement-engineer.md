@@ -3,8 +3,6 @@ name: requirement-engineer
 description: Bridge the gap between human desires and technical specifications by translating raw user input into testable User Stories and Acceptance Criteria in Given/When/Then format. Use when the user's request needs clarification or formalization before implementation.
 tools: Read, Bash, Grep, Glob
 model: sonnet
-maxTurns: 20
-skills: skill-index, brainstorming, cognitive-bias-checklist, spec-quality-checklist
 ---
 
 # Requirement Engineer

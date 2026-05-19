@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Consistency Gate — Cross-file Budget Integrity Check
+Consistency Gate — Cross-file Budget Integrity Check (LEGACY)
 
 Validates that budget limits (Wiki, Code, Web Search) and hard ceilings
-are consistent across all protocol files:
-- CLAUDE.md
-- .claude/router/CONTEXT_FUNNEL.md
-- .claude/router/ROUTER.md
-- .claude/workflow/artifacts/task_brief.md
+are consistent across protocol files. Originally designed for the
+.agents/ era when CONTEXT_FUNNEL.md and ROUTER.md owned the budget
+constants. In the current .claude/ framework, CLAUDE.md no longer
+publishes budget constants — only an active task_brief.md does.
+
+This gate now degrades gracefully:
+- If a referenced file is missing, that file is SKIPPED (not failed)
+- If fewer than 2 files have budgets, the gate is a no-op (PASS)
+- Only mismatches between files that DO publish budgets are reported
 
 Exit codes:
-- 0: PASS (all files consistent)
-- 2: FAIL (mismatch found)
+- 0: PASS (no mismatches OR not enough files to compare)
+- 2: FAIL (mismatch found between files that both publish budgets)
 """
 
 import os
@@ -136,9 +140,9 @@ def _extract_focus_card_budgets(text: str) -> dict:
 def main() -> int:
     files = {
         "CLAUDE.md": os.path.join(REPO_ROOT, "CLAUDE.md"),
-        "CONTEXT_FUNNEL.md": os.path.join(REPO_ROOT, ".agents", "router", "CONTEXT_FUNNEL.md"),
-        "ROUTER.md": os.path.join(REPO_ROOT, ".agents", "router", "ROUTER.md"),
-        "task_brief.md": os.path.join(REPO_ROOT, ".agents", "workflow", "artifacts", "task_brief.md"),
+        "CONTEXT_FUNNEL.md": os.path.join(REPO_ROOT, ".claude", "router", "CONTEXT_FUNNEL.md"),
+        "ROUTER.md": os.path.join(REPO_ROOT, ".claude", "router", "ROUTER.md"),
+        "task_brief.md": os.path.join(REPO_ROOT, ".claude", "workflow", "artifacts", "task_brief.md"),
     }
 
     extractors = {
@@ -149,12 +153,22 @@ def main() -> int:
     }
 
     parsed = {}
+    skipped = []
     for name, path in files.items():
         if not os.path.exists(path):
-            print(f"FAIL: file not found: {path}")
-            return EXIT_FAIL
+            skipped.append(name)
+            continue
         text = _read(path)
-        parsed[name] = extractors[name](text)
+        budgets = extractors[name](text)
+        if budgets:
+            parsed[name] = budgets
+
+    if skipped:
+        print(f"INFO: skipped missing files: {', '.join(skipped)}")
+
+    if len(parsed) < 2:
+        print("PASS: fewer than 2 files publish budgets — nothing to compare")
+        return 0
 
     errors = []
 

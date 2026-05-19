@@ -24,7 +24,7 @@ EXIT_FAIL = 2
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.normpath(os.path.join(THIS_DIR, "..", "..", ".."))
-RUNS_DIR = os.path.join(REPO_ROOT, ".agents", "workflow", "runs")
+RUNS_DIR = os.path.join(REPO_ROOT, ".claude", "runs", "task-briefs")
 
 
 def _find_bypass_files() -> list[str]:
@@ -54,7 +54,7 @@ def _is_task_archived(task_id: str) -> bool:
         return False
     date = parts[3]
     topic = parts[2] if len(parts) > 2 else ""
-    archive_dir = os.path.join(REPO_ROOT, ".agents", "wiki", "archive")
+    archive_dir = os.path.join(REPO_ROOT, ".claude", "wiki", "archive")
     if os.path.isdir(archive_dir):
         for f in os.listdir(archive_dir):
             if date in f and topic.lower().replace(" ", "_") in f.lower():

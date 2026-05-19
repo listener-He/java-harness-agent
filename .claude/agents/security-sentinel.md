@@ -3,7 +3,6 @@ name: security-sentinel
 description: Prevent secret leakage and authorization bypass risks by running deterministic script checks. Uses automated scanning only — no subjective security review. Triggered before Archive in all tasks, and explicitly in Scenario A (Emergency Hotfix).
 tools: Read, Bash, Grep, Glob
 model: haiku
-maxTurns: 5
 ---
 
 # Security Sentinel

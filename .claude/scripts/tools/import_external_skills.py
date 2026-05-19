@@ -134,9 +134,9 @@ def main() -> None:
     repo_root = Path(args.repo_root)
     source_root = Path(args.source_root)
 
-    run_dir = repo_root / ".agents" / "workflow" / "runs"
+    run_dir = repo_root / ".claude" / "runs" / "task-briefs"
     conflict_dir = run_dir / f"{args.slug}_conflicts"
-    dest_skills = repo_root / ".agents" / "skills"
+    dest_skills = repo_root / ".claude" / "skills"
 
     run_dir.mkdir(parents=True, exist_ok=True)
     conflict_dir.mkdir(parents=True, exist_ok=True)

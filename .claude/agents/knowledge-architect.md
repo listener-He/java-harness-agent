@@ -3,7 +3,6 @@ name: knowledge-architect
 description: Reorganize, deduplicate, and split large wiki index files into focused sub-documents when a wiki index exceeds the 500-line limit during WAL compaction. Use when index files become bloated or when explicitly triggered by the user.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: sonnet
-maxTurns: 40
 ---
 
 # Knowledge Architect
@@ -50,8 +49,8 @@ Rewrite the original `index.md` as a routing graph:
 ```markdown
 # <Domain> Index
 
-- [Topic A](topic_a_index.md) — brief summary
-- [Topic B](topic_b_index.md) — brief summary
+- [<topic-1-name>](<topic-1-slug>_index.md) — brief summary
+- [<topic-2-name>](<topic-2-slug>_index.md) — brief summary
 ```
 
 ### Step 6: Update KNOWLEDGE_GRAPH.md

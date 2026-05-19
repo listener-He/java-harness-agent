@@ -3,8 +3,6 @@ name: code-reviewer
 description: Conduct rigorous, tech-lead-level code inspection of newly written code. Focus on correctness, performance, security, and maintainability. Use before QA and Archive phases, or whenever the user asks for a code review.
 tools: Read, Bash, Grep, Glob
 model: sonnet
-maxTurns: 20
-skills: skill-index, code-review-checklist, java-testing-standards, ultraqa, security-review-checklist
 ---
 
 # Code Reviewer

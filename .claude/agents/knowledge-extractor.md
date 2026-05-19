@@ -3,8 +3,6 @@ name: knowledge-extractor
 description: Extract stable knowledge (Domain, API, Rules, Data) from completed code changes into structured WAL fragments during the Archive phase. Consolidates all knowledge extraction into a single structured output.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: sonnet
-maxTurns: 40
-skills: skill-index, wal-documentation-rules, verify
 ---
 
 # Knowledge Extractor

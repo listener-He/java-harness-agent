@@ -3,7 +3,6 @@ name: focus-guard
 description: Enforce Allowed Scope boundaries during implementation. Prevent cross-domain edits and file changes not authorized by the task_brief contract. Use during the Implement phase of STANDARD tasks, or whenever scope discipline is needed.
 tools: Read, Bash, Grep, Glob
 model: haiku
-maxTurns: 5
 ---
 
 # Focus Guard

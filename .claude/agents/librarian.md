@@ -3,7 +3,6 @@ name: librarian
 description: Prevent WAL graveyard bloat by periodically merging scattered WAL fragments into the main wiki and performing garbage collection. Use when triggered by @gc, @librarian, or "整理 wiki".
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: sonnet
-maxTurns: 40
 ---
 
 # Librarian

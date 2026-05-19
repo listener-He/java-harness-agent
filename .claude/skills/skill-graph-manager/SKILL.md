@@ -46,6 +46,6 @@ Whenever you write a bidirectional link inside a `SKILL.md`, you MUST use this e
 
 ```markdown
 ## Related Skills
-- [skill-a](../skill-a/SKILL.md): <Brief explanation of why they are related, e.g., "The predecessor skill for requirements">
-- [skill-b](../skill-b/SKILL.md): <Brief explanation, e.g., "Provides the coding standards required by this skill">
+- [<related-skill-1>](../<related-skill-1>/SKILL.md): <Brief explanation of why they are related, e.g., "The predecessor skill for requirements">
+- [<related-skill-2>](../<related-skill-2>/SKILL.md): <Brief explanation, e.g., "Provides the coding standards required by this skill">
 ```

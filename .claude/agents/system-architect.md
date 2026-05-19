@@ -3,8 +3,6 @@ name: system-architect
 description: Design high-level system interactions, database schema, API contracts, and design patterns before any code is written. Acts as the Foreman in EPIC scenarios. Use during the Propose phase of STANDARD tasks.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: sonnet
-maxTurns: 30
-skills: skill-index, brainstorming, task-decomposition-guide, decision-frameworks, cognitive-bias-checklist
 ---
 
 # System Architect

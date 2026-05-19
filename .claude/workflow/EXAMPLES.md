@@ -65,7 +65,7 @@ Design: POST /orders/{id}/cancel
 - Guard: status must be PROCESSING (DONE/FAILED → ORD_004)
 - Allowed Scope: OrderController.java, OrderService.java
 
-Spec: .agents/workflow/runs/2026-05-17_order-cancel_task_brief.md
+Spec: .claude/runs/task-briefs/2026-05-17_order-cancel_task_brief.md
 (FYI — proceeding to Implement unless you object)
 ```
 

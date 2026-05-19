@@ -3,7 +3,6 @@ name: documentation-curator
 description: Update user-facing docs, READMEs, API docs, and Javadocs to reflect recent code changes. Use after code changes land, when asked to update documentation, or during the Archive phase of STANDARD tasks.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: sonnet
-maxTurns: 20
 ---
 
 # Documentation Curator

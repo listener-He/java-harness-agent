@@ -19,67 +19,69 @@ Entry point: **[CLAUDE.md](CLAUDE.md)** — read first on every session start.
 ```
 CLAUDE.md                      # Single entry point
 .claude/
-├── rules/                     # Routing, lifecycle, hooks, safety constraints, write-back policy
-│   ├── routing.md             # Intent classification, profiles, context funnel
-│   ├── lifecycle.md           # 6-phase lifecycle state machine
-│   ├── hooks.md               # Pre/guard/shift-left/post/fail/loop hooks
+├── rules/                     # Routing, lifecycle, dispatch, hooks, safety, write-back
+│   ├── routing.md             # Profiles, risk classification, special scenarios, shortcuts
+│   ├── lifecycle.md           # Phase details (Explorer → Propose → Review → Implement → QA → Archive)
+│   ├── dispatch.md            # Agent invocation (inline role adoption vs sub-agent dispatch) + handoff
+│   ├── hooks.md               # Per-phase gate checklist; settings.json defines auto-fired hooks
 │   ├── safety-constraints.md  # Hard constraints, commit policy
 │   └── writeback-policy.md    # WAL fragment write-back, anti-bloat rules
-├── agents/                    # Role definitions — two-tier: Mounted Roles (shared CLAUDE.md context) + Isolated Sub-Agents (self-contained .md with explicit skill deps)
-│   ├── ambiguity-gatekeeper.md   # [Isolated] Gate: blocks work on vague input. Enforces "definition of ready" (action verb + target + measurable outcome). Stops runaway exploration >3 unconverging steps. Phase: before Explorer.
-│   ├── requirement-engineer.md   # [Isolated] Translates raw user requests → testable ACs in Given/When/Then. Challenges vague adjectives ("fast", "better"). Defines happy path + 2 edge cases per requirement. Runs cognitive bias check before finalizing. Phase: Explorer.
-│   ├── system-architect.md       # [Mounted] Designs the technical solution before code exists. Produces task_brief.md (Allowed Scope + ACs + Hard Constraints + Task DAG). HIGH risk: ≥2 ADR alternatives with Pros/Cons/Failure Conditions. Acts as Foreman in EPIC. Phase: Propose → Review.
-│   ├── lead-engineer.md          # [Mounted] Translates task_brief Machine Section → compilable, tested code. Follows TDD: RED (failing test from AC) → GREEN (minimum code) → REFACTOR (clean up). Copies existing patterns, stays in Allowed Scope. Phase: Implement.
-│   ├── focus-guard.md            # [Isolated] Scope enforcement gate. Ensures every file edit stays within task_brief Allowed Scope. Blocks out-of-scope changes; requests [Boundary Exception] for necessary cross-boundary edits. Does NOT review quality — only boundary compliance. Phase: Implement (guard).
-│   ├── code-reviewer.md          # [Isolated] Tech-lead code inspection against 5-dimension rubric: Correctness, Security, Performance, Design & Maintainability, Style. Reports CRITICAL (blocks merge) / MAJOR / MINOR findings with file:line references. Phase: QA.
-│   ├── knowledge-extractor.md    # [Isolated] Extracts stable knowledge from completed code → WAL fragments (Domain, API, Rules, Data). Categorizes changes, writes to wal/ directories. Does NOT edit shared index.md — merging is the Librarian's job. Phase: Archive.
-│   ├── documentation-curator.md  # [Isolated] Updates user-facing docs (README, Javadoc, API docs) to reflect code changes. Handles new/changed/removed public APIs. Follows Javadoc standards (@param, @return, @throws). Scope excludes wiki/WAL. Phase: Archive.
-│   ├── skill-graph-curator.md    # [Isolated] Maintains skill index consistency. Ensures every skill dir has SKILL.md and every SKILL.md is indexed. Detects dead links, duplicates, orphans. Runs skill_index_linter as gate. Phase: Archive.
-│   ├── knowledge-architect.md    # [Isolated] Splits bloated wiki indexes when >500 lines. Deduplicates → groups by topic → creates focused sub-documents → rewrites parent as lean routing index. Updates KNOWLEDGE_GRAPH.md. Phase: Maintenance (triggered by GC overflow).
-│   ├── librarian.md              # [Isolated] Wiki health maintainer. Aggregates scattered WAL fragments → merges into stable domain indexes → garbage-collects merged fragments. Invokes Knowledge Architect on index overflow. Trigger: @gc / @librarian. Phase: Maintenance.
-│   └── security-sentinel.md      # [Isolated] Deterministic security gate. Runs automated scan (secrets_linter.py) for hardcoded credentials, tokens, keys. Reports objective pass/fail — no subjective security review. Triggered before every Archive + Scenario A (Emergency Hotfix).
-├── skills/
-│   ├── adversarial-review/          # One-round isolated critique with adversarial injection (A/B/C frames)
-│   ├── ai-pipeline/                 # Orchestrate full AI engineering pipeline (plan → eval → improve → archive)
-│   ├── ai-slop-cleaner/             # Regression-safe cleanup: remove dead code, merge duplicates, reduce complexity
+├── agents/                    # Role catalog — each .md has Claude Code frontmatter (name/description/tools/model) and is invokable via the Agent tool
+│   ├── ambiguity-gatekeeper.md   # Gate: blocks work on vague input. Enforces "definition of ready" (action verb + target + measurable outcome). Stops runaway exploration >3 unconverging steps. Phase: before Explorer.
+│   ├── requirement-engineer.md   # Translates raw user requests → testable ACs in Given/When/Then. Challenges vague adjectives ("fast", "better"). Defines happy path + 2 edge cases per requirement. Runs cognitive bias check before finalizing. Phase: Explorer.
+│   ├── system-architect.md       # Designs the technical solution before code exists. Produces task_brief.md (Allowed Scope + ACs + Hard Constraints + Task DAG). HIGH risk: ≥2 ADR alternatives with Pros/Cons/Failure Conditions. Acts as Foreman in EPIC. Phase: Propose → Review.
+│   ├── lead-engineer.md          # Translates task_brief Machine Section → compilable, tested code. Follows TDD: RED (failing test from AC) → GREEN (minimum code) → REFACTOR (clean up). Copies existing patterns, stays in Allowed Scope. Phase: Implement.
+│   ├── focus-guard.md            # Scope enforcement gate. Ensures every file edit stays within task_brief Allowed Scope. Blocks out-of-scope changes; requests [Boundary Exception] for necessary cross-boundary edits. Does NOT review quality — only boundary compliance. Phase: Implement (guard).
+│   ├── code-reviewer.md          # Tech-lead code inspection against 5-dimension rubric: Correctness, Security, Performance, Design & Maintainability, Style. Reports CRITICAL (blocks merge) / MAJOR / MINOR findings with file:line references. Phase: QA.
+│   ├── knowledge-extractor.md    # Extracts stable knowledge from completed code → WAL fragments (Domain, API, Rules, Data). Categorizes changes, writes to wal/ directories. Does NOT edit shared index.md — merging is the Librarian's job. Phase: Archive.
+│   ├── documentation-curator.md  # Updates user-facing docs (README, Javadoc, API docs) to reflect code changes. Handles new/changed/removed public APIs. Follows Javadoc standards (@param, @return, @throws). Scope excludes wiki/WAL. Phase: Archive.
+│   ├── skill-graph-curator.md    # Maintains skill index consistency. Ensures every skill dir has SKILL.md and every SKILL.md is indexed. Detects dead links, duplicates, orphans. Runs skill_index_linter as gate. Phase: Archive.
+│   ├── knowledge-architect.md    # Splits bloated wiki indexes when >500 lines. Deduplicates → groups by topic → creates focused sub-documents → rewrites parent as lean routing index. Updates KNOWLEDGE_GRAPH.md. Phase: Maintenance (triggered by GC overflow).
+│   ├── librarian.md              # Wiki health maintainer. Aggregates scattered WAL fragments → merges into stable domain indexes → garbage-collects merged fragments. Invokes Knowledge Architect on index overflow. Trigger: @gc / @librarian. Phase: Maintenance.
+│   └── security-sentinel.md      # Deterministic security gate. Runs automated scan (secrets_linter.py) for hardcoded credentials, tokens, keys. Reports objective pass/fail — no subjective security review. Triggered before every Archive + Scenario A (Emergency Hotfix).
+├── skills/                          # 29 skills auto-loaded by Claude Code on every session
+│   ├── skill-index/                 # Central navigator (active set + archive references)
+│   ├── adversarial-review/          # One-round isolated critique (HIGH-risk Review)
+│   ├── ai-slop-cleaner/             # Regression-safe cleanup: dead code, duplicates, over-abstraction
 │   ├── architecture-decision-records/ # Capture architectural decisions as structured ADRs
-│   ├── blueprint/                   # Turn an objective into a step-by-step multi-session construction plan
 │   ├── brainstorming/               # Explore idea/requirement into design with ADR-format alternatives
 │   ├── code-review-checklist/       # Mandatory pre-delivery code review against all project standards
 │   ├── cognitive-bias-checklist/    # Prevent hallucinations and overconfidence during design decisions
 │   ├── decision-frameworks/         # SWOT, 5-Why, First Principles for root cause and architecture selection
-│   ├── deepinit/                    # Deep codebase init: hierarchical CLAUDE.md + machine-readable context_brief.md
-│   ├── dispatching-parallel-agents/ # Dispatch isolated sub-agents for independent parallel workstreams
-│   ├── eval-harness/                # Formal evaluation: AC definition (Explorer) and pass@k benchmarks (Pipeline)
-│   ├── external-research/           # Web research for: pipeline plateau, CVE, compliance, competitor benchmarking
-│   ├── greenfield-scaffold/         # From-scratch protocol: domain model → API → DB → package → scaffold
-│   ├── incident-response/           # Production emergency triage, root cause investigation, post-mortem
 │   ├── java-architecture-standards/ # Mandatory: 3-Layer arch, API design, POJO, anti-JOIN, error codes
 │   ├── java-coding-style/           # Mandatory: Checkstyle, Javadoc, utility class boundaries, functional patterns
 │   ├── java-testing-standards/      # Mandatory: test isolation, mock guidelines, 3-scenario coverage rule
 │   ├── linter-severity-standard/    # FAIL/WARN/IGNORE severity rubric for gate scripts
 │   ├── local-code-intelligence/     # Zero-cost local tools: BM25 wiki search, symbol index, failure memory
-│   ├── migration-planner/           # A→B migration with behavioral equivalence test suite
 │   ├── mybatis-sql-standard/        # Anti-JOIN, index utilization, implicit type conversion prevention
 │   ├── product-manager-expert/      # PRD generation and PRD ingestion → technical requirements + AC
-│   ├── release/                     # Validates pre-release gates, guides step-by-step release execution
 │   ├── remember/                    # Classify discovered knowledge into correct persistence layer
 │   ├── requirement-intake/          # Normalize raw input (PRD, idea, bug) into structured intent+scope+AC
 │   ├── security-review-checklist/   # Secrets, authZ, IDOR, data exposure, dependency safety checklist
-│   ├── self-improve/                # Tournament-based evolutionary improvement loop with plateau detection
 │   ├── skill-creator/               # Create or update SKILL.md for repeatable workflows
 │   ├── skill-graph-manager/         # Mandatory: maintain bidirectional Skill Knowledge Graph
-│   ├── skill-index/                 # Central navigator for all workspace skills
 │   ├── spec-quality-checklist/      # Self-correction gate for AI-generated docs before Python gate scripts
 │   ├── stakeholder-conflict-resolver/ # Detect and resolve mutually exclusive stakeholder requirements
 │   ├── systematic-debugging/        # Mandatory root-cause investigation before any fix
 │   ├── task-decomposition-guide/    # Decompose large PRDs/EPICs via INVEST criteria and Vertical Slicing
 │   ├── test-driven-development/     # Write failing tests from ACs before implementation
 │   ├── ultraqa/                     # Structured QA loop with Evidence Mapping Table (AC ↔ Test ↔ Result)
-│   ├── using-git-worktrees/         # Isolated git worktrees for parallel or HIGH risk work
 │   ├── verify/                      # End-to-end AC verification with pass/fail evidence before Archive
 │   ├── wal-documentation-rules/     # Mandatory: extract stable knowledge into WAL fragments at Archive
 │   └── writing-plans/               # Decompose spec into checkpoint-driven implementation plan
+├── skills-archive/                  # 12 lower-frequency skills — NOT auto-loaded; referenced inline by the rule/agent that needs them
+│   ├── ai-pipeline/                 # Full AI engineering pipeline orchestrator (Scenario PIPELINE)
+│   ├── blueprint/                   # Multi-session, multi-agent construction plan (Scenario EPIC)
+│   ├── deepinit/                    # New-repo deep init: hierarchical CLAUDE.md (Scenario GREENFIELD)
+│   ├── dispatching-parallel-agents/ # Parallel sub-agent dispatch (Scenario EPIC)
+│   ├── eval-harness/                # Formal AC eval / pass@k benchmarks (Scenario PIPELINE)
+│   ├── external-research/           # CVE / compliance / plateau research (Scenarios D, PIPELINE)
+│   ├── greenfield-scaffold/         # From-scratch protocol (Scenario GREENFIELD)
+│   ├── incident-response/           # Production triage + post-mortem (Scenario A)
+│   ├── migration-planner/           # A→B migration with equivalence tests (Scenario B)
+│   ├── release/                     # Pre-release validation + step-by-step (Scenario RELEASE)
+│   ├── self-improve/                # Tournament loop with plateau detection (Scenario PIPELINE)
+│   └── using-git-worktrees/         # Isolated worktrees for HIGH-risk parallel work (lead-engineer)
 ├── wiki/                      # Knowledge graph (file-system-based, no vector DB)
 │   ├── KNOWLEDGE_GRAPH.md     # Root index
 │   ├── purpose.md             # Design philosophy
@@ -266,8 +268,8 @@ Every user request is classified into an **intent** and routed to a **profile**:
 | Profile | Use case | Lifecycle | Write-back | Artifact |
 |---------|----------|-----------|------------|----------|
 | **LEARN** | Read/explain code | None | No | None |
-| **PATCH** (TRIVIAL) | Typos, logging, null checks (≤1 file) | `Implement → QA → Archive` | No | None |
-| **PATCH** (LOW) | Small bugfix, internal refactor | `Explorer → Implement → QA → Archive` | No | Slim Spec |
+| **PATCH** (TRIVIAL) | Typos, logging, null checks, single-domain bugfix (≤3 files, no public API/DB/auth change) | `Implement → QA → Archive` | No | None |
+| **PATCH** (LOW) | Small bugfix spanning two related domains (4–6 files, still no public API/DB/auth change) | `Implement → QA → Archive` | No | None |
 | **STANDARD** (MEDIUM) | Feature, new API, cross-module | Full 6-phase (no gate) | Yes (WAL) | `task_brief.md` |
 | **STANDARD** (HIGH) | Core flow, DB schema, auth, breaking API | Full 6-phase + Approval Gate | Yes (WAL) | `task_brief.md` + ADR |
 | **MAINTENANCE** | Wiki GC, knowledge extract, document split, project scan | Role-specific (see Maintenance Workflows) | Yes (WAL/merged) | WAL fragments, merged indexes, scan report |

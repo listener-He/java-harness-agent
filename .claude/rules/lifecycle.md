@@ -1,23 +1,16 @@
 # Lifecycle — Phases & State Machine
 
-One-way flow with hard gates. See [routing.md](routing.md) for profile selection and risk classification. See [hooks.md](hooks.md) for phase gates.
+This file documents the **phases** in detail. The mapping from profile/risk to per-profile flow lives in [routing.md](routing.md). Gate checklists per phase live in [hooks.md](hooks.md).
 
 ---
 
-## Phase Flow
+## Canonical Phase Flow
 
 ```
 Explorer → Propose → Review → [Approval Gate if HIGH] → Implement → QA → Archive
 ```
 
-| Profile | Flow |
-|---|---|
-| LEARN | No lifecycle phases |
-| PATCH (TRIVIAL) | Implement → QA → Archive |
-| PATCH (LOW) | Explorer(inline) → Implement → QA → Archive |
-| STANDARD (MEDIUM) | Explorer → Propose(task_brief) → Review → Implement → QA → Archive |
-| STANDARD (HIGH) | Explorer → Propose(task_brief, ≥2 ADR) → Review(adversarial) → **Approval Gate** → Implement → QA → Archive |
-| MAINTENANCE | Role-specific (see below) |
+PATCH profiles skip Explorer/Propose/Review entirely. MAINTENANCE has its own role-specific flow. See routing.md → "Risk Classification" for the per-profile flow tables.
 
 ---
 
@@ -115,11 +108,4 @@ Only two: `launch_spec_*.md` (task queue) and `task_brief.md` (per-task contract
 
 ## Maintenance Flows
 
-No code phases. See agent definitions for detailed checklists.
-
-| Trigger | Role | Flow |
-|---|---|---|
-| `@gc` / "整理 wiki" | Librarian | Aggregate → Merge → Clean → Lint |
-| `@wiki-update` / "沉淀知识" | Knowledge Extractor | Diff → Extract → WAL fragments → Lint |
-| "拆分文档" / index > 500 lines | Knowledge Architect | Check → Deduplicate → Split → Rewrite index |
-| "扫描项目" | Explorer (inline) | Scan → Index → Report |
+Maintenance tasks have no code phases (no Explorer/Propose/Implement/QA). The trigger→role→flow table lives in [routing.md → Maintenance Operations](routing.md#maintenance-operations). Detailed checklists for each role are in `.claude/agents/`.

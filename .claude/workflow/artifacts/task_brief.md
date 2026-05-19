@@ -9,8 +9,8 @@
 - Do not rewrite wiki indexes directly.
 
 ## Allowed Scope
-- .agents/
-- AGENTS.md
+- .claude/
+- CLAUDE.md
 
 ## Budgets
 - Wiki budget: 3 docs (hard ceiling: 8)

@@ -1,11 +1,13 @@
 ---
 name: "skill-index"
-description: "Central index and navigator for all workspace skills. Invoke when you need to find the right skill, understand skill relationships, or see the lifecycle phase map. The single entry point to the skill ecosystem."
+description: "Skill navigator. List active skills, locate archived ones, choose the right sequence per scenario."
 ---
 
 # Skill Index — Central Navigator
 
-Root node of the Skill Knowledge Graph. Navigate here to find the appropriate specialized skill.
+This framework keeps 29 "active" skills auto-loaded by Claude Code. 12 lower-frequency skills are stored under `.claude/skills-archive/` and need to be re-activated on demand (see § Archive).
+
+**Scope:** A typical Claude Code install may surface external skills (`lark-*`, `claude-api`, `loop`, `schedule`, etc.). Those are global utilities — ignore unless asked by name.
 
 ---
 
@@ -13,25 +15,25 @@ Root node of the Skill Knowledge Graph. Navigate here to find the appropriate sp
 
 | Scenario | Skill sequence |
 |---|---|
-| **Any non-trivial input** (PRD / idea / bug report / security finding) | `requirement-intake` → route to appropriate skill below |
-| Writing a new feature (from idea) | `requirement-intake` → `brainstorming` → `task-decomposition-guide` → `java-architecture-standards` → `test-driven-development` → `ultraqa` → `wal-documentation-rules` |
-| Processing a PRD | `requirement-intake` → `product-manager-expert` (Ingestion Mode) → `task-decomposition-guide` → standard feature flow |
-| Fixing a bug | `requirement-intake` → `systematic-debugging` → `test-driven-development` → `verify` |
-| Refactoring | `cognitive-bias-checklist` → `blueprint` → `ai-slop-cleaner` → `code-review-checklist` |
-| Greenfield (from scratch) | `requirement-intake` → `greenfield-scaffold` → `brainstorming` → standard feature flow |
-| A→B migration | `requirement-intake` → `migration-planner` → standard STANDARD flow |
-| Full pipeline (idea → delivery) | `ai-pipeline` (orchestrates all phases automatically) |
-| Large epic / multi-domain | `task-decomposition-guide` → `dispatching-parallel-agents` → `verify` |
-| Security or HIGH risk change | `security-review-checklist` → `code-review-checklist` → `verify` |
-| Multi-stakeholder conflict | `requirement-intake` → `stakeholder-conflict-resolver` → `product-manager-expert` (Mode A) |
-| Production incident / outage | `requirement-intake` → `incident-response` → `systematic-debugging` → post-mortem AIs into task queue |
-| Knowledge preservation | `wal-documentation-rules` (Archive) + `remember` (lessons learned) |
+| Any non-trivial input (PRD / bug / signal) | `requirement-intake` → route below |
+| Writing a new feature | `brainstorming` → `task-decomposition-guide` → `java-architecture-standards` → `test-driven-development` → `ultraqa` → `wal-documentation-rules` → `remember` |
+| Processing a PRD | `product-manager-expert` (Ingestion) → `task-decomposition-guide` → feature flow |
+| Fixing a bug | `systematic-debugging` → `test-driven-development` → `verify` |
+| Code review / QA | `code-review-checklist` → `java-testing-standards` → `ultraqa` |
+| Security or HIGH risk change | `security-review-checklist` → `adversarial-review` → `code-review-checklist` → `verify` |
+| Cleanup after AI-heavy session | `ai-slop-cleaner` → `code-review-checklist` |
+| Recording a design decision | `architecture-decision-records` |
+| Knowledge preservation | `wal-documentation-rules` (Archive) → `remember` (cross-session) |
+| Pre-Explorer codebase context | `local-code-intelligence` (BM25 + symbol index + failure memory) |
+| **Migration / Greenfield / Incident / EPIC / PRD / Release / Pipeline** | See `.claude/rules/routing.md` Special Scenarios — the matching scenario inlines the archive path to read |
 
 ---
 
-## 0. Default Enabled Set
+## 0. Active (Auto-loaded by Claude Code)
 
-Default Enabled means: preferred for automatic invocation and daily workflow. Everything else is opt-in unless a mounted role checklist requires it.
+These 29 skills live under `.claude/skills/<name>/SKILL.md` and are visible to the Skill tool without further action.
+
+### 0.0 Default Enabled (13) — daily workflow
 
 | Skill | Lifecycle Phase(s) | Primary Role |
 |---|---|---|
@@ -49,121 +51,82 @@ Default Enabled means: preferred for automatic invocation and daily workflow. Ev
 | [java-testing-standards](../java-testing-standards/SKILL.md) | QA | Code Reviewer |
 | [mybatis-sql-standard](../mybatis-sql-standard/SKILL.md) | Propose / Implement | System Architect / Lead Engineer |
 
----
+### 0.1 Role-Required & QA-Critical (8)
 
-## 0.1 Role-Required (Not Default Enabled)
-
-These are invoked because mounted roles explicitly require them (see `.claude/agents/`).
-
-| Skill | Required By Roles |
+| Skill | Required When |
 |---|---|
-| [cognitive-bias-checklist](../cognitive-bias-checklist/SKILL.md) | Requirement Engineer, System Architect, Devil's Advocate |
-| [spec-quality-checklist](../spec-quality-checklist/SKILL.md) | Requirement Engineer, System Architect, Documentation Curator |
-| [decision-frameworks](../decision-frameworks/SKILL.md) | System Architect, Devil's Advocate, Ambiguity Gatekeeper |
-| [linter-severity-standard](../linter-severity-standard/SKILL.md) | Code Reviewer |
+| [cognitive-bias-checklist](../cognitive-bias-checklist/SKILL.md) | Requirement Engineer / System Architect — Propose phase |
+| [spec-quality-checklist](../spec-quality-checklist/SKILL.md) | Documentation Curator / pre-gate self-check |
+| [decision-frameworks](../decision-frameworks/SKILL.md) | System Architect — ambiguous root cause or design choice |
+| [linter-severity-standard](../linter-severity-standard/SKILL.md) | Code Reviewer — interpreting gate output |
+| [ultraqa](../ultraqa/SKILL.md) | QA phase, AC count ≥ 4 OR HIGH risk |
+| [security-review-checklist](../security-review-checklist/SKILL.md) | HIGH risk change touching auth/data/secrets |
+| [skill-creator](../skill-creator/SKILL.md) | Adding/updating a SKILL.md |
+| [skill-index](./SKILL.md) | This file |
 
----
+### 0.2 Reactivated — Reasoning, Knowledge & Cleanup (8)
 
-## 0.2 Lifecycle Phase Map (Change / STANDARD)
+These were moved back from archive because they fit the daily flow.
 
-This is the “happy path” routing aligned with mounted roles.
+| Skill | Use When |
+|---|---|
+| [adversarial-review](../adversarial-review/SKILL.md) | HIGH risk Review phase — one isolated round of critique. Required by lifecycle.md HIGH flow. Detects requirements/design contradictions. |
+| [stakeholder-conflict-resolver](../stakeholder-conflict-resolver/SKILL.md) | Downstream from adversarial-review Category A CRITICAL — when conflicting requirements come from different stakeholders (PM / frontend / security / legal), produces structured conflict map + resolution decision. |
+| [local-code-intelligence](../local-code-intelligence/SKILL.md) | Explorer phase — BM25 wiki search + Java symbol index + failure memory. Run before reading source files. |
+| [remember](../remember/SKILL.md) | Archive phase — classify discovered knowledge into project memory / notepad / docs. |
+| [ai-slop-cleaner](../ai-slop-cleaner/SKILL.md) | After AI-heavy session — regression-safe cleanup of dead code, duplicates, over-abstraction. |
+| [architecture-decision-records](../architecture-decision-records/SKILL.md) | When an architectural decision is made — capture as ADR. Pairs with HIGH-risk ≥2-ADR requirement. |
+| [requirement-intake](../requirement-intake/SKILL.md) | Front door for any non-trivial input (PRD, bug report, signal, security finding) before routing. |
+| [product-manager-expert](../product-manager-expert/SKILL.md) | PRD generation (Mode A) or PRD ingestion → AC + implementation queue (Mode B). |
 
-| Phase | Mounted Role(s) | Skills |
+### 0.3 Lifecycle Phase Map (STANDARD)
+
+| Phase | Role | Skills |
 |---|---|---|
-| Pre-Explorer | — | **requirement-intake** (for non-trivial inputs) |
-| Explorer | Requirement Engineer | brainstorming → (cognitive-bias-checklist) → (spec-quality-checklist) |
-| Explorer (Greenfield) | Requirement Engineer | **greenfield-scaffold** → brainstorming |
-| Explorer (Migration) | Requirement Engineer | **migration-planner** Phase 1-2 |
-| Propose / Review | System Architect | **brainstorming** (≥2 ADR alternatives) → task-decomposition-guide → decision-frameworks → (cognitive-bias-checklist) |
-| Implement | Lead Engineer + Focus Guard | writing-plans → java-architecture-standards/java-coding-style/mybatis-sql-standard → systematic-debugging/test-driven-development |
-| QA | Code Reviewer | code-review-checklist → java-testing-standards → **ultraqa** (Evidence Mapping Table) → (security-review-checklist for HIGH risk) |
-| Archive | Knowledge Extractor | wal-documentation-rules → verify (evidence summary) |
+| Pre-Explorer | — | `requirement-intake` (if input is non-trivial) |
+| Explorer | Requirement Engineer | `local-code-intelligence` → brainstorming → (cognitive-bias-checklist) → (spec-quality-checklist) |
+| Propose / Review | System Architect | brainstorming (≥2 ADR via `architecture-decision-records`) → task-decomposition-guide → decision-frameworks |
+| Review (HIGH only) | Devil's Advocate | `adversarial-review` (one isolated round) |
+| Implement | Lead Engineer + Focus Guard | writing-plans → java-architecture-standards / java-coding-style / mybatis-sql-standard → systematic-debugging / test-driven-development |
+| QA | Code Reviewer | code-review-checklist → java-testing-standards → ultraqa → (security-review-checklist) |
+| Cleanup | Lead Engineer | (optional) `ai-slop-cleaner` |
+| Archive | Knowledge Extractor | wal-documentation-rules → verify → `remember` (cross-session lessons) |
+
+For Greenfield / Migration / EPIC / Incident / Pipeline / Release flows, the matching scenario in `.claude/rules/routing.md` inlines the archive path the agent must read.
 
 ---
 
-## 1. Business & Product
+## 1. Archive (Scenario-Mounted, Not Auto-loaded)
 
-| Skill | Purpose |
+The following 12 skills live under `.claude/skills-archive/<name>/SKILL.md`. They are not auto-injected — instead, each is **referenced inline by the rule or agent that needs it**, with the full path written in place. No central lookup table, no "decide whether to activate" step.
+
+### 1.1 Where each archived skill is referenced
+
+| Skill | Referenced from |
 |---|---|
-| [requirement-intake](../requirement-intake/SKILL.md) | **Front door.** Classifies ANY raw input (PRD, idea, bug, signal, security, compliance) into normalized intent+AC format before routing. Run first for all non-trivial inputs. |
-| [product-manager-expert](../product-manager-expert/SKILL.md) | Two modes: (A) PRD Ingestion — process existing PRD into AC + implementation queue; (B) PRD Generation — research and write a new PRD. |
-| [task-decomposition-guide](../task-decomposition-guide/SKILL.md) | MANDATORY MASTER skill for decomposing large PRDs or EPIC scenarios into manageable subtasks. Enforces Agile INVEST criteria and Vertical Slicing. |
-| [greenfield-scaffold](../greenfield-scaffold/SKILL.md) | Starting-from-scratch protocol: domain model → API contract → DB schema → package structure → scaffold. Use when there is no existing codebase. |
-| [migration-planner](../migration-planner/SKILL.md) | A→B migration protocol with behavioral equivalence testing. Generates equivalence test suite BEFORE migration code. |
-| [stakeholder-conflict-resolver](../stakeholder-conflict-resolver/SKILL.md) | Detects and resolves mutually exclusive requirements from multiple stakeholders. Produces conflict map + resolution record. |
-| [incident-response](../incident-response/SKILL.md) | Production emergency triage (severity → blast radius → mitigation) + root cause investigation + post-mortem with 5-Why chain and Action Items. |
+| `incident-response` | `.claude/rules/routing.md` → Scenario A |
+| `migration-planner` | `.claude/rules/routing.md` → Scenario B |
+| `greenfield-scaffold` | `.claude/rules/routing.md` → Scenario GREENFIELD |
+| `blueprint` | `.claude/rules/routing.md` → Scenario EPIC |
+| `dispatching-parallel-agents` | `.claude/rules/routing.md` → Scenario EPIC |
+| `using-git-worktrees` | `.claude/agents/lead-engineer.md` → HIGH-risk / parallel work |
+| `ai-pipeline` | `.claude/rules/routing.md` → Scenario PIPELINE |
+| `self-improve` | `.claude/rules/routing.md` → Scenario PIPELINE |
+| `eval-harness` | `.claude/rules/routing.md` → Scenario PIPELINE |
+| `external-research` | `.claude/rules/routing.md` → Scenario D + Scenario PIPELINE |
+| `release` | `.claude/rules/routing.md` → Scenario RELEASE |
+| `deepinit` | `.claude/rules/routing.md` → Scenario GREENFIELD |
 
----
+Each referenced location writes the full `.claude/skills-archive/<name>/SKILL.md` path inline. When the rule fires, the agent reads that exact file — no judgment about whether to mount it, no lookup needed.
 
-## 2. Engineering Pipeline
+### 1.2 Why archive (not delete)
 
-| Skill | Purpose |
-|---|---|
-| [ai-pipeline](../ai-pipeline/SKILL.md) | End-to-end AI engineering pipeline orchestrator (blueprint → decisions → eval → improve → cleanup). |
-| [blueprint](../blueprint/SKILL.md) | Convert a goal into an executable step plan with dependency awareness. |
-| [architecture-decision-records](../architecture-decision-records/SKILL.md) | Capture architecture decisions as ADR documents. |
-| [eval-harness](../eval-harness/SKILL.md) | Two modes: (A) early-phase AC definition at Explorer; (B) pipeline benchmark harness with pass@k metrics. |
-| [external-research](../external-research/SKILL.md) | Four trigger modes: pipeline plateau / security CVE / compliance / competitor benchmarking. |
-| [self-improve](../self-improve/SKILL.md) | Eval-anchored tournament loop: tracks score delta per iteration, plateau detection at 2 no-gain iterations triggers external-research. |
-| [ai-slop-cleaner](../ai-slop-cleaner/SKILL.md) | Regression-safe cleanup bounded by task_brief Allowed Scope. Step 0 enforces scope gate before any analysis. |
-
----
-
-## 3. Java Backend Standards
-
-| Skill | Purpose |
-|---|---|
-| [java-architecture-standards](../java-architecture-standards/SKILL.md) | MANDATORY MASTER skill for Java backend architecture, API design, and engineering rules. |
-| [java-coding-style](../java-coding-style/SKILL.md) | MANDATORY MASTER skill for Java coding style, strict Javadoc templates, utility class boundaries, and functional programming patterns. |
-| [java-testing-standards](../java-testing-standards/SKILL.md) | MANDATORY MASTER skill for Java Testing & QA, test isolation, mock guidelines, and the 3-scenario coverage rule. |
-| [mybatis-sql-standard](../mybatis-sql-standard/SKILL.md) | Anti-JOIN strategy, type conversion prevention, leftmost prefix index rules, no `SELECT *`. |
-
----
-
-## 4. QA, Debugging & Review
-
-| Skill | Purpose |
-|---|---|
-| [adversarial-review](../adversarial-review/SKILL.md) | One-round isolated critique, scenario-specific adversarial frame. Hard 1-round limit. For MEDIUM/HIGH risk Review phase. |
-| [brainstorming](../brainstorming/SKILL.md) | Explore intent, requirements, and design before any creative work. |
-| [systematic-debugging](../systematic-debugging/SKILL.md) | Systematic investigation before proposing fixes. |
-| [test-driven-development](../test-driven-development/SKILL.md) | Write tests first, then implement; enforce 3-scenario coverage. |
-| [ultraqa](../ultraqa/SKILL.md) | Test → verify → fix → repeat QA loop until acceptance passes. |
-| [verify](../verify/SKILL.md) | Verification-before-completion: evidence-driven validation. |
-| [code-review-checklist](../code-review-checklist/SKILL.md) | **MANDATORY** code review checklist — run before every code delivery. |
-| [cognitive-bias-checklist](../cognitive-bias-checklist/SKILL.md) | Cognitive bias checklist for deep analysis and architectural design. |
-| [decision-frameworks](../decision-frameworks/SKILL.md) | Decision frameworks (SWOT, 5-Why, Decision Matrix) for complex scenarios. |
-| [spec-quality-checklist](../spec-quality-checklist/SKILL.md) | Flexible quality gate checklist for AI self-correction on docs/specs. |
-| [wal-documentation-rules](../wal-documentation-rules/SKILL.md) | **MANDATORY** documentation capture during Archive phase (API, Domain, Data WAL). |
-| [security-review-checklist](../security-review-checklist/SKILL.md) | Security checklist for HIGH risk changes: secrets, authZ, IDOR, data exposure. |
-| [linter-severity-standard](../linter-severity-standard/SKILL.md) | Linter severity levels (FAIL / WARN / IGNORE) and bypass justification protocol. |
-
----
-
-## 5. Workflow & Collaboration
-
-| Skill | Purpose |
-|---|---|
-| [dispatching-parallel-agents](../dispatching-parallel-agents/SKILL.md) | Dispatch parallel agents for independent tasks. |
-| [using-git-worktrees](../using-git-worktrees/SKILL.md) | Use git worktrees for isolated development. |
-| [writing-plans](../writing-plans/SKILL.md) | Write an implementation plan before coding. |
-| [release](../release/SKILL.md) | Analyze repo release rules and guide release steps. |
-| [deepinit](../deepinit/SKILL.md) | Deep initialization: generates hierarchical CLAUDE.md files + machine-readable `context_brief.md` for downstream skill consumption. |
-| [remember](../remember/SKILL.md) | Extract and persist reusable project knowledge. |
-| [local-code-intelligence](../local-code-intelligence/SKILL.md) | Three pure-local tools: BM25 wiki search, Java symbol index, failure memory. Zero-cost context before file navigation. |
-
----
-
-## 6. Meta Skills
-
-| Skill | Purpose |
-|---|---|
-| [skill-creator](../skill-creator/SKILL.md) | Create new skills and validate skill format. |
-| [skill-graph-manager](../skill-graph-manager/SKILL.md) | **MANDATORY** mechanism for managing the bidirectional Skill Knowledge Graph. Invoke when adding or modifying skills. |
+Auto-loading 12 rarely-used skill descriptions costs ~1,800 tok on every session. By keeping these out of `.claude/skills/` and inlining their paths at the point of use, the framework retains the full capability surface while paying the cost only when the rule actually fires.
 
 ---
 
 ## Related
 
-- [skill-graph-manager](../skill-graph-manager/SKILL.md): maintains this index and the graph connections.
-- [skill-creator](../skill-creator/SKILL.md): use when creating a new skill — it will prompt you to register here.
+- `.claude/agents/` — role catalog; each role file lists which skills it depends on
+- `.claude/rules/routing.md` — when each lifecycle phase fires
+- `.claude/skills/skill-creator/SKILL.md` — used when adding a new skill (will prompt you to register here)

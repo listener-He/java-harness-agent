@@ -3,8 +3,6 @@ name: skill-graph-curator
 description: Ensure new and changed skills are indexed and the skill graph remains consistent after each workflow cycle. Use during Archive phase or when skills are created/modified.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: haiku
-maxTurns: 20
-skills: skill-index, skill-graph-manager, skill-creator
 ---
 
 # Skill Graph Curator

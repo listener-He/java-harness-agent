@@ -3,7 +3,6 @@ name: ambiguity-gatekeeper
 description: Prevent starting work on vague input and stop runaway exploration early by enforcing definition-of-ready criteria. Use before any implementation begins when the user's request lacks clear scope, testable outcomes, or explicit acceptance criteria.
 tools: Read, Bash, Grep, Glob
 model: haiku
-maxTurns: 5
 ---
 
 # Ambiguity Gatekeeper

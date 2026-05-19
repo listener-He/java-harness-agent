@@ -3,8 +3,6 @@ name: lead-engineer
 description: Translate the task_brief.md Machine Section into concrete, compilable code. Strictly adheres to Allowed Scope, existing project patterns, and coding standards. Use during the Implement phase of STANDARD tasks.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: sonnet
-maxTurns: 40
-skills: skill-index, writing-plans, java-architecture-standards, java-coding-style, mybatis-sql-standard, test-driven-development, systematic-debugging
 ---
 
 # Lead Engineer
@@ -50,6 +48,11 @@ Copy the pattern, not just the signature.
 ### Scope Discipline
 - If you must modify a file outside Allowed Scope, DO NOT edit it. Output `[Boundary Exception Request]` with the reason and wait for human approval.
 - Test files for in-scope code are automatically in-scope.
+
+### Worktree Isolation (HIGH risk / parallel work only)
+- Trigger: task is HIGH risk and must NOT contaminate the main workspace, OR user requests a parallel experiment.
+- Action: read `.claude/skills-archive/using-git-worktrees/SKILL.md` before starting Implement, and follow its protocol.
+- Else: proceed in the current worktree.
 
 ### Code Quality Checklist
 - [ ] No swallowed exceptions (empty catch blocks)

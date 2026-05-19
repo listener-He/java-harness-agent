@@ -38,13 +38,12 @@ FORBIDDEN_TOKENS = [
 
 REQUIRED_PATHS = [
     "CLAUDE.md",
-    ".claude/README.md",
     ".claude/wiki/KNOWLEDGE_GRAPH.md",
-    ".claude/router/ROUTER.md",
-    ".claude/router/CONTEXT_FUNNEL.md",
-    ".claude/workflow/LIFECYCLE.md",
-    ".claude/workflow/HOOKS.md",
-    ".claude/workflow/ARCHIVE_WAL.md",
+    ".claude/rules/routing.md",
+    ".claude/rules/lifecycle.md",
+    ".claude/rules/hooks.md",
+    ".claude/rules/safety-constraints.md",
+    ".claude/rules/writeback-policy.md",
     ".claude/scripts/harness/engine.py",
     ".claude/scripts/wiki/wiki_linter.py",
     ".claude/scripts/wiki/compactor.py",
@@ -141,7 +140,7 @@ def _resolve_link(repo_root: Path, current_file: Path, link: str) -> Optional[Pa
 
     if s.startswith(".claude/"):
         s = s[len(".claude/") :]
-        return (repo_root / ".agents" / s).resolve()
+        return (repo_root / ".claude" / s).resolve()
 
     return (current_file.parent / s).resolve()
 
@@ -220,7 +219,7 @@ def check_markdown_links(repo_root: Path, roots: List[Path]) -> List[Finding]:
         if f.name in {"index.md", "KNOWLEDGE_GRAPH.md", "purpose.md"}:
             continue
         if f not in referenced:
-            if str(f).startswith(str((repo_root / ".agents" / "wiki").resolve())):
+            if str(f).startswith(str((repo_root / ".claude" / "wiki").resolve())):
                 findings.append(
                     Finding(
                         kind="ORPHAN_MD",
@@ -275,13 +274,12 @@ def main() -> int:
 
     link_roots = [
         repo_root / "CLAUDE.md",
-        repo_root / ".agents" / "README.md",
-        repo_root / ".agents" / "wiki",
+        repo_root / ".claude" / "wiki",
     ]
     findings.extend(check_markdown_links(repo_root, link_roots))
 
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    out_path = Path(args.out) if args.out else (repo_root / ".agents" / "workflow" / "runs" / f"zero_residue_report_{stamp}.md")
+    out_path = Path(args.out) if args.out else (repo_root / ".claude" / "runs" / "task-briefs" / f"zero_residue_report_{stamp}.md")
     if not out_path.is_absolute():
         out_path = (repo_root / out_path).resolve()
 

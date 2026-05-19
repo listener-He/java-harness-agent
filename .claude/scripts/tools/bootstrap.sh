@@ -1,98 +1,118 @@
 #!/usr/bin/env bash
-# -*- coding: utf-8 -*-
-# bootstrap.sh — Quick-start .claude/ protocol skeleton in a new project
-#
-# Usage:
-#   bash .claude/scripts/tools/bootstrap.sh [TARGET_DIR]
-#
-# Examples:
-#   bash .claude/scripts/tools/bootstrap.sh /path/to/new-project
-#   bash .claude/scripts/tools/bootstrap.sh          # bootstraps into current dir
-#
-# Safety: never overwrites existing files (cp -n).
+# Bootstrap a new project with this Java AI engineering framework.
+# Copies CLAUDE.md (entry point) + .claude/ (framework) into TARGET.
+# Existing files at the destination are preserved (never overwritten).
 
-set -euo pipefail
+set -eu
 
-TARGET="${1:-.}"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+if [ $# -lt 1 ]; then
+    cat <<USAGE
+Usage: $0 <target-project-dir>
 
-echo "=== Bootstrap .claude/ protocol skeleton ==="
-echo "Source: $REPO_ROOT"
-echo "Target: $TARGET"
-echo ""
+Copies the framework into <target-project-dir>:
+  - CLAUDE.md                          (project entry point)
+  - .claude/rules/                     (routing, lifecycle, hooks, etc.)
+  - .claude/agents/                    (role definitions)
+  - .claude/skills/                    (skill knowledge graph)
+  - .claude/scripts/                   (gates, harness, tools, wiki, local_intel)
+  - .claude/wiki/                      (KNOWLEDGE_GRAPH, schema, purpose)
+  - .claude/workflow/                  (lifecycle examples, artifact templates)
+  - .claude/settings.json              (hooks + permissions)
+USAGE
+    exit 1
+fi
 
-# ── 1. Create directory structure ──────────────────────────────────
-echo "[1/5] Creating directory structure..."
-mkdir -p "$TARGET/.claude/"{router/runs,workflow/{runs,artifacts},wiki/{wiki/{domain,api,data,architecture,specs,testing,reviews,preferences}/wal,archive,schema},skills,scripts/{gates,wiki,tools,harness},events/drift_queue}
+TARGET="$1"
+REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+
+echo "=== Bootstrapping framework into $TARGET ==="
+
+# ── 1. Create target structure ────────────────────────────────────
+echo "[1/4] Preparing target structure..."
+mkdir -p "$TARGET/.claude/rules" \
+         "$TARGET/.claude/agents" \
+         "$TARGET/.claude/skills" \
+         "$TARGET/.claude/scripts/gates" \
+         "$TARGET/.claude/scripts/harness" \
+         "$TARGET/.claude/scripts/local_intel" \
+         "$TARGET/.claude/scripts/tools" \
+         "$TARGET/.claude/scripts/wiki" \
+         "$TARGET/.claude/wiki/schema" \
+         "$TARGET/.claude/wiki/wiki/preferences" \
+         "$TARGET/.claude/workflow/artifacts" \
+         "$TARGET/.claude/runs/task-briefs" \
+         "$TARGET/.claude/runs/launch-specs" \
+         "$TARGET/.claude/runs/cache"
 echo "  Done."
 
 # ── 2. Copy protocol files (preserve existing) ────────────────────
-echo "[2/5] Copying protocol files..."
+echo "[2/4] Copying protocol files..."
 
 copy_if_missing() {
     local src="$1"
     local dst="$2"
-    if [ -f "$dst" ]; then
+    if [ ! -e "$src" ]; then
+        echo "  WARN: source missing, skipped: $src"
+        return
+    fi
+    if [ -e "$dst" ]; then
         echo "  SKIP (exists): $dst"
     else
         mkdir -p "$(dirname "$dst")"
-        cp "$src" "$dst"
+        cp -R "$src" "$dst"
         echo "  COPY: $dst"
     fi
 }
 
-# Core entry point
-copy_if_missing "$REPO_ROOT/AGENTS.md" "$TARGET/AGENTS.md"
+# Entry point
+copy_if_missing "$REPO_ROOT/CLAUDE.md" "$TARGET/CLAUDE.md"
 
-# Router
-copy_if_missing "$REPO_ROOT/.claude/router/ROUTER.md" "$TARGET/.claude/router/ROUTER.md"
-copy_if_missing "$REPO_ROOT/.claude/router/CONTEXT_FUNNEL.md" "$TARGET/.claude/router/CONTEXT_FUNNEL.md"
+# Rules
+for rule in routing.md lifecycle.md hooks.md safety-constraints.md writeback-policy.md; do
+    copy_if_missing "$REPO_ROOT/.claude/rules/$rule" "$TARGET/.claude/rules/$rule"
+done
 
-# Workflow
-copy_if_missing "$REPO_ROOT/.claude/workflow/LIFECYCLE.md" "$TARGET/.claude/workflow/LIFECYCLE.md"
-copy_if_missing "$REPO_ROOT/.claude/workflow/HOOKS.md" "$TARGET/.claude/workflow/HOOKS.md"
-copy_if_missing "$REPO_ROOT/.claude/workflow/ROLE_MATRIX.md" "$TARGET/.claude/workflow/ROLE_MATRIX.md"
-copy_if_missing "$REPO_ROOT/.claude/workflow/ARCHIVE_WAL.md" "$TARGET/.claude/workflow/ARCHIVE_WAL.md"
-copy_if_missing "$REPO_ROOT/.claude/workflow/role_matrix.json" "$TARGET/.claude/workflow/role_matrix.json"
+# Agents
+for agent in "$REPO_ROOT/.claude/agents/"*.md; do
+    [ -e "$agent" ] || continue
+    copy_if_missing "$agent" "$TARGET/.claude/agents/$(basename "$agent")"
+done
 
 # Wiki
 copy_if_missing "$REPO_ROOT/.claude/wiki/KNOWLEDGE_GRAPH.md" "$TARGET/.claude/wiki/KNOWLEDGE_GRAPH.md"
 copy_if_missing "$REPO_ROOT/.claude/wiki/purpose.md" "$TARGET/.claude/wiki/purpose.md"
-copy_if_missing "$REPO_ROOT/.claude/wiki/schema/openspec_schema.md" "$TARGET/.claude/wiki/schema/openspec_schema.md"
+copy_if_missing "$REPO_ROOT/.claude/wiki/schema/task_brief_schema.md" "$TARGET/.claude/wiki/schema/task_brief_schema.md"
 copy_if_missing "$REPO_ROOT/.claude/wiki/schema/subagent_contract_schema.md" "$TARGET/.claude/wiki/schema/subagent_contract_schema.md"
 
-# Artifact templates
-copy_if_missing "$REPO_ROOT/.claude/workflow/artifacts/focus_card.md" "$TARGET/.claude/workflow/artifacts/focus_card.md"
+# Workflow templates
+copy_if_missing "$REPO_ROOT/.claude/workflow/EXAMPLES.md" "$TARGET/.claude/workflow/EXAMPLES.md"
+copy_if_missing "$REPO_ROOT/.claude/workflow/role_matrix.json" "$TARGET/.claude/workflow/role_matrix.json"
+copy_if_missing "$REPO_ROOT/.claude/workflow/artifacts/task_brief.md" "$TARGET/.claude/workflow/artifacts/task_brief.md"
+copy_if_missing "$REPO_ROOT/.claude/workflow/artifacts/delivery_capsule.md" "$TARGET/.claude/workflow/artifacts/delivery_capsule.md"
+
+# Settings (hooks + permissions)
+copy_if_missing "$REPO_ROOT/.claude/settings.json" "$TARGET/.claude/settings.json"
 
 echo "  Done."
 
-# ── 3. Copy gate scripts ──────────────────────────────────────────
-echo "[3/5] Copying gate scripts..."
-for script in "$REPO_ROOT/.claude/scripts/gates/"*.py; do
-    bname="$(basename "$script")"
-    dst="$TARGET/.claude/scripts/gates/$bname"
-    if [ "$bname" = "__pycache__" ]; then continue; fi
-    copy_if_missing "$script" "$dst"
+# ── 3. Copy scripts ───────────────────────────────────────────────
+echo "[3/4] Copying scripts..."
+for dir in gates harness local_intel tools wiki; do
+    src_dir="$REPO_ROOT/.claude/scripts/$dir"
+    [ -d "$src_dir" ] || continue
+    for f in "$src_dir/"*; do
+        [ -e "$f" ] || continue
+        bname="$(basename "$f")"
+        if [ "$bname" = "__pycache__" ]; then continue; fi
+        copy_if_missing "$f" "$TARGET/.claude/scripts/$dir/$bname"
+    done
 done
-
-# Wiki/tools scripts
-for script in "$REPO_ROOT/.claude/scripts/wiki/"*.py; do
-    bname="$(basename "$script")"
-    dst="$TARGET/.claude/scripts/wiki/$bname"
-    if [ "$bname" = "__pycache__" ]; then continue; fi
-    copy_if_missing "$script" "$dst"
-done
-for script in "$REPO_ROOT/.claude/scripts/tools/"*.py; do
-    bname="$(basename "$script")"
-    dst="$TARGET/.claude/scripts/tools/$bname"
-    copy_if_missing "$script" "$dst"
-done
-copy_if_missing "$REPO_ROOT/.claude/scripts/tools/bootstrap.sh" "$TARGET/.claude/scripts/tools/bootstrap.sh"
+# Ensure hook wrapper is executable in target
+chmod +x "$TARGET/.claude/scripts/harness/post_tool_use_hook.sh" 2>/dev/null || true
 echo "  Done."
 
 # ── 4. Create stub project preferences ────────────────────────────
-echo "[4/5] Creating stub project preferences..."
+echo "[4/4] Creating stub project preferences..."
 PREF_FILE="$TARGET/.claude/wiki/wiki/preferences/index.md"
 if [ -f "$PREF_FILE" ]; then
     echo "  SKIP (exists): $PREF_FILE"
@@ -136,19 +156,9 @@ PREFEOF
     echo "  CREATE: $PREF_FILE"
 fi
 
-# ── 5. Run self-check ─────────────────────────────────────────────
-echo "[5/5] Running initial consistency check..."
-CONSISTENCY_GATE="$TARGET/.claude/scripts/gates/consistency_gate.py"
-if [ -f "$CONSISTENCY_GATE" ]; then
-    python3 "$CONSISTENCY_GATE" && echo "  PASS: Budget values consistent." || echo "  WARN: consistency_gate reported issues (may need project-specific overrides)."
-else
-    echo "  SKIP: consistency_gate.py not found in target."
-fi
-
 echo ""
 echo "=== Bootstrap complete ==="
 echo "Next steps:"
 echo "  1. Edit $PREF_FILE with your project-specific constraints."
-echo "  2. Review $TARGET/AGENTS.md and adjust project-specific paths if needed."
-echo "  3. Copy relevant skills from source .claude/skills/ to target."
-echo "  4. Run: python3 .claude/scripts/gates/consistency_gate.py"
+echo "  2. Review $TARGET/CLAUDE.md — it is the entry point Claude Code loads on session start."
+echo "  3. Optionally trim $TARGET/.claude/skills/ to only project-relevant skills."
