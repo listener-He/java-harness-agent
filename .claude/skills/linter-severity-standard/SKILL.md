@@ -1,38 +1,97 @@
 ---
 name: "linter-severity-standard"
-description: "Shared FAIL/WARN/IGNORE severity rubric for repo gate scripts. TRIGGER when a gate script (secrets_linter, migration_gate, api_breaking_gate, dependency_gate) returns output — classify severity before deciding to block or continue."
+description: "Shared OK/WARN/FAIL severity contract for every gate script under .claude/scripts/gates/. TRIGGER whenever a gate is invoked — agent MUST surface WARN/FAIL inline using the reporting protocol below. New gates MUST pass `_severity_audit.py`."
 ---
 
-# Linter Severity Standard (FAIL / WARN / IGNORE)
+# Linter Severity Standard (OK / WARN / FAIL)
 
-This standard classifies gate checks into three severity levels to avoid repeated retries on minor issues while ensuring hard red lines remain blocking.
+This is the **mandatory contract** every script under `.claude/scripts/gates/` follows so the main agent can mechanically classify gate output. The contract has three parts: exit codes, stdout format, and an agent reporting protocol.
 
-## 1) Severity Definitions
+---
 
-- FAIL: Must stop progress. Triggers `fail_hook`. Fix required before proceeding.
-- WARN: Allowed to proceed, but must explain rationale and follow-up plan in the delivery (or explicitly accept the risk).
-- IGNORE: Record only. Not a gate condition.
+## 1. Severity Definitions
 
-## 2) Standard Classification (Fixed Thresholds)
+| Severity | Exit Code | Semantics | Effect on workflow |
+|---|---|---|---|
+| **OK** | 0 | Check passed cleanly | Continue |
+| **WARN** | 1 | Check found a soft issue; not blocking | Continue, BUT agent must report it and either fix or explicitly acknowledge |
+| **FAIL** | 2 | Hard violation; blocks the phase | Stop, fix, re-run. Max 2 retries (anti-loop) then escalate |
 
-### 2.1 Wiki Graph (wiki_linter)
+WARN is **not** "I'll ignore that". WARN means "user/agent must see this and decide". If you skip a WARN without acknowledgment, the failure is on you.
 
-- FAIL
-  - Dead Markdown links
-- WARN
-  - Orphan files (not referenced by any Markdown, and not index/purpose/root)
-  - Oversized file warning (> 500 lines)
+---
 
-### 2.2 Contract Health Check (schema_checker)
+## 2. Gate Output Contract (mandatory format)
 
-- FAIL (Full Spec)
-  - Missing critical modules: API contract / data model / acceptance criteria (BDD / AC)
-- WARN (Full Spec)
-  - Missing JSON examples (unless there is a clear justification: no API / no input / no output)
-- FAIL (Slim Spec)
-  - Missing required modules: change summary / blast radius / risk & rollback / verification & evidence
+Every gate script MUST produce output that satisfies both:
 
-## 3) Relationship With Hooks
+### 2a. Text mode (default)
+- **First line** starts with `OK:` / `WARN:` / `FAIL:` followed by the gate name and a one-line summary
+- Subsequent lines (`- detail`) hold the per-finding detail
+- Stderr only for crashes/exceptions, never for normal findings
 
-- The `Doc Consistency Gate` MUST follow script exit codes: any FAIL (non-zero) triggers `fail_hook`.
-- WARN does not block, but the agent must output an explanation and next action.
+Example:
+```
+WARN: task_brief gate
+- AC↔Scope cross-check: no identifier overlap
+-   Likely cause: scope too narrow
+```
+
+### 2b. JSON mode (opt-in via `--json` flag, when implemented)
+- One JSON object on a single line: `{"severity":"WARN","gate":"task_brief_gate","message":"...","details":["...","..."]}`
+- Used by orchestration scripts that aggregate multiple gates
+
+### 2c. Constants in source
+Every gate MUST declare these constants (or import them from `_severity.py`):
+```python
+EXIT_WARN = 1
+EXIT_FAIL = 2
+```
+The audit script `_severity_audit.py` scans for this — non-conformers fail CI.
+
+Helpers available in `.claude/scripts/gates/_severity.py`:
+- `Severity` enum, `Result` dataclass, `emit(result, as_json=False)`
+- Optional. Inline `EXIT_WARN = 1` style is equally valid.
+
+---
+
+## 3. Agent Reporting Protocol (mandatory when invoking any gate)
+
+When the agent runs a gate script, it MUST:
+
+1. **Capture the exit code** — do not rely on text parsing alone
+2. **For WARN (exit 1)**: re-emit the findings as a `[WARN] <gate>: <reason>` block in the visible response, then either (a) fix and re-run, or (b) explicitly state "accepting WARN because <reason>". Silent skip is FORBIDDEN.
+3. **For FAIL (exit 2)**: stop immediately. Output `[FAIL] <gate>: <reason>` and either fix-and-retry (max 2 attempts) or escalate via `[Plan Invalidation]` per lifecycle.md.
+4. **For OK (exit 0)**: continue silently. No need to echo OK lines.
+
+Anti-pattern to avoid: "the gate complained but the change is fine" without naming the WARN. If the agent has reason to accept a WARN, it must say so verbatim.
+
+---
+
+## 4. Per-Gate Specifics (legacy reference)
+
+These are the historical category-level thresholds. They still hold, but the universal contract above is the single source of truth for severity handling.
+
+### 4.1 Wiki Graph (`wiki_linter`)
+- FAIL: dead Markdown links
+- WARN: orphan files (not referenced + not index/purpose/root), files > 500 lines
+
+### 4.2 Contract Health (`schema_checker` / `task_brief_gate`)
+- FAIL (Full Spec): missing API contract / data model / acceptance criteria modules
+- FAIL (Full Spec, AC↔Scope cross-check): empty Allowed Scope while ACs exist, or vice versa
+- WARN (Full Spec): missing JSON examples; AC↔Scope identifier mismatch (heuristic)
+- FAIL (Slim Spec): missing change summary / scope / risk / verification modules
+
+---
+
+## 5. Compliance Check
+
+Run before merging any change to `.claude/scripts/gates/`:
+```bash
+python3 .claude/scripts/gates/_severity_audit.py
+```
+- Exit 0: all gates conform
+- Exit 1: a gate lacks the `OK:|WARN:|FAIL:` output prefix
+- Exit 2: a gate is missing severity constants entirely
+
+Add this to the bootstrap / CI script when there is one.

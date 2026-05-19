@@ -14,8 +14,9 @@ This gate now degrades gracefully:
 - If fewer than 2 files have budgets, the gate is a no-op (PASS)
 - Only mismatches between files that DO publish budgets are reported
 
-Exit codes:
-- 0: PASS (no mismatches OR not enough files to compare)
+Exit codes (per linter-severity-standard):
+- 0: OK (no mismatches OR not enough files to compare)
+- 1: WARN (currently unused — declared for convention compliance)
 - 2: FAIL (mismatch found between files that both publish budgets)
 """
 
@@ -23,6 +24,7 @@ import os
 import re
 import sys
 
+EXIT_WARN = 1
 EXIT_FAIL = 2
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -167,7 +169,7 @@ def main() -> int:
         print(f"INFO: skipped missing files: {', '.join(skipped)}")
 
     if len(parsed) < 2:
-        print("PASS: fewer than 2 files publish budgets — nothing to compare")
+        print("OK: fewer than 2 files publish budgets — nothing to compare")
         return 0
 
     errors = []
