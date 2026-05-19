@@ -14,10 +14,15 @@ EXIT_FAIL = 2
 SLIM_MARKER_PATTERN = re.compile(r"^\s*spec_mode\s*:\s*SLIM\s*$", re.IGNORECASE | re.MULTILINE)
 
 FULL_REQUIRED_HEADERS = [
-    (re.compile(r"#+\s+.*(API|接口).*", re.IGNORECASE), "API 契约模块"),
-    (re.compile(r"#+\s+.*(数据|模型|表结构|Data Model).*", re.IGNORECASE), "数据模型模块"),
     (re.compile(r"#+\s+.*(BDD|验收|Acceptance Criteria).*", re.IGNORECASE), "验收标准模块"),
 ]
+# In the dimension-driven schema, sections 2/3/4/8/9 are dimension-gated
+# and may be legally omitted when their dimension is not declared. Therefore
+# schema_checker no longer enforces API/Data/Tech-Arch/Patterns headers —
+# dimension-aware enforcement lives in `task_brief_gate._section_completeness_check()`.
+# Acceptance Criteria stays as a baseline check (it is spec-floor / always required).
+# Spec-floor sections §1/§5/§6/§7 are enforced by task_brief_gate; schema_checker
+# acts as a redundant low-level guard for §7 (AC) only.
 
 SLIM_REQUIRED_HEADERS = [
     (re.compile(r"#+\s+.*(变更摘要|Change Summary).*", re.IGNORECASE), "变更摘要"),
@@ -57,11 +62,12 @@ def check_schema(file_path):
         print("关键结构: ✅ OK")
 
     warn_items = []
-    if not is_slim and "```json" not in content:
-        warn_items.append("未发现 ```json 代码块")
+    api_section_present = bool(re.search(r"^##\s+3\.\s+API Contract\b", content, re.MULTILINE))
+    if not is_slim and api_section_present and "```json" not in content:
+        warn_items.append("§3 API 节存在但未发现 ```json 代码块")
         print("发现项:")
-        print("  - [WARN] 未发现 ```json 代码块")
-    elif not is_slim:
+        print("  - [WARN] §3 API 节存在但未发现 ```json 代码块")
+    elif not is_slim and api_section_present:
         print("JSON Example: ✅ OK")
 
     if fail_items:

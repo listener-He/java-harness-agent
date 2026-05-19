@@ -73,32 +73,33 @@ What becomes easier or more difficult to do because of this change?
 
 When a decision moment is detected:
 
-1. **Initialize (first time only)** — if `docs/adr/` does not exist, ask the user for confirmation before creating the directory, a `README.md` seeded with the index table header (see ADR Index Format below), and a blank `template.md` for manual use. Do not create files without explicit consent.
+1. **Initialize (first time only)** — if `.claude/wiki/wiki/architecture/adr/` does not exist, ask the user for confirmation before creating the directory, a `README.md` seeded with the index table header (see ADR Index Format below), and a blank `template.md` for manual use. Do not create files without explicit consent.
 2. **Identify the decision** — extract the core architectural choice being made
 3. **Gather context** — what problem prompted this? What constraints exist?
 4. **Document alternatives** — what other options were considered? Why were they rejected?
 5. **State consequences** — what are the trade-offs? What becomes easier/harder?
-6. **Assign a number** — scan existing ADRs in `docs/adr/` and increment
-7. **Confirm and write** — present the draft ADR to the user for review. Only write to `docs/adr/NNNN-decision-title.md` after explicit approval. If the user declines, discard the draft without writing any files.
-8. **Update the index** — append to `docs/adr/README.md`
+6. **Assign a number** — scan existing ADRs in `.claude/wiki/wiki/architecture/adr/` and increment
+7. **Confirm and write** — present the draft ADR to the user for review. Only write to `.claude/wiki/wiki/architecture/adr/NNNN-decision-title.md` after explicit approval. If the user declines, discard the draft without writing any files.
+8. **Update the index** — append a row to the `## ADR List` table inside `.claude/wiki/wiki/architecture/index.md` (this is the canonical wiki index; the `adr/README.md` is only a directory-level pointer that links back here).
 
 ### Reading Existing ADRs
 
 When a user asks "why did we choose X?":
 
-1. Check if `docs/adr/` exists — if not, respond: "No ADRs found in this project. Would you like to start recording architectural decisions?"
-2. If it exists, scan `docs/adr/README.md` index for relevant entries
+1. Check if `.claude/wiki/wiki/architecture/adr/` exists — if not, respond: "No ADRs found in this project. Would you like to start recording architectural decisions?"
+2. If it exists, scan the `## ADR List` table inside `.claude/wiki/wiki/architecture/index.md` for relevant entries (the wiki index is canonical; `adr/README.md` only links back here)
 3. Read matching ADR files and present the Context and Decision sections
 4. If no match is found, respond: "No ADR found for that decision. Would you like to record one now?"
 
 ### ADR Directory Structure
 
 ```
-docs/
+.claude/wiki/wiki/architecture/
+├── index.md                  ← canonical wiki index (contains the ADR List table)
 └── adr/
-    ├── README.md              ← index of all ADRs
-    ├── NNNN-<slug>.md         ← one file per decision (e.g. 0001-use-nextjs.md)
-    └── template.md            ← blank template for manual use
+    ├── README.md             ← directory-level pointer back to ../index.md
+    ├── template.md           ← blank template for manual use
+    └── NNNN-<slug>.md        ← one file per decision (e.g. 0001-use-jwt-auth.md)
 ```
 
 ### ADR Index Format

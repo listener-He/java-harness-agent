@@ -33,20 +33,31 @@ def main():
     parser.add_argument("--date", default=datetime.now().strftime("%Y-%m-%d"))
     args = parser.parse_args()
 
-    runs_dir = ".claude/workflow/runs"
+    # Canonical location for active task_briefs (per CLAUDE.md):
+    # .claude/runs/task-briefs/. The legacy .claude/workflow/runs/ is kept as a
+    # fallback to support stale clones that still write to the old path.
+    runs_dir = ".claude/runs/task-briefs"
+    legacy_runs_dir = ".claude/workflow/runs"
     archive_dir = ".claude/wiki/archive"
     _ensure_dir(runs_dir)
     _ensure_dir(archive_dir)
 
-    task_brief_src = os.path.join(runs_dir, f"{args.date}_{args.slug}_task_brief.md")
-    task_brief_dst = os.path.join(archive_dir, f"{args.date}_{args.slug}_task_brief.md")
+    filename = f"{args.date}_{args.slug}_task_brief.md"
+    task_brief_dst = os.path.join(archive_dir, filename)
 
-    moved = _move_if_exists(task_brief_src, task_brief_dst)
+    # Try canonical path first, then legacy.
+    candidates = [
+        os.path.join(runs_dir, filename),
+        os.path.join(legacy_runs_dir, filename),
+    ]
+    task_brief_src = next((p for p in candidates if os.path.exists(p)), None)
 
-    if moved:
-        _write_pointer(task_brief_src, task_brief_dst)
-    else:
-        raise SystemExit(f"No task_brief found for {args.date}_{args.slug} under .claude/workflow/runs/")
+    if task_brief_src is None:
+        searched = ", ".join(candidates)
+        raise SystemExit(f"No task_brief found for {args.date}_{args.slug}. Searched: {searched}")
+
+    _move_if_exists(task_brief_src, task_brief_dst)
+    _write_pointer(task_brief_src, task_brief_dst)
 
 
 if __name__ == "__main__":

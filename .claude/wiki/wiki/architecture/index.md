@@ -7,6 +7,8 @@ Architecture baselines and ADRs (Architecture Decision Records). Consulted for c
 
 ## ADR List
 
+ADR files live in the [adr/ directory](adr/README.md). Append a row here when adding a new one. Numbering: scan adr/NNNN-*.md, take max + 1.
+
 | ADR # | Title | Status | Decision Summary | Date | Doc Link |
 |---|---|---|---|---|---|
 | (Example) ADR-001 | Use JWT for stateless auth | Accepted | Reduce Redis dependency; validate at the gateway | 2026-04-14 | `[adr_001_jwt.md]` |

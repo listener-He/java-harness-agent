@@ -132,6 +132,8 @@ def render_slim_brief(task: dict) -> str:
 def render_standard_brief(task: dict) -> str:
     acs_lines = "\n".join(f"  - {ac}" for ac in task["acs"]) or "  - (fill from decomposition AC list)"
     return f"""spec_mode: STANDARD
+risk: MEDIUM   # raise to HIGH if change touches DB schema, auth, error-code system, or ≥3 domains
+dimensions: []   # add any of: domain, api, data, tech_arch, patterns — see .claude/agents/system-architect.md §5a decision tree
 
 ## 1. Context
 - Business goal: {task['goal'] or '(one-sentence business value)'}
@@ -141,14 +143,21 @@ def render_standard_brief(task: dict) -> str:
   - Upstream tasks: {task['dependencies'] or 'None'}
   - Wiki docs read: (relative links to wiki indexes consulted)
 
+<!-- §2/§3/§4 are dimension-gated: omit entirely unless the corresponding dimension
+     is in the `dimensions:` frontmatter. The placeholders below are commented out
+     to make omission the default. Uncomment a section and fill it ONLY if you add
+     its dimension. -->
+<!--
 ## 2. Domain Model
-None (fill in if new terms / state machine changes)
+(required iff `domain` in dimensions — new terms / state machine changes)
 
 ## 3. API Contract (Handoff)
-None (fill in if new/changed endpoint — use the strict format from task_brief_schema.md)
+(required iff `api` in dimensions — strict format from task_brief_schema.md)
 
 ## 4. Data Model
-None (fill in if schema change)
+(required iff `data` in dimensions — tables, fields, indexes)
+-->
+
 
 ## 5. Business Logic
 - Step-by-step behavior: (fill in)
@@ -163,6 +172,22 @@ None (fill in: security / concurrency / forbidden patterns / rollback)
 {acs_lines}
 - Edge cases: (invalid params, concurrency, permission denied, etc.)
 - Unit test requirements: (key branches and asserts)
+
+<!--
+## 8. Technical Architecture
+(required iff `tech_arch` in dimensions)
+- Component View: (services / modules / external systems and their flow)
+- Deployment View: (where each component runs)
+- Third-party Dependencies: (new libs / services + version + reason)
+- Technology Selection Rationale: (reference ADR-NNNN under .claude/wiki/wiki/architecture/adr/)
+
+## 9. Design Patterns Applied
+(required iff `patterns` in dimensions)
+- Layering Rules: (Controller / Service / Repository / Domain placement; cross-layer exceptions)
+- Key Patterns: (Strategy / Factory / Repository / Aggregate Root / ACL / Saga / Outbox + which class embodies each)
+- Anti-Corruption Layer (ACL): (adapter/translator for external systems; N/A if no integration)
+- Forbidden Patterns: (explicit DO-NOT-USE list at pattern level)
+-->
 """
 
 

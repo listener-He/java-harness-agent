@@ -29,6 +29,7 @@ Use this skill when:
 - Lock behavior with focused regression tests first whenever practical.
 - Write a cleanup plan before editing code.
 - Prefer deletion over addition.
+- Only delete orphans YOUR changes created; pre-existing dead code is NOT in scope unless the user explicitly asks — surface it under `## Out-of-Scope Findings` instead.
 - Reuse existing utilities and patterns before introducing new ones.
 - Avoid new dependencies unless the user explicitly requests them.
 - Keep diffs small, reversible, and smell-focused.

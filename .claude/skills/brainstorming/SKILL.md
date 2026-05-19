@@ -62,6 +62,8 @@ Emit a **Constraint List** — the implied constraints that ALL subsequent imple
 - [constraint 2]: ...
 ```
 
+**Before handing off, self-check**: "Would a senior engineer say this design is overcomplicated?" If yes — cut a dimension and rewrite. Bias toward the simplest design that satisfies the ACs; speculative flexibility is the most common over-engineering trap.
+
 This list flows into:
 - The Task Brief `## Allowed Scope` (what files must change)
 - The Task Brief `## Hard Constraints` (what must not change)

@@ -204,7 +204,15 @@ When dispatched, `requirement-engineer` MUST return this exact structured block.
 [Must-Ask Questions]: <questions the main agent MUST raise via AskUserQuestion; or "none">
 [Optional Questions]: <worth asking but not blocking; or "none">
 [Scope Hint]: <files / modules likely in Allowed Scope, comma-separated; or "unknown">
+[Source Documents]:
+  - <path>[#L<a>-L<b>] — <one-line WHY>
+  - VERBATIM: """<逐字 quote — use ONLY when no source file exists>"""
 ```
+
+Rules for `[Source Documents]` (anti-summarization contract — see also `.claude/rules/dispatch-template.md`):
+- Each line MUST be either a path pointer (with optional `#L<a>-L<b>` range) OR a `VERBATIM:"""..."""` block. Never paraphrase.
+- This field flows verbatim into the next sub-agent's `## Source Documents (MUST READ before producing output)` dispatch section.
+- Empty value = `unknown` only when the user input is < 1 sentence and there is literally no file to point at. In that case the field MUST be `VERBATIM:"""<the user's exact prompt>"""`.
 
 The main agent MUST raise every `Must-Ask` question through `AskUserQuestion` before entering Phase 2. Skipping is not allowed.
 

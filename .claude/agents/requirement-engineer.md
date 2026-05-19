@@ -82,8 +82,25 @@ You MUST return exactly this block, no preamble or trailing prose. The main agen
 [Must-Ask Questions]: <questions the main agent MUST raise via AskUserQuestion before Phase 2; or "none">
 [Optional Questions]: <worth asking, non-blocking; or "none">
 [Scope Hint]: <files / modules likely in Allowed Scope, comma-separated; or "unknown">
+[Source Documents]:
+  - <relative/path/to/source>[#L<a>-L<b>] — <one-line WHY downstream agents must read this>
+  - VERBATIM: """<逐字 quote 用户原始输入>"""    # use ONLY when no source file exists
+[Source Documents Read]: <comma-separated paths YOU actually Read while producing this output; or "none" if input had no source files>
 [Next Step]: <one sentence — what the main agent should do next>
 ```
+
+`[Source Documents Read]` records every file YOU opened with the `Read` tool during this dispatch. It is checked by the main agent's `subagent_return_gate.py` cross-check 5 — if `[Status]=PASS` but this field is missing or "none", a WARN is surfaced. Be truthful: under-reporting risks a WARN, over-reporting (claiming reads you didn't do) is a contract violation.
+
+### Source Documents — anti-summarization contract (MANDATORY)
+
+This is the most important field for downstream architecture quality. The system-architect sub-agent does NOT inherit your context — it sees only the dispatch prompt. If you summarize sources here, the architect designs from your summary instead of the source, and any nuance lost in compression becomes a design defect (Gresham's law: bad context drives out good).
+
+Rules:
+- Each line MUST be either a path pointer (with optional line range) OR a `VERBATIM:"""..."""` quote. **No paraphrases, no "TL;DR", no translation.**
+- If the user pasted a PRD or referenced a file, list the file path with the relevant line range.
+- If the user typed a free-form sentence with no file backing, the field MUST be `VERBATIM:"""<exact prompt>"""`.
+- Empty/unknown is NOT permitted — at minimum, point at the user's raw input verbatim.
+- This field is copied verbatim into the next sub-agent's `## Source Documents (MUST READ before producing output)` block defined in `.claude/rules/dispatch-template.md`.
 
 You do NOT call `AskUserQuestion` yourself — sub-agents have no such tool. Surface every blocking question in `[Must-Ask Questions]` and the main agent will ask the human.
 

@@ -78,11 +78,13 @@ def main() -> int:
         if not a:
             continue
         if a.endswith("/"):
+            # Trailing slash = explicit directory prefix.
             allowed_prefixes.append(a)
             continue
-        if "/" in a:
-            allowed_prefixes.append(a.rstrip("/") + "/")
-            continue
+        # No trailing slash. Treat as an exact file path regardless of whether
+        # the entry contains "/". The previous behavior silently turned every
+        # file entry into an unreachable prefix (e.g. ".../foo.md/") and let
+        # nothing match — see ADR / brief 2026-05-20_arch-design-contract-uplift.
         allowed_exact.add(a)
 
     if not allowed_prefixes and not allowed_exact:

@@ -158,6 +158,9 @@ def check_forbidden_tokens(repo_root: Path) -> List[Finding]:
         rel = str(p.relative_to(repo_root))
         if rel in IGNORE_FILES:
             continue
+        # Skip prior zero-residue reports in both canonical and legacy locations.
+        if rel.startswith(".claude/runs/task-briefs/zero_residue_report_"):
+            continue
         if rel.startswith(".claude/workflow/runs/zero_residue_report_"):
             continue
         try:
@@ -262,7 +265,7 @@ def write_report(repo_root: Path, out_path: Path, findings: List[Finding]) -> No
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--out", default="", help="输出报告路径（默认写入 .claude/workflow/runs/）")
+    parser.add_argument("--out", default="", help="输出报告路径（默认写入 .claude/runs/task-briefs/）")
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parents[3]

@@ -36,7 +36,8 @@ IGNORE_GLOBS = [
     "**/target/**",
     "**/.git/**",
     "**/.idea/**",
-    "**/.claude/workflow/runs/**",
+    "**/.claude/runs/**",            # canonical runtime artifacts dir
+    "**/.claude/workflow/runs/**",   # legacy path (kept until cleanup)
     "**/.claude/router/runs/**",
 ]
 

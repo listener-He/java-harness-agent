@@ -44,10 +44,13 @@ def check_wiki():
 
         # WAL fragments are historical records — their links point to repo-root paths
         # and are not expected to resolve from within the wal/ directory. Skip link checks.
+        # Archived task_briefs are also frozen historical artifacts with path-heavy
+        # prose (paths in backticks that the inline_ref pattern misreads as links).
         in_wal = (os.path.sep + "wal" + os.path.sep) in file_path
+        in_archive = (os.path.sep + "archive" + os.path.sep) in file_path
 
-        # Check links (skip for wal/ files)
-        if not in_wal:
+        # Check links (skip for wal/ and archive/ files)
+        if not in_wal and not in_archive:
             content = "".join(lines)
             links = link_pattern.findall(content) + wikilink_pattern.findall(content) + inline_ref_pattern.findall(content)
 

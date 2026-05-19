@@ -11,9 +11,13 @@ The main agent invokes this AFTER receiving a sub-agent's response. It checks:
   3. Cross-check 2 — PASS status but Commands Run = none.
   4. Cross-check 3 — PASS status but ACs Mapped = none (task brief had ACs).
   5. Cross-check 4 — Status says PASS but an AC row says FAIL.
+  6. Cross-check 5 — PASS status but [Source Documents Read] = none/missing,
+     suggesting the agent skipped the MUST READ contract from
+     '## Source Documents' in the dispatch prompt.
 
-FAIL is emitted only for cross-check 4 (direct contradiction); the other three
-are WARN (heuristic — might be a read-only or trivial task with no diff).
+FAIL is emitted only for cross-check 4 (direct contradiction); cross-checks 1-3
+and 5 are WARN (heuristic — might be a read-only task, trivial diff, or a legacy
+dispatch that pre-dates the new field).
 
 Exit codes per linter-severity-standard:
   0 = OK
@@ -142,6 +146,23 @@ def validate(text: str, task_kind: str) -> Result:
         if _is_none(fields["ACs Mapped"]):
             details.append(
                 "[Status]=PASS but [ACs Mapped]=none — no AC verification recorded"
+            )
+            sev = Severity.WARN
+        # Cross-check 5 — Source Documents Read contract (added 2026-05-20 per
+        # follow-up to architecture-design-contract uplift). Field is OPTIONAL
+        # in the REQUIRED_FIELDS list to keep legacy dispatches passing, but
+        # for PASS status we WARN if it is missing or "none".
+        src_read = fields.get("Source Documents Read")
+        if src_read is None:
+            details.append(
+                "[Status]=PASS but [Source Documents Read] field is missing — "
+                "dispatch-template requires it; agent may have skipped the MUST READ contract"
+            )
+            sev = Severity.WARN
+        elif _is_none(src_read):
+            details.append(
+                "[Status]=PASS but [Source Documents Read]=none — "
+                "if the dispatch '## Source Documents' had pointers, the agent silently skipped them"
             )
             sev = Severity.WARN
 

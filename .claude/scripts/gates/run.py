@@ -7,7 +7,7 @@ This tool mounts roles dynamically by (intent, profile, phase) using:
 - .claude/workflow/role_matrix.json
 
 It runs deterministic gates and writes a markdown report to:
-- .claude/workflow/runs/gates_report_<timestamp>.md
+- .claude/runs/task-briefs/gates_report_<timestamp>.md
 
 Exit codes:
 - 0: PASS
@@ -25,6 +25,24 @@ from datetime import datetime
 
 EXIT_WARN = 1
 EXIT_FAIL = 2
+
+# Canonical runtime artifact directory (per CLAUDE.md).
+# Legacy `.claude/workflow/runs/` is kept as a read fallback only.
+RUNS_DIR = ".claude/runs/task-briefs"
+LEGACY_RUNS_DIR = ".claude/workflow/runs"
+
+
+def _resolve_runtime_path(filename: str) -> str:
+    """Prefer canonical RUNS_DIR; fall back to LEGACY_RUNS_DIR if the file
+    already exists there (one-time migration). New files are always written
+    to RUNS_DIR."""
+    canonical = os.path.join(RUNS_DIR, filename)
+    if os.path.exists(canonical):
+        return canonical
+    legacy = os.path.join(LEGACY_RUNS_DIR, filename)
+    if os.path.exists(legacy):
+        return legacy
+    return canonical
 
 
 def _load_json(path: str) -> dict:
@@ -118,7 +136,7 @@ def _build_escalation_card(
             f.write(f"- `{s}`: {task_state.get(s)} failures\n")
         f.write("\n## What I tried (with evidence)\n")
         f.write(f"- Re-ran mounted gates; latest evidence in `{report_path}`.\n")
-        f.write(f"- Retry state snapshot: `.claude/workflow/runs/gate_retry_state.json`.\n\n")
+        f.write(f"- Retry state snapshot: `{RUNS_DIR}/gate_retry_state.json`.\n\n")
         f.write("## What I need from human\n")
         f.write("- Clarify scope/intent ambiguities or adjust constraints for blocked scripts.\n")
         f.write("- Confirm whether to reset retry counter for this task after intervention.\n")
@@ -189,7 +207,7 @@ def main() -> int:
 
     matrix = _load_json(args.matrix)
     task_id = args.task_id.strip() or f"{args.intent}:{args.profile}:{args.topic}:{args.date}"
-    retry_state_file = ".claude/workflow/runs/gate_retry_state.json"
+    retry_state_file = _resolve_runtime_path("gate_retry_state.json")
     retry_state = _load_retry_state(retry_state_file)
     task_state = retry_state.get(task_id, {})
 
@@ -218,7 +236,7 @@ def main() -> int:
         return EXIT_WARN
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    report_path = f".claude/workflow/runs/gates_report_{timestamp}.md"
+    report_path = os.path.join(RUNS_DIR, f"gates_report_{timestamp}.md")
     os.makedirs(os.path.dirname(report_path), exist_ok=True)
 
     overall = 0
@@ -298,7 +316,7 @@ def main() -> int:
     print("FAIL: gates failed")
     blocked = [k for k, v in task_state.items() if int(v) > args.max_failures_per_script]
     if blocked:
-        escalation_path = f".claude/workflow/runs/escalation_card_{timestamp}.md"
+        escalation_path = os.path.join(RUNS_DIR, f"escalation_card_{timestamp}.md")
         _build_escalation_card(escalation_path, task_id, args, blocked, task_state, report_path)
         print("HUMAN_HELP_REQUIRED: some scripts exceeded failure cap")
         for b in blocked:

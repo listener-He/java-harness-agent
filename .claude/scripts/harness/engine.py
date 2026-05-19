@@ -12,16 +12,24 @@ import os
 import argparse
 from datetime import datetime
 
-STATE_FILE = ".claude/workflow/runs/engine_state.json"
+# Canonical state file location (per CLAUDE.md runtime artifact policy).
+# Legacy `.claude/workflow/runs/engine_state.json` is read once for migration,
+# then all writes go to the canonical location.
+STATE_FILE = ".claude/runs/engine_state.json"
+LEGACY_STATE_FILE = ".claude/workflow/runs/engine_state.json"
 CATALOG_DIR = ".claude/router/runs"
 ALL_PHASES = [
-    "1_Explorer", "2_Propose", "3_Review", "3.5_Approval", 
+    "1_Explorer", "2_Propose", "3_Review", "3.5_Approval",
     "4_Implement", "5_QA", "6_Archive"
 ]
 
 def load_state():
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE, "r") as f:
+            return json.load(f)
+    # Legacy fallback — read existing state from the old location once.
+    if os.path.exists(LEGACY_STATE_FILE):
+        with open(LEGACY_STATE_FILE, "r") as f:
             return json.load(f)
     return None
 

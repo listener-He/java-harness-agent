@@ -24,6 +24,19 @@ Why this exists: sub-agents do NOT inherit `CLAUDE.md`, project rules, memory, o
 - <constraint-1>
 - <constraint-2>
 
+## Source Documents (MUST READ before producing output)
+List the primary sources the sub-agent MUST `Read` before doing anything else. Use pointers, never summaries — summarizing here triggers Gresham's law for context (劣质上下文驱逐优质上下文): once a 4-line summary exists in the prompt, the sub-agent will rely on it and skip the source, and any nuance lost in compression (e.g. "p99<200ms 且 503 时优雅降级" compressed to "low-latency, fault-tolerant") leads to wrong design.
+
+Format — each line MUST be ONE of:
+- `<relative/path/to/source>[#L<start>-L<end>] — <one-line WHY this file matters>`
+- `VERBATIM: """<逐字 quote 用户原始输入；禁止改写、概括、翻译>"""` (use ONLY when no source file exists, e.g. small Idea input)
+
+Hard rule for the sub-agent: if this section is missing, empty, or any line lacks both a `#L...` pointer AND a `VERBATIM:` quote prefix, return `[Status]: ESCALATE` with `[Reason]: Source Documents missing or summarized — re-dispatch with pointers/verbatim`.
+
+Example:
+- `.claude/runs/task-briefs/2026-05-20_xxx_task_brief.md#L40-L120 — full Machine Section, the contract you implement against`
+- `src/main/java/com/example/order/OrderService.java#L80-L140 — current cancel() logic you must NOT break`
+
 ## Inputs
 - Task brief: <.claude/runs/task-briefs/…_task_brief.md>
 - Files to inspect/modify: <comma-separated paths or "see Allowed Scope">
@@ -44,6 +57,8 @@ If a section has no relevant entries, write "none" — do not delete the section
 - DO NOT modify files outside Allowed Scope. If required, return `[Status]: BOUNDARY_EXCEPTION` with the file and reason — wait for main agent, do not edit.
 - DO NOT bypass safety checks (`--no-verify`, `--no-gpg-sign`, etc.).
 - DO NOT invoke other sub-agents. Return to the main agent for orchestration.
+- DO NOT skip the `## Source Documents` reads. Open every listed file with `Read` (and the indicated line range) before producing any output. Skipped reads = `[Status]: ESCALATE` with `[Reason]: skipped mandatory source read`.
+- DO NOT summarize. If a downstream agent needs context from you, pass it pointers + verbatim quotes — never paraphrases.
 
 ## Expected Output (structured — parseable by main agent)
 Return ONLY this block, no preamble:
@@ -52,10 +67,13 @@ Return ONLY this block, no preamble:
 [Files Changed]: <list of relative paths with +N/-M line counts, or "none">
 [Commands Run]: <each command + exit code, or "none">
 [ACs Mapped]: <AC-id → test method or evidence → PASS/FAIL/SKIP>
+[Source Documents Read]: <comma-separated paths you actually Read from the '## Source Documents' section, or "none" if there were none>
 [Issues Found]: <numbered list, or "none">
 [Next Step]: <one sentence — what main agent should do next>
 
 (If [Status] is ESCALATE or BOUNDARY_EXCEPTION, also include a [Reason]: line explaining why.)
+
+The `[Source Documents Read]` field MUST list every file you opened with `Read` from the `## Source Documents` section. The main agent's `subagent_return_gate.py` cross-checks this against the dispatch's mandatory-read list — leaving it `none` while the dispatch had pointers triggers a WARN (you may have skipped the read contract). This is the only honest way to enforce the MUST READ rule from the prompt side; the field exists precisely so the agent cannot silently bypass it.
 
 ## Template Source
 This prompt was built from: .claude/rules/dispatch-template.md
@@ -67,6 +85,7 @@ This prompt was built from: .claude/rules/dispatch-template.md
 
 Before doing anything, check the incoming prompt has these sections (header lines):
 - `## Task Contract` with all three subsections: Allowed Scope, Acceptance Criteria, Hard Constraints
+- `## Source Documents (MUST READ before producing output)` with at least one valid line (pointer or VERBATIM)
 - `## Inputs`
 - `## Memory Snapshot`
 - `## Hard Limits`
@@ -129,6 +148,11 @@ For LEARN/MAINTENANCE-only sub-agent dispatches (e.g., librarian, knowledge-arch
 - No new external dependencies
 - Order entity table must not be altered (DDL frozen)
 
+## Source Documents (MUST READ before producing output)
+- .claude/runs/task-briefs/2026-05-19_order_cancel_task_brief.md#L40-L120 — Machine Section; the contract you implement against
+- src/main/java/com/example/order/OrderService.java#L80-L140 — current cancel() logic; do NOT break
+- src/main/java/com/example/order/OrderEvents.java — event publisher you must reuse (no new bus)
+
 ## Inputs
 - Task brief: .claude/runs/task-briefs/2026-05-19_order_cancel_task_brief.md
 - Files to inspect/modify: see Allowed Scope
@@ -160,6 +184,11 @@ This prompt was built from: .claude/rules/dispatch-template.md
 - Review must check java-architecture-standards Layer 1 violations
 - Review must check security-review-checklist
 - DO NOT modify code; report-only
+
+## Source Documents (MUST READ before producing output)
+- .claude/runs/task-briefs/2026-05-19_order_cancel_task_brief.md#L40-L120 — the contract; you check the diff against this
+- src/main/java/com/example/order/OrderService.java — full file, post-change state to review
+- src/test/java/com/example/order/OrderServiceTest.java — full file, the asserted behavior
 
 ## Inputs
 - Task brief: .claude/runs/task-briefs/2026-05-19_order_cancel_task_brief.md

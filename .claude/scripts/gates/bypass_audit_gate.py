@@ -3,7 +3,7 @@
 """
 Bypass Audit Gate — TTL Enforcement
 
-Scans `.claude/workflow/runs/` for `bypass_justification*.md` files and
+Scans `.claude/runs/task-briefs/` for `bypass_justification*.md` files and
 validates their lifecycle compliance:
 - Must have `task_id:` header
 - Must have `expires_after:` header

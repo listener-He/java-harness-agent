@@ -35,8 +35,57 @@ AC_STOPWORDS = {
 }
 
 SLIM_MARKER = re.compile(r"^\s*spec_mode\s*:\s*SLIM\s*$", re.IGNORECASE | re.MULTILINE)
+STANDARD_MARKER = re.compile(r"^\s*spec_mode\s*:\s*STANDARD\s*$", re.IGNORECASE | re.MULTILINE)
+RISK_MARKER = re.compile(r"^\s*risk\s*:\s*(MEDIUM|HIGH)\b", re.IGNORECASE | re.MULTILINE)
+DIMENSIONS_MARKER = re.compile(r"^\s*dimensions\s*:\s*\[(.*?)\]\s*$", re.IGNORECASE | re.MULTILINE)
 AC_SECTION = re.compile(r"^#+\s+.*(BDD|验收|Acceptance Criteria)", re.IGNORECASE)
-HEADER_LINE = re.compile(r"^#+\s")
+HEADER_LINE = re.compile(r"^#+\s", re.MULTILINE)
+
+# STANDARD spec_mode requires a `risk: MEDIUM|HIGH` marker; missing → FAIL.
+STRICT_RISK_MARKER = True
+
+# STANDARD spec_mode requires a `dimensions:` marker; missing → FAIL.
+STRICT_DIMENSIONS_MARKER = True
+
+# Spec-floor sections — ALWAYS required for STANDARD regardless of dimensions.
+# These prevent security/observability/config-only changes from legally omitting
+# NFR/AC documentation.
+SPECFLOOR_HEADERS = [
+    (re.compile(r"^##\s+1\.\s+Context\b", re.MULTILINE), "## 1. Context"),
+    (re.compile(r"^##\s+5\.\s+Business Logic\b", re.MULTILINE), "## 5. Business Logic"),
+    (re.compile(r"^##\s+6\.\s+Non-Functional Constraints\b", re.MULTILINE), "## 6. Non-Functional Constraints"),
+    (re.compile(r"^##\s+7\.\s+Acceptance Criteria\b", re.MULTILINE), "## 7. Acceptance Criteria"),
+]
+
+# Dimension → (section header regex, display name). Starter set.
+DIMENSION_SECTION_MAP = {
+    "domain":    (re.compile(r"^##\s+2\.\s+Domain Model\b", re.MULTILINE),            "## 2. Domain Model"),
+    "api":       (re.compile(r"^##\s+3\.\s+API Contract\b", re.MULTILINE),            "## 3. API Contract"),
+    "data":      (re.compile(r"^##\s+4\.\s+Data Model\b", re.MULTILINE),              "## 4. Data Model"),
+    "tech_arch": (re.compile(r"^##\s+8\.\s+Technical Architecture\b", re.MULTILINE),  "## 8. Technical Architecture"),
+    "patterns":  (re.compile(r"^##\s+9\.\s+Design Patterns Applied\b", re.MULTILINE), "## 9. Design Patterns Applied"),
+}
+KNOWN_DIMENSIONS = set(DIMENSION_SECTION_MAP.keys())
+
+# Allowed Scope path signatures → suggested dimensions for the heuristic
+# backstop. WARN only (never FAIL); path conventions vary across projects.
+PATH_SIGNATURE_HINTS = [
+    ("controller/",  "api"),
+    ("web/",         "api"),
+    ("/api/",        "api"),
+    ("mapper/",      "data"),
+    ("dao/",         "data"),
+    ("entity/",      "data"),
+    ("migration/",   "data"),
+    ("migrations/",  "data"),
+    ("/db/",         "data"),
+    ("event/",       "domain"),
+    ("events/",      "domain"),
+    ("aggregate/",   "domain"),
+    ("aggregates/",  "domain"),
+]
+
+NONE_TOKENS = {"none", "n/a", "无"}
 
 
 def _repo_root() -> str:
@@ -203,6 +252,196 @@ def _ac_scope_cross_check(content: str) -> tuple[int, list[str]]:
     ]
 
 
+def _risk_from_frontmatter(content: str) -> tuple[str, int, list[str]]:
+    """Detect risk level from the `risk:` frontmatter marker.
+
+    Returns (risk, exit_code_contribution, detail_messages).
+    - SLIM mode: returns ("N/A", 0, []) — risk marker not required.
+    - STANDARD with valid marker: returns ("MEDIUM"|"HIGH", 0, []).
+    - STANDARD with missing marker:
+        * STRICT_RISK_MARKER=False → ("HIGH", WARN, [...])  (transition period)
+        * STRICT_RISK_MARKER=True  → ("HIGH", FAIL, [...])  (post-archive)
+    - STANDARD with malformed marker → ("HIGH", FAIL, [...]) always.
+    """
+    if SLIM_MARKER.search(content):
+        return "N/A", 0, []
+    if not STANDARD_MARKER.search(content):
+        # No spec_mode at all — schema_checker will already complain; assume HIGH.
+        return "HIGH", 0, []
+    m = RISK_MARKER.search(content)
+    if m:
+        return m.group(1).upper(), 0, []
+    # Marker missing.
+    msg = [
+        "risk marker missing: STANDARD spec_mode requires `risk: MEDIUM` or `risk: HIGH` on the line after `spec_mode:`",
+        "  Fix: add `risk: MEDIUM` (default) or `risk: HIGH` to the frontmatter",
+    ]
+    if STRICT_RISK_MARKER:
+        return "HIGH", EXIT_FAIL, msg
+    return "HIGH", EXIT_WARN, msg + ["  (transition period: defaulting to HIGH)"]
+
+
+def _section_body(content: str, header_pattern: re.Pattern) -> str:
+    """Return body text between a matched header and the next ## header.
+
+    Advances past the rest of the matched header line (any text after the
+    matched prefix, e.g. ' (Hard Constraints)' tail) so it is not counted
+    as body content.
+    """
+    m = header_pattern.search(content)
+    if not m:
+        return ""
+    # Skip the rest of the header line.
+    nl = content.find("\n", m.end())
+    start = nl + 1 if nl != -1 else len(content)
+    after = content[start:]
+    next_hdr = HEADER_LINE.search(after)
+    return after[: next_hdr.start()] if next_hdr else after
+
+
+def _body_is_empty_or_none(body: str) -> bool:
+    """True iff the body has no substantive content (whitespace / None / N/A)."""
+    text = re.sub(r"```.*?```", "", body, flags=re.DOTALL)         # strip code fences
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)        # strip HTML comments
+    non_blank = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if not non_blank:
+        return True
+    first = non_blank[0].rstrip(".:;,").lower()
+    # Common "I have nothing to say" patterns.
+    if first in NONE_TOKENS:
+        return True
+    if first.startswith("none ") or first.startswith("n/a "):
+        return True
+    return False
+
+
+def _dimensions_from_frontmatter(content: str) -> tuple[set[str], int, list[str]]:
+    """Parse the `dimensions: [a, b, c]` frontmatter line.
+
+    Returns (parsed_dimensions, exit_contribution, detail_messages).
+    SLIM mode returns (set(), 0, []) — dimensions are not used.
+    """
+    if SLIM_MARKER.search(content):
+        return set(), 0, []
+
+    m = DIMENSIONS_MARKER.search(content)
+    if not m:
+        # Missing marker — transition rules.
+        msg = [
+            "dimensions marker missing: STANDARD spec_mode now uses `dimensions: [domain, api, data, tech_arch, patterns]`",
+            "  Fix: add `dimensions: [...]` to the frontmatter after `risk:` (empty list `[]` is legal)",
+        ]
+        if STRICT_DIMENSIONS_MARKER:
+            return set(), EXIT_FAIL, msg
+        # Transition: infer dimensions from risk level.
+        if RISK_MARKER.search(content):
+            risk_val = RISK_MARKER.search(content).group(1).upper()
+            inferred = set(KNOWN_DIMENSIONS) if risk_val == "HIGH" else set()
+            msg.append(
+                f"  (transition period: inferring dimensions={sorted(inferred) or '[]'} from risk={risk_val}; "
+                f"will become FAIL after 2026-05-20_dimension-driven-schema task is archived)"
+            )
+            return inferred, EXIT_WARN, msg
+        return set(), EXIT_WARN, msg + ["  (transition period: defaulting to empty dimensions)"]
+
+    raw = m.group(1).strip()
+    if not raw:
+        return set(), 0, []
+    declared = {token.strip().lower() for token in raw.split(",") if token.strip()}
+
+    # Unknown dimensions — WARN, never FAIL.
+    unknown = declared - KNOWN_DIMENSIONS
+    details: list[str] = []
+    code = 0
+    if unknown:
+        code = EXIT_WARN
+        details.append(
+            f"unknown dimension(s) in frontmatter: {sorted(unknown)} — known starter set: {sorted(KNOWN_DIMENSIONS)}"
+        )
+        details.append("  (unknown dimensions are tolerated; to add one permanently, open an ADR and update the schema + gate)")
+    return declared, code, details
+
+
+def _section_completeness_check(content: str, dimensions: set[str]) -> tuple[int, list[str]]:
+    """Spec-floor + dimension-gated section completeness check.
+
+    Spec-floor (§1/§5/§6/§7): always required, header present AND body non-empty.
+    Dimension-gated (§2/§3/§4/§8/§9): required iff the corresponding dimension
+    is in `dimensions`. When required, both header AND body must be present
+    and substantive (not None / N/A). When NOT required, the section MAY be
+    omitted entirely; if a header IS present with None body, that is tolerated
+    (legacy briefs and back-compat).
+    """
+    if SLIM_MARKER.search(content):
+        return 0, []
+
+    details: list[str] = []
+    code = 0
+
+    # Spec-floor — header MUST be present; body MUST be substantive.
+    for pattern, name in SPECFLOOR_HEADERS:
+        if not pattern.search(content):
+            details.append(f"spec-floor missing: {name} (header absent — required regardless of dimensions)")
+            code = EXIT_FAIL
+            continue
+        body = _section_body(content, pattern)
+        if _body_is_empty_or_none(body):
+            details.append(f"spec-floor empty: {name} body is None/empty — spec-floor sections MUST be substantive")
+            code = EXIT_FAIL
+
+    # Dimension-gated — required iff declared.
+    for dim in sorted(dimensions):
+        if dim not in DIMENSION_SECTION_MAP:
+            continue  # unknown dims already WARNed in _dimensions_from_frontmatter
+        pattern, name = DIMENSION_SECTION_MAP[dim]
+        if not pattern.search(content):
+            details.append(f"declared dimension '{dim}' but section '{name}' missing")
+            code = EXIT_FAIL
+            continue
+        body = _section_body(content, pattern)
+        if _body_is_empty_or_none(body):
+            details.append(
+                f"declared dimension '{dim}' but section '{name}' body is empty/None — "
+                f"declared dimensions require substantive content"
+            )
+            code = EXIT_FAIL
+
+    if code != 0:
+        details.append("  Fix: see .claude/wiki/schema/task_brief_schema.md (spec-floor + dimension-gated rules)")
+    return code, details
+
+
+def _heuristic_dimension_check(content: str, dimensions: set[str]) -> tuple[int, list[str]]:
+    """Scan Allowed Scope for path signatures that suggest undeclared dimensions.
+
+    WARN-only (never FAIL): path conventions vary across projects, so this is
+    advisory — heuristic-as-backstop.
+    """
+    if SLIM_MARKER.search(content):
+        return 0, []
+
+    exact, prefixes = _read_allowed_scope(content)
+    all_paths = list(exact) + prefixes
+    if not all_paths:
+        return 0, []
+
+    suggestions: dict[str, list[str]] = {}
+    for path in all_paths:
+        path_lower = path.lower()
+        for signature, suggested_dim in PATH_SIGNATURE_HINTS:
+            if signature in path_lower and suggested_dim not in dimensions:
+                suggestions.setdefault(suggested_dim, []).append(f"'{signature}' (in {path})")
+
+    if not suggestions:
+        return 0, []
+
+    details = ["heuristic dimension check: path signatures suggest undeclared dimension(s):"]
+    for dim, hits in sorted(suggestions.items()):
+        details.append(f"  - dimension '{dim}' suggested by: {', '.join(hits[:3])}")
+    details.append("  Hint: add the dimension to `dimensions:` or explain in §1 Context why the signature is misleading")
+    return EXIT_WARN, details
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--require", required=True)
@@ -224,18 +463,29 @@ def main() -> int:
     with open(path, "r", encoding="utf-8") as f:
         content = f.read()
     cross_code, cross_details = _ac_scope_cross_check(content)
+    risk, risk_code, risk_details = _risk_from_frontmatter(content)
+    dimensions, dim_code, dim_details = _dimensions_from_frontmatter(content)
+    section_code, section_details = _section_completeness_check(content, dimensions)
+    heuristic_code, heuristic_details = _heuristic_dimension_check(content, dimensions)
 
-    final_code = max(schema_code, cross_code)
+    final_code = max(schema_code, cross_code, risk_code, dim_code, section_code, heuristic_code)
+    all_details = (
+        schema_details + cross_details + risk_details
+        + dim_details + section_details + heuristic_details
+    )
     if final_code == 0:
-        print("OK: task_brief gate pass (schema + AC↔Scope coherent)")
+        dims_repr = ",".join(sorted(dimensions)) or "[]"
+        print(
+            f"OK: task_brief gate pass (schema + AC↔Scope + risk={risk} + dimensions={dims_repr} + sections complete)"
+        )
         return 0
     if final_code == EXIT_WARN:
         print("WARN: task_brief gate")
-        for d in schema_details + cross_details:
+        for d in all_details:
             print(f"- {d}")
         return EXIT_WARN
     print("FAIL: task_brief gate")
-    for d in schema_details + cross_details:
+    for d in all_details:
         print(f"- {d}")
     return EXIT_FAIL
 
