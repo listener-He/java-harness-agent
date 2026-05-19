@@ -1,6 +1,6 @@
 ---
 name: "java-architecture-standards"
-description: "MANDATORY MASTER skill for Java backend development. Enforces strict 3-Layer architecture, API design (No Path Variables), POJO structure, Anti-JOIN data assembly, and Error Code handling. Invoke before writing ANY Java code."
+description: "Layer 1 (Architecture) for Java backend: 3-Layer architecture, API design (No Path Variables), POJO structure, Anti-JOIN data assembly, Error Code handling. Composes with java-coding-style (L2) and mybatis-sql-standard (L3, conditional). Invoke before writing ANY Java code. See .claude/rules/skill-precedence.md Zone A."
 ---
 
 # Java Architecture & Engineering Standards

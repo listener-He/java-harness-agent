@@ -1,6 +1,6 @@
 ---
 name: verify
-description: "End-to-end verification that a change satisfies each AC. TRIGGER before Archive phase — run implementation against each AC, produce pass/fail evidence. A FAIL result blocks Archive and rolls back to Phase 4."
+description: "Lightweight single-pass AC verification before Archive — run implementation against each AC, produce pass/fail evidence. FAIL blocks Archive and rolls back to Phase 4. Mutually exclusive with ultraqa: choose verify when AC count ≤ 3 AND risk ≠ HIGH; otherwise use ultraqa. See .claude/rules/skill-precedence.md Zone C."
 ---
 
 # Verify

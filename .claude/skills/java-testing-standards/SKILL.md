@@ -1,6 +1,6 @@
 ---
 name: "java-testing-standards"
-description: "MANDATORY MASTER skill for Java Testing & QA. TRIGGER at Phase 5 (QA) and whenever writing test code. Enforces test isolation, mock guidelines, and the 3-scenario coverage rule (Happy Path, Exception, Edge Cases)."
+description: "Standards for Java test code (test isolation, mock guidelines, 3-scenario coverage: Happy Path, Exception, Edge Cases). Always applies when test code is Java. Composes with verify or ultraqa (the QA-flow skill chosen per Zone C). See .claude/rules/skill-precedence.md Zone C."
 ---
 
 # Java Unit & Integration Testing Standards

@@ -1,6 +1,6 @@
 ---
 name: "code-review-checklist"
-description: "MANDATORY Code Review Checklist. Evaluates code against ALL project standards. Invoke AFTER writing/modifying code and BEFORE finalizing response. Automatically fix and re-evaluate until all checks pass."
+description: "Inline self-review checklist for TRIVIAL/LOW (PATCH) changes — evaluates code against project standards AFTER writing and BEFORE finalizing. For MEDIUM/HIGH (STANDARD) changes, the code-reviewer sub-agent supersedes this skill; do NOT run both. See .claude/rules/skill-precedence.md Zone B."
 ---
 
 # Code Review (CR) Checklist & Self-Correction Loop

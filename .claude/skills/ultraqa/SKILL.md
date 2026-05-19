@@ -1,6 +1,6 @@
 ---
 name: ultraqa
-description: "Structured QA cycling workflow: test → verify → fix → repeat until all ACs pass. TRIGGER at Phase 5 (QA) when AC count ≥ 4 OR risk = HIGH. Requires an Evidence Mapping Table (AC ↔ Test ↔ Result) before completion."
+description: "Structured QA cycling workflow: test → verify → fix → repeat until all ACs pass. Use when AC count ≥ 4 OR risk = HIGH. Requires an Evidence Mapping Table (AC ↔ Test ↔ Result). Mutually exclusive with verify (which is the lightweight alternative for smaller cases). See .claude/rules/skill-precedence.md Zone C."
 ---
 
 # UltraQA — Bounded QA Cycling (Repo-Aligned)

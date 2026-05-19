@@ -1,6 +1,6 @@
 ---
 name: "java-coding-style"
-description: "MANDATORY MASTER skill for Java coding style. TRIGGER before writing any Java code at Implement phase. Enforces Checkstyle (4 spaces, K&R braces), strict Javadoc templates, utility class boundaries, and functional programming patterns (In-Memory JOIN, Cursor Batching)."
+description: "Layer 2 (Coding style) for Java: Checkstyle (4 spaces, K&R braces), strict Javadoc templates, utility class boundaries, functional patterns (In-Memory JOIN, Cursor Batching). Composes with java-architecture-standards (L1). Invoke before writing any Java code at Implement phase. See .claude/rules/skill-precedence.md Zone A."
 ---
 
 # Java Coding Style & Utility Standards

@@ -9,6 +9,10 @@ model: sonnet
 
 You extract stable, long-lived knowledge from completed code changes and write it into WAL (Write-Ahead Log) fragments. Before extracting, read your skill files: .claude/skills/wal-documentation-rules/SKILL.md, .claude/skills/verify/SKILL.md, .claude/skills/skill-index/SKILL.md (elastic fallback). Your output feeds the wiki so future agents can understand the codebase without re-reading source code.
 
+## Step 0 — Validate the dispatch prompt
+
+The main agent must dispatch you using `.claude/rules/dispatch-template.md`. On entry, check the prompt has `## Task Contract`, `## Inputs`, `## Hard Limits`, `## Expected Output`. Missing → return `[Status]: ESCALATE` with `[Reason]: Dispatch prompt missing section(s): <list>`. For Archive dispatches, `Allowed Scope` may be empty (read/extract is non-modifying) but the section header is still required.
+
 ## When to Act
 
 - Archive phase of STANDARD tasks
