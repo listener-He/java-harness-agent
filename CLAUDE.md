@@ -7,7 +7,7 @@ Single entry point for AI coding assistants on this repo. Lazy-load everything e
 1. **Anti-loop**: max 3 retries per gate/linter, max 2 for compile fixes. Exceed → STOP, ask human.
 2. **Never commit**: `.claude/runs/`, `__pycache__/`, `target/`, `build/`, `.idea/`, `.vscode/`, `.DS_Store`. Only commit source, archived task_briefs (`.claude/wiki/archive/`), and `.claude/**/wal/` fragments.
 
-Full safety/commit/artifact policy: [.claude/rules/safety-constraints.md](.claude/rules/safety-constraints.md).
+Full safety/commit/artifact policy: [.claude/rules/policy.md](.claude/rules/policy.md).
 
 ## Two Modes
 
@@ -34,12 +34,10 @@ Standard-required → emit one line before any output: `[Risk: HIGH | Scenario: 
 
 | Topic | File |
 |---|---|
-| Routing, profiles, shortcuts, risk classification | [.claude/rules/routing.md](.claude/rules/routing.md) |
-| Lifecycle phases + gates | [.claude/rules/lifecycle.md](.claude/rules/lifecycle.md) |
-| Agent invocation & dispatch | [.claude/rules/dispatch.md](.claude/rules/dispatch.md) |
-| Hooks | [.claude/rules/hooks.md](.claude/rules/hooks.md) |
-| Safety + commit policy | [.claude/rules/safety-constraints.md](.claude/rules/safety-constraints.md) |
-| WAL write-back + anti-bloat | [.claude/rules/writeback-policy.md](.claude/rules/writeback-policy.md) |
+| Routing + lifecycle + hooks (profiles, phases, gates) | [.claude/rules/lifecycle.md](.claude/rules/lifecycle.md) |
+| Safety + commit + WAL write-back + dispatch | [.claude/rules/policy.md](.claude/rules/policy.md) |
+| Sub-agent dispatch prompt template (mandatory) | [.claude/rules/dispatch-template.md](.claude/rules/dispatch-template.md) |
+| Skill precedence (conflict resolution for MANDATORY) | [.claude/rules/skill-precedence.md](.claude/rules/skill-precedence.md) |
 | Role catalog | [.claude/agents/](.claude/agents/) |
 | Active skill index (+ archive index) | [.claude/skills/skill-index/SKILL.md](.claude/skills/skill-index/SKILL.md) |
 | Wiki root | [.claude/wiki/KNOWLEDGE_GRAPH.md](.claude/wiki/KNOWLEDGE_GRAPH.md) |

@@ -1,6 +1,6 @@
 ---
 name: "wal-documentation-rules"
-description: "MANDATORY documentation capture during the Archive phase. Defines how to extract stable knowledge into Write-Ahead Log (WAL) fragments (domain, api, rules + optional data) to keep the LLM Wiki synced without merge conflicts."
+description: "Rulebook for WAL fragment writes (domain, api, rules + optional data) during Archive — keeps the LLM Wiki synced without merge conflicts. MANDATORY for STANDARD profile Archive; skipped entirely in PATCH. Executed by the knowledge-extractor sub-agent by default. See .claude/rules/skill-precedence.md Zone D."
 ---
 
 # Write-Ahead Log (WAL) Documentation Capture
@@ -22,7 +22,7 @@ If unsure, check the task's `_task_brief.md`: if `task_type: PATCH`, skip this s
 
 - WAL + compaction policy: `.claude/workflow/ARCHIVE_WAL.md`
 - Write-back verification tool: `.claude/scripts/tools/writeback_gate.py`
-- Routing and navigation: `.claude/rules/routing.md`
+- Routing and navigation: `.claude/rules/lifecycle.md` (Part 1)
 
 ---
 

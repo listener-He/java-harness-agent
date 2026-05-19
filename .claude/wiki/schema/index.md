@@ -13,10 +13,8 @@ This file is intentionally English-only to maximize agent execution reliability.
 - **[Sub-Agent Contract Schema](subagent_contract_schema.md)**: the minimal executable contract template for dispatching tasks to sub-agents (e.g., Trae, Qoder, search).
 
 ## Process Links (Do not duplicate rules here)
-- **[Router](../../rules/routing.md)**: map requests into an intent queue (`launch_spec`).
-- **[Context Funnel](../../rules/routing.md)**: forward navigation + reverse write-back rules.
-- **[Lifecycle](../../rules/lifecycle.md)**: the contract freeze point (Approval Gate) and phase responsibilities.
-- **[Hooks](../../rules/hooks.md)**: guard/fail/loop constraints (max retries, domain boundary, HITL).
+- **[Routing + Lifecycle + Hooks](../../rules/lifecycle.md)**: profiles, phase responsibilities, Approval Gate, and guard/fail/loop constraints (max retries, domain boundary, HITL).
+- **[Policy](../../rules/policy.md)**: safety constraints, commit policy, WAL write-back, and sub-agent dispatch rules.
 
 ## Link Rules
 - Links inside this repo MUST use relative paths from the current file. Do not hardcode `.claude/` into relative links.

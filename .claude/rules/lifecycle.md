@@ -1,8 +1,123 @@
-# Lifecycle — Phases & State Machine
+# Routing, Lifecycle & Hooks
 
-This file documents the **phases** in detail. The mapping from profile/risk to per-profile flow lives in [routing.md](routing.md). Gate checklists per phase live in [hooks.md](hooks.md).
+Single source of truth for: how a request gets classified, what phases follow, which hooks fire when, and what to do on failure. Merged from former `routing.md` + `lifecycle.md` + `hooks.md`.
 
 ---
+
+# Part 1 — Routing: Profiles & Risk Classification
+
+## Profiles
+
+| Profile | When | Artifacts | Approval Gate |
+|---|---|---|---|
+| **LEARN** | Read/explain/understand code | None | No |
+| **PATCH** | TRIVIAL or LOW risk change | None (TRIVIAL) / Slim Spec (LOW) | No |
+| **STANDARD** | MEDIUM or HIGH risk change | task_brief.md + launch_spec | MEDIUM: FYI only; HIGH: required |
+| **MAINTENANCE** | Wiki/WAL operations, no code changes | WAL fragments | No |
+
+## Risk Classification
+
+Pick the lowest tier whose criteria fully cover the request. Default to lower tier when ambiguous — escalation is cheap, downgrade is wasted ceremony.
+
+| Risk | Criteria | Profile |
+|---|---|---|
+| **TRIVIAL** | ≤3 files. No public API, DB schema, auth, or error-code system change. Includes: bugfixes within a single domain, defensive checks, validation, logs, comments, formatting, typos, internal refactors. | PATCH |
+| **LOW** | 4–6 files OR small bugfix spanning two related domains. Still no public API/DB/auth/error-code change. | PATCH |
+| **MEDIUM** | New/changed external API, public method signature change, or core business path change. No DB/auth foundation change. | STANDARD |
+| **HIGH** | DB schema/index changes, auth/permission strategy, error code system changes, ≥3 domains, shared utilities, unclear blast radius. | STANDARD |
+
+**Per-profile flows:**
+- **TRIVIAL:** `Implement → QA → Archive` — no task_brief, no inline Explorer, no WAL.
+- **LOW:** `Implement → QA → Archive` — no task_brief, no WAL; if scope is unclear at start, do a quick mental Explorer (no document).
+- **MEDIUM:** `Explorer → Propose(task_brief) → Review → Implement → QA → Archive`
+- **HIGH:** `Explorer → Propose(task_brief, ≥2 ADR) → Review(adversarial) → Approval Gate → Implement → QA → Archive`
+
+### Boundary rules
+
+- **Never** force STANDARD on a TRIVIAL/LOW change just because the user mentioned "important" or "production". Use the table criteria, not vibes.
+- **Always** escalate if, mid-implementation, you discover the change actually touches public API/DB/auth — stop, emit `[Plan Invalidation]`, ask whether to switch to STANDARD.
+- **Vibe override:** if the user invokes `@vibe`, `@patch`, or starts the request with a clear directive ("just add", "quick fix", "tweak"), bias one tier down.
+
+## Special Scenarios
+
+These override the default risk classification. When a scenario specifies a **Read:** line, that exact archive file must be read at the indicated phase — the path is the instruction.
+
+### Scenario DEBUG — Deep Troubleshooting
+**Trigger:** Bug/error with unknown root cause.
+**Routing:** Profile PATCH. ALLOWED to run terminal commands (≤5 retries). FORBIDDEN from modifying code. Once root cause found → yield to user or transition to Change intent.
+
+### Scenario EPIC — Massive Refactoring / Cross-Domain Feature
+**Trigger:** Feature spanning ≥3 domains, framework migration, or massive refactoring.
+**Routing:** Profile STANDARD, risk HIGH (forced). MUST slice work into micro-tasks. MUST delegate to sub-agents via contract schema. MUST NOT write code directly — act as Foreman + QA.
+**Read:** `.claude/skills-archive/blueprint/SKILL.md` (system-architect, Propose phase) + `.claude/skills-archive/dispatching-parallel-agents/SKILL.md` (when ≥2 independent workstreams).
+
+### Scenario A — Emergency Hotfix
+**Trigger:** Production incident, critical bug, ship immediately.
+**Routing:** Profile PATCH. No Propose/Review. Requires `## Emergency Justification` + `secrets_linter.py` before Archive.
+**Read:** `.claude/skills-archive/incident-response/SKILL.md` (main agent, FIRST action — triage → mitigation → post-mortem).
+
+### Scenario B — Database / System Migration
+**Trigger:** DDL changes (CREATE TABLE, ALTER TABLE, ADD INDEX, DROP COLUMN, etc.) OR A→B system migration.
+**Routing:** Profile STANDARD, risk HIGH (forced). Approval Gate required. Gate: `python3 .claude/scripts/gates/migration_gate.py --sql-dir <path>`. Data WAL write-back MANDATORY.
+**Read:** `.claude/skills-archive/migration-planner/SKILL.md` (system-architect, Propose phase — equivalence-test-first protocol).
+
+### Scenario C — Breaking API Change
+**Trigger:** Removing/renaming public endpoint, backward-incompatible schema change, auth/permission strategy change.
+**Routing:** Profile STANDARD, risk HIGH (forced). Gate: `python3 .claude/scripts/gates/api_breaking_gate.py --task-brief <path>`. Must document migration guide in task_brief.
+
+### Scenario D — Performance Tuning
+**Trigger:** Performance-focused request (slow query, high latency, memory/CPU).
+**Routing:** LEARN first (gather baseline evidence: bottleneck + metric + proposed fix). Then re-route as Change.
+**Read (optional):** `.claude/skills-archive/external-research/SKILL.md` if baseline reveals an unknown systemic pattern.
+
+### Scenario E — Dependency Upgrade
+**Trigger:** Changes to `pom.xml` dependencies.
+**Routing:** PATCH for patch-version bumps; STANDARD for major/minor version or new dependency. Gate: `python3 .claude/scripts/gates/dependency_gate.py --pom <pom.xml>`.
+
+### Scenario GREENFIELD — Starting from scratch
+**Trigger:** No `src/` directory OR user explicitly says "from scratch / new project".
+**Routing:** Profile STANDARD, risk HIGH (because everything is being decided for the first time).
+**Read:** `.claude/skills-archive/greenfield-scaffold/SKILL.md` (requirement-engineer + system-architect, replaces "infer from existing code" Explorer logic). Optionally `.claude/skills-archive/deepinit/SKILL.md` for hierarchical CLAUDE.md generation.
+
+### Scenario RELEASE — Release / Deployment
+**Trigger:** User requests a release, version tag, deploy.
+**Routing:** Profile MAINTENANCE (no code change typically).
+**Read:** `.claude/skills-archive/release/SKILL.md` (main agent — validates pre-release gates).
+
+### Scenario PIPELINE — Full Idea→Delivery Loop
+**Trigger:** User invokes `@ai-pipeline` or "run the full pipeline" or "from idea to delivery".
+**Routing:** Profile STANDARD, multi-phase orchestration.
+**Read:** `.claude/skills-archive/ai-pipeline/SKILL.md` (main agent — orchestrates blueprint → decisions → eval → improve → cleanup). Also read `.claude/skills-archive/self-improve/SKILL.md` and `.claude/skills-archive/eval-harness/SKILL.md` when their phases fire.
+
+## Maintenance Operations
+
+| Trigger | Role | Flow |
+|---|---|---|
+| "整理/合并 wiki", `@gc` | Librarian | Aggregate → Merge → Clean → Lint |
+| "提取/沉淀知识", `@wiki-update` | Knowledge Extractor | Diff → Extract → WAL fragments → Lint |
+| "拆分文档", index > 500 lines | Knowledge Architect | Check → Deduplicate → Split → Rewrite index |
+| "扫描项目", "审计代码库" | Explorer (inline) | Scan → Index → Report |
+
+Maintenance tasks have no code phases (no Explorer/Propose/Implement/QA). Detailed checklists for each role are in `.claude/agents/`.
+
+## Shortcuts (Explicit Overrides)
+
+| Shortcut | Profile | Effect |
+|---|---|---|
+| `@read` / `@learn` | LEARN | Read-only; never write code, never run gates |
+| `@vibe` / `@patch` / `@quickfix` | PATCH | Act directly; skip Explorer/Propose/WAL even if heuristics suggest LOW |
+| `@standard` | STANDARD | Force task_brief + lifecycle, even if heuristics suggest PATCH |
+| `@gc` / `@librarian` | MAINTENANCE | Librarian flow |
+| `@wiki-update` / `@milestone` | MAINTENANCE | Knowledge Extractor flow |
+
+Flags: `--risk low|medium|high`, `--launch`, `--no-launch`, `--test "<cmd>"`, `--yes` (auto-confirm).
+`@learn` MUST NOT combine with `--launch` or `--writeback`.
+
+When no shortcut is given, classify by the Risk Classification table; default to the lower tier when ambiguous.
+
+---
+
+# Part 2 — Lifecycle: Phases & State Machine
 
 ## Canonical Phase Flow
 
@@ -10,35 +125,29 @@ This file documents the **phases** in detail. The mapping from profile/risk to p
 Explorer → Propose → Review → [Approval Gate if HIGH] → Implement → QA → Archive
 ```
 
-PATCH profiles skip Explorer/Propose/Review entirely. MAINTENANCE has its own role-specific flow. See routing.md → "Risk Classification" for the per-profile flow tables.
+PATCH profiles skip Explorer/Propose/Review entirely. MAINTENANCE has its own role-specific flow (see Maintenance Operations above).
 
----
+## Discipline Pillars
 
-## PDD: Task Dependencies & Parallelism
-
+### PDD: Task Dependencies & Parallelism
 - Declare dependencies BEFORE writing code. Each task lists its upstream dependencies.
 - ≥3 tasks: draw a dependency graph (DAG). Tasks without mutual dependencies MAY run in parallel (soft limit: 3).
 - A task whose `Depends On` are not all `DONE` MUST remain PENDING.
 
-## BDD: AC Format
-
+### BDD: AC Format
 Every requirement MUST be: `Given [precondition], when [action], then [observable, measurable result].`
 Vague language ("handle correctly", "work properly") is BLOCKED.
 
-## SDD/SPEC: Contract-First
-
+### SDD/SPEC: Contract-First
 `task_brief.md` is the universal contract. No code until spec is complete. Two sections:
 - **Machine Section** (English): Allowed Scope, ACs, Hard Constraints — AI consumption
 - **Human Section** (Chinese): business rationale, design trade-offs, decision questions
 
-## TDD: Red → Green → Refactor
-
+### TDD: Red → Green → Refactor
 Tests are derived from BDD ACs, not invented by implementer.
 1. RED — write failing test from AC
 2. GREEN — minimum code to pass
 3. REFACTOR — clean up within passing tests
-
----
 
 ## Phase Details
 
@@ -94,8 +203,6 @@ Do NOT fix by expanding scope. Wait for human decision.
 2. Plan Deviation Reflection: scope drift? dependency accuracy? plan invalidations? deferred ACs?
 3. Move task_brief to `.claude/wiki/archive/`
 
----
-
 ## State Files
 
 Only two: `launch_spec_*.md` (task queue) and `task_brief.md` (per-task contract).
@@ -106,6 +213,79 @@ Only two: `launch_spec_*.md` (task queue) and `task_brief.md` (per-task contract
 
 ---
 
-## Maintenance Flows
+# Part 3 — Hooks & Gates Reference
 
-Maintenance tasks have no code phases (no Explorer/Propose/Implement/QA). The trigger→role→flow table lives in [routing.md → Maintenance Operations](routing.md#maintenance-operations). Detailed checklists for each role are in `.claude/agents/`.
+Real Claude Code hooks are configured in `.claude/settings.json`. This part documents what each lifecycle phase needs in terms of validation and gates — the agent executes these at the appropriate moments.
+
+## Automated Hooks (settings.json)
+
+| Hook | Trigger | Action |
+|---|---|---|
+| PreToolUse | Before every Edit/Write | `pre_tool_use_hook.py` → `scope_guard.py` (blocks out-of-scope edits when an active task_brief exists; silent skip otherwise) |
+| PostToolUse | After every Edit/Write | `post_tool_use_hook.py` → `secrets_linter.py` on changed file |
+| UserPromptSubmit | Before every user prompt | `user_prompt_submit_hook.py` → `failure_memory.py summary --days 30 --min-count 2 --top 5` (injects recurring failures into context; silent if none) |
+
+These run automatically. The agent does not need to invoke them manually.
+
+**failure_memory UserPromptSubmit semantics:**
+- Reads `.claude/runs/local_intel/failure_memory.json` (gitignored via `.claude/runs/`, populated by gate-failure `record` calls)
+- Aggregates failures from the last 30 days, groups by `(phase, gate, pattern)`, keeps only patterns that recurred ≥ 2 times
+- Top 5 are emitted to stdout as a `[failure-memory]` context block prepended to the user prompt
+- Silent (no injection) when: no memory file, no recurring patterns, or `CLAUDE_FAILURE_MEMORY_QUIET=1`
+- Token budget: typically < 200 tokens; well under the 5-minute prompt-cache window
+
+**scope_guard PreToolUse semantics:**
+- Looks up active task_brief via `find_active_task_brief.py` (latest `launch_spec_*.md` → IN_PROGRESS row → Artifact path)
+- If no launch_spec exists or no IN_PROGRESS row: silent skip (PATCH/Vibe/maintenance work is not restricted)
+- If file is in Allowed Scope: silent pass
+- If file is out of scope: exit 2 with stderr message — Claude Code blocks the Edit and surfaces the reason to the agent
+- Emergency bypass: `CLAUDE_SCOPE_GUARD_BYPASS=1` env var skips the check (one-shot, for stuck cases)
+
+## Phase Gates (Agent-Executed)
+
+### Explorer → Propose
+- Run `python3 .claude/scripts/local_intel/failure_memory.py query --intent Change --phase Explorer` to surface past failures
+- Run `python3 .claude/scripts/local_intel/code_index.py --impact-of <target>` to enumerate callers before writing Allowed Scope
+- MEDIUM/HIGH: Convert requirements to Given/When/Then ACs — vague language blocked
+
+### Propose → Implement
+- Run `python3 .claude/scripts/gates/task_brief_gate.py --require <path>` (task_brief structural validation)
+- HIGH risk: Approval Gate — present Human Section, wait for explicit approval
+
+### Implement → QA
+- `shift_left`: Run `mvn compile -q` after each code change. MAX 2 retries.
+- Scope enforcement is automatic via the PreToolUse hook (see above) — no manual scope_guard.py call needed when a launch_spec is active. To audit the full change set in one shot (e.g., before commit), run `python3 .claude/scripts/gates/scope_guard.py --task-brief <path>` (omit `--files` to default to git diff).
+- TRIVIAL/LOW: if no unit tests cover the change, present `git diff` to user before proceeding
+- Do NOT run full test suite here (that's QA)
+
+### QA
+- Run tests. Produce objective evidence (test output).
+- ACs ≥ 4 or risk = HIGH: map each Given/When/Then AC → test method → expected → actual → status
+
+### QA → Archive
+- Run `python3 .claude/scripts/gates/secrets_linter.py --paths "<changed files>"`
+
+## Scenario-Specific Gates
+
+| Scenario | Gate |
+|---|---|
+| B (DB Migration) | `python3 .claude/scripts/gates/migration_gate.py --sql-dir <path>` |
+| C (Breaking API) | `python3 .claude/scripts/gates/api_breaking_gate.py --task-brief <path>` |
+| E (Dependency) | `python3 .claude/scripts/gates/dependency_gate.py --pom <pom.xml>` |
+
+## Failure Protocol
+
+On any gate failure:
+1. Record: `python3 .claude/scripts/local_intel/failure_memory.py record --intent <intent> --profile <profile> --phase <phase> --gate <script> --pattern "<reason>" --task-id <id>`
+2. Fix and re-run. MAX 2 retries per phase.
+3. Same phase fails 3 times: STOP and ask human.
+
+## Compound Failure Decision Matrix
+
+| Scenario | Action |
+|---|---|
+| QA → back to Implement, scope unchanged | Normal rollback within existing Allowed Scope |
+| QA → back to Implement, scope needs expansion | STOP. Output `[Boundary Exception Request]`. Wait for approval. |
+| Same phase fails twice, same root cause | STOP. Escalate with evidence. |
+| Same phase fails twice, different root causes | STOP. Roll back to Propose for contract amendment. |
+| Implement → compile failure (shift_left) | Fix, max 2 retries. Both fail → downgrade to Propose. |

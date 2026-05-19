@@ -25,7 +25,7 @@ This framework keeps 29 "active" skills auto-loaded by Claude Code. 12 lower-fre
 | Recording a design decision | `architecture-decision-records` |
 | Knowledge preservation | `wal-documentation-rules` (Archive) → `remember` (cross-session) |
 | Pre-Explorer codebase context | `local-code-intelligence` (BM25 + symbol index + failure memory) |
-| **Migration / Greenfield / Incident / EPIC / PRD / Release / Pipeline** | See `.claude/rules/routing.md` Special Scenarios — the matching scenario inlines the archive path to read |
+| **Migration / Greenfield / Incident / EPIC / PRD / Release / Pipeline** | See `.claude/rules/lifecycle.md` Special Scenarios — the matching scenario inlines the archive path to read |
 
 ---
 
@@ -92,7 +92,7 @@ These were moved back from archive because they fit the daily flow.
 | Cleanup | Lead Engineer | (optional) `ai-slop-cleaner` |
 | Archive | Knowledge Extractor | wal-documentation-rules → verify → `remember` (cross-session lessons) |
 
-For Greenfield / Migration / EPIC / Incident / Pipeline / Release flows, the matching scenario in `.claude/rules/routing.md` inlines the archive path the agent must read.
+For Greenfield / Migration / EPIC / Incident / Pipeline / Release flows, the matching scenario in `.claude/rules/lifecycle.md` inlines the archive path the agent must read.
 
 ---
 
@@ -104,18 +104,18 @@ The following 12 skills live under `.claude/skills-archive/<name>/SKILL.md`. The
 
 | Skill | Referenced from |
 |---|---|
-| `incident-response` | `.claude/rules/routing.md` → Scenario A |
-| `migration-planner` | `.claude/rules/routing.md` → Scenario B |
-| `greenfield-scaffold` | `.claude/rules/routing.md` → Scenario GREENFIELD |
-| `blueprint` | `.claude/rules/routing.md` → Scenario EPIC |
-| `dispatching-parallel-agents` | `.claude/rules/routing.md` → Scenario EPIC |
+| `incident-response` | `.claude/rules/lifecycle.md` → Scenario A |
+| `migration-planner` | `.claude/rules/lifecycle.md` → Scenario B |
+| `greenfield-scaffold` | `.claude/rules/lifecycle.md` → Scenario GREENFIELD |
+| `blueprint` | `.claude/rules/lifecycle.md` → Scenario EPIC |
+| `dispatching-parallel-agents` | `.claude/rules/lifecycle.md` → Scenario EPIC |
 | `using-git-worktrees` | `.claude/agents/lead-engineer.md` → HIGH-risk / parallel work |
-| `ai-pipeline` | `.claude/rules/routing.md` → Scenario PIPELINE |
-| `self-improve` | `.claude/rules/routing.md` → Scenario PIPELINE |
-| `eval-harness` | `.claude/rules/routing.md` → Scenario PIPELINE |
-| `external-research` | `.claude/rules/routing.md` → Scenario D + Scenario PIPELINE |
-| `release` | `.claude/rules/routing.md` → Scenario RELEASE |
-| `deepinit` | `.claude/rules/routing.md` → Scenario GREENFIELD |
+| `ai-pipeline` | `.claude/rules/lifecycle.md` → Scenario PIPELINE |
+| `self-improve` | `.claude/rules/lifecycle.md` → Scenario PIPELINE |
+| `eval-harness` | `.claude/rules/lifecycle.md` → Scenario PIPELINE |
+| `external-research` | `.claude/rules/lifecycle.md` → Scenario D + Scenario PIPELINE |
+| `release` | `.claude/rules/lifecycle.md` → Scenario RELEASE |
+| `deepinit` | `.claude/rules/lifecycle.md` → Scenario GREENFIELD |
 
 Each referenced location writes the full `.claude/skills-archive/<name>/SKILL.md` path inline. When the rule fires, the agent reads that exact file — no judgment about whether to mount it, no lookup needed.
 
@@ -128,5 +128,5 @@ Auto-loading 12 rarely-used skill descriptions costs ~1,800 tok on every session
 ## Related
 
 - `.claude/agents/` — role catalog; each role file lists which skills it depends on
-- `.claude/rules/routing.md` — when each lifecycle phase fires
+- `.claude/rules/lifecycle.md` — when each lifecycle phase fires
 - `.claude/skills/skill-creator/SKILL.md` — used when adding a new skill (will prompt you to register here)
