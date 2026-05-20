@@ -69,8 +69,6 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-**These principles are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
-
 ### 5. Skill Files: Reference, Not Preflight Reading
 
 **Skills are deep-dive references, not preflight reading.** The description for each skill in your system prompt is the daily navigation — for Zone A skills (`java-architecture-standards`, `java-coding-style`, `mybatis-sql-standard`, `test-driven-development`) the description already encodes the everyday rules you need.
@@ -86,14 +84,7 @@ Production incident facts live under `.claude/wiki/incidents/<date>_<slug>.md`. 
 - **UserPromptSubmit:** the `[failure-memory]` block at turn start lists recent incidents (last 30 days + any with `status: watch`), each with a one-line "提醒未来 LLM" lesson. Skim them like you'd skim a standup digest.
 - **PostToolUse:** when you edit a file referenced by a past incident, an `[incident-hint]` block injects a pointer. **Open that specific `.md`** — it has the actual root cause, fix, and what to avoid this time.
 
-**Ingesting a new incident:** when a real production fact (Sentry alert, Jira ticket, oncall log, post-mortem) needs to enter the system, pipe it to `ingest_incident.py`:
-
-```
-cat sentry_alert.txt | python3 .claude/scripts/local_intel/ingest_incident.py \
-    --source sentry --slug <kebab-case-slug>
-```
-
-The script saves the raw fact and prints a structured prompt. **You** (the LLM) then read the raw + write `.claude/wiki/incidents/<date>_<slug>.md` following the template — the script does not parse Sentry/Jira JSON, because schema drift makes parsers brittle. The single most important field to write well is `## 提醒未来 LLM` — that one line is what every future session sees.
+**Ingesting a new incident:** when a real production fact (Sentry alert, Jira ticket, oncall log, post-mortem) needs to enter the system, run `python3 .claude/scripts/local_intel/ingest_incident.py --help` for usage. The script saves the raw fact and prints a structured prompt; **you** (the LLM) then read the raw + write `.claude/wiki/incidents/<date>_<slug>.md` following the template — the script does not parse Sentry/Jira JSON, because schema drift makes parsers brittle. The single most important field to write well is `## 提醒未来 LLM` — that one line is what every future session sees.
 
 ## Two Modes
 
