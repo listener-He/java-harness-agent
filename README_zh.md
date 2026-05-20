@@ -37,6 +37,14 @@ CLAUDE.md                      # 唯一入口
 │   ├── knowledge-architect.md    # 知识架构师 · Knowledge Architect — 当 wiki 索引文件超过 500 行上限时，执行去重→按主题拆分→创建聚焦子文档→将父索引重写为精简路由图。必要时更新 KNOWLEDGE_GRAPH.md。工作阶段：Maintenance（由 GC 溢出触发）。
 │   ├── librarian.md              # 图书管理员 · Librarian — Wiki 健康维护者。收集分散的 WAL 碎片→合并到稳定的领域索引→垃圾回收已合并的碎片。发现索引超 500 行时自动调用 Knowledge Architect 拆分。触发方式：@gc / @librarian。工作阶段：Maintenance。
 │   └── security-sentinel.md      # 安全哨兵 · Security Sentinel — 确定性安全门禁。运行自动化扫描（secrets_linter.py）检测硬编码凭据、令牌、密钥、云凭证。仅报告客观通过/失败结果，不做主观安全审计。每次 Archive 前 + Scenario A（紧急热修复）触发。
+├── commands/                    # 用户可调用的 slash 命令（h- 前缀，避免与 Claude Code 内置命令冲突）
+│   ├── h-decompose.md           # PRD/EPIC 预校验 → task-decomposition-guide 拆解 → N 个 brief 骨架 → DAG 绑定 launch_spec
+│   ├── h-brief.md               # 按 schema 生成 task_brief + 双向绑定 launch_spec
+│   ├── h-design.md              # 用严格 Source Documents 契约派遣 system-architect → HIGH 写 ≥2 ADR → 填 brief §8/§9
+│   ├── h-resume.md              # 只读：定位 IN_PROGRESS 任务 + 恢复 Machine Section + 给出 Next Action
+│   ├── h-gates.md               # Phase/Scenario 感知的 gate 套件 + failure_memory 失败记录
+│   ├── h-archive.md             # Plan Deviation Reflection → knowledge-extractor → 归档 brief → wiki_linter → 标记 DONE
+│   └── h-incident.md            # 包装 ingest_incident.py + 按 TEMPLATE 写 incident .md（强制 "提醒未来 LLM" 质量自检）
 ├── skills/                          # 29 个 active skill，每次会话被 Claude Code 自动加载
 │   ├── skill-index/                 # 中央导航（active 集合 + archive 索引）
 │   ├── adversarial-review/          # 单轮对抗性审查（HIGH risk Review 阶段）
@@ -256,6 +264,24 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 | ② 搜索 | `wiki_search.py` — 找出相关 wiki 上下文 | Explorer (inline) |
 | ③ 记忆 | `failure_memory.py query` — 找出历史失败记录 | Explorer (inline) |
 | ④ 报告 | 生成结构化扫描报告（目录、模块、关键符号、风险） | Explorer (inline) |
+
+---
+
+## Slash 命令
+
+用户可直接调用的快捷指令，将多步固定流程封装为一次调用。本项目所有自建命令使用 `h-` 前缀（harness 缩写），避免与 Claude Code 内置命令（`/init`、`/review`、`/security-review` 等）和 skill 注册命令冲突。命令文件位于 `.claude/commands/<name>.md`，Claude Code 启动时自动加载——通过 `/h-<name> [args]` 调用。
+
+| 命令 | 阶段 | 效果 | 使用时机 |
+|------|------|------|---------|
+| `/h-decompose <slug> <prd-path>` | Explorer → Propose | PRD/EPIC 预校验 → task-decomposition-guide 拆解 → N 个 brief 骨架 → DAG 绑定 launch_spec | EPIC/PRD 涉及 ≥3 个域，需要 INVEST 合规切片 |
+| `/h-brief <slug>` | Propose 入口 | 按 schema 生成 task_brief + 1 行 launch_spec | 单个 STANDARD 任务起步（范围已知） |
+| `/h-design [slug]` | Propose 设计 | 用严格 Source Documents 契约派遣 system-architect；HIGH 写 ≥2 ADR；填 brief §8/§9 | HIGH/EPIC 需要设计备选方案；MEDIUM 需要 1 个显式选项 |
+| `/h-resume` | 任意时刻 | 只读：定位 IN_PROGRESS 任务 + 恢复 Machine Section 上下文 + 给出 Next Action | 会话中断后恢复 |
+| `/h-gates [--phase X] [--scenario Y]` | 阶段边界 / commit 前 | 跑所有适用 gate（scope、secrets、task_brief、scenario B/C/E）；失败记录到 failure_memory | Phase 转换或 commit 前的完整 diff 审计 |
+| `/h-archive` | Phase 6 | Plan Deviation Reflection → knowledge-extractor → 归档 brief → wiki_linter → 标记 launch_spec DONE | STANDARD 任务收尾 |
+| `/h-incident <source> <slug>` | 任意时刻 | 包装 `ingest_incident.py` + 按 TEMPLATE 写结构化 incident `.md`；强制 `## 提醒未来 LLM` 质量自检 | 真实生产事故（Sentry/Jira/oncall/复盘）进入记忆系统 |
+
+每个命令文件都是强约束的：步骤顺序固定、STOP 条件明确、Allowed Edit 边界显式。完整契约见 `.claude/commands/h-<name>.md`。
 
 ---
 

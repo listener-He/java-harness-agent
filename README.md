@@ -37,6 +37,14 @@ CLAUDE.md                      # Single entry point
 │   ├── knowledge-architect.md    # Splits bloated wiki indexes when >500 lines. Deduplicates → groups by topic → creates focused sub-documents → rewrites parent as lean routing index. Updates KNOWLEDGE_GRAPH.md. Phase: Maintenance (triggered by GC overflow).
 │   ├── librarian.md              # Wiki health maintainer. Aggregates scattered WAL fragments → merges into stable domain indexes → garbage-collects merged fragments. Invokes Knowledge Architect on index overflow. Trigger: @gc / @librarian. Phase: Maintenance.
 │   └── security-sentinel.md      # Deterministic security gate. Runs automated scan (secrets_linter.py) for hardcoded credentials, tokens, keys. Reports objective pass/fail — no subjective security review. Triggered before every Archive + Scenario A (Emergency Hotfix).
+├── commands/                    # User-invokable slash commands (h- prefix, avoid Claude Code built-in collision)
+│   ├── h-decompose.md           # PRD/EPIC pre-validation → task-decomposition-guide → N brief skeletons → DAG bound to launch_spec
+│   ├── h-brief.md               # Schema-compliant task_brief + bidirectional launch_spec binding
+│   ├── h-design.md              # Dispatch system-architect with strict Source Documents → write ≥2 ADRs (HIGH) → fill brief §8/§9
+│   ├── h-resume.md              # Read-only: locate IN_PROGRESS task + restore Machine Section + report Next Action
+│   ├── h-gates.md               # Phase/scenario-aware gate suite + failure_memory recording
+│   ├── h-archive.md             # Plan Deviation Reflection → knowledge-extractor → archive brief → wiki_linter → mark DONE
+│   └── h-incident.md            # Wrap ingest_incident.py + write incident .md from TEMPLATE (enforces 提醒未来 LLM smell test)
 ├── skills/                          # 29 skills auto-loaded by Claude Code on every session
 │   ├── skill-index/                 # Central navigator (active set + archive references)
 │   ├── adversarial-review/          # One-round isolated critique (HIGH-risk Review)
@@ -256,6 +264,24 @@ When the user requests pure knowledge/wiki maintenance (整理, 提取, 扫描, 
 | ② Search | `wiki_search.py` — surface relevant wiki context | Explorer (inline) |
 | ③ Memory | `failure_memory.py query` — surface past failures | Explorer (inline) |
 | ④ Report | Produce structured scan report (directories, modules, key symbols, risks) | Explorer (inline) |
+
+---
+
+## Slash Commands
+
+User-invokable shortcuts that wrap multi-step lifecycle flows into single invocations. All project commands use the `h-` prefix (harness) to avoid collision with Claude Code built-ins (`/init`, `/review`, `/security-review`, etc.) and skill-registered commands. Commands live under `.claude/commands/<name>.md` and are loaded automatically — invoke as `/h-<name> [args]`.
+
+| Command | Phase | Effect | When to use |
+|---------|-------|--------|-------------|
+| `/h-decompose <slug> <prd-path>` | Explorer → Propose | PRD/EPIC pre-validation → task-decomposition-guide → N brief skeletons → DAG bound to launch_spec | EPIC/PRD spanning ≥3 domains; need INVEST-compliant slicing |
+| `/h-brief <slug>` | Propose entry | Schema-compliant task_brief + 1 launch_spec row | Single STANDARD task starting from a known scope |
+| `/h-design [slug]` | Propose design | Dispatch system-architect with strict Source Documents contract; write ≥2 ADRs (HIGH); fill brief §8/§9 | HIGH/EPIC needs design alternatives; MEDIUM needs 1 explicit option |
+| `/h-resume` | Any | Read-only: locate IN_PROGRESS task + restore Machine Section context + report Next Action | Resuming an interrupted session |
+| `/h-gates [--phase X] [--scenario Y]` | Phase boundary / pre-commit | Run all applicable gates (scope, secrets, task_brief, scenario B/C/E); record failures into failure_memory | Auditing full diff before phase transition or commit |
+| `/h-archive` | Phase 6 | Plan Deviation Reflection → knowledge-extractor → archive brief → wiki_linter → mark launch_spec DONE | STANDARD task completion |
+| `/h-incident <source> <slug>` | Anytime | Wrap `ingest_incident.py` + write structured incident `.md` from TEMPLATE; enforces `## 提醒未来 LLM` smell test | Real production fact (Sentry/Jira/oncall/post-mortem) entering memory |
+
+Each command file is opinionated: hard step ordering, fixed STOP conditions, explicit Allowed Edit boundaries. See `.claude/commands/h-<name>.md` for the full contract per command.
 
 ---
 
