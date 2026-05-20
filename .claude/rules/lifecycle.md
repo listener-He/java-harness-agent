@@ -15,28 +15,43 @@ Single source of truth for: how a request gets classified, what phases follow, w
 | **STANDARD** | MEDIUM or HIGH risk change | task_brief.md + launch_spec | MEDIUM: FYI only; HIGH: required |
 | **MAINTENANCE** | Wiki/WAL operations, no code changes | WAL fragments | No |
 
+## Step 0 — Triage Probe (auto-injected via UserPromptSubmit hook)
+
+Before applying shortcuts or the Risk table, check the `[triage]` block injected by `.claude/scripts/local_intel/triage_probe.py` (runs in the UserPromptSubmit hook, after `[failure-memory]` and `[ambiguity]`).
+
+The probe synthesizes four signals into a `suggested_profile`:
+- **blast_radius** — `code_index.py --impact-of` for any file/class names in the prompt
+- **failure_history** — `failure_memory.py summary --days 30 --min-count 2`
+- **ambiguity** — `ambiguity_gate.py` (OK / WARN / FAIL)
+- **danger_keywords** — HIGH tier (auth, schema, migration, error code, secret, framework routing files) / MEDIUM tier (public api, hook, gate)
+
+How to use the suggestion:
+- No `[triage]` block printed → input was heuristic-skipped (too short, pure question, `@learn`/`@read` shortcut). Proceed by normal shortcut rules.
+- `[triage]` present → **adopt the suggested profile or higher**. The probe never downgrades; you may only escalate further.
+- User used `@vibe`/`@patch` AND probe shows red signals → emit a `[Probe Override]` block at turn start enumerating ignored signals, then proceed in the requested mode. See [policy.md](policy.md#probe-override).
+
 ## Risk Classification
 
-Pick the lowest tier whose criteria fully cover the request. Default to lower tier when ambiguous — escalation is cheap, downgrade is wasted ceremony.
+Pick the tier whose Probe Signals row best matches your `[triage]` output. When in doubt, escalate one tier — the probe is conservative; tipping points around the boundaries should round up.
 
-| Risk | Criteria | Profile |
+| Risk | Probe Signals (all must hold) | Profile |
 |---|---|---|
-| **TRIVIAL** | ≤3 files. No public API, DB schema, auth, or error-code system change. Includes: bugfixes within a single domain, defensive checks, validation, logs, comments, formatting, typos, internal refactors. | PATCH |
-| **LOW** | 4–6 files OR small bugfix spanning two related domains. Still no public API/DB/auth/error-code change. | PATCH |
-| **MEDIUM** | New/changed external API, public method signature change, or core business path change. No DB/auth foundation change. | STANDARD |
-| **HIGH** | DB schema/index changes, auth/permission strategy, error code system changes, ≥3 domains, shared utilities, unclear blast radius. | STANDARD |
+| **TRIVIAL** | suggested=VIBE AND signals_red=[] AND no danger_keywords | PATCH (act inline, no spec) |
+| **LOW** | suggested=PATCH (any single soft signal: blast 3–6 files, OR ambiguity FAIL, OR 2 recurring failures, OR MEDIUM keyword) | PATCH (Slim Spec, no task_brief) |
+| **MEDIUM** | suggested=STANDARD-MEDIUM (blast ≥7, OR ≥3 recurring failures, OR two PATCH-tier signals compounding) | STANDARD (task_brief required) |
+| **HIGH** | suggested=STANDARD-HIGH (any HIGH-tier danger keyword: auth, schema, migration, error code, lifecycle/policy/routing files, secret/token/credential) | STANDARD (task_brief + ≥2 ADR + Approval Gate) |
 
 **Per-profile flows:**
 - **TRIVIAL:** `Implement → QA → Archive` — no task_brief, no inline Explorer, no WAL.
-- **LOW:** `Implement → QA → Archive` — no task_brief, no WAL; if scope is unclear at start, do a quick mental Explorer (no document).
+- **LOW:** `Implement → QA → Archive` — no task_brief, no WAL; Slim Spec = one paragraph stating scope + AC before code.
 - **MEDIUM:** `Explorer → Propose(task_brief) → Review → Implement → QA → Archive`
 - **HIGH:** `Explorer → Propose(task_brief, ≥2 ADR) → Review(adversarial) → Approval Gate → Implement → QA → Archive`
 
 ### Boundary rules
 
-- **Never** force STANDARD on a TRIVIAL/LOW change just because the user mentioned "important" or "production". Use the table criteria, not vibes.
+- **Never** force STANDARD on a TRIVIAL/LOW change just because the user mentioned "important" or "production". Use the Probe Signals row, not vibes.
 - **Always** escalate if, mid-implementation, you discover the change actually touches public API/DB/auth — stop, emit `[Plan Invalidation]`, ask whether to switch to STANDARD.
-- **Vibe override:** if the user invokes `@vibe`, `@patch`, or starts the request with a clear directive ("just add", "quick fix", "tweak"), bias one tier down.
+- **Vibe override:** if the user invokes `@vibe`, `@patch`, or starts the request with a clear directive ("just add", "quick fix", "tweak"), Probe signals are still computed but the user's declared intent takes precedence. Emit `[Probe Override]` if any signals were red.
 
 ## Special Scenarios
 
@@ -292,9 +307,16 @@ Real Claude Code hooks are configured in `.claude/settings.json`. This part docu
 |---|---|---|
 | PreToolUse | Before every Edit/Write | `pre_tool_use_hook.py` → `scope_guard.py` (blocks out-of-scope edits when an active task_brief exists; silent skip otherwise) |
 | PostToolUse | After every Edit/Write | `post_tool_use_hook.py` → `secrets_linter.py` on changed file |
-| UserPromptSubmit | Before every user prompt | `user_prompt_submit_hook.py` → `failure_memory.py summary --days 30 --min-count 2 --top 5` (injects recurring failures into context; silent if none) |
+| UserPromptSubmit | Before every user prompt | `user_prompt_submit_hook.py` → emits up to four compact context blocks: `[failure-memory]`, distill nudge, `[ambiguity]`, `[triage]`. Each is silent when there is nothing to surface. |
 
 These run automatically. The agent does not need to invoke them manually.
+
+**triage_probe UserPromptSubmit semantics (Step 0 routing input — see Part 1):**
+- Skips silently when prompt < 15 chars, contains `@learn`/`@read`/`@cap`/maintenance shortcuts, or is a question without an action verb
+- Synthesizes four signals (blast_radius, failure_history, ambiguity, danger_keywords) into `suggested_profile` ∈ {VIBE, PATCH, STANDARD-MEDIUM, STANDARD-HIGH}
+- Prints `[triage]` block only when profile > VIBE or there are red signals; silent on ALL-GREEN VIBE
+- Each upstream subprocess capped at 3s; total budget typically < 600ms
+- Quiet env: `CLAUDE_TRIAGE_QUIET=1`
 
 **failure_memory UserPromptSubmit semantics:**
 - Reads `.claude/runs/local_intel/failure_memory.json` (gitignored via `.claude/runs/`, populated by gate-failure `record` calls)

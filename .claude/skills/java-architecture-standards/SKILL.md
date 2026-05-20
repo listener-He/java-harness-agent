@@ -1,6 +1,13 @@
 ---
 name: "java-architecture-standards"
-description: "Layer 1 (Architecture) for Java backend: 3-Layer architecture, API design (No Path Variables), POJO structure, Anti-JOIN data assembly, Error Code handling. Composes with java-coding-style (L2) and mybatis-sql-standard (L3, conditional). Invoke before writing ANY Java code. See .claude/rules/skill-precedence.md Zone A."
+description: |
+  Layer 1 (Architecture) for Java backend. Daily decisions you can make WITHOUT opening SKILL.md:
+  - Red Lines: NO @PathVariable (use query string / request body); NO hard delete (is_deleted=1); NO `I` prefix on interfaces; every list query filters by tenant_id.
+  - Service writes: throw DomainException + AbstractErrorCode (never RuntimeException) — guarantees @Transactional rollback.
+  - Cross-domain reads: Anti-JOIN — query main table, extract FK ids, query related table, assemble in memory.
+  - DI: @RequiredArgsConstructor on the class, NEVER @Autowired on fields. Lombok: @Getter+@Setter, NOT @Data.
+  - Null checks: Objects.isNull() / Objects.nonNull(), not == null.
+  Open SKILL.md when deciding: POJO directory layout, audit field set, endpoint naming verbs, @ResourceLock usage.
 ---
 
 # Java Architecture & Engineering Standards

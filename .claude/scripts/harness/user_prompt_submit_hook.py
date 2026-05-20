@@ -22,6 +22,7 @@ import sys
 FAILURE_MEMORY = ".claude/scripts/local_intel/failure_memory.py"
 DISTILL_THRESHOLD = ".claude/scripts/wiki/distill_threshold.py"
 AMBIGUITY_GATE = ".claude/scripts/gates/ambiguity_gate.py"
+TRIAGE_PROBE = ".claude/scripts/local_intel/triage_probe.py"
 
 # Shortcuts that override the default triage — when present, the user has
 # already declared intent and we do not need to nudge them.
@@ -86,6 +87,28 @@ def _emit_distill_nudge() -> None:
     print(out)
 
 
+def _emit_triage_probe(prompt_text: str) -> None:
+    """Inject [triage] block when probe suggests a profile above VIBE.
+
+    Silent when probe heuristic-skips (short input, pure question) or when the
+    suggested profile is VIBE with no red signals. Subprocess is bounded by the
+    probe's internal 3s-per-tool timeouts.
+    """
+    if os.environ.get("CLAUDE_TRIAGE_QUIET") == "1":
+        return
+    text = (prompt_text or "").strip()
+    if not text:
+        return
+    proc = subprocess.run(
+        [sys.executable, TRIAGE_PROBE, "--quiet-on-skip"],
+        input=text, check=False, capture_output=True, text=True,
+    )
+    out = (proc.stdout or "").rstrip()
+    if not out:
+        return
+    print(out)
+
+
 def _emit_ambiguity_check(prompt_text: str) -> None:
     if os.environ.get("CLAUDE_AMBIGUITY_QUIET") == "1":
         return
@@ -114,6 +137,7 @@ def main() -> int:
     _emit_failure_memory()
     _emit_distill_nudge()
     _emit_ambiguity_check(prompt_text)
+    _emit_triage_probe(prompt_text)
     return 0
 
 

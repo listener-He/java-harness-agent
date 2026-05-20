@@ -1,6 +1,14 @@
 ---
 name: test-driven-development
-description: "Write failing tests derived from ACs before writing implementation code. TRIGGER at Implement phase for STANDARD tasks — confirm tests fail, implement until tests pass. DO NOT skip to implementation without prior test failure evidence."
+description: |
+  TDD discipline for STANDARD-profile Implement phase. Daily protocol without opening SKILL.md:
+  - RED first: write the test from an AC, RUN it, confirm it fails. No implementation yet.
+  - GREEN second: write the minimum code to pass. Resist adding "while I'm here" code.
+  - REFACTOR third: clean up only after green. Tests stay green throughout.
+  - One test = one AC. If a test asserts multiple behaviors, split it.
+  - Never modify a test to make a failing implementation pass — fix the implementation.
+  - Skipping RED (writing test+impl together) violates the discipline; you do not know the test actually tests anything.
+  Open SKILL.md when deciding: how to test code without obvious seams, when to stub vs mock vs use a real dependency, refactor patterns that preserve green.
 ---
 
 # Test-Driven Development (TDD)

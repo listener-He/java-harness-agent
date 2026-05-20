@@ -1,6 +1,13 @@
 ---
 name: "java-coding-style"
-description: "Layer 2 (Coding style) for Java: Checkstyle (4 spaces, K&R braces), strict Javadoc templates, utility class boundaries, functional patterns (In-Memory JOIN, Cursor Batching). Composes with java-architecture-standards (L1). Invoke before writing any Java code at Implement phase. See .claude/rules/skill-precedence.md Zone A."
+description: |
+  Layer 2 (Coding style) for Java. Daily decisions without opening SKILL.md:
+  - 4 spaces (never tabs); K&R braces; always braces for if/for/while (no single-line).
+  - NO wildcard imports (`import x.*;`). NO `// comment` for structural blocks — use `/** */`.
+  - Every public class/method has Javadoc with @author/@date/@param/@return.
+  - Custom utility class: `public final class` + `private` ctor + all methods `static`. NO business imports.
+  - Discovery-first: prefer cn.hutool / commons / existing *Util before writing a new helper.
+  Open SKILL.md when deciding: In-Memory JOIN generic helper signature, Cursor Batching skeleton for large datasets, Javadoc template details.
 ---
 
 # Java Coding Style & Utility Standards

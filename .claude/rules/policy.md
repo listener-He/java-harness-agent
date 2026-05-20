@@ -14,6 +14,21 @@ Single source of truth for: safety/commit rules, WAL write-back, agent invocatio
 | **Artifact Paths** | Runtime artifacts under `.claude/runs/`. Never in repo root. Archive phase moves task_brief to `wiki/archive/`. |
 | **State Files** | Only two: `launch_spec_*.md` (task queue) and `task_brief.md` (per-task contract). No brake_snapshot, no engine_state.json. |
 
+<a id="probe-override"></a>
+### Probe Override
+
+When the user invokes `@vibe` / `@patch` / `@quickfix` but the `[triage]` block (from `triage_probe.py`, see [lifecycle.md Step 0](lifecycle.md#step-0--triage-probe-auto-injected-via-userpromptsubmit-hook)) reports any `signals_red`, the agent MUST print this block at turn start before any other output:
+
+```
+[Probe Override]
+User invoked <shortcut>; ignoring probe signals:
+  - <signal-1>
+  - <signal-2>
+Proceeding in <Vibe|Patch> at user's explicit request.
+```
+
+This is **non-blocking** — the user's declared intent wins. The block exists solely for auditability so silent escalations cannot happen and over-eager Vibe usage is visible in the transcript.
+
 ## Commit Policy
 
 **Never commit:**

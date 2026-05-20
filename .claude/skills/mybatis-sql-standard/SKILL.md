@@ -1,6 +1,16 @@
 ---
 name: "mybatis-sql-standard"
-description: "Enforces strict MyBatis SQL writing standards, database table design boundaries, and data modeling structures. TRIGGER when writing or modifying any MyBatis mapper XML, SQL fragment, or database table schema. Enforces anti-JOIN strategies, index utilization, and implicit type conversion prevention."
+description: |
+  Layer 3 (Persistence). TRIGGER when touching mapper XML, SQL fragment, or table schema. Daily decisions without opening SKILL.md:
+  - NO JOIN to fetch dictionary/redundant fields — single-table query + in-memory assembly (95% of queries are single-table).
+  - NO `${}` parameter substitution (SQL injection); use `#{}` or a whitelisted enum.
+  - NO `SELECT *` — list columns; skip large TEXT/JSON unless explicitly needed.
+  - NO physical foreign keys; store ids logically and rely on application-level boundaries.
+  - Every business table has the 8 standard audit columns (id, tenant_id, create_time, update_time, create_by, update_by, is_deleted, version).
+  - Prefer LambdaQueryWrapper over hardcoded XML for single-table queries.
+  - Don't add `tenant_id = #{}` manually — the global TenantLineInnerInterceptor injects it.
+  - Type-match params to columns (VARCHAR↔String, BIGINT↔Long); type mismatch disables the index.
+  Open SKILL.md when deciding: composite index leftmost-prefix design, IN-clause partitioning threshold, `<choose>`/`<if>` patterns for safe dynamic sorting.
 ---
 
 # SYSTEM DIRECTIVE: MyBatis SQL & Database Design Standard

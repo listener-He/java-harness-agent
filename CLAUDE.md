@@ -71,14 +71,32 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 **These principles are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
 
+### 5. Skill Files: Reference, Not Preflight Reading
+
+**Skills are deep-dive references, not preflight reading.** The description for each skill in your system prompt is the daily navigation — for Zone A skills (`java-architecture-standards`, `java-coding-style`, `mybatis-sql-standard`, `test-driven-development`) the description already encodes the everyday rules you need.
+
+- Don't ritualistically read every Zone A `SKILL.md` before Implement. The description has what you need 90% of the time.
+- Open `SKILL.md` only when you face a **specific technical decision** the description doesn't answer (e.g., "what's the In-Memory JOIN helper signature", "should this be a composite index leftmost-prefix or a covering index").
+- During Implement, the PostToolUse hook emits a `[skill-hint]` block when a known anti-pattern slips into a file. Treat the hint as a signal to consider opening that specific `SKILL.md`, not as a blocking gate.
+
 ## Two Modes
 
 | Mode | When | Flow |
 |---|---|---|
-| **Vibe** (default) | LEARN, TRIVIAL, simple PATCH, "just do it" | Act directly. No task_brief, no Explorer, no WAL. |
+| **Vibe** | LEARN, TRIVIAL, simple PATCH, "just do it" | Act directly. No task_brief, no Explorer, no WAL. |
 | **Standard** | MEDIUM/HIGH risk, public API/DB/auth changes, EPIC | Explorer → Propose → Review → [Approval if HIGH] → Implement → QA → Archive |
 
-Default to Vibe. Escalate to Standard only when the change touches **public API, DB schema, auth, error-code system, or ≥3 domains**. Force a mode with `@vibe` / `@patch` / `@standard` / `@learn`.
+### Vibe Eligibility (white-list, not fallback)
+
+Vibe is **not** the default — the UserPromptSubmit hook runs `triage_probe.py` (Step 0 in [lifecycle.md](.claude/rules/lifecycle.md)) and prints a `[triage]` block when the probe sees red signals. Enter Vibe ONLY if one of:
+
+1. Explicit `@vibe` / `@patch` / `@quickfix` (user has declared intent — if probe still flags red, print `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override))
+2. LEARN-class request (read-only, no code write)
+3. `[triage]` absent (probe heuristic-skipped: short input, pure question, maintenance shortcut)
+4. `[triage]` shows `suggested: VIBE` with `signals_red=[]` (probe ALL-GREEN)
+5. Diff < 3 lines and obviously cosmetic (typo / formatting)
+
+Any other input enters at least **PATCH(LOW)** with a Slim Spec — one paragraph stating scope + AC before code. Force a mode with `@vibe` / `@patch` / `@standard` / `@learn`.
 
 Standard mode composes PDD + SDD/SPEC + BDD + TDD — see [.claude/wiki/purpose.md](.claude/wiki/purpose.md).
 
