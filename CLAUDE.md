@@ -79,6 +79,22 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Open `SKILL.md` only when you face a **specific technical decision** the description doesn't answer (e.g., "what's the In-Memory JOIN helper signature", "should this be a composite index leftmost-prefix or a covering index").
 - During Implement, the PostToolUse hook emits a `[skill-hint]` block when a known anti-pattern slips into a file. Treat the hint as a signal to consider opening that specific `SKILL.md`, not as a blocking gate.
 
+### 6. Past Incidents: Read When the Hook Points You at Them
+
+Production incident facts live under `.claude/wiki/incidents/<date>_<slug>.md`. They are surfaced two ways:
+
+- **UserPromptSubmit:** the `[failure-memory]` block at turn start lists recent incidents (last 30 days + any with `status: watch`), each with a one-line "提醒未来 LLM" lesson. Skim them like you'd skim a standup digest.
+- **PostToolUse:** when you edit a file referenced by a past incident, an `[incident-hint]` block injects a pointer. **Open that specific `.md`** — it has the actual root cause, fix, and what to avoid this time.
+
+**Ingesting a new incident:** when a real production fact (Sentry alert, Jira ticket, oncall log, post-mortem) needs to enter the system, pipe it to `ingest_incident.py`:
+
+```
+cat sentry_alert.txt | python3 .claude/scripts/local_intel/ingest_incident.py \
+    --source sentry --slug <kebab-case-slug>
+```
+
+The script saves the raw fact and prints a structured prompt. **You** (the LLM) then read the raw + write `.claude/wiki/incidents/<date>_<slug>.md` following the template — the script does not parse Sentry/Jira JSON, because schema drift makes parsers brittle. The single most important field to write well is `## 提醒未来 LLM` — that one line is what every future session sees.
+
 ## Two Modes
 
 | Mode | When | Flow |

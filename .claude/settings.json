@@ -50,6 +50,26 @@
           }
         ]
       }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/scripts/harness/subagent_stop_hook.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/scripts/harness/stop_hook.py"
+          }
+        ]
+      }
     ]
   }
 }

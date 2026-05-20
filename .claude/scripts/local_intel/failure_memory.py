@@ -35,11 +35,18 @@ Exit codes: 0=ok, 1=no data, 2=error
 import argparse
 import json
 import os
+import re
 import sys
 from datetime import datetime
+from pathlib import Path
 
-MEMORY_PATH = ".claude/runs/local_intel/failure_memory.json"
+# Resolve repo-relative paths against this file's location so the script
+# works regardless of the caller's CWD (UserPromptSubmit and PostToolUse
+# hooks invoke us through subprocess from various directories).
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+MEMORY_PATH = str(_REPO_ROOT / ".claude" / "runs" / "local_intel" / "failure_memory.json")
 MAX_RECORDS = 500
+INCIDENTS_DIR = str(_REPO_ROOT / ".claude" / "wiki" / "incidents")
 
 
 def _load() -> dict:
@@ -183,6 +190,80 @@ def summary(days: int = 30, min_count: int = 2, top: int = 5) -> list[dict]:
     return recurring[:top]
 
 
+_FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
+_REMINDER_RE = re.compile(
+    r"##\s*提醒未来\s*LLM\s*\n(.*?)(?=\n##\s|\Z)",
+    re.DOTALL,
+)
+
+
+def _parse_frontmatter(text: str) -> dict[str, str]:
+    """Parse a minimal subset of YAML frontmatter (key: value lines)."""
+    m = _FRONTMATTER_RE.match(text)
+    if not m:
+        return {}
+    fields: dict[str, str] = {}
+    for line in m.group(1).splitlines():
+        line = line.strip()
+        if not line or ":" not in line or line.startswith("#"):
+            continue
+        key, _, value = line.partition(":")
+        fields[key.strip()] = value.strip().strip("\"'")
+    return fields
+
+
+def incidents_summary(days: int = 30, top: int = 5) -> list[dict]:
+    """Read .claude/wiki/incidents/*.md, return recent entries.
+
+    Returns list of dicts with: date, slug, severity, status, reminder.
+    Includes:
+      - All files whose frontmatter date is within `days`
+      - All files with status == "watch" (permanent)
+    Sorted by date desc, capped at top.
+    """
+    d = Path(INCIDENTS_DIR)
+    if not d.is_dir():
+        return []
+    from datetime import timedelta
+    cutoff = (datetime.now() - timedelta(days=days)).date()
+
+    entries: list[dict] = []
+    for p in d.glob("*.md"):
+        # Skip docs: README, TEMPLATE, anything not following <date>_<slug>.md
+        name = p.name
+        if not re.match(r"^\d{4}-\d{2}-\d{2}_[a-z0-9][a-z0-9-]*\.md$", name):
+            continue
+        try:
+            text = p.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        fm = _parse_frontmatter(text)
+        if not fm:
+            continue
+        try:
+            d_obj = datetime.fromisoformat(fm.get("date", "")).date()
+        except ValueError:
+            continue
+        status = fm.get("status", "").lower()
+        if d_obj < cutoff and status != "watch":
+            continue
+        m = _REMINDER_RE.search(text)
+        reminder = (m.group(1).strip() if m else "").splitlines()
+        reminder_line = next((ln.strip() for ln in reminder if ln.strip()), "")
+        # Strip leading markdown emphasis like **下次改这片代码时考虑：**
+        reminder_line = re.sub(r"^\*\*[^*]+\*\*\s*[:：]?\s*", "", reminder_line)
+        entries.append({
+            "date": fm.get("date", ""),
+            "slug": fm.get("slug", p.stem.split("_", 1)[-1]),
+            "severity": fm.get("severity", "").upper() or "?",
+            "status": status or "?",
+            "reminder": reminder_line or "(no '提醒未来 LLM' line in record)",
+            "path": str(p),
+        })
+    entries.sort(key=lambda e: e["date"], reverse=True)
+    return entries[:top]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Local cross-session failure pattern memory"
@@ -219,7 +300,16 @@ def main() -> int:
     sm.add_argument("--min-count", type=int, default=2,
                     help="only include patterns that recurred at least N times")
     sm.add_argument("--top", type=int, default=5)
+    sm.add_argument("--include-incidents", action="store_true",
+                    help="append a second section listing recent incidents from "
+                         ".claude/wiki/incidents/")
     sm.add_argument("--json", action="store_true", dest="as_json")
+
+    inc = sub.add_parser("incidents",
+                         help="Standalone list of recent incidents (for tooling)")
+    inc.add_argument("--days", type=int, default=30)
+    inc.add_argument("--top", type=int, default=5)
+    inc.add_argument("--json", action="store_true", dest="as_json")
 
     args = parser.parse_args()
 
@@ -260,15 +350,40 @@ def main() -> int:
 
     if args.cmd == "summary":
         items = summary(args.days, args.min_count, args.top)
+        incidents = (incidents_summary(args.days, args.top)
+                     if args.include_incidents else [])
         if args.as_json:
-            print(json.dumps(items))
+            payload = {"recurring": items, "incidents": incidents} \
+                if args.include_incidents else items
+            print(json.dumps(payload, ensure_ascii=False))
+            return 0 if (items or incidents) else 1
+        if not items and not incidents:
+            return 1
+        if items:
+            print("recurring gate failures (last %dd):" % args.days)
+            for it in items:
+                gate_part = f"/{it['gate']}" if it['gate'] else ""
+                print(f"- ×{it['count']} {it['phase']}{gate_part}: "
+                      f"{it['pattern']} (last {it['last_ts']})")
+        if incidents:
+            if items:
+                print()
+            print("incidents (last %dd + status:watch):" % args.days)
+            for it in incidents:
+                print(f"- {it['date']} {it['severity']} {it['slug']} — "
+                      f"{it['reminder']}")
+        return 0
+
+    if args.cmd == "incidents":
+        items = incidents_summary(args.days, args.top)
+        if args.as_json:
+            print(json.dumps(items, ensure_ascii=False))
             return 0 if items else 1
         if not items:
             return 1
         for it in items:
-            gate_part = f"/{it['gate']}" if it['gate'] else ""
-            print(f"- ×{it['count']} {it['phase']}{gate_part}: "
-                  f"{it['pattern']} (last {it['last_ts']})")
+            print(f"- {it['date']} {it['severity']} {it['slug']} — "
+                  f"{it['reminder']}")
         return 0
 
     parser.print_help()

@@ -18,6 +18,7 @@ from pathlib import Path
 _SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 SECRETS_LINTER = str(_SCRIPTS_DIR / "gates" / "secrets_linter.py")
 SKILL_HINT = str(_SCRIPTS_DIR / "local_intel" / "skill_hint.py")
+INCIDENT_HINT = str(_SCRIPTS_DIR / "local_intel" / "incident_hint.py")
 
 
 def main() -> int:
@@ -46,6 +47,19 @@ def main() -> int:
     try:
         proc = subprocess.run(
             [sys.executable, SKILL_HINT, file_path],
+            check=False, capture_output=True, text=True,
+        )
+        out = (proc.stdout or "").rstrip()
+        if out:
+            print(out)
+    except Exception:
+        pass
+
+    # Past-incident reverse lookup: if a recent incident touched this file,
+    # remind the LLM. Non-blocking, silent on no match.
+    try:
+        proc = subprocess.run(
+            [sys.executable, INCIDENT_HINT, file_path],
             check=False, capture_output=True, text=True,
         )
         out = (proc.stdout or "").rstrip()

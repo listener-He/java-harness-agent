@@ -19,10 +19,15 @@ import os
 import subprocess
 import sys
 
-FAILURE_MEMORY = ".claude/scripts/local_intel/failure_memory.py"
-DISTILL_THRESHOLD = ".claude/scripts/wiki/distill_threshold.py"
-AMBIGUITY_GATE = ".claude/scripts/gates/ambiguity_gate.py"
-TRIAGE_PROBE = ".claude/scripts/local_intel/triage_probe.py"
+from pathlib import Path
+
+# Resolve sibling scripts relative to this file so the hook works regardless
+# of the harness's current working directory.
+_SCRIPTS_DIR = Path(__file__).resolve().parent.parent
+FAILURE_MEMORY = str(_SCRIPTS_DIR / "local_intel" / "failure_memory.py")
+DISTILL_THRESHOLD = str(_SCRIPTS_DIR / "wiki" / "distill_threshold.py")
+AMBIGUITY_GATE = str(_SCRIPTS_DIR / "gates" / "ambiguity_gate.py")
+TRIAGE_PROBE = str(_SCRIPTS_DIR / "local_intel" / "triage_probe.py")
 
 # Shortcuts that override the default triage — when present, the user has
 # already declared intent and we do not need to nudge them.
@@ -64,13 +69,14 @@ def _emit_failure_memory() -> None:
         return
     proc = subprocess.run(
         [sys.executable, FAILURE_MEMORY, "summary",
-         "--days", "30", "--min-count", "2", "--top", "5"],
+         "--days", "30", "--min-count", "2", "--top", "5",
+         "--include-incidents"],
         check=False, capture_output=True, text=True,
     )
     out = (proc.stdout or "").rstrip()
     if not out:
         return
-    print("[failure-memory] Recurring issues in the last 30 days — keep in mind while planning:")
+    print("[failure-memory] Recent failures and incidents — keep in mind while planning:")
     print(out)
 
 
