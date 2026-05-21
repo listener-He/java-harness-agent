@@ -126,5 +126,5 @@ WAL written: api + rules. Task brief archived.
 - **1 explicit stop**: Implement Yield (Turn 3→4) — no Approval Gate for MEDIUM
 - **Single artifact**: `task_brief.md` is the only task-level file — no brake snapshot, no delivery capsule, no explore report
 - **Evidence Mapping Table** makes QA objective — no "I think it works"
-- **HIGH risk** adds: Approval Gate (after Propose), ≥2 ADR alternatives in task_brief Human Section
+- **HIGH risk** adds: Approval Gate (after Propose), one ADR per actual irreversible decision linked from §8 (or explicit "mechanical" note if none), adversarial-review Category B
 - **Multi-assistant handoff**: Design/Review/Archive by strong-reasoning assistant → Implement by strong-codegen assistant

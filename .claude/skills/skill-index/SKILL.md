@@ -85,7 +85,7 @@ These were moved back from archive because they fit the daily flow.
 |---|---|---|
 | Pre-Explorer | — | `requirement-intake` (if input is non-trivial) |
 | Explorer | Requirement Engineer | `local-code-intelligence` → brainstorming → (cognitive-bias-checklist) → (spec-quality-checklist) |
-| Propose / Review | System Architect | brainstorming (≥2 ADR via `architecture-decision-records`) → task-decomposition-guide → decision-frameworks |
+| Propose / Review | System Architect | brainstorming (one ADR per actual irreversible decision via `architecture-decision-records`; zero ADRs allowed with explicit "mechanical" note) → task-decomposition-guide → decision-frameworks |
 | Review (HIGH only) | Devil's Advocate | `adversarial-review` (one isolated round) |
 | Implement | Lead Engineer + Focus Guard | writing-plans → java-architecture-standards / java-coding-style / mybatis-sql-standard → systematic-debugging / test-driven-development |
 | QA | Code Reviewer | code-review-checklist → java-testing-standards → ultraqa → (security-review-checklist) |
@@ -105,7 +105,7 @@ The following 12 skills live under `.claude/skills-archive/<name>/SKILL.md`. The
 | Skill | Referenced from |
 |---|---|
 | `incident-response` | `.claude/rules/lifecycle.md` → Scenario A |
-| `migration-planner` | `.claude/rules/lifecycle.md` → Scenario B |
+| `migration-planner` | `.claude/rules/lifecycle.md` → Scenario B2 (mutating DDL / migration); B1 additive is PATCH and skips this skill |
 | `greenfield-scaffold` | `.claude/rules/lifecycle.md` → Scenario GREENFIELD |
 | `blueprint` | `.claude/rules/lifecycle.md` → Scenario EPIC |
 | `dispatching-parallel-agents` | `.claude/rules/lifecycle.md` → Scenario EPIC |

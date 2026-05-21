@@ -53,7 +53,10 @@ MIN_LEN_FOR_PROBE = 15
 # downstream task — they are the routing table itself.
 DANGER_HIGH = (
     "auth", "认证", "permission", "权限", "rbac",
-    "schema", "ddl", "alter table", "drop column", "create table",
+    # Mutating DDL — touches existing live data. Additive `create table`
+    # is intentionally NOT here; see Scenario B1 (PATCH).
+    "alter table", "drop column", "drop table",
+    "modify column", "rename column", "rename table",
     "migration", "迁移",
     "error code", "错误码", "errcode",
     "secret", "token", "credential", "凭证",
@@ -64,6 +67,9 @@ DANGER_HIGH = (
 DANGER_MEDIUM = (
     "public api", "公共 api", "endpoint", "签名",
     "hook", "gate", "framework", "架构",
+    # Additive / generic schema talk — often PATCH-able when isolated. The
+    # synthesizer escalates to MEDIUM only if compounded with other signals.
+    "create table", "create index", "ddl", "schema",
 )
 
 FILE_HINT_PAT = re.compile(

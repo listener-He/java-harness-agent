@@ -70,7 +70,7 @@ python3 .claude/scripts/local_intel/code_index.py --build
 # Who calls this method? (for blast radius estimation)
 python3 .claude/scripts/local_intel/code_index.py --who-calls createOrder
 
-# Which mapper XMLs touch this table? (for Scenario B: DB migration)
+# Which mapper XMLs touch this table? (for Scenario B1/B2: DB migration)
 python3 .claude/scripts/local_intel/code_index.py --what-touches-table orders
 
 # Full impact analysis of a file change (importers + callers)
@@ -151,7 +151,7 @@ Indexes are stored in `.claude/runs/local_intel/` (gitignored).
 
 ## Related Skills
 
-- [wal-documentation-rules](../wal-documentation-rules/SKILL.md): uses code index to find affected mappers during Scenario B
+- [wal-documentation-rules](../wal-documentation-rules/SKILL.md): uses code index to find affected mappers during Scenario B1/B2
 - [security-review-checklist](../security-review-checklist/SKILL.md): uses `--what-touches-table` to find all data access paths for sensitive tables
 - [systematic-debugging](../systematic-debugging/SKILL.md): uses `--who-calls` to trace call chains during root-cause investigation
 - [task-decomposition-guide](../task-decomposition-guide/SKILL.md): uses `--impact-of` to size blast radius before decomposing an EPIC

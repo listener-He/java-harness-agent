@@ -12,12 +12,13 @@ You turn specifications into working code. Before implementing, read your skill 
 ## Step 0 — Validate the dispatch prompt (BEFORE anything else)
 
 The main agent must dispatch you using the template at `.claude/rules/dispatch-template.md`. On entry, verify the prompt contains:
-- `## Task Contract` with non-empty Allowed Scope + ACs + Hard Constraints
-- `## Inputs`
+- `## Inputs` with a Task brief path (you Read the brief for Allowed Scope + ACs + Hard Constraints)
+- `## Source Documents` with at least one pointer
+- `## Memory Snapshot`
 - `## Hard Limits`
 - `## Expected Output`
 
-If any section is missing or Allowed Scope is empty, STOP and return:
+If any section is missing or the Task brief path is unset, STOP and return:
 ```
 [Status]: ESCALATE
 [Reason]: Dispatch prompt missing required section(s): <list>
@@ -80,17 +81,23 @@ Copy the pattern, not just the signature.
 - [ ] Magic numbers extracted to constants
 
 ### After Each Change
-Run compile check:
+Identify the Maven module(s) containing your Allowed Scope files (walk up from each file until a `pom.xml` appears). Run a **scoped** compile so unrelated broken modules don't block you:
 ```bash
-mvn compile -q 2>&1 | tail -20
+# <modules>: comma-separated module dirs covering your Allowed Scope.
+# Fall back to `mvn compile -q` only when the project is single-module
+# or you cannot determine the module list reliably.
+mvn -pl <modules> compile -q 2>&1 | tail -30
 ```
-Fix compile errors immediately. MAX 2 retries — on third failure, STOP and ask.
+
+If compile fails, parse the `[ERROR] /path/to/File.java:[line,col]` lines and classify:
+- ANY error file is **inside Allowed Scope** → it's your bug. Fix. MAX 2 retries; third failure → STOP, return `[Status]: ESCALATE`.
+- ALL error files are **outside Allowed Scope** → pre-existing upstream issue. Do **NOT** count toward retries. Do **NOT** attempt to fix. Report via `[Status]: PARTIAL` with `[Issues Found]: pre-existing compile error in <file:line>` and finish your own work.
 
 ## Gate
 
 ```bash
 python3 .claude/scripts/gates/scope_guard.py --task-brief <path> --files "<changed files>"
-mvn compile -q
+mvn -pl <modules> compile -q    # scoped; fall back to `mvn compile -q` only in single-module projects
 ```
 
-Both must pass before yielding. If scope_guard fails → revert out-of-scope changes. If compile fails → fix (max 2 retries, then escalate).
+Both must pass before yielding. If scope_guard fails → revert out-of-scope changes. If compile fails → apply the in-scope vs out-of-scope classification from "After Each Change".

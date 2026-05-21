@@ -1,6 +1,6 @@
 ---
 name: "wal-documentation-rules"
-description: "Rulebook for WAL fragment writes (domain, api, rules + optional data) during Archive — keeps the LLM Wiki synced without merge conflicts. MANDATORY for STANDARD profile Archive; skipped entirely in PATCH. Executed by the knowledge-extractor sub-agent by default. See .claude/rules/skill-precedence.md Zone D."
+description: "Rulebook for WAL fragment writes (domain, api, rules, data, architecture) during Archive — keeps the LLM Wiki synced without merge conflicts. User-elected per task via h-archive Step 3b; skipped entirely in PATCH. Executed by the knowledge-extractor sub-agent by default. See .claude/rules/skill-precedence.md Zone D."
 ---
 
 # Write-Ahead Log (WAL) Documentation Capture
@@ -9,12 +9,16 @@ description: "Rulebook for WAL fragment writes (domain, api, rules + optional da
 
 ## When to Write WAL
 
-| Task Type | WAL Required? |
+| Task Type | WAL Behavior |
 |---|---|
-| STANDARD Archive (new feature, refactor, design) | YES — mandatory |
-| PATCH Archive (hotfix, typo, config tweak) | NO — skip WAL entirely |
+| STANDARD Archive (new feature, refactor, design) | **User-elected** — `h-archive` Step 3b multi-selects which dimensions to write. **None** is a valid choice (writes a single stub; HIGH+None requires justification). The question itself is mandatory; silent zero-WAL is not allowed. |
+| PATCH Archive (hotfix, typo, config tweak) | NO — skip WAL entirely, no question asked. |
 
 If unsure, check the task's `_task_brief.md`: if `task_type: PATCH`, skip this skill.
+
+## Why user election, not mandatory triple
+
+The historic rule "STANDARD Archive MUST write Domain + API + Rules" pushed agents to fabricate padding fragments for tasks that genuinely touched only one dimension. The new rule trusts the user to pick; the question is enforced (you cannot silently skip), but the *content* is honest.
 
 ---
 
@@ -44,7 +48,11 @@ If unsure, check the task's `_task_brief.md`: if `task_type: PATCH`, skip this s
 
 ---
 
-## 2. Three Mandatory WAL Types (STANDARD Archive)
+## 2. Five User-Electable WAL Types (STANDARD Archive)
+
+The user picks any subset via `h-archive` Step 3b. Choose Brief detail level (table-driven, ~5-15 lines) by default; only escalate to Detailed/Verbose when the user explicitly notes it.
+
+If the user elected **None**, do NOT write any of the type-specific fragments below. Instead `h-archive` writes a single stub at `.claude/wiki/wiki/domain/wal/<YYYYMMDD>_<slug>_stub.md` recording the explicit decision (and a justification for HIGH risk). The stub is verified by `writeback_gate.py --accept-stub`.
 
 ### WAL Type 1 — Domain (`domain_append`)
 

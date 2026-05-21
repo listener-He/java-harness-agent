@@ -77,8 +77,8 @@ Gate: `python3 .claude/scripts/wiki/wiki_linter.py` — FAIL if dead links or an
 
 - Do NOT directly edit shared `index.md` files during automated runs. Write to `wal/` fragments.
 - WAL fragments are merged later by the Librarian (via `@gc`).
-- STANDARD tasks: WAL write-back is MANDATORY (Domain + API + Rules; Data if schema change).
-- PATCH tasks: no WAL required. Wiki refresh deferred to `@wiki-update`.
+- **STANDARD tasks: WAL write-back is user-elected.** During Archive, `h-archive` scans the diff, suggests WAL dimensions (Domain / API / Rules / Data / Architecture) with pre-checks based on what was actually changed, then asks the user via multi-select. Only chosen dimensions are written. **None** is a valid choice — it writes a single stub file recording the explicit decision. HIGH risk + None additionally requires a one-line justification (e.g., "config-only change; no domain knowledge to capture") to prevent habitual skipping; MEDIUM may skip with no justification. **Discipline preserved:** the question itself is mandatory — silent zero-WAL is not allowed.
+- PATCH tasks: no WAL required, no question asked. Wiki refresh deferred to `@wiki-update`.
 - New tables/schemas go into WAL data domain (`wiki/data/wal/`) as Markdown with DDL code blocks — NOT as root `.sql` files.
 
 ---
@@ -96,15 +96,29 @@ Honest note: "inline role adoption" is just *you, reading a markdown file*. Clau
 
 Roles live in [.claude/agents/](../agents/). The `Agent` tool picks one by name; check its `tools:` frontmatter to know what it can do.
 
+### Inline preference for small STANDARD-MEDIUM tasks
+
+For STANDARD-MEDIUM tasks where **AC count ≤ 3 AND single domain AND no cross-cutting concerns**, **prefer inline role adoption** for `lead-engineer`. The main agent reads `.claude/agents/lead-engineer.md` and acts as that role within the current conversation; Allowed Scope / ACs / Hard Constraints stay in scope via the active task_brief. This saves the dispatch prompt overhead (~50 lines + a re-Read of source files the main agent already has in context) without losing rigor.
+
+Stay with **sub-agent dispatch** when ANY of the following holds — isolation is the actual product, not overhead:
+- AC count ≥ 4 (heavier work; isolation prevents context bleed and confirmation bias)
+- Multi-domain or HIGH risk (fresh-context review catches what main agent normalized away)
+- Role is `code-reviewer` or `adversarial-review` — isolation is the whole point; **never inline these**
+- Role is `knowledge-extractor` (Archive write-back) — isolation produces clean WAL fragments
+- Role is `requirement-engineer`, `system-architect`, `security-sentinel` — these benefit from clean context per dispatch
+
+When in doubt, dispatch. The inline shortcut is a planned optimization for the recognizable "small mechanical Java change" case, not a general default.
+
 ## Dispatch payload (sub-agents)
 
 **MANDATORY:** every sub-agent dispatch prompt MUST be built from the template at [dispatch-template.md](dispatch-template.md). Do NOT write dispatch prompts free-form — the template captures the contract, anti-loop limits, scope, and structured-return format that sub-agents otherwise wouldn't know about (they don't inherit CLAUDE.md / rules / memory).
 
 Required sections, all present even if "none":
-1. **Task Contract** — Allowed Scope + ACs + Hard Constraints (from `task_brief.md` Machine Section)
-2. **Inputs** — file paths, commit ranges, line numbers
-3. **Hard Limits** — anti-loop, scope discipline, no safety-bypass (verbatim from template)
-4. **Expected Output** — the structured `[Status]: … [Files Changed]: …` block
+1. **Inputs** — task_brief path (the brief itself carries Allowed Scope + ACs + Hard Constraints; sub-agent Reads it) + file paths / commit ranges
+2. **Source Documents** — pointers to mandatory reads (brief Machine Section + relevant source files)
+3. **Memory Snapshot** — relevant auto-memory entries (default "none")
+4. **Hard Limits** — anti-loop, scope discipline, no safety-bypass (verbatim from template)
+5. **Expected Output** — the structured `[Status]: … [Files Changed]: …` block
 
 Receiving sub-agents validate the prompt structure on entry. Missing section → return `[Status]: ESCALATE` with the missing-section name; the main agent must re-dispatch with the template. See [dispatch-template.md](dispatch-template.md) for the full skeleton and worked examples.
 

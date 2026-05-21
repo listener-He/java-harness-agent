@@ -22,7 +22,7 @@ Read the brief in full. Capture:
 |---|---|
 | `spec_mode: SLIM` (LOW risk) | STOP — SLIM mode doesn't carry §8/§9; fill the 5 SLIM sections directly without dispatching an architect. |
 | `risk: MEDIUM`, §8 already substantive (no `TODO(h-brief)` markers) | STOP — design already done; if you want to revise, edit the brief manually or delete the section first. |
-| `risk: HIGH`, ≥2 ADR files already linked from §8 | STOP — design already done. |
+| `risk: HIGH`, §8 ADR section finalized (either ≥1 ADR file linked OR explicit `Mechanical implementation — no irreversible architectural decision; no ADR required.` line) | STOP — design already done. |
 | `risk: MEDIUM` or `HIGH`, §8/§9 placeholder or missing (when dimension declared) | Proceed to Step 3. |
 
 Refusing re-design is deliberate — accidentally re-dispatching the architect mid-Implement is a major scope-creep vector.
@@ -43,8 +43,8 @@ Fill:
 - **Acceptance Criteria** (for the architect, distinct from brief AC):
   - AC-1: §8 Technical Architecture filled with substantive Component / Deployment / Third-party / Rationale content (no `TODO` markers) **IF** `tech_arch` in dimensions
   - AC-2: §9 Design Patterns Applied filled **IF** `patterns` in dimensions
-  - AC-3 (HIGH only): ≥2 ADR files written under `.claude/wiki/wiki/architecture/adr/ADR-NNNN-<slug>.md` following `.claude/wiki/wiki/architecture/adr/template.md`. Each ADR MUST include populated `## Alternatives Considered` with Pros/Cons/Why-not, and `## Consequences` Positive/Negative.
-  - AC-4 (HIGH only): §8 references the ADRs by file path
+  - AC-3 (HIGH only): EITHER ≥1 ADR file written per actual irreversible decision under `.claude/wiki/wiki/architecture/adr/ADR-NNNN-<slug>.md` (following `.claude/wiki/wiki/architecture/adr/template.md` with populated `## Alternatives Considered` Pros/Cons/Why-not and `## Consequences` Positive/Negative), OR §8 carries the explicit line `> Mechanical implementation — no irreversible architectural decision; no ADR required.` Architect MUST consciously decide which applies — silently producing zero ADRs is NOT acceptable.
+  - AC-4 (HIGH only): §8 either references the ADRs by file path OR carries the verbatim "mechanical" note
 - **Hard Constraints**:
   - MEDIUM: produce exactly 1 option with explicit rationale + constraint list
   - HIGH: produce 2–3 alternatives, then state which is chosen and why
@@ -70,8 +70,8 @@ python3 .claude/scripts/gates/subagent_return_gate.py --return-file <tmp> --task
 
 Independently verify the architect's claimed work, do not trust `[Status]: PASS` alone:
 
-1. **ADR count** (HIGH only): `ls .claude/wiki/wiki/architecture/adr/ADR-*-<slug>*.md | wc -l` ≥ 2. Below 2 → reject the architect's return, ask for revision; second insufficient run → STOP.
-2. **ADR structure** (HIGH only): each ADR file contains substantive `## Alternatives Considered` with ≥2 alternatives and `## Consequences` Positive + Negative sections. Missing → reject.
+1. **ADR coverage** (HIGH only): EITHER `ls .claude/wiki/wiki/architecture/adr/ADR-*-<slug>*.md | wc -l` ≥ 1 with each ADR linked from §8, OR §8 contains the verbatim line `Mechanical implementation — no irreversible architectural decision; no ADR required.` Neither present → reject the architect's return, ask for revision; second insufficient run → STOP.
+2. **ADR structure** (HIGH only, when ADRs exist): each ADR file contains substantive `## Alternatives Considered` with ≥2 alternatives and `## Consequences` Positive + Negative sections. Missing → reject.
 3. **§8 substantive** (if `tech_arch` in dimensions): no `TODO(h-brief)` or `TODO(h-design)` markers remain; Component / Deployment / Third-party / Rationale all populated.
 4. **§9 substantive** (if `patterns` in dimensions): same check.
 5. **§8 ADR links** (HIGH only): §8 body contains the actual ADR file paths.
@@ -109,7 +109,7 @@ Output exactly this block:
 
 - **Allowed edits**: the resolved task_brief, ADR files under `.claude/wiki/wiki/architecture/adr/` (HIGH only). NOTHING ELSE — explicitly NO source code, NO wiki indexes, NO ADR template / README.
 - **No re-design**: refuse to run if §8/§9 are already substantive (Step 2 table). The deliberate way to revise is to delete the section first, then re-invoke.
-- **HIGH risk + <2 ADRs is a hard fail**, not a soft warning — the entire reason HIGH has the ADR rule is to prevent single-option blind spots.
+- **HIGH risk + no ADRs AND no explicit "mechanical" §8 note is a hard fail** — the discipline is to *consciously decide* whether an irreversible decision exists, not to skip the question. Silently producing zero ADRs without the mechanical note = reject.
 - **Dispatch-template is non-negotiable**: system-architect agent ESCALATEs on missing `## Source Documents`. Build the prompt correctly the first time — do not paraphrase brief content into the prompt.
 - Anti-loop: max 1 revision per gate (Step 4, Step 5, Step 6). Second failure of the same gate → STOP.
 - This command does NOT invoke `adversarial-review` Category B — that belongs to Phase 3 (Review), not Propose. Keep phase boundaries clean.

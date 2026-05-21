@@ -30,16 +30,33 @@ def main() -> int:
     parser.add_argument("--date", required=True, help="YYYYMMDD")
     parser.add_argument("--require-data", action="store_true", help="Require data WAL as well")
     parser.add_argument("--require", action="append", default=[], help="Wal types: domain,api,rules,data,architecture")
+    parser.add_argument("--accept-stub", action="store_true",
+                        help="Pass if a single user-elected-None stub file exists "
+                             "at .claude/wiki/wiki/domain/wal/<date>_<topic>_stub.md")
     args = parser.parse_args()
 
     topic = args.topic.strip().lower().replace(" ", "_")
     date = args.date.strip()
+
+    # --accept-stub: explicit user election of "no WAL". We accept the single
+    # stub file as a valid Archive artifact (replaces the historic mandatory
+    # domain+api+rules triple). No --require list is consulted in this mode.
+    if args.accept_stub:
+        stub_path = f"{WIKI_ROOT}/domain/wal/{date}_{topic}_stub.md"
+        if os.path.exists(stub_path):
+            print(f"OK: stub present at {stub_path}")
+            return 0
+        print(f"FAIL: --accept-stub but stub file not found: {stub_path}")
+        return EXIT_FAIL
 
     required_types = []
     for x in (args.require or []):
         if x and x.strip():
             required_types.extend(t.strip().lower() for t in x.split(","))
     if not required_types:
+        # Historic default kept for backward compatibility with old call sites
+        # that still pass no --require. New call sites (h-archive Step 3c)
+        # MUST pass --require explicitly with the user-elected list.
         required_types = ["domain", "api", "rules"]
     if args.require_data and "data" not in required_types:
         required_types.append("data")

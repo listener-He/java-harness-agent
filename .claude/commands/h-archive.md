@@ -25,24 +25,76 @@ Append a `## Plan Deviation Reflection` section to the task_brief covering each 
 
 This section is the input contract for Step 3 — do not skip.
 
-## Step 3 — Dispatch knowledge-extractor sub-agent
+## Step 3 — User-elected WAL fragments
 
-Per skill-precedence Zone D, `knowledge-extractor` is the default executor. Build the dispatch prompt strictly from `.claude/rules/dispatch-template.md` with:
+### 3a. Suggest dimensions from diff
+Run `git diff HEAD~1 HEAD --name-only --diff-filter=AM` (or against the task's base commit if known) plus a content scan. Pre-check the dimensions whose patterns match:
 
-- **Allowed Scope**: `.claude/wiki/**/wal/` (sub-agent writes WAL fragments only, never edits source)
-- **Source Documents**: the resolved task_brief with `#L<a>-L<b>` covering Machine Section + Plan Deviation Reflection (use pointers, no summaries — see dispatch-template anti-summarization contract)
-- **Acceptance Criteria**: AC-1 Domain WAL written; AC-2 API WAL written; AC-3 Rules WAL written; AC-4 Data WAL written **only if** schema changed
-- **Memory Snapshot**: copy any `type=user` / `type=feedback` entries relevant to WAL writing
+- `*.sql` / `*Migration*` / DDL keywords (CREATE/ALTER/DROP) in diff → **Data**
+- New `*Controller.java` / new `@RestController` / `@*Mapping` / new public DTO → **API**
+- New `enum {` block / new state-machine class / new value object → **Domain**
+- New `@Valid` / `@PreAuthorize` / new `DomainException` subclass / new business invariant in service code → **Rules**
+- An ADR file was written under `.claude/wiki/wiki/architecture/adr/ADR-*.md` for this task → **Architecture**
 
-After the sub-agent returns, validate the return block:
+If a dimension's signal is absent, leave it un-checked. The user can still toggle it on.
 
+### 3b. Ask the user (mandatory question — silent zero-WAL is not allowed)
+Use `AskUserQuestion` with a multi-select listing all five dimensions plus **None**. Each option must surface its pre-check state and the WHY (one line). Wording template:
+
+```
+Q: Which WAL fragments should we write for this task? (Suggested based on diff; adjust freely.)
+- [✓] Domain — <reason: e.g. "new OrderStatus enum"> or "no signal in diff"
+- [✓] API — <reason or "no signal in diff">
+- [ ] Rules — <reason or "no signal in diff">
+- [ ] Data — <reason or "no signal in diff">
+- [ ] Architecture — <reason or "no ADR written for this task">
+- [ ] None — record explicit decision to skip
+```
+
+If user picks **None** AND `risk: HIGH` in the task_brief, follow up with a single-question prompt for a one-line justification (the answer goes verbatim into the stub). MEDIUM tasks skip the follow-up.
+
+### 3c. Write the selected fragments
+
+**Path A — user chose ≥1 dimension:** Dispatch `knowledge-extractor` per skill-precedence Zone D, strictly from `.claude/rules/dispatch-template.md`:
+
+- **Inputs**: include the line `[Chosen Dimensions]: <comma-separated list, e.g. "domain,api">` so the extractor writes only those — no other dimensions, no padding.
+- **Source Documents**: the resolved task_brief with `#L<a>-L<b>` covering Machine Section + Plan Deviation Reflection (pointers, no summaries — see dispatch-template anti-summarization contract). For each chosen dimension, also add pointers to the diff files most relevant to it.
+- **Acceptance Criteria**: one AC per chosen dimension, e.g. `AC-1: Domain WAL fragment written at expected path`. Do NOT include ACs for dimensions the user did not select.
+- **Memory Snapshot**: copy any `type=user` / `type=feedback` entries relevant to WAL writing.
+
+After the sub-agent returns:
 ```
 python3 .claude/scripts/gates/subagent_return_gate.py --return-file <tmp> --task-kind extract
 ```
-
 - exit 0 → continue
 - exit 1 (WARN) → surface warning to user inline, continue
 - exit 2 (FAIL) → re-dispatch ONCE with the template; second FAIL → STOP and ask user
+
+Then verify the chosen dimensions were actually written:
+```
+python3 .claude/scripts/gates/writeback_gate.py --topic <slug> --date <YYYYMMDD> --require "<chosen-list>"
+```
+
+**Path B — user chose None:** Skip the sub-agent dispatch. Write a single stub file directly (you, the main agent, write it — no sub-agent needed for one file):
+
+- Path: `.claude/wiki/wiki/domain/wal/<YYYYMMDD>_<slug>_stub.md`
+- Content:
+  ```markdown
+  # WAL Stub - <YYYY-MM-DD> - <slug>
+
+  Source spec: `<relative_path_to_task_brief.md>`
+
+  ## WAL Election
+  User elected: **None** — no WAL fragments written for this task.
+
+  ## Justification
+  <verbatim justification from user, or "n/a (MEDIUM task)">
+  ```
+
+Then verify:
+```
+python3 .claude/scripts/gates/writeback_gate.py --topic <slug> --date <YYYYMMDD> --accept-stub
+```
 
 ## Step 4 — Conditional add-ons (skip with one-line reason if not applicable)
 

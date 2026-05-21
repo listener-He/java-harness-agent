@@ -49,7 +49,7 @@ dimensions: [domain, api, data, tech_arch, patterns]   # subset of the known set
 ```
 
 - `spec_mode: STANDARD` — selects this template.
-- `risk:` — narrowed semantics: drives the **flow** (HIGH triggers Approval Gate, ≥2 ADR, adversarial-review Category B). Does NOT decide which sections are required. Both `MEDIUM` and `HIGH` carry the same spec-floor + dimension-gated rules.
+- `risk:` — narrowed semantics: drives the **flow** (HIGH triggers Approval Gate, one ADR per actual irreversible decision (or explicit "mechanical" note), adversarial-review Category B). Does NOT decide which sections are required. Both `MEDIUM` and `HIGH` carry the same spec-floor + dimension-gated rules.
 - `dimensions:` — YAML inline list. Known starter set (gate FAILs only when a declared dimension's section is missing/empty; unknown names WARN but do not FAIL — the set is open for ADR-driven extension):
 
   | dimension | gates section | use when the change … |

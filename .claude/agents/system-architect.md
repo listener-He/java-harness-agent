@@ -46,11 +46,24 @@ When emitting your structured return (`.claude/rules/dispatch-template.md` Expec
 - State your rationale explicitly
 - Define the Constraint List (decisions that bind implementation)
 
-#### For HIGH risk (≥2 ADR alternatives):
-- Present 2-3 viable alternatives
-- For each: Pros, Cons, Failure Conditions, estimated complexity
-- Recommend one with explicit rationale for why others were rejected
-- Each alternative must be genuinely different (not just "same thing with different library")
+#### For HIGH risk:
+First, identify each **actual** irreversible architectural decision in this task. Typical decision categories:
+- Transport / messaging choice (MQ vs scheduled job vs sync RPC)
+- Persistence model (single-table vs multi-table, normalized vs denormalized, OLTP vs OLAP store)
+- Sync vs async, push vs pull, batch vs stream
+- Framework / library selection that locks the codebase in for ≥6 months
+- API contract shape (REST/gRPC/event), pagination/versioning strategy
+
+For each decision identified, write ONE ADR under `.claude/wiki/wiki/architecture/adr/ADR-NNNN-<slug>.md`:
+- Present 2–3 genuinely different alternatives (not "same thing with different library name")
+- For each alternative: Pros, Cons, Failure Conditions, estimated complexity
+- Recommend one, with explicit rationale for why others were rejected
+
+If you genuinely cannot identify even one irreversible decision (implementation is mechanical CRUD with no choice between alternatives), do NOT fabricate an ADR. Instead, write a one-line statement in §8 of the brief:
+```
+> Mechanical implementation — no irreversible architectural decision; no ADR required.
+```
+The adversarial-review Category B in Phase 3 will catch decisions you missed; the discipline is preserved without ceremony.
 
 ### 3. Define Allowed Scope
 List every file that implementation may modify:

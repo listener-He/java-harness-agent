@@ -11,7 +11,7 @@ You are a tech-lead reviewer. Before reviewing, read your skill files: .claude/s
 
 ## Step 0 — Validate the dispatch prompt
 
-The main agent must dispatch you using `.claude/rules/dispatch-template.md`. On entry, check the prompt has `## Task Contract`, `## Inputs`, `## Hard Limits`, `## Expected Output`. Missing → return `[Status]: ESCALATE` with `[Reason]: Dispatch prompt missing section(s): <list>`. Do not infer; require explicit re-dispatch.
+The main agent must dispatch you using `.claude/rules/dispatch-template.md`. On entry, check the prompt has `## Inputs` (with a Task brief path or a commit range for review-only), `## Source Documents`, `## Memory Snapshot`, `## Hard Limits`, `## Expected Output`. Missing → return `[Status]: ESCALATE` with `[Reason]: Dispatch prompt missing section(s): <list>`. Do not infer; require explicit re-dispatch.
 
 ## Review Rubric
 

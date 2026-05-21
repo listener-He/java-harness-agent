@@ -39,13 +39,13 @@ Pick the tier whose Probe Signals row best matches your `[triage]` output. When 
 | **TRIVIAL** | suggested=VIBE AND signals_red=[] AND no danger_keywords | PATCH (act inline, no spec) |
 | **LOW** | suggested=PATCH (any single soft signal: blast 3–6 files, OR ambiguity FAIL, OR 2 recurring failures, OR MEDIUM keyword) | PATCH (Slim Spec, no task_brief) |
 | **MEDIUM** | suggested=STANDARD-MEDIUM (blast ≥7, OR ≥3 recurring failures, OR two PATCH-tier signals compounding) | STANDARD (task_brief required) |
-| **HIGH** | suggested=STANDARD-HIGH (any HIGH-tier danger keyword: auth, schema, migration, error code, lifecycle/policy/routing files, secret/token/credential) | STANDARD (task_brief + ≥2 ADR + Approval Gate) |
+| **HIGH** | suggested=STANDARD-HIGH (any HIGH-tier danger keyword: auth, mutating DDL `ALTER/DROP/MODIFY/RENAME`, migration, error code, lifecycle/policy/routing files, secret/token/credential). Note: pure `CREATE TABLE` additive DDL is **not** HIGH — see Scenario B1. | STANDARD (task_brief + ADR per actual irreversible decision + Approval Gate). See [Phase 2](#phase-2-propose) for ADR criteria. |
 
 **Per-profile flows:**
 - **TRIVIAL:** `Implement → QA → Archive` — no task_brief, no inline Explorer, no WAL.
 - **LOW:** `Implement → QA → Archive` — no task_brief, no WAL; Slim Spec = one paragraph stating scope + AC before code.
 - **MEDIUM:** `Explorer → Propose(task_brief) → Review → Implement → QA → Archive`
-- **HIGH:** `Explorer → Propose(task_brief, ≥2 ADR) → Review(adversarial) → Approval Gate → Implement → QA → Archive`
+- **HIGH:** `Explorer → Propose(task_brief, ADR per actual decision) → Review(adversarial) → Approval Gate → Implement → QA → Archive`
 
 ### Boundary rules
 
@@ -71,9 +71,15 @@ These override the default risk classification. When a scenario specifies a **Re
 **Routing:** Profile PATCH. No Propose/Review. Requires `## Emergency Justification` + `secrets_linter.py` before Archive.
 **Read:** `.claude/skills-archive/incident-response/SKILL.md` (main agent, FIRST action — triage → mitigation → post-mortem).
 
-### Scenario B — Database / System Migration
-**Trigger:** DDL changes (CREATE TABLE, ALTER TABLE, ADD INDEX, DROP COLUMN, etc.) OR A→B system migration.
-**Routing:** Profile STANDARD, risk HIGH (forced). Approval Gate required. Gate: `python3 .claude/scripts/gates/migration_gate.py --sql-dir <path>`. Data WAL write-back MANDATORY.
+### Scenario B1 — Additive DDL (new tables / new indexes on new tables)
+**Trigger:** Only adds new schema objects — `CREATE TABLE` for a brand-new table, `CREATE INDEX` on a new table. All `.sql` / mapper changes are new files; nothing touches existing schema.
+**Detection:** `git status` shows only added files under the migration dir; `grep -E '\b(ALTER|DROP|MODIFY|RENAME)\b' <sql-dir>` returns nothing.
+**Routing:** Profile **PATCH (LOW)**. Slim Spec (scope + AC) required, no task_brief. Gate: `python3 .claude/scripts/gates/migration_gate.py --sql-dir <path>` still runs. Data WAL write-back strongly recommended (DDL is high-value knowledge; PATCH normally skips WAL but B1 carries it as a per-scenario carve-out — write a Data WAL fragment manually using the template in `.claude/skills/wal-documentation-rules/SKILL.md`).
+**Skip:** adversarial review, ADR ceremony, Approval Gate, system-architect dispatch — additive new schema has no live rows and is mechanically reversible (`DROP TABLE`).
+
+### Scenario B2 — Mutating DDL or System Migration
+**Trigger:** Modifies existing schema (`ALTER TABLE`, `DROP COLUMN`, `DROP TABLE`, `MODIFY COLUMN`, `RENAME`, adding `NOT NULL` / `UNIQUE` / `FK` to an existing table) OR any A→B system migration.
+**Routing:** Profile STANDARD, risk HIGH (forced). Approval Gate required. Gate: `python3 .claude/scripts/gates/migration_gate.py --sql-dir <path>`. WAL write-back follows the user-elected scheme; the diff scan in `h-archive` Step 3a pre-checks **Data** for any B2 task. Deselecting Data is allowed but discouraged — if user picks None, the justification line should explain why a live-schema mutation needs no Data WAL.
 **Read:** `.claude/skills-archive/migration-planner/SKILL.md` (system-architect, Propose phase — equivalence-test-first protocol).
 
 ### Scenario C — Breaking API Change
@@ -244,7 +250,7 @@ The main agent MUST raise every `Must-Ask` question through `AskUserQuestion` be
 **Output:** MEDIUM/HIGH → inline `[Explore]` block (Spec Gap + ACs + Hidden Scope + Echo-Confirmed=Yes). TRIVIAL/LOW → reasoning inline only, no echo required. Never write a standalone explore_report.md.
 
 ### Phase 2: Propose
-1. Design solution (MEDIUM: 1 option + rationale; HIGH: ≥2 ADR with Pros/Cons/Failure Conditions)
+1. Design solution. **MEDIUM:** 1 option + rationale. **HIGH:** one ADR per *actual* irreversible architectural decision (transport choice, persistence model, sync vs async, framework selection, API contract shape) — each ADR carries 2–3 alternatives with Pros/Cons/Failure Conditions and the chosen option's rationale. If the design genuinely has no irreversible decision (mechanical CRUD with no choice between alternatives), state this explicitly in §8: `> Mechanical implementation — no irreversible architectural decision; no ADR required.` Adversarial-review Category B (Phase 3) is the safety net either way.
 2. Define Allowed Scope (exhaustive file list) and Hard Constraints
 3. Write `task_brief.md` with bidirectional binding: immediately write its path into launch_spec Artifact column
 
@@ -264,7 +270,7 @@ Present Human Section to user. Approval responses:
 1. Read task_brief Machine Section before any code
 2. TDD: RED (failing test from AC) → GREEN (minimum code) → REFACTOR (clean up)
 3. Stay within Allowed Scope. Violations → `[Boundary Exception Request]`, wait for approval.
-4. Run `mvn compile -q` after each change. MAX 2 retries.
+4. Run `mvn -pl <modules> compile -q` (scoped to modules containing Allowed Scope files) after each change. MAX 2 retries for **in-scope** compile errors. Out-of-scope errors are pre-existing upstream breakage — report via `[Issues Found]`, do not count toward the budget, do not try to fix.
 5. After compile passes: yield to human for QA permission.
 
 **[Plan Invalidation]:** If a core assumption in task_brief proves wrong (structural, not a missing dependency):
@@ -280,10 +286,12 @@ Do NOT fix by expanding scope. Wait for human decision.
 ### Phase 5: QA
 1. Run compile if not run since last change
 2. Run tests. ACs ≥ 4 or HIGH risk: map each Given/When/Then → test method → expected → actual → status
-3. QA fails → roll back to Implement. MAX 2 retries. Third failure: STOP, ask human.
+3. Test failures classify by file scope (same contract as the compile rule in Phase 4):
+   - Failing test file is **inside Allowed Scope** OR is a newly added test for in-scope code → it's your bug. Roll back to Implement. MAX 2 retries; third failure → STOP, ask human.
+   - Failing test file is **outside Allowed Scope** AND `git log` shows it was already broken before this task started → pre-existing flake/breakage. Report via `[Issues Found]: pre-existing test failure in <test file>`, do NOT count toward the budget, do NOT silently fix the test. Continue to Archive only if every in-scope AC has objective PASS evidence.
 
 ### Phase 6: Archive
-1. Write WAL fragments (Domain + API + Rules; Data if schema change)
+1. WAL write-back is **user-elected**: `h-archive` scans the diff, suggests dimensions, asks the user via multi-select. Only chosen dimensions are written. **None** is a valid choice — writes a single stub file (HIGH risk + None requires a one-line justification; MEDIUM does not).
 2. Plan Deviation Reflection: scope drift? dependency accuracy? plan invalidations? deferred ACs?
 3. Move task_brief to `.claude/wiki/archive/`
 
@@ -344,7 +352,7 @@ These run automatically. The agent does not need to invoke them manually.
 - HIGH risk: Approval Gate — present Human Section, wait for explicit approval
 
 ### Implement → QA
-- `shift_left`: Run `mvn compile -q` after each code change. MAX 2 retries.
+- `shift_left`: Run `mvn -pl <modules> compile -q` (scoped to Allowed Scope modules) after each code change. MAX 2 retries for **in-scope** errors only — pre-existing upstream compile breakage must be reported via `[Issues Found]`, not fixed, and does not count toward the budget.
 - Scope enforcement is automatic via the PreToolUse hook (see above) — no manual scope_guard.py call needed when a launch_spec is active. To audit the full change set in one shot (e.g., before commit), run `python3 .claude/scripts/gates/scope_guard.py --task-brief <path>` (omit `--files` to default to git diff).
 - TRIVIAL/LOW: if no unit tests cover the change, present `git diff` to user before proceeding
 - Do NOT run full test suite here (that's QA)
@@ -360,7 +368,8 @@ These run automatically. The agent does not need to invoke them manually.
 
 | Scenario | Gate |
 |---|---|
-| B (DB Migration) | `python3 .claude/scripts/gates/migration_gate.py --sql-dir <path>` |
+| B1 (Additive DDL — PATCH) | `python3 .claude/scripts/gates/migration_gate.py --sql-dir <path>` |
+| B2 (Mutating DDL / Migration — HIGH) | `python3 .claude/scripts/gates/migration_gate.py --sql-dir <path>` |
 | C (Breaking API) | `python3 .claude/scripts/gates/api_breaking_gate.py --task-brief <path>` |
 | E (Dependency) | `python3 .claude/scripts/gates/dependency_gate.py --pom <pom.xml>` |
 
@@ -379,4 +388,7 @@ On any gate failure:
 | QA → back to Implement, scope needs expansion | STOP. Output `[Boundary Exception Request]`. Wait for approval. |
 | Same phase fails twice, same root cause | STOP. Escalate with evidence. |
 | Same phase fails twice, different root causes | STOP. Roll back to Propose for contract amendment. |
-| Implement → compile failure (shift_left) | Fix, max 2 retries. Both fail → downgrade to Propose. |
+| Implement → in-scope compile failure (shift_left) | Fix, max 2 retries. Both fail → downgrade to Propose. |
+| Implement → out-of-scope compile failure | Report via `[Issues Found]`, do NOT fix, do NOT count toward retries. Continue with own work. |
+| QA → in-scope test failure | Roll back to Implement. Max 2 retries. Third fails → STOP, ask human. |
+| QA → out-of-scope test failure (pre-existing breakage / flake) | Report via `[Issues Found]: pre-existing test failure in <file>`. Do NOT fix the test to make it green. Do NOT count toward retries. |

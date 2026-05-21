@@ -1,8 +1,10 @@
 # Dispatch Prompt Template
 
-Canonical skeleton for every sub-agent prompt. The main agent fills in placeholders — it MUST NOT write dispatch prompts from scratch. The receiving sub-agent MUST validate this structure before doing any work; missing sections → return `[Status]: ESCALATE` with the missing section name.
+Canonical skeleton for every sub-agent dispatch. The main agent fills `<…>` placeholders — do NOT write dispatch prompts from scratch. The receiving sub-agent validates the structure before working; missing sections → `[Status]: ESCALATE`.
 
 Why this exists: sub-agents do NOT inherit `CLAUDE.md`, project rules, memory, or anti-loop limits. The dispatch prompt is the *only* contract they see. Free-form prompts lead to forgotten constraints and unparseable returns.
+
+**Design principle (anti-bloat):** the dispatch prompt does NOT duplicate the task_brief. Allowed Scope, ACs, and Hard Constraints live in the brief — the dispatch points to it and the sub-agent reads it. This keeps prompts ~40 lines instead of ~100, and avoids the classic copy-paste drift between brief and prompt.
 
 ---
 
@@ -11,100 +13,78 @@ Why this exists: sub-agents do NOT inherit `CLAUDE.md`, project rules, memory, o
 ```
 # Dispatch: <role-name>
 
-## Task Contract
-**Allowed Scope** (verbatim from task_brief — file paths/prefixes, one per line):
-- <path-or-prefix-1>
-- <path-or-prefix-2>
-
-**Acceptance Criteria** (Given/When/Then, copied from task_brief; assign each an AC-id):
-- AC-1: Given <…>, when <…>, then <…>.
-- AC-2: Given <…>, when <…>, then <…>.
-
-**Hard Constraints** (invariants the sub-agent MUST NOT violate):
-- <constraint-1>
-- <constraint-2>
-
-## Source Documents (MUST READ before producing output)
-List the primary sources the sub-agent MUST `Read` before doing anything else. Use pointers, never summaries — summarizing here triggers Gresham's law for context (劣质上下文驱逐优质上下文): once a 4-line summary exists in the prompt, the sub-agent will rely on it and skip the source, and any nuance lost in compression (e.g. "p99<200ms 且 503 时优雅降级" compressed to "low-latency, fault-tolerant") leads to wrong design.
-
-Format — each line MUST be ONE of:
-- `<relative/path/to/source>[#L<start>-L<end>] — <one-line WHY this file matters>`
-- `VERBATIM: """<逐字 quote 用户原始输入；禁止改写、概括、翻译>"""` (use ONLY when no source file exists, e.g. small Idea input)
-
-Hard rule for the sub-agent: if this section is missing, empty, or any line lacks both a `#L...` pointer AND a `VERBATIM:` quote prefix, return `[Status]: ESCALATE` with `[Reason]: Source Documents missing or summarized — re-dispatch with pointers/verbatim`.
-
-Example:
-- `.claude/runs/task-briefs/2026-05-20_xxx_task_brief.md#L40-L120 — full Machine Section, the contract you implement against`
-- `src/main/java/com/example/order/OrderService.java#L80-L140 — current cancel() logic you must NOT break`
-
 ## Inputs
-- Task brief: <.claude/runs/task-briefs/…_task_brief.md>
-- Files to inspect/modify: <comma-separated paths or "see Allowed Scope">
+- **Task brief:** `<.claude/runs/task-briefs/…_task_brief.md>#L<machine-section-range>` — your contract. Allowed Scope, ACs (with AC-ids), and Hard Constraints all live in the Machine Section. **Read it FIRST.**
+- Files to inspect/modify: <comma-separated paths, or "see Allowed Scope in task_brief">
 - Commit range / line numbers (if applicable): <…>
 - Other inputs: <…>
 
-## Memory Snapshot (sub-agent does NOT inherit auto-memory — main agent copies relevant entries here)
-- type=user: <key user identity / role / preferences that affect this task, or "none">
-- type=feedback: <feedback rules the sub-agent must honor, e.g. "no single-file directory creation", or "none">
-- type=project: <ongoing-work facts relevant to this task, or "none">
+(For review-only dispatches with no task_brief — e.g. PR review on a commit range — replace the Task brief line with the commit range; Source Documents below carries the contract.)
 
-If a section has no relevant entries, write "none" — do not delete the section.
+## Source Documents (MUST READ before producing output)
+Pointers, never summaries — paraphrasing here triggers Gresham's law for context (劣质上下文驱逐优质上下文). Each line MUST be ONE of:
+- `<relative/path>[#L<a>-L<b>] — <one-line WHY>`
+- `VERBATIM: """<逐字 quote — only when no source file exists, e.g. small Idea input; do NOT paraphrase>"""`
+
+Required first entry: the task_brief Machine Section (or, for review-only, the diff endpoints).
+
+Hard rule: if this section is missing, empty, or any line lacks both a `#L...` pointer AND a `VERBATIM:` prefix, return `[Status]: ESCALATE` with `[Reason]: Source Documents missing or summarized`.
+
+## Memory Snapshot (auto-memory NOT inherited — main agent fills only entries relevant to THIS task)
+- type=user: <or "none">
+- type=feedback: <or "none">
+- type=project: <or "none">
+
+Default is "none". The main agent fills an entry only when an `auto-memory` record demonstrably affects how this specific task should be done. Pasting unrelated memory is noise — leave it out.
 
 ## Hard Limits (apply to YOU, the sub-agent — your context does NOT inherit them)
-- MAX 3 retries per gate/linter run.
-- MAX 2 retries for compile failures.
-- After 2 same-root-cause failures: STOP, return `[Status]: ESCALATE`.
-- DO NOT modify files outside Allowed Scope. If required, return `[Status]: BOUNDARY_EXCEPTION` with the file and reason — wait for main agent, do not edit.
-- DO NOT bypass safety checks (`--no-verify`, `--no-gpg-sign`, etc.).
-- DO NOT invoke other sub-agents. Return to the main agent for orchestration.
-- DO NOT skip the `## Source Documents` reads. Open every listed file with `Read` (and the indicated line range) before producing any output. Skipped reads = `[Status]: ESCALATE` with `[Reason]: skipped mandatory source read`.
-- DO NOT summarize. If a downstream agent needs context from you, pass it pointers + verbatim quotes — never paraphrases.
+- MAX 3 retries per gate/linter run. MAX 2 retries for **in-scope** compile errors only — out-of-scope compile errors are pre-existing upstream issues; report `[Status]: PARTIAL` with `[Issues Found]: pre-existing compile error in <file:line>`, do NOT count toward retries, do NOT fix.
+- After 2 same-root-cause failures → STOP, return `[Status]: ESCALATE`.
+- Files outside Allowed Scope (see task_brief) → return `[Status]: BOUNDARY_EXCEPTION` with file + reason; wait for main agent. Do NOT edit.
+- DO NOT skip mandatory `## Source Documents` reads. List every file you Read in `[Source Documents Read]`. Skipped read = `[Status]: ESCALATE`.
+- DO NOT bypass safety checks (`--no-verify`, `--no-gpg-sign`). DO NOT invoke other sub-agents. DO NOT summarize when passing context downstream — use pointers + verbatim quotes.
 
-## Expected Output (structured — parseable by main agent)
-Return ONLY this block, no preamble:
+## Expected Output (structured — parseable by main agent; return ONLY this block, no preamble)
 
 [Status]: PASS | PARTIAL | FAIL | ESCALATE | BOUNDARY_EXCEPTION
-[Files Changed]: <list of relative paths with +N/-M line counts, or "none">
+[Files Changed]: <relative paths with +N/-M, or "none">
 [Commands Run]: <each command + exit code, or "none">
 [ACs Mapped]: <AC-id → test method or evidence → PASS/FAIL/SKIP>
-[Source Documents Read]: <comma-separated paths you actually Read from the '## Source Documents' section, or "none" if there were none>
+[Source Documents Read]: <comma-separated paths you actually Read from the '## Source Documents' section, or "none">
 [Issues Found]: <numbered list, or "none">
 [Next Step]: <one sentence — what main agent should do next>
 
-(If [Status] is ESCALATE or BOUNDARY_EXCEPTION, also include a [Reason]: line explaining why.)
+(If [Status] is ESCALATE or BOUNDARY_EXCEPTION, also include a `[Reason]:` line.)
 
-The `[Source Documents Read]` field MUST list every file you opened with `Read` from the `## Source Documents` section. The main agent's `subagent_return_gate.py` cross-checks this against the dispatch's mandatory-read list — leaving it `none` while the dispatch had pointers triggers a WARN (you may have skipped the read contract). This is the only honest way to enforce the MUST READ rule from the prompt side; the field exists precisely so the agent cannot silently bypass it.
+The `[Source Documents Read]` field MUST list every file you opened with `Read` from `## Source Documents`. `subagent_return_gate.py` cross-checks this — leaving it "none" while the dispatch had pointers triggers a WARN.
 
 ## Template Source
-This prompt was built from: .claude/rules/dispatch-template.md
+.claude/rules/dispatch-template.md
 ```
 
 ---
 
 ## Validation rules (for the receiving sub-agent)
 
-Before doing anything, check the incoming prompt has these sections (header lines):
-- `## Task Contract` with all three subsections: Allowed Scope, Acceptance Criteria, Hard Constraints
-- `## Source Documents (MUST READ before producing output)` with at least one valid line (pointer or VERBATIM)
-- `## Inputs`
+Before doing anything, check the incoming prompt has these section headers:
+- `## Inputs` with a Task brief path (or a commit range / explicit description for review-only dispatch)
+- `## Source Documents (MUST READ before producing output)` with at least one valid pointer or VERBATIM line
 - `## Memory Snapshot`
 - `## Hard Limits`
 - `## Expected Output`
 
-If any are missing OR if Allowed Scope is empty:
+If any are missing OR the Task brief path is unset AND no review-only context is given:
 ```
 [Status]: ESCALATE
 [Reason]: Dispatch prompt missing required section(s): <list>
 [Next Step]: Main agent must re-dispatch using .claude/rules/dispatch-template.md
 ```
 
-Do not attempt to fill in missing sections from inference. The contract must be explicit.
+Do not infer Allowed Scope / ACs / Hard Constraints from the prompt — read them from the task_brief Machine Section listed in `## Inputs`. The contract is in the brief, not the prompt.
 
 ---
 
 ## Return validation (for the main agent — RUN AFTER RECEIVING)
-
-After the sub-agent returns, the main agent MUST validate the return block before acting on it. Save the return text to a file (or pipe it), then run:
 
 ```bash
 python3 .claude/scripts/gates/subagent_return_gate.py \
@@ -114,16 +94,19 @@ python3 .claude/scripts/gates/subagent_return_gate.py \
 
 Exit codes (per linter-severity-standard):
 - **0 OK** — proceed
-- **1 WARN** — return is structurally valid but has consistency warnings (e.g., `[Status]=PASS` with no files changed). Surface the WARN to the user; do not silently accept.
-- **2 FAIL** — return is structurally broken or contains direct contradiction (`[Status]=PASS` with an AC row reporting FAIL). Re-dispatch the sub-agent with the original template; do not accept the result.
+- **1 WARN** — structurally valid but with consistency warnings (e.g., `[Status]=PASS` with no files changed). Surface to user; don't silently accept.
+- **2 FAIL** — structurally broken or contradictory (`[Status]=PASS` with an AC reporting FAIL). Re-dispatch; don't accept.
 
-This gate catches a real failure mode: sub-agent claims `[Status]: PASS` while internal evidence ([Files Changed], [Commands Run], [ACs Mapped]) is empty or contradicts the claim. The validator runs in < 1s and burns ~50 tokens of context — well worth catching one bad return.
+This catches a real failure mode: sub-agent claims `[Status]: PASS` while internal evidence ([Files Changed], [Commands Run], [ACs Mapped]) is empty or contradicts the claim.
 
 ---
 
-## When the template is NOT required
+## When the structure is relaxed
 
-For LEARN/MAINTENANCE-only sub-agent dispatches (e.g., librarian, knowledge-architect doing read-only wiki ops), the `Hard Constraints` and `ACs Mapped` may be empty (`none`) — but the headers must still be present. This keeps the parsing contract uniform.
+For LEARN/MAINTENANCE-only sub-agent dispatches (librarian, knowledge-architect doing read-only wiki ops):
+- `## Inputs` Task brief line may be replaced with a description of the read-only scope (e.g., "wiki index `.claude/wiki/wiki/domain/index.md` plus its WAL fragments").
+- `[ACs Mapped]` in return may be "none".
+- All section headers MUST still be present — keeps the parsing contract uniform.
 
 ---
 
@@ -134,29 +117,19 @@ For LEARN/MAINTENANCE-only sub-agent dispatches (e.g., librarian, knowledge-arch
 ```
 # Dispatch: lead-engineer
 
-## Task Contract
-**Allowed Scope**:
-- src/main/java/com/example/order/
-- src/test/java/com/example/order/
-
-**Acceptance Criteria**:
-- AC-1: Given an order with status=PENDING, when cancel() is called, then status becomes CANCELLED and event is published.
-- AC-2: Given an order with status=SHIPPED, when cancel() is called, then BusinessException with code ORDER_NOT_CANCELLABLE is thrown.
-
-**Hard Constraints**:
-- No JPA cascade changes
-- No new external dependencies
-- Order entity table must not be altered (DDL frozen)
+## Inputs
+- **Task brief:** `.claude/runs/task-briefs/2026-05-19_order_cancel_task_brief.md#L40-L120` — your contract (Allowed Scope, ACs, Hard Constraints all in the Machine Section). Read first.
+- Files to inspect/modify: see Allowed Scope in task_brief
 
 ## Source Documents (MUST READ before producing output)
-- .claude/runs/task-briefs/2026-05-19_order_cancel_task_brief.md#L40-L120 — Machine Section; the contract you implement against
-- src/main/java/com/example/order/OrderService.java#L80-L140 — current cancel() logic; do NOT break
-- src/main/java/com/example/order/OrderEvents.java — event publisher you must reuse (no new bus)
+- `.claude/runs/task-briefs/2026-05-19_order_cancel_task_brief.md#L40-L120` — Machine Section; the contract
+- `src/main/java/com/example/order/OrderService.java#L80-L140` — current `cancel()` logic; do NOT break
+- `src/main/java/com/example/order/OrderEvents.java` — event publisher you must reuse (no new bus)
 
-## Inputs
-- Task brief: .claude/runs/task-briefs/2026-05-19_order_cancel_task_brief.md
-- Files to inspect/modify: see Allowed Scope
-- Other inputs: existing OrderService at src/main/java/com/example/order/OrderService.java
+## Memory Snapshot
+- type=user: none
+- type=feedback: none
+- type=project: none
 
 ## Hard Limits
 […verbatim from template…]
@@ -165,35 +138,28 @@ For LEARN/MAINTENANCE-only sub-agent dispatches (e.g., librarian, knowledge-arch
 […verbatim from template…]
 
 ## Template Source
-This prompt was built from: .claude/rules/dispatch-template.md
+.claude/rules/dispatch-template.md
 ```
 
-### Example 2 — Dispatching code-reviewer
+### Example 2 — Dispatching code-reviewer (review-only)
 
 ```
 # Dispatch: code-reviewer
 
-## Task Contract
-**Allowed Scope**:
-- (review-only — no edits)
-
-**Acceptance Criteria**:
-- AC-1: Given the diff in commit range abc123..def456, when reviewed, then no FAIL-severity findings remain.
-
-**Hard Constraints**:
-- Review must check java-architecture-standards Layer 1 violations
-- Review must check security-review-checklist
-- DO NOT modify code; report-only
+## Inputs
+- **Task brief:** `.claude/runs/task-briefs/2026-05-19_order_cancel_task_brief.md#L40-L120` — the contract you check the diff against (review-only; you do NOT modify)
+- Commit range: `abc123..def456`
+- Files changed: `src/main/java/com/example/order/OrderService.java` (+45/-12), `src/test/java/com/example/order/OrderServiceTest.java` (+89/-0)
 
 ## Source Documents (MUST READ before producing output)
-- .claude/runs/task-briefs/2026-05-19_order_cancel_task_brief.md#L40-L120 — the contract; you check the diff against this
-- src/main/java/com/example/order/OrderService.java — full file, post-change state to review
-- src/test/java/com/example/order/OrderServiceTest.java — full file, the asserted behavior
+- `.claude/runs/task-briefs/2026-05-19_order_cancel_task_brief.md#L40-L120` — contract; check diff against this
+- `src/main/java/com/example/order/OrderService.java` — full post-change state
+- `src/test/java/com/example/order/OrderServiceTest.java` — asserted behavior
 
-## Inputs
-- Task brief: .claude/runs/task-briefs/2026-05-19_order_cancel_task_brief.md
-- Commit range: abc123..def456
-- Files changed: src/main/java/com/example/order/OrderService.java (+45/-12), src/test/java/com/example/order/OrderServiceTest.java (+89/-0)
+## Memory Snapshot
+- type=user: none
+- type=feedback: none
+- type=project: none
 
 ## Hard Limits
 […verbatim from template…]
