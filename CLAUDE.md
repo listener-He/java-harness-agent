@@ -125,6 +125,7 @@ Standard-required → emit one line before any output: `[Risk: HIGH | Scenario: 
 | Safety + commit + WAL write-back + dispatch | [.claude/rules/policy.md](.claude/rules/policy.md) |
 | Sub-agent dispatch prompt template (mandatory) | [.claude/rules/dispatch-template.md](.claude/rules/dispatch-template.md) |
 | Skill precedence (conflict resolution for MANDATORY) | [.claude/rules/skill-precedence.md](.claude/rules/skill-precedence.md) |
+| TaskList usage (when to open / granularity) | [.claude/rules/tasklist-policy.md](.claude/rules/tasklist-policy.md) |
 | Role catalog | [.claude/agents/](.claude/agents/) |
 | Active skill index (+ archive index) | [.claude/skills/skill-index/SKILL.md](.claude/skills/skill-index/SKILL.md) |
 | Wiki root | [.claude/wiki/KNOWLEDGE_GRAPH.md](.claude/wiki/KNOWLEDGE_GRAPH.md) |

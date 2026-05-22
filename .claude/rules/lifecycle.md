@@ -65,11 +65,13 @@ These override the default risk classification. When a scenario specifies a **Re
 **Trigger:** Feature spanning ≥3 domains, framework migration, or massive refactoring.
 **Routing:** Profile STANDARD, risk HIGH (forced). MUST slice work into micro-tasks. MUST delegate to sub-agents via contract schema. MUST NOT write code directly — act as Foreman + QA.
 **Read:** `.claude/skills-archive/blueprint/SKILL.md` (system-architect, Propose phase) + `.claude/skills-archive/dispatching-parallel-agents/SKILL.md` (when ≥2 independent workstreams).
+**TaskList:** open one item per INVEST sub-task — the only mechanism that visualizes the sub-task DAG (`launch_spec` is a flat list). See [tasklist-policy.md §1](tasklist-policy.md).
 
 ### Scenario A — Emergency Hotfix
 **Trigger:** Production incident, critical bug, ship immediately.
 **Routing:** Profile PATCH. No Propose/Review. Requires `## Emergency Justification` + `secrets_linter.py` before Archive.
 **Read:** `.claude/skills-archive/incident-response/SKILL.md` (main agent, FIRST action — triage → mitigation → post-mortem).
+**TaskList:** open 1-2 audit items (`Emergency Justification written`, `secrets_linter clean`) so post-incident review can trace required artifacts in the transcript. See [tasklist-policy.md §1](tasklist-policy.md).
 
 ### Scenario B1 — Additive DDL (new tables / new indexes on new tables)
 **Trigger:** Only adds new schema objects — `CREATE TABLE` for a brand-new table, `CREATE INDEX` on a new table. All `.sql` / mapper changes are new files; nothing touches existing schema.
@@ -283,9 +285,11 @@ Present Human Section to user. Approval responses:
 - Partial → record approved sections, roll back rejected only
 - Full rejection → roll back to Propose
 
+**TaskList:** open one "WAITING_APPROVAL: <task slug>" item until resolved — UI persistence prevents the user missing the approval request. Mark `completed` on Full/Partial; cancel on Full rejection. See [tasklist-policy.md §1](tasklist-policy.md).
+
 ### Phase 4: Implement
 1. Read task_brief Machine Section before any code
-2. TDD: RED (failing test from AC) → GREEN (minimum code) → REFACTOR (clean up)
+2. TDD: RED (failing test from AC) → GREEN (minimum code) → REFACTOR (clean up). **AC count ≥ 4:** open TaskList with one item per AC — see [tasklist-policy.md §1](tasklist-policy.md).
 3. Stay within Allowed Scope. Violations → `[Boundary Exception Request]`, wait for approval.
 4. Run `mvn -pl <modules> compile -q` (scoped to modules containing Allowed Scope files) after each change. MAX 2 retries for **in-scope** compile errors. Out-of-scope errors are pre-existing upstream breakage — report via `[Issues Found]`, do not count toward the budget, do not try to fix.
 5. After compile passes: yield to human for QA permission.
