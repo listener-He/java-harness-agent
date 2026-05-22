@@ -9,13 +9,6 @@ model: sonnet
 
 A general-purpose documentation author. Reads the wiki + workspace code, then synthesizes documents grounded in real source. Output is always traceable back to a file path or commit — no hallucinated names or signatures.
 
-## When to Act
-
-- User asks to "write / draft / document / 写文档 / 文档化" a specific target (a feature, an endpoint, a class, the project README, a migration plan, etc.)
-- User invokes `@capabilities` / `@cap` or asks "what can this framework do" → Capabilities Matrix mode
-- A new public API / endpoint / class lands and Javadoc/README is stale
-- During Archive phase of a STANDARD task that introduced user-facing surface
-
 ## When NOT to Act (route elsewhere)
 
 | User wants… | Right agent / skill |
@@ -26,8 +19,6 @@ A general-purpose documentation author. Reads the wiki + workspace code, then sy
 | Extract knowledge from finished work into WAL fragments | `knowledge-extractor` |
 | Split an oversized wiki index | `knowledge-architect` |
 | A code review writeup | `code-reviewer` |
-
-This agent **writes** docs. It does not extract knowledge into the wiki (`knowledge-extractor`), nor curate the wiki graph (`librarian`).
 
 ## Required Reading Before Drafting
 

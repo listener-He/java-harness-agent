@@ -60,13 +60,6 @@ Transform tasks into verifiable goals:
 - "Fix the bug" → "Write a test that reproduces it, then make it pass"
 - "Refactor X" → "Ensure tests pass before and after"
 
-For multi-step tasks, state a brief plan:
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-```
-
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
 ### 5. Skill Files: Reference, Not Preflight Reading
@@ -84,7 +77,7 @@ Production incident facts live under `.claude/wiki/incidents/<date>_<slug>.md`. 
 - **UserPromptSubmit:** the `[failure-memory]` block at turn start lists recent incidents (last 30 days + any with `status: watch`), each with a one-line "提醒未来 LLM" lesson. Skim them like you'd skim a standup digest.
 - **PostToolUse:** when you edit a file referenced by a past incident, an `[incident-hint]` block injects a pointer. **Open that specific `.md`** — it has the actual root cause, fix, and what to avoid this time.
 
-**Ingesting a new incident:** when a real production fact (Sentry alert, Jira ticket, oncall log, post-mortem) needs to enter the system, run `python3 .claude/scripts/local_intel/ingest_incident.py --help` for usage. The script saves the raw fact and prints a structured prompt; **you** (the LLM) then read the raw + write `.claude/wiki/incidents/<date>_<slug>.md` following the template — the script does not parse Sentry/Jira JSON, because schema drift makes parsers brittle. The single most important field to write well is `## 提醒未来 LLM` — that one line is what every future session sees.
+**Ingesting a new incident:** run `python3 .claude/scripts/local_intel/ingest_incident.py --help` — script saves the raw fact + prints a template; you write `.claude/wiki/incidents/<date>_<slug>.md` per the template. The `## 提醒未来 LLM` field is what every future session sees — write it well.
 
 ## Two Modes
 
@@ -95,13 +88,7 @@ Production incident facts live under `.claude/wiki/incidents/<date>_<slug>.md`. 
 
 ### Vibe Eligibility (white-list, not fallback)
 
-Vibe is **not** the default — the UserPromptSubmit hook runs `triage_probe.py` (Step 0 in [lifecycle.md](.claude/rules/lifecycle.md)) and prints a `[triage]` block when the probe sees red signals. Enter Vibe ONLY if one of:
-
-1. Explicit `@vibe` / `@patch` / `@quickfix` (user has declared intent — if probe still flags red, print `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override))
-2. LEARN-class request (read-only, no code write)
-3. `[triage]` absent (probe heuristic-skipped: short input, pure question, maintenance shortcut)
-4. `[triage]` shows `suggested: VIBE` with `signals_red=[]` (probe ALL-GREEN)
-5. Diff < 3 lines and obviously cosmetic (typo / formatting)
+Enter Vibe ONLY if: probe ALL-GREEN or heuristic-skipped (see [lifecycle.md](.claude/rules/lifecycle.md) Step 0 + Risk Classification), OR explicit `@vibe`/`@patch`/`@quickfix`/`@learn`, OR diff < 3 lines obviously cosmetic. `@vibe`/`@patch` while probe shows red signals → emit `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override).
 
 Any other input enters at least **PATCH(LOW)** with a Slim Spec — one paragraph stating scope + AC before code. Force a mode with `@vibe` / `@patch` / `@standard` / `@learn`.
 

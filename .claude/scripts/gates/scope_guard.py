@@ -52,13 +52,17 @@ def _read_allowed_prefixes(task_brief_path: str) -> list[str]:
 
 def _git_changed_files() -> list[str]:
     try:
-        out = subprocess.check_output(["git", "diff", "--name-only"], text=True).strip()
+        out = subprocess.check_output(
+            ["git", "diff", "--name-only"], text=True, timeout=30
+        ).strip()
         if out:
             return [x.strip() for x in out.splitlines() if x.strip()]
     except Exception:
         pass
     try:
-        out = subprocess.check_output(["git", "diff", "--name-only", "--cached"], text=True).strip()
+        out = subprocess.check_output(
+            ["git", "diff", "--name-only", "--cached"], text=True, timeout=30
+        ).strip()
         if out:
             return [x.strip() for x in out.splitlines() if x.strip()]
     except Exception:

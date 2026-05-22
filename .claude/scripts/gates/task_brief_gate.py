@@ -100,12 +100,16 @@ def _run_schema_checker(task_brief_path: str) -> tuple[int, list[str]]:
     if not os.path.exists(checker):
         return EXIT_WARN, [f"schema checker missing: {checker}"]
 
-    proc = subprocess.run(
-        [sys.executable, checker, task_brief_path],
-        cwd=_repo_root(),
-        capture_output=True,
-        text=True,
-    )
+    try:
+        proc = subprocess.run(
+            [sys.executable, checker, task_brief_path],
+            cwd=_repo_root(),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired:
+        return EXIT_WARN, ["schema_checker timed out (10s)"]
     out = (proc.stdout or "").strip()
     err = (proc.stderr or "").strip()
     details: list[str] = []

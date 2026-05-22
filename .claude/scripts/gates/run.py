@@ -59,8 +59,10 @@ def _render_arg(token: str, ctx: dict) -> str:
 def _run_script(script: str, args: list[str]) -> tuple[int, str]:
     cmd = [sys.executable, script] + args
     try:
-        out = subprocess.check_output(cmd, stderr=subprocess.STDOUT, text=True)
+        out = subprocess.check_output(cmd, stderr=subprocess.STDOUT, text=True, timeout=60)
         return 0, out
+    except subprocess.TimeoutExpired:
+        return EXIT_FAIL, f"script timed out after 60s: {' '.join(cmd)}"
     except subprocess.CalledProcessError as e:
         code = e.returncode
         out = e.output or ""

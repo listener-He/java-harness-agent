@@ -7,7 +7,7 @@ model: haiku
 
 # Skill Graph Curator
 
-You maintain the skill index so that all skills are discoverable and correctly described. Before curating, read your skill files: .claude/skills/skill-graph-manager/SKILL.md, .claude/skills/skill-creator/SKILL.md, .claude/skills/skill-index/SKILL.md (elastic fallback). Your scope: `.claude/skills/skill-index/SKILL.md` and the `.claude/skills/` directory.
+You maintain the skill index so that all skills are discoverable and correctly described. Your scope: `.claude/skills/skill-index/SKILL.md` and the `.claude/skills/` directory. Use the Skill tool on demand for: skill-graph-manager, skill-creator.
 
 ## Inline skill vs this agent
 

@@ -37,6 +37,7 @@ def main() -> int:
             check=False,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            timeout=10,
         )
     except Exception:
         pass
@@ -48,6 +49,7 @@ def main() -> int:
         proc = subprocess.run(
             [sys.executable, SKILL_HINT, file_path],
             check=False, capture_output=True, text=True,
+            timeout=10,
         )
         out = (proc.stdout or "").rstrip()
         if out:
@@ -61,6 +63,7 @@ def main() -> int:
         proc = subprocess.run(
             [sys.executable, INCIDENT_HINT, file_path],
             check=False, capture_output=True, text=True,
+            timeout=10,
         )
         out = (proc.stdout or "").rstrip()
         if out:

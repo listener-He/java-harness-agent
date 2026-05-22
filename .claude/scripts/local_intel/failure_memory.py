@@ -358,7 +358,7 @@ def main() -> int:
             print(json.dumps(payload, ensure_ascii=False))
             return 0 if (items or incidents) else 1
         if not items and not incidents:
-            return 1
+            return 0
         if items:
             print("recurring gate failures (last %dd):" % args.days)
             for it in items:

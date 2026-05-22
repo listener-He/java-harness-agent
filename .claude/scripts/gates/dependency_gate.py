@@ -54,10 +54,11 @@ def _get_baseline(pom_path: str) -> str | None:
     try:
         result = subprocess.run(
             ["git", "show", f"HEAD:{pom_path}"],
-            capture_output=True, text=True, check=True
+            capture_output=True, text=True, check=True,
+            timeout=30,
         )
         return result.stdout
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return None
 
 

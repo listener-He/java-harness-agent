@@ -35,6 +35,7 @@ def _find_active_task_brief() -> str:
             check=False,
             capture_output=True,
             text=True,
+            timeout=10,
         )
     except Exception:
         return ""
@@ -46,6 +47,7 @@ def _repo_root() -> str:
         out = subprocess.check_output(
             ["git", "rev-parse", "--show-toplevel"],
             stderr=subprocess.DEVNULL,
+            timeout=30,
         )
         return out.decode().strip()
     except Exception:
@@ -75,14 +77,19 @@ def main() -> int:
 
     rel_file = _to_relative(file_path, _repo_root())
 
-    proc = subprocess.run(
-        [sys.executable, SCOPE_GUARD,
-         "--task-brief", task_brief,
-         "--files", rel_file],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    try:
+        proc = subprocess.run(
+            [sys.executable, SCOPE_GUARD,
+             "--task-brief", task_brief,
+             "--files", rel_file],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired:
+        # Fail-open: if scope_guard hangs, don't block the edit.
+        return 0
     if proc.returncode == EXIT_BLOCK:
         sys.stderr.write(
             f"[scope_guard] BLOCKED: {rel_file} is outside Allowed Scope of {task_brief}\n"

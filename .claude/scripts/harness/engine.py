@@ -25,24 +25,24 @@ ALL_PHASES = [
 
 def load_state():
     if os.path.exists(STATE_FILE):
-        with open(STATE_FILE, "r") as f:
+        with open(STATE_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     # Legacy fallback — read existing state from the old location once.
     if os.path.exists(LEGACY_STATE_FILE):
-        with open(LEGACY_STATE_FILE, "r") as f:
+        with open(LEGACY_STATE_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     return None
 
 def save_state(state):
     os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, "w") as f:
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
 
 def write_launch_spec(intents):
     os.makedirs(CATALOG_DIR, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filepath = f"{CATALOG_DIR}/launch_spec_{timestamp}.md"
-    with open(filepath, "w") as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         f.write(f"# Launch Spec - {timestamp}\n\n")
         f.write("## State Machine\n")
         f.write("| Intent | Status | Phase | Artifact/Log | Failed_Reason |\n")

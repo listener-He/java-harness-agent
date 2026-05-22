@@ -67,12 +67,16 @@ def _read_prompt_from_stdin() -> str:
 def _emit_failure_memory() -> None:
     if os.environ.get("CLAUDE_FAILURE_MEMORY_QUIET") == "1":
         return
-    proc = subprocess.run(
-        [sys.executable, FAILURE_MEMORY, "summary",
-         "--days", "30", "--min-count", "2", "--top", "5",
-         "--include-incidents"],
-        check=False, capture_output=True, text=True,
-    )
+    try:
+        proc = subprocess.run(
+            [sys.executable, FAILURE_MEMORY, "summary",
+             "--days", "30", "--min-count", "2", "--top", "5",
+             "--include-incidents"],
+            check=False, capture_output=True, text=True,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired:
+        return  # hook is best-effort; silent on timeout
     out = (proc.stdout or "").rstrip()
     if not out:
         return
@@ -83,10 +87,14 @@ def _emit_failure_memory() -> None:
 def _emit_distill_nudge() -> None:
     if os.environ.get("CLAUDE_DISTILL_QUIET") == "1":
         return
-    proc = subprocess.run(
-        [sys.executable, DISTILL_THRESHOLD],
-        check=False, capture_output=True, text=True,
-    )
+    try:
+        proc = subprocess.run(
+            [sys.executable, DISTILL_THRESHOLD],
+            check=False, capture_output=True, text=True,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired:
+        return
     out = (proc.stdout or "").rstrip()
     if not out:
         return
@@ -105,10 +113,14 @@ def _emit_triage_probe(prompt_text: str) -> None:
     text = (prompt_text or "").strip()
     if not text:
         return
-    proc = subprocess.run(
-        [sys.executable, TRIAGE_PROBE, "--quiet-on-skip"],
-        input=text, check=False, capture_output=True, text=True,
-    )
+    try:
+        proc = subprocess.run(
+            [sys.executable, TRIAGE_PROBE, "--quiet-on-skip"],
+            input=text, check=False, capture_output=True, text=True,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired:
+        return
     out = (proc.stdout or "").rstrip()
     if not out:
         return
@@ -124,10 +136,14 @@ def _emit_ambiguity_check(prompt_text: str) -> None:
     lowered = text.lower()
     if any(marker in lowered for marker in SHORTCUT_OVERRIDES):
         return
-    proc = subprocess.run(
-        [sys.executable, AMBIGUITY_GATE, "--intent", text[:500]],
-        check=False, capture_output=True, text=True,
-    )
+    try:
+        proc = subprocess.run(
+            [sys.executable, AMBIGUITY_GATE, "--intent", text[:500]],
+            check=False, capture_output=True, text=True,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired:
+        return
     # 0 = PASS (silent). 1 = WARN, 2 = FAIL — both surface as a soft nudge.
     if proc.returncode == 0:
         return

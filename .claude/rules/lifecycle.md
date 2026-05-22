@@ -216,43 +216,17 @@ Why this split: `input-classifier` is a thin classifier (Inline). `ambiguity-gat
 
 Sub-agents do NOT inherit `CLAUDE.md` / rules / memory. Every dispatch MUST include the `## Memory Snapshot` section from [dispatch-template.md](dispatch-template.md), copying any `type=user` and `type=feedback` entries relevant to the task.
 
-#### 1.1 Sub-agent return contract (ambiguity-gatekeeper)
+#### 1.1 Sub-agent return handling (ambiguity-gatekeeper)
 
-When dispatched for an Idea / Feedback / Compliance / Security input, `ambiguity-gatekeeper` MUST return this structured block:
-
-```
-[Status]: PASS | FAIL
-[Undefined Scope]: <what is missing — unbounded blast radius, no measurable goal, missing precondition; or "none">
-[Must-Ask Questions]: <numbered clarifying questions with project context; or "none">
-[Reason]: <one-line summary of the blocking ambiguity; or "none" on PASS>
-```
-
-Main agent behavior on return:
+`ambiguity-gatekeeper` returns a `[Status]: PASS | FAIL` structured block — full contract in [ambiguity-gatekeeper.md](../agents/ambiguity-gatekeeper.md). Main agent behavior:
 - **PASS** → proceed to `requirement-engineer` dispatch (adding `security-review-checklist` for Security type).
 - **FAIL** → relay every `[Must-Ask Questions]` item via `AskUserQuestion`. After receiving user answers, re-enter Step B with the enriched input. Do NOT proceed to `requirement-engineer` until `ambiguity-gatekeeper` returns PASS.
 
-The `[triage]` hook (`ambiguity_gate.py`) is a surface-level keyword filter and does NOT substitute for this dispatch. `ambiguity-gatekeeper` has `Read / Bash / Grep / Glob` tools and reasons over actual project context.
+The `[triage]` hook (`ambiguity_gate.py`) is a surface-level keyword filter and does NOT substitute for this dispatch — `ambiguity-gatekeeper` reasons over actual project context with `Read / Bash / Grep / Glob` tools.
 
-#### 1.2 Sub-agent return contract (requirement-engineer)
+#### 1.2 Sub-agent return handling (requirement-engineer)
 
-When dispatched, `requirement-engineer` MUST return this exact structured block. The main agent parses it before proceeding.
-
-```
-[Intent Summary]: <one-line restatement of what the user wants>
-[ACs]: <numbered Given/When/Then list>
-[Ambiguities]: <vague terms, missing info, unbounded scope; or "none">
-[Must-Ask Questions]: <questions the main agent MUST raise via AskUserQuestion; or "none">
-[Optional Questions]: <worth asking but not blocking; or "none">
-[Scope Hint]: <files / modules likely in Allowed Scope, comma-separated; or "unknown">
-[Source Documents]:
-  - <path>[#L<a>-L<b>] — <one-line WHY>
-  - VERBATIM: """<逐字 quote — use ONLY when no source file exists>"""
-```
-
-Rules for `[Source Documents]` (anti-summarization contract — see also `.claude/rules/dispatch-template.md`):
-- Each line MUST be either a path pointer (with optional `#L<a>-L<b>` range) OR a `VERBATIM:"""..."""` block. Never paraphrase.
-- This field flows verbatim into the next sub-agent's `## Source Documents (MUST READ before producing output)` dispatch section.
-- Empty value = `unknown` only when the user input is < 1 sentence and there is literally no file to point at. In that case the field MUST be `VERBATIM:"""<the user's exact prompt>"""`.
+`requirement-engineer` returns a structured block with `[Intent Summary]`, `[ACs]`, `[Must-Ask Questions]`, `[Source Documents]`, `[Source Documents Read]`, etc. — full contract in [requirement-engineer.md](../agents/requirement-engineer.md) Output Format section. The `[Source Documents]` anti-summarization rules are documented there and in [dispatch-template.md](dispatch-template.md).
 
 The main agent MUST raise every `Must-Ask` question through `AskUserQuestion` before entering Phase 2. Skipping is not allowed.
 

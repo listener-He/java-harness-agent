@@ -13,8 +13,9 @@ Output:
   - default (human): a [triage] block; silent if profile=VIBE and no red signals
   - --json: full structured result for downstream consumers
 
-Designed to run inside UserPromptSubmit hook in well under 1s.
-Subprocess timeouts cap each upstream tool at 3s.
+Designed to run inside UserPromptSubmit hook in well under 1s — upstream signals
+(code_index, failure_memory, ambiguity_gate) are gathered via in-process imports
+(no subprocess fan-out), total typically under 600ms.
 """
 
 from __future__ import annotations

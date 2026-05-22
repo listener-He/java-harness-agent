@@ -133,6 +133,7 @@ def main() -> int:
         proc = subprocess.run(
             [sys.executable, RETURN_GATE, "--return-stdin"],
             input=text, check=False, capture_output=True, text=True,
+            timeout=10,
         )
     except Exception:
         return 0

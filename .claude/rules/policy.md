@@ -111,16 +111,7 @@ When in doubt, dispatch. The inline shortcut is a planned optimization for the r
 
 ## Dispatch payload (sub-agents)
 
-**MANDATORY:** every sub-agent dispatch prompt MUST be built from the template at [dispatch-template.md](dispatch-template.md). Do NOT write dispatch prompts free-form — the template captures the contract, anti-loop limits, scope, and structured-return format that sub-agents otherwise wouldn't know about (they don't inherit CLAUDE.md / rules / memory).
-
-Required sections, all present even if "none":
-1. **Inputs** — task_brief path (the brief itself carries Allowed Scope + ACs + Hard Constraints; sub-agent Reads it) + file paths / commit ranges
-2. **Source Documents** — pointers to mandatory reads (brief Machine Section + relevant source files)
-3. **Memory Snapshot** — relevant auto-memory entries (default "none")
-4. **Hard Limits** — anti-loop, scope discipline, no safety-bypass (verbatim from template)
-5. **Expected Output** — the structured `[Status]: … [Files Changed]: …` block
-
-Receiving sub-agents validate the prompt structure on entry. Missing section → return `[Status]: ESCALATE` with the missing-section name; the main agent must re-dispatch with the template. See [dispatch-template.md](dispatch-template.md) for the full skeleton and worked examples.
+**MANDATORY:** every sub-agent dispatch prompt MUST be built from the template at [dispatch-template.md](dispatch-template.md). The template captures the contract, anti-loop limits, scope, and structured-return format that sub-agents otherwise wouldn't know about (they don't inherit CLAUDE.md / rules / memory). Required sections, validation rules, and worked examples all live there. Missing section → sub-agent returns `[Status]: ESCALATE`; main agent re-dispatches.
 
 ## Handoff (Standard mode)
 

@@ -31,6 +31,17 @@ A request passes when ALL of these are present:
 If investigation exceeds 3 steps without converging on a clear hypothesis, STOP and escalate:
 "I've checked [X, Y, Z] but cannot identify the root cause. Can you point me to the specific area?"
 
+## Return Contract (when dispatched for Idea / Feedback / Compliance / Security input)
+
+Return exactly this structured block — main agent parses it line by line:
+
+```
+[Status]: PASS | FAIL
+[Undefined Scope]: <what is missing — unbounded blast radius, no measurable goal, missing precondition; or "none">
+[Must-Ask Questions]: <numbered clarifying questions with project context; or "none">
+[Reason]: <one-line summary of the blocking ambiguity; or "none" on PASS>
+```
+
 ## Gate
 
 ```bash

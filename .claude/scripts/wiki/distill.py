@@ -279,7 +279,11 @@ def cmd_execute(plan_path: Path, dry_run: bool) -> int:
             if dry_run:
                 print(f"  [DRY] git rm {op['file']}")
             else:
-                rc = subprocess.run(["git", "rm", op["file"]], check=False)
+                try:
+                    rc = subprocess.run(["git", "rm", op["file"]], check=False, timeout=30)
+                except subprocess.TimeoutExpired:
+                    print(f"  [TIMEOUT] git rm {op['file']} (30s)", file=sys.stderr)
+                    continue
                 print(f"  [{'OK' if rc.returncode == 0 else 'FAIL'}] git rm {op['file']}")
         elif op["op"] == "MERGE":
             target = op.get("target")
@@ -293,7 +297,11 @@ def cmd_execute(plan_path: Path, dry_run: bool) -> int:
                 with open(target, "a", encoding="utf-8") as f:
                     f.write(f"\n\n<!-- merged from {op['file']} -->\n")
                     f.write(src)
-                subprocess.run(["git", "rm", op["file"]], check=False)
+                try:
+                    subprocess.run(["git", "rm", op["file"]], check=False, timeout=30)
+                except subprocess.TimeoutExpired:
+                    print(f"  [TIMEOUT] git rm {op['file']} (30s)", file=sys.stderr)
+                    continue
                 print(f"  [OK] merged {op['file']} → {target}")
     return 0
 
