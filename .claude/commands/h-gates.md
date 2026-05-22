@@ -5,6 +5,14 @@ argument-hint: [--phase explore|propose|implement|qa|archive] [--scenario B|C|E]
 
 Run the gates that apply to the current state of work. Hooks already cover edit-time scope/secrets checks; this command does the **full-suite audit** you'd run before a commit, phase transition, or PR. Output is severity-aggregated per `.claude/skills-archive/linter-severity-standard/SKILL.md`.
 
+### Relationship to the PreToolUse hook
+
+`pre_tool_use_hook.py` runs `scope_guard.py` on **every single Edit/Write** with that one file as the only changed file. It's a per-edit tripwire — fast, scoped to one path, fails the Edit before the diff lands.
+
+`/h-gates` runs `scope_guard.py` (and the rest of the suite) on the **full accumulated git diff**. It's a batch audit — catches drift across many edits, finds files that escaped per-edit detection (e.g. created via Bash redirection or a script that bypassed the hook), and aggregates with other gates that have no per-edit equivalent (`task_brief_gate.py`, `migration_gate.py`, etc.).
+
+They are complementary, not redundant: per-edit catches issues at write-time; batch catches "the whole change set still consistent?" before a phase transition. Run `/h-gates` at phase boundaries even when the hook reported zero blocks during Implement.
+
 ## Step 1 — Detect context
 
 1. Run `python3 .claude/scripts/harness/find_active_task_brief.py`. Stdout = active task_brief path, or empty.

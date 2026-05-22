@@ -117,8 +117,9 @@ If `gh pr create` exits non-zero → report stderr verbatim, STOP. Do not procee
 ```
 
 **launch_spec** — in the latest `.claude/runs/launch-specs/launch_spec_*.md`, find this task's row and:
-- Change `Status` column: `IN_PROGRESS` → `WAITING_APPROVAL`
+- Status stays `IN_PROGRESS` — do NOT transition to `WAITING_APPROVAL` (that status is reserved for the HIGH-risk Approval Gate between Review and Implement, per lifecycle.md). The PR-open state is tracked via the Artifact marker, not the status column — same pattern as the COLLAB marker.
 - Append PR number to the `Artifact` column: `<brief path> | PR #<number>`
+- `/h-archive` will flip `IN_PROGRESS` → `DONE` after merge. Until then, the PR marker is informational only.
 
 ## Step 9 — Report
 
@@ -132,15 +133,15 @@ Output exactly this block:
 [Base Branch]: <branch>
 [Draft]: yes | no
 [Gates]: secrets=<OK|WARN|FAIL>, scope=<OK|WARN|FAIL>
-[launch_spec Status]: WAITING_APPROVAL
-[Next Action]: <one sentence — e.g. "PR open for review. After merge, run /h-archive to complete the workflow loop.">
+[launch_spec Status]: IN_PROGRESS (PR marker appended to Artifact column)
+[Next Action]: <one sentence — e.g. "PR open for review. After merge, run /h-archive to flip IN_PROGRESS → DONE and complete the workflow loop.">
 ```
 
 ## Hard constraints
 
 - **Allowed edits**: the resolved task_brief (append `## PR` section only), the target `launch_spec_*.md` row. NO source-code edits. NO wiki edits.
 - **Do NOT create PR if any gate exits 2 (FAIL)** — the gates are there to prevent broken code from reaching review.
-- **Do NOT proceed past Step 7 if `gh pr create` fails** — a failed PR creation must not leave the launch_spec in WAITING_APPROVAL.
+- **Do NOT proceed past Step 7 if `gh pr create` fails** — a failed PR creation must not write a `| PR #<n>` Artifact marker. Leave the row untouched until the PR is actually created.
 - **Draft flag is sticky** — if `--draft` is set, create as draft. Do not auto-promote.
 - **Ticket closure** (`Closes #<number>`) is only added when `ticket_url` is present in the brief frontmatter from h-from-ticket. Do not guess ticket numbers.
 - Anti-loop: max 2 user edit rounds in Step 6, then STOP.

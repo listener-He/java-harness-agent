@@ -77,13 +77,15 @@ python3 .claude/scripts/local_intel/failure_memory.py record \
 ## Step 5 — Route by failure type
 
 ### type = `security` (P1)
-Invoke the h-incident command flow inline (do not dispatch as sub-agent):
+Open `.claude/commands/h-incident.md` and execute its Steps 3–8 in this conversation (slash commands are LLM prompt templates, not callable functions — "execute inline" means follow the Steps yourself; do NOT dispatch a sub-agent, do NOT try to invoke `/h-incident` as if it were a tool). Use these inputs:
+
 - `source`: `log`
 - `slug`: `ci-secret-<YYYYMMDD>`
-- Write `.claude/runs/decompositions/<YYYYMMDD>_ci-secret_raw.md` with the relevant log lines
-- Proceed through h-incident Steps 3–8
+- raw file: write the relevant log lines to `.claude/runs/decompositions/<YYYYMMDD>_ci-secret_raw.md` first, then pass that path to h-incident Step 4's `--from-file`
 
-STOP after incident is recorded. Do not proceed to standard task creation.
+Steps 1–2 (arg parsing + raw-fact acquisition) are already satisfied by the inputs above, so jump straight to h-incident Step 3 (path collision check) and continue through Step 8 (final report).
+
+STOP after the incident is recorded. Do not proceed to standard task creation.
 
 ### type = `compile`
 Surface immediately:

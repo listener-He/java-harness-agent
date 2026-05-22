@@ -78,6 +78,7 @@ python3 .claude/scripts/gates/writeback_gate.py --topic <slug> --date <YYYYMMDD>
 **Path B — user chose None:** Skip the sub-agent dispatch. Write a single stub file directly (you, the main agent, write it — no sub-agent needed for one file):
 
 - Path: `.claude/wiki/wiki/domain/wal/<YYYYMMDD>_<slug>_stub.md`
+  - **Why `domain/wal/` regardless of the task's actual dimension**: a "None" decision is meta-knowledge ("we deliberately chose not to capture WAL"), not domain/api/data content. By convention all None stubs land in one location so a downstream scan can find them with a single `find <path> -name "*_stub.md"`. Tooling MUST filter `_stub.md` out when aggregating real domain knowledge — the `_stub.md` suffix is the signal.
 - Content:
   ```markdown
   # WAL Stub - <YYYY-MM-DD> - <slug>

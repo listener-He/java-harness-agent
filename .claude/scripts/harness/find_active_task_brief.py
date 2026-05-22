@@ -30,7 +30,16 @@ def find() -> str:
             continue
         cells = [c.strip() for c in line.split("|")]
         for cell in cells:
-            m = re.search(r"(\.claude/runs/task-briefs/[^\s|`)]+\.md)", cell)
+            # Active briefs live under runs/task-briefs/. Archived briefs live
+            # under wiki/archive/. The latter SHOULD NOT appear on an IN_PROGRESS
+            # row — if it does, it signals a prior /h-archive run that updated
+            # the brief move but forgot to flip the launch_spec status. We still
+            # return the (archive) path so /h-resume can detect this and surface
+            # the inconsistency per h-resume.md Step 2.
+            m = re.search(
+                r"((?:\.claude/runs/task-briefs/|\.claude/wiki/archive/)[^\s|`)]+\.md)",
+                cell,
+            )
             if m and os.path.isfile(m.group(1)):
                 return m.group(1)
     return ""

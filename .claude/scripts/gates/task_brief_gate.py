@@ -44,9 +44,6 @@ HEADER_LINE = re.compile(r"^#+\s", re.MULTILINE)
 # STANDARD spec_mode requires a `risk: MEDIUM|HIGH` marker; missing → FAIL.
 STRICT_RISK_MARKER = True
 
-# STANDARD spec_mode requires a `dimensions:` marker; missing → FAIL.
-STRICT_DIMENSIONS_MARKER = True
-
 # Spec-floor sections — ALWAYS required for STANDARD regardless of dimensions.
 # These prevent security/observability/config-only changes from legally omitting
 # NFR/AC documentation.
@@ -135,6 +132,13 @@ def _read_allowed_scope(content: str) -> tuple[set[str], list[str]]:
             break
         if in_section and s.startswith("-"):
             v = s.lstrip("-").strip()
+            if not v:
+                continue
+            # Take the first whitespace-delimited token so trailing inline
+            # annotations (e.g. "- path (note)") are dropped. Then strip
+            # surrounding markdown backticks so "- `path`" parses the same
+            # as "- path". Mirrors scope_guard.py's parser.
+            v = v.split(None, 1)[0].strip("`")
             if not v or v.lower() == "none":
                 continue
             if v.endswith("/") or "/" in v:
@@ -326,23 +330,10 @@ def _dimensions_from_frontmatter(content: str) -> tuple[set[str], int, list[str]
 
     m = DIMENSIONS_MARKER.search(content)
     if not m:
-        # Missing marker — transition rules.
-        msg = [
-            "dimensions marker missing: STANDARD spec_mode now uses `dimensions: [domain, api, data, tech_arch, patterns]`",
+        return set(), EXIT_FAIL, [
+            "dimensions marker missing: STANDARD spec_mode requires `dimensions: [domain, api, data, tech_arch, patterns]`",
             "  Fix: add `dimensions: [...]` to the frontmatter after `risk:` (empty list `[]` is legal)",
         ]
-        if STRICT_DIMENSIONS_MARKER:
-            return set(), EXIT_FAIL, msg
-        # Transition: infer dimensions from risk level.
-        if RISK_MARKER.search(content):
-            risk_val = RISK_MARKER.search(content).group(1).upper()
-            inferred = set(KNOWN_DIMENSIONS) if risk_val == "HIGH" else set()
-            msg.append(
-                f"  (transition period: inferring dimensions={sorted(inferred) or '[]'} from risk={risk_val}; "
-                f"will become FAIL after 2026-05-20_dimension-driven-schema task is archived)"
-            )
-            return inferred, EXIT_WARN, msg
-        return set(), EXIT_WARN, msg + ["  (transition period: defaulting to empty dimensions)"]
 
     raw = m.group(1).strip()
     if not raw:

@@ -38,8 +38,15 @@ def _read_allowed_prefixes(task_brief_path: str) -> list[str]:
             s = line.strip()
             if s.startswith("-"):
                 v = s.lstrip("-").strip()
-                if v:
-                    prefixes.append(v)
+                if not v:
+                    continue
+                # Take the first whitespace-delimited token so trailing inline
+                # annotations (e.g. "- path (note)" or "- path # comment") are
+                # dropped. Then strip surrounding markdown backticks so
+                # "- `path`" parses the same as "- path".
+                token = v.split(None, 1)[0].strip("`")
+                if token and token.lower() != "none":
+                    prefixes.append(token)
     return prefixes
 
 
@@ -84,7 +91,7 @@ def main() -> int:
         # No trailing slash. Treat as an exact file path regardless of whether
         # the entry contains "/". The previous behavior silently turned every
         # file entry into an unreachable prefix (e.g. ".../foo.md/") and let
-        # nothing match — see ADR / brief 2026-05-20_arch-design-contract-uplift.
+        # nothing match.
         allowed_exact.add(a)
 
     if not allowed_prefixes and not allowed_exact:

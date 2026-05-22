@@ -104,12 +104,15 @@ For MEDIUM (p2): brief is recommended. Add note: `Slim Spec required before Impl
 
 ## Step 6 — Production incident recording (if --production or p1/p2)
 
-Run the `/h-incident` command flow inline with:
+Open `.claude/commands/h-incident.md` and execute its Steps 1–8 in this conversation with the following arguments (slash commands are LLM prompt templates, not callable functions — "execute inline" means follow the Steps yourself, do NOT dispatch a sub-agent and do NOT try to invoke `/h-incident` as if it were a tool):
+
 - `source`: `manual` (or `github` if ticket-ref was provided)
 - `slug`: `<slug>`
-- raw file: `.claude/runs/decompositions/<YYYYMMDD>_<slug>_bug_raw.md`
+- raw file: `.claude/runs/decompositions/<YYYYMMDD>_<slug>_bug_raw.md` — pass as `--from-file` in h-incident Step 2
 
-This records the bug as a structured incident at `.claude/wiki/incidents/<YYYYMMDD>_<slug>.md`, ensuring future `[failure-memory]` blocks surface it. The `## 提醒未来 LLM` field is derived from the root cause statement in Step 4.
+This records the bug as a structured incident at `.claude/wiki/incidents/<YYYYMMDD>_<slug>.md`, ensuring future `[failure-memory]` blocks surface it. The `## 提醒未来 LLM` field is derived from the root cause statement in Step 4 of this command.
+
+After h-incident's Steps 1–8 complete and produce their own `[Incident Status]` report, return to Step 7 below.
 
 For p3 (test-only bugs): skip this step entirely — do not create an incident file for non-production bugs.
 

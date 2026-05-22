@@ -79,9 +79,13 @@ If the script exits non-zero, surface stderr verbatim and STOP. Do not proceed t
 For each scaffolded brief from Step 5:
 
 - Resolve or create the latest `.claude/runs/launch-specs/launch_spec_<YYYY-MM-DD>.md` (same logic as `/h-brief` Step 6: use latest if exists, create with table header otherwise).
+- **Risk inference (two-stage — Effort is SIZE proxy, not RISK proxy)**:
+  1. **Size baseline from Effort**: `Simple → LOW`, `Medium → MEDIUM`, `Complex → MEDIUM`. Do NOT auto-promote Complex to HIGH; a large but mechanical refactor is MEDIUM, not HIGH.
+  2. **Keyword upgrade to HIGH**: scan the subtask's `Goal` + `Acceptance Criteria` text for any HIGH-tier danger keyword from `.claude/rules/lifecycle.md` Risk Classification table — `auth`, mutating DDL (`ALTER` / `DROP` / `MODIFY` / `RENAME` / `migration`), public API breaking change, payment / financial logic, `secret` / `token` / `credential`, error code definition, lifecycle / policy / routing files. Match → upgrade to HIGH regardless of Effort.
+  3. **Hard floor**: if `Depends On` includes a HIGH-risk upstream subtask, this subtask is at minimum MEDIUM (correctness depends on something HIGH-risk).
 - Append one row per subtask:
   ```
-  | <slug>_part_<i> | <risk inferred from Effort: Simple→LOW, Medium→MEDIUM, Complex→HIGH> | Propose | PENDING | <Depends On from _tasks.md, mapped to other part_<j> slugs, or "none"> | <brief path> |
+  | <slug>_part_<i> | <risk per the rule above> | Propose | PENDING | <Depends On from _tasks.md, mapped to other part_<j> slugs, or "none"> | <brief path> |
   ```
 
 All rows start as `PENDING`. Dependencies form a DAG — if you detect a cycle, STOP and report; cycles must be resolved at the decomposition layer (Step 3), not by editing launch_spec rows.

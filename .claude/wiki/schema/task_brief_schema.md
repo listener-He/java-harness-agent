@@ -62,11 +62,30 @@ dimensions: [domain, api, data, tech_arch, patterns]   # subset of the known set
 
 ### Hard rules
 
+- **`## Allowed Scope`** (machine-readable allowlist) — **always required** for STANDARD spec_mode. SLIM mode is exempt (it uses `# Scope of Change` instead, with no enforcement). Format and parsing rules below.
 - **Spec-floor**: §1 Context, §5 Business Logic, §6 Non-Functional Constraints, §7 Acceptance Criteria — **always required**, regardless of `dimensions:`. Header MUST be present and body MUST be substantive (not `None`, `N/A`, `无`, or whitespace). Spec-floor exists so a security-only / observability-only / config-only change cannot legally omit its NFR and AC documentation.
 - **Dimension-gated**: §2 / §3 / §4 / §8 / §9 — required if and only if the corresponding dimension is in `dimensions:`. When required, header AND body MUST be present and substantive. When NOT required, the section MAY be entirely omitted (no header). Writing the header with `None` body is tolerated for backward compatibility with legacy briefs.
 - **Heuristic backstop**: `task_brief_gate.py` scans Allowed Scope path prefixes; if a typical signature appears (`controller/`, `web/`, `mapper/`, `dao/`, `entity/`, `migration/`, `event/`, `domain/`) but the corresponding dimension is not declared, the gate emits WARN with a hint — never FAIL, since path conventions vary.
 - **Unknown dimensions** in `dimensions:` produce WARN, never FAIL. To add a new dimension permanently (e.g. `security`, `observability`, `config`), open an ADR and update this schema + the gate's known set in the same PR.
 - **Empty `dimensions: []`** is legal and means: only spec-floor sections (§1/§5/§6/§7) are required. Use for pure internal refactors, bugfixes that don't touch any of the 5 dimensions, or harness/tooling changes that genuinely fit none.
+
+### `## Allowed Scope` format (parsed by `task_brief_gate.py` and `scope_guard.py`)
+
+```markdown
+## Allowed Scope
+
+- src/main/java/com/example/order/OrderService.java
+- src/main/java/com/example/order/
+- .claude/runs/task-briefs/2026-05-22_<slug>_task_brief.md
+```
+
+Parsing rules — keep entries simple to avoid surprising the parser:
+
+- One `-` bullet per entry.
+- **Bare paths only**: the parser strips surrounding markdown backticks (`` `path` `` is equivalent to `path`) and stops at the first whitespace, so trailing inline annotations like ` (this file)` or ` # note` are dropped. Prefer no annotation at all for unambiguous diffs.
+- **Trailing `/` = directory prefix**: `src/foo/` matches any file under that directory.
+- **No trailing `/` + contains `/` = file prefix** (gate behavior): `src/foo/Bar.java` is registered as a file path. `scope_guard.py` enforces it as an exact match; `task_brief_gate.py` treats it as a prefix for the AC↔Scope coherence check.
+- `- None` (case-insensitive) is treated as "no entry" — useful only to keep the section non-empty for SLIM templates that mistakenly migrate here.
 
 ### Section templates
 
@@ -74,6 +93,9 @@ dimensions: [domain, api, data, tech_arch, patterns]   # subset of the known set
 spec_mode: STANDARD
 risk: MEDIUM   # or HIGH (narrowed semantics — flow only)
 dimensions: [<subset of: domain, api, data, tech_arch, patterns>]
+
+## Allowed Scope        ← MACHINE-READABLE ALLOWLIST (always required for STANDARD)
+- <bare path or directory prefix, one per bullet — see format rules above>
 
 ## 1. Context           ← SPEC-FLOOR (always required, substantive)
 - Business goal: one sentence.
