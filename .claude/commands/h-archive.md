@@ -113,6 +113,10 @@ python3 .claude/scripts/tools/archive_session_artifacts.py --slug <slug>
 
 Confirm afterwards that `.claude/wiki/archive/<date>_<slug>_task_brief.md` exists and `.claude/runs/task-briefs/<original>` is now a pointer file.
 
+If a collab file exists for this task (`find .claude/runs/collabs/*_<slug>_collab.md`):
+- Status `SIGNED_OFF` → move to `.claude/wiki/archive/collabs/<date>_<slug>_collab.md`
+- Status not `SIGNED_OFF` → warn: `Collab for <slug> is not yet signed off. Archive anyway? (deliverable will be moved but marked UNRESOLVED)`. If user confirms, move with `status: UNRESOLVED` appended.
+
 ## Step 6 — Wiki lint
 
 Run `python3 .claude/scripts/wiki/wiki_linter.py`.

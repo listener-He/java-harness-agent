@@ -318,7 +318,9 @@ Only two: `launch_spec_*.md` (task queue) and `task_brief.md` (per-task contract
 
 **Launch spec statuses:** PENDING | IN_PROGRESS | WAITING_APPROVAL | DONE | FAILED
 
-**Resume protocol:** Find IN_PROGRESS row → read Artifact → load task_brief Machine Section.
+**Collab in-progress marker:** When a task is awaiting external review, its status stays `IN_PROGRESS` and the Artifact column gets a `| COLLAB:<slug>` suffix pointing to `.claude/runs/collabs/<date>_<slug>_collab.md`. This avoids adding a new status that breaks existing scripts — `find_active_task_brief.py` continues to find the row, and `/h-resume` reads the COLLAB marker to surface the pending review.
+
+**Resume protocol:** Find IN_PROGRESS row → read Artifact → load task_brief Machine Section. If Artifact contains `| COLLAB:<slug>`, also read the collab state file and surface open questions before resuming implementation.
 
 ---
 

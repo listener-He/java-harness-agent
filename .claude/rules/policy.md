@@ -36,7 +36,7 @@ This is **non-blocking** — the user's declared intent wins. The block exists s
 - Python caches: `__pycache__/`, `*.pyc`
 - Build/IDE artifacts: `target/`, `build/`, `.idea/`, `.vscode/`, `.DS_Store`
 
-**Only commit:** source code, archived task briefs (`.claude/wiki/archive/`), and `.claude/**/wal/` fragments.
+**Only commit:** source code, archived task briefs (`.claude/wiki/archive/`), archived collab deliverables (`.claude/wiki/archive/collabs/`), and `.claude/**/wal/` fragments.
 
 ---
 

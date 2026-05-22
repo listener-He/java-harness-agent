@@ -22,6 +22,7 @@ List `.claude/runs/launch-specs/launch_spec_*.md`. Then:
 | Directory missing or no launch_spec files | `No resumable state — clean slate. Ready for a fresh task.` |
 | launch_spec exists, only `DONE`/`FAILED` rows | `Queue complete (N DONE / M FAILED). No active work to resume.` Surface FAILED rows if any. |
 | launch_spec has `WAITING_APPROVAL` rows | `Task <slug> is WAITING_APPROVAL — surface its task_brief Human Section, ask user to approve/reject before resuming.` Read that brief's Human Section and present it. |
+| `IN_PROGRESS` row Artifact column contains `\| COLLAB:<collab-slug>` | Read `.claude/runs/collabs/*_<collab-slug>_collab.md`. Surface `status`, `open_questions`, and `deliverable_path`. Report: `Task is IN_PROGRESS but pending external collab review. Run /h-collab-update <collab-slug> to log feedback or sign off before continuing implementation.` |
 | launch_spec has only `PENDING` rows | `N pending tasks. Suggest starting <first-pending-slug> next.` List dependencies if any row has unmet `Depends On`. |
 | `IN_PROGRESS` row exists but Artifact path is broken (file missing or already in `.claude/wiki/archive/`) | `Inconsistency: IN_PROGRESS points to missing/archived brief <path>. Likely a prior Archive run did not update launch_spec. Ask user whether to mark DONE or restore.` |
 
