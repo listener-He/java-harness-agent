@@ -45,7 +45,7 @@ Inspect the launch_spec row for this task. Look for a Phase column (typical valu
 - **Phase column present** → that is the resume point.
 - **Phase column absent** → infer from task_brief state:
   - No §7 Acceptance Criteria → still in Explore/Propose
-  - §7 present, no code edits visible via `git log --oneline --since="$(date -d '-7 days')"` touching Allowed Scope → at Review/Approval boundary
+  - §7 present, no code edits visible via `git log --oneline --since="7 days ago"` touching Allowed Scope → at Review/Approval boundary
   - Code edits exist + no QA evidence in `## Plan Deviation Reflection` → mid-Implement
   - QA evidence present, no archive pointer → ready for Archive (suggest `/h-archive`)
 - **Phase HIGH-risk + Approval not yet given** → present Human Section, do not proceed past Approval Gate.

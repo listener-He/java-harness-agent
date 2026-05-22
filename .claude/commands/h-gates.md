@@ -3,7 +3,7 @@ description: Phase-aware gate suite runner — auto-detects active phase/scenari
 argument-hint: [--phase explore|propose|implement|qa|archive] [--scenario B|C|E] [--all]
 ---
 
-Run the gates that apply to the current state of work. Hooks already cover edit-time scope/secrets checks; this command does the **full-suite audit** you'd run before a commit, phase transition, or PR. Output is severity-aggregated per `.claude/skills/linter-severity-standard/SKILL.md`.
+Run the gates that apply to the current state of work. Hooks already cover edit-time scope/secrets checks; this command does the **full-suite audit** you'd run before a commit, phase transition, or PR. Output is severity-aggregated per `.claude/skills-archive/linter-severity-standard/SKILL.md`.
 
 ## Step 1 — Detect context
 
