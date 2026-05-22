@@ -38,15 +38,23 @@ CLAUDE.md                      # Single entry point
 │   ├── librarian.md              # Wiki health maintainer. Aggregates scattered WAL fragments → merges into stable domain indexes → garbage-collects merged fragments. Invokes Knowledge Architect on index overflow. Trigger: @gc / @librarian. Phase: Maintenance.
 │   └── security-sentinel.md      # Deterministic security gate. Runs automated scan (secrets_linter.py) for hardcoded credentials, tokens, keys. Reports objective pass/fail — no subjective security review. Triggered before every Archive + Scenario A (Emergency Hotfix).
 ├── commands/                    # User-invokable slash commands (h- prefix, avoid Claude Code built-in collision)
+│   ├── h-from-ticket.md         # GitHub/Jira/Linear ticket → task_brief skeleton + launch_spec row (runs ambiguity-gatekeeper + input-classifier)
 │   ├── h-decompose.md           # PRD/EPIC pre-validation → task-decomposition-guide → N brief skeletons → DAG bound to launch_spec
 │   ├── h-brief.md               # Schema-compliant task_brief + bidirectional launch_spec binding
 │   ├── h-design.md              # Dispatch system-architect with strict Source Documents → write ≥2 ADRs (HIGH) → fill brief §8/§9
 │   ├── h-resume.md              # Read-only: locate IN_PROGRESS task + restore Machine Section + report Next Action
+│   ├── h-fix-bug.md             # Ticket/manual → root-cause-debug Phase 1 (MUST complete) → launch_spec row at correct risk level; p1/p2 triggers h-incident
 │   ├── h-gates.md               # Phase/scenario-aware gate suite + failure_memory recording
 │   ├── h-archive.md             # Plan Deviation Reflection → knowledge-extractor → archive brief → wiki_linter → mark DONE
+│   ├── h-collab.md              # Generate cross-team deliverable (api/process/data/integration/custom) + collab state file + COLLAB marker in launch_spec
+│   ├── h-collab-update.md       # Log external feedback → update deliverable → --signoff removes COLLAB marker; BLOCKED state recorded only
+│   ├── h-pr.md                  # secrets_linter + scope_guard → gh pr create → write PR URL into task_brief; launch_spec → WAITING_APPROVAL
+│   ├── h-ci.md                  # Fetch CI run data → classify failures (compile/test/security/coverage) → failure_memory + routing recommendation
+│   ├── h-release.md             # Pre-release gates (queue/tree/branch/secrets) → WAL changelog → mvn versions:set → tag + push; --dry-run supported
 │   └── h-incident.md            # Wrap ingest_incident.py + write incident .md from TEMPLATE (enforces 提醒未来 LLM smell test)
-├── skills/                          # 29 skills auto-loaded by Claude Code on every session
+├── skills/                          # 28 skills auto-loaded by Claude Code on every session
 │   ├── skill-index/                 # Central navigator (active set + archive references)
+│   ├── ac-verify/                   # End-to-end AC verification with pass/fail evidence before Archive
 │   ├── adversarial-review/          # One-round isolated critique (HIGH-risk Review)
 │   ├── ai-slop-cleaner/             # Regression-safe cleanup: dead code, duplicates, over-abstraction
 │   ├── architecture-decision-records/ # Capture architectural decisions as structured ADRs
@@ -54,28 +62,26 @@ CLAUDE.md                      # Single entry point
 │   ├── code-review-checklist/       # Mandatory pre-delivery code review against all project standards
 │   ├── cognitive-bias-checklist/    # Prevent hallucinations and overconfidence during design decisions
 │   ├── decision-frameworks/         # SWOT, 5-Why, First Principles for root cause and architecture selection
+│   ├── impl-plan/                   # Decompose spec into checkpoint-driven implementation plan
+│   ├── input-classifier/            # Classify raw input (PRD, idea, bug, ticket) into structured intent+scope+AC
 │   ├── java-architecture-standards/ # Mandatory: 3-Layer arch, API design, POJO, anti-JOIN, error codes
 │   ├── java-coding-style/           # Mandatory: Checkstyle, Javadoc, utility class boundaries, functional patterns
 │   ├── java-testing-standards/      # Mandatory: test isolation, mock guidelines, 3-scenario coverage rule
-│   ├── linter-severity-standard/    # FAIL/WARN/IGNORE severity rubric for gate scripts
 │   ├── local-code-intelligence/     # Zero-cost local tools: BM25 wiki search, symbol index, failure memory
 │   ├── mybatis-sql-standard/        # Anti-JOIN, index utilization, implicit type conversion prevention
 │   ├── product-manager-expert/      # PRD generation and PRD ingestion → technical requirements + AC
 │   ├── remember/                    # Classify discovered knowledge into correct persistence layer
-│   ├── requirement-intake/          # Normalize raw input (PRD, idea, bug) into structured intent+scope+AC
+│   ├── root-cause-debug/            # Mandatory root-cause investigation before any fix (Phase 1 must complete)
 │   ├── security-review-checklist/   # Secrets, authZ, IDOR, data exposure, dependency safety checklist
 │   ├── skill-creator/               # Create or update SKILL.md for repeatable workflows
 │   ├── skill-graph-manager/         # Mandatory: maintain bidirectional Skill Knowledge Graph
 │   ├── spec-quality-checklist/      # Self-correction gate for AI-generated docs before Python gate scripts
 │   ├── stakeholder-conflict-resolver/ # Detect and resolve mutually exclusive stakeholder requirements
-│   ├── systematic-debugging/        # Mandatory root-cause investigation before any fix
 │   ├── task-decomposition-guide/    # Decompose large PRDs/EPICs via INVEST criteria and Vertical Slicing
 │   ├── test-driven-development/     # Write failing tests from ACs before implementation
 │   ├── ultraqa/                     # Structured QA loop with Evidence Mapping Table (AC ↔ Test ↔ Result)
-│   ├── verify/                      # End-to-end AC verification with pass/fail evidence before Archive
-│   ├── wal-documentation-rules/     # Mandatory: extract stable knowledge into WAL fragments at Archive
-│   └── writing-plans/               # Decompose spec into checkpoint-driven implementation plan
-├── skills-archive/                  # 12 lower-frequency skills — NOT auto-loaded; referenced inline by the rule/agent that needs them
+│   └── wal-documentation-rules/     # Mandatory: extract stable knowledge into WAL fragments at Archive
+├── skills-archive/                  # 13 lower-frequency skills — NOT auto-loaded; referenced inline by the rule/agent that needs them
 │   ├── ai-pipeline/                 # Full AI engineering pipeline orchestrator (Scenario PIPELINE)
 │   ├── blueprint/                   # Multi-session, multi-agent construction plan (Scenario EPIC)
 │   ├── deepinit/                    # New-repo deep init: hierarchical CLAUDE.md (Scenario GREENFIELD)
@@ -84,6 +90,7 @@ CLAUDE.md                      # Single entry point
 │   ├── external-research/           # CVE / compliance / plateau research (Scenarios D, PIPELINE)
 │   ├── greenfield-scaffold/         # From-scratch protocol (Scenario GREENFIELD)
 │   ├── incident-response/           # Production triage + post-mortem (Scenario A)
+│   ├── linter-severity-standard/    # FAIL/WARN/IGNORE severity rubric for gate scripts
 │   ├── migration-planner/           # A→B migration with equivalence tests (Scenario B)
 │   ├── release/                     # Pre-release validation + step-by-step (Scenario RELEASE)
 │   ├── self-improve/                # Tournament loop with plateau detection (Scenario PIPELINE)
@@ -136,13 +143,14 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 
 | Item | Detail |
 |------|--------|
-| **Roles** | `@Ambiguity Gatekeeper`, `@Requirement Engineer`, `@Focus Guard` |
-| **Skills** | `requirement-intake`, `brainstorming`, `product-manager-expert`, `task-decomposition-guide` |
-| **Activities** | ① Classify input via intent signal matrix → determine risk level (TRIVIAL/LOW/MEDIUM/HIGH) |
-| | ② **Specification Inference**: `Current: [X]. Required: [Y]. Delta: [Z]` — the gap is the true scope |
-| | ③ **BDD — AC-as-Tests Translation (MUST)** : convert every requirement to `Given [precondition], when [action], then [observable, measurable result]` — vague language ("handle correctly", "work properly") is BLOCKED |
-| | ④ Impact analysis: `code_index.py --impact-of <target>` → identify hidden dependencies |
-| | ⑤ Adversarial review Category A (HIGH only): "are we solving the right problem?" |
+| **Roles** | `@Ambiguity Gatekeeper` (pre-gate), `@Requirement Engineer`, `@System Architect` (Propose) |
+| **Skills** | `input-classifier`, `brainstorming`, `product-manager-expert`, `task-decomposition-guide` |
+| **Activities** | ① `input-classifier` inline: classify raw input → emit `[Intake]` block with `Input-Type` and `Route` |
+| | ② **Idea/Feedback/Compliance/Security inputs**: dispatch `ambiguity-gatekeeper` first — FAIL blocks until input is tightened; PASS → dispatch `requirement-engineer` |
+| | ③ **Specification Inference**: `Current: [X]. Required: [Y]. Delta: [Z]` — the gap is the true scope |
+| | ④ **BDD — AC-as-Tests Translation (MUST)**: convert every requirement to `Given [precondition], when [action], then [observable, measurable result]` — vague language ("handle correctly", "work properly") is BLOCKED |
+| | ⑤ Impact analysis: `code_index.py --impact-of <target>` → identify hidden dependencies |
+| | ⑥ Adversarial review Category A (HIGH only): "are we solving the right problem?" |
 | **Output** | Spec Gap + AC list (Given/When/Then) + Hidden Scope → feeds into task_brief Machine Section |
 
 ### Phase 2: Propose — 架构设计与 Spec (Architecture Design & Specification)
@@ -178,7 +186,7 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 | Item | Detail |
 |------|--------|
 | **Roles** | `@Lead Engineer`, `@Focus Guard` |
-| **Skills** | `test-driven-development`, `java-architecture-standards`, `java-coding-style`, `mybatis-sql-standard`, `writing-plans` |
+| **Skills** | `test-driven-development`, `java-architecture-standards`, `java-coding-style`, `mybatis-sql-standard`, `impl-plan` |
 | **Activities** | ① Read `task_brief.md` Machine Section — Allowed Scope + ACs + Hard Constraints |
 | | ② **RED**: Write failing tests derived from ACs (must see test failure before writing code) |
 | | ③ **GREEN**: Implement within Allowed Scope — `scope_guard.py` enforces boundary |
@@ -205,7 +213,7 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 | Item | Detail |
 |------|--------|
 | **Roles** | `@Knowledge Extractor`, `@Documentation Curator`, `@Skill Graph Curator` |
-| **Skills** | `wal-documentation-rules`, `verify` |
+| **Skills** | `wal-documentation-rules`, `ac-verify` |
 | **Activities** | ① Extract stable knowledge from completed task_brief |
 | | ② Write **WAL fragments** into domain directories: `api/wal/`, `data/wal/`, `domain/wal/` |
 | | ③ **Plan Deviation Reflection (PDD)**: Compare planned vs actual — scope drift, dependency accuracy, plan invalidations, AC coverage; write `plan_deviation.md` for significant deviations |
@@ -269,19 +277,90 @@ When the user requests pure knowledge/wiki maintenance (整理, 提取, 扫描, 
 
 ## Slash Commands
 
-User-invokable shortcuts that wrap multi-step lifecycle flows into single invocations. All project commands use the `h-` prefix (harness) to avoid collision with Claude Code built-ins (`/init`, `/review`, `/security-review`, etc.) and skill-registered commands. Commands live under `.claude/commands/<name>.md` and are loaded automatically — invoke as `/h-<name> [args]`.
+User-invokable shortcuts that wrap multi-step lifecycle flows into single invocations. All project commands use the `h-` prefix (harness) to avoid collision with Claude Code built-ins (`/init`, `/review`, `/security-review`, etc.). Commands live under `.claude/commands/<name>.md` and are loaded automatically — invoke as `/h-<name> [args]`.
+
+### Intake & Planning
 
 | Command | Phase | Effect | When to use |
 |---------|-------|--------|-------------|
+| `/h-from-ticket <source> [<slug>]` | Explorer entry | Fetch GitHub/Jira/Linear ticket → `input-classifier` + `ambiguity-gatekeeper` → task_brief skeleton + launch_spec row at Explore phase | Ticket-driven development; maps ticket fields to brief sections; `ticket_ref`/`ticket_url` in frontmatter for PR auto-close |
 | `/h-decompose <slug> <prd-path>` | Explorer → Propose | PRD/EPIC pre-validation → task-decomposition-guide → N brief skeletons → DAG bound to launch_spec | EPIC/PRD spanning ≥3 domains; need INVEST-compliant slicing |
 | `/h-brief <slug>` | Propose entry | Schema-compliant task_brief + 1 launch_spec row | Single STANDARD task starting from a known scope |
 | `/h-design [slug]` | Propose design | Dispatch system-architect with strict Source Documents contract; write ≥2 ADRs (HIGH); fill brief §8/§9 | HIGH/EPIC needs design alternatives; MEDIUM needs 1 explicit option |
-| `/h-resume` | Any | Read-only: locate IN_PROGRESS task + restore Machine Section context + report Next Action | Resuming an interrupted session |
+
+### Daily Development
+
+| Command | Phase | Effect | When to use |
+|---------|-------|--------|-------------|
+| `/h-resume` | Any | Read-only: locate IN_PROGRESS task + restore Machine Section context + report Next Action; detects COLLAB-blocked state | Resuming an interrupted session |
+| `/h-fix-bug [<issue-url>] [--priority p1|p2|p3]` | Explorer | GitHub issue or manual input → `failure_memory` query → `root-cause-debug` Phase 1 (MUST complete before any fix) → launch_spec row; p1/p2 triggers `h-incident` | Bug reports from QA or production; priority determines risk level and whether incident file is created |
 | `/h-gates [--phase X] [--scenario Y]` | Phase boundary / pre-commit | Run all applicable gates (scope, secrets, task_brief, scenario B/C/E); record failures into failure_memory | Auditing full diff before phase transition or commit |
 | `/h-archive` | Phase 6 | Plan Deviation Reflection → knowledge-extractor → archive brief → wiki_linter → mark launch_spec DONE | STANDARD task completion |
+
+### Cross-Team Collaboration
+
+| Command | Phase | Effect | When to use |
+|---------|-------|--------|-------------|
+| `/h-collab <slug> [--type api\|process\|data\|integration\|custom]` | Between Propose and Implement | Generate structured deliverable from task_brief; type auto-inferred if omitted; creates collab state file + `COLLAB:<date>-<slug>` marker in launch_spec; external delivery is manual | Task requires external team alignment (frontend, third-party, QA, ops) before code is written |
+| `/h-collab-update <slug> [--signoff] [--reviewer <name>]` | Anytime (cross-session) | Collect feedback (approved/questions/changes/blocker) → update deliverable → update collab state; `--signoff` removes COLLAB marker; BLOCKED state does not change launch_spec | After receiving external team response to a deliverable |
+
+### Delivery
+
+| Command | Phase | Effect | When to use |
+|---------|-------|--------|-------------|
+| `/h-pr [slug]` | After QA | `secrets_linter` + `scope_guard` pre-gates → `gh pr create` with Human Section + AC checklist; PR URL written back to task_brief; launch_spec → WAITING_APPROVAL; auto-closes ticket if `ticket_url` in frontmatter | Creating a PR for a completed STANDARD task |
+| `/h-ci [--run-id <id>] [--from-file <log>]` | After push | Fetch CI run data → classify failures by type/severity → `failure_memory` recording → routing recommendation (flake check / fix task / alert) | Analyzing CI failures after a push or as post-PR feedback |
+| `/h-release <version> [--dry-run]` | Release | Pre-release gates (queue completeness, clean tree, release branch, secrets) → WAL changelog → `mvn versions:set` → `mvn test` → tag + push; `--dry-run` prints all intended actions without git operations | Cutting a release version |
+
+### Production
+
+| Command | Phase | Effect | When to use |
+|---------|-------|--------|-------------|
 | `/h-incident <source> <slug>` | Anytime | Wrap `ingest_incident.py` + write structured incident `.md` from TEMPLATE; enforces `## 提醒未来 LLM` smell test | Real production fact (Sentry/Jira/oncall/post-mortem) entering memory |
 
 Each command file is opinionated: hard step ordering, fixed STOP conditions, explicit Allowed Edit boundaries. See `.claude/commands/h-<name>.md` for the full contract per command.
+
+---
+
+## Daily Development Workflow
+
+The command suite covers the full ticket-to-production loop. Each step is optional depending on the task's risk profile.
+
+```
+  [Ticket / Bug report]
+        │
+        ▼
+  /h-from-ticket <url>          ← GitHub / Jira / Linear ticket → task_brief skeleton
+  /h-fix-bug [<issue-url>]      ← Bug report → root-cause-debug → task_brief at right risk level
+        │
+        ▼ (STANDARD tasks)
+  /h-decompose | /h-brief       ← Define scope, create task_brief
+  /h-design [slug]              ← Architecture design, ADRs for HIGH risk
+        │
+        ▼ (if external team alignment needed)
+  /h-collab <slug>              ← Generate deliverable (api/process/data/integration)
+        ↕  ← share manually, then:
+  /h-collab-update <slug>       ← Log feedback, apply changes, --signoff to unblock
+        │
+        ▼ (Implement)
+  /h-resume                     ← Restore context after interruption
+  /h-gates [--phase Implement]  ← Gate audit before phase transition
+        │
+        ▼ (Archive)
+  /h-archive                    ← Plan Deviation Reflection → WAL → mark DONE
+        │
+        ▼ (Delivery)
+  /h-pr [slug]                  ← Create PR (secrets + scope gates run first)
+  /h-ci [--run-id <id>]         ← Analyze CI failures after push
+        │
+        ▼ (Release)
+  /h-release <version>          ← Pre-release gates → changelog → tag + push
+        │
+        ▼ (Production)
+  /h-incident <source> <slug>   ← Record real incident into failure_memory
+```
+
+**Cross-session continuity:** collab state (`runs/collabs/<date>_<slug>_collab.md`) and the `COLLAB:<slug>` marker in `launch_spec` persist across sessions. `/h-resume` detects the COLLAB marker and surfaces the pending deliverable state automatically.
 
 ---
 

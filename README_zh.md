@@ -38,15 +38,23 @@ CLAUDE.md                      # 唯一入口
 │   ├── librarian.md              # 图书管理员 · Librarian — Wiki 健康维护者。收集分散的 WAL 碎片→合并到稳定的领域索引→垃圾回收已合并的碎片。发现索引超 500 行时自动调用 Knowledge Architect 拆分。触发方式：@gc / @librarian。工作阶段：Maintenance。
 │   └── security-sentinel.md      # 安全哨兵 · Security Sentinel — 确定性安全门禁。运行自动化扫描（secrets_linter.py）检测硬编码凭据、令牌、密钥、云凭证。仅报告客观通过/失败结果，不做主观安全审计。每次 Archive 前 + Scenario A（紧急热修复）触发。
 ├── commands/                    # 用户可调用的 slash 命令（h- 前缀，避免与 Claude Code 内置命令冲突）
+│   ├── h-from-ticket.md         # GitHub/Jira/Linear ticket → task_brief 骨架 + launch_spec 行（跑 ambiguity-gatekeeper + input-classifier）
 │   ├── h-decompose.md           # PRD/EPIC 预校验 → task-decomposition-guide 拆解 → N 个 brief 骨架 → DAG 绑定 launch_spec
 │   ├── h-brief.md               # 按 schema 生成 task_brief + 双向绑定 launch_spec
 │   ├── h-design.md              # 用严格 Source Documents 契约派遣 system-architect → HIGH 写 ≥2 ADR → 填 brief §8/§9
-│   ├── h-resume.md              # 只读：定位 IN_PROGRESS 任务 + 恢复 Machine Section + 给出 Next Action
+│   ├── h-resume.md              # 只读：定位 IN_PROGRESS 任务 + 恢复 Machine Section + 给出 Next Action（自动检测 COLLAB 阻断状态）
+│   ├── h-fix-bug.md             # ticket/手动输入 → root-cause-debug Phase 1（必须完成）→ 按风险创建 launch_spec 行；p1/p2 触发 h-incident
 │   ├── h-gates.md               # Phase/Scenario 感知的 gate 套件 + failure_memory 失败记录
 │   ├── h-archive.md             # Plan Deviation Reflection → knowledge-extractor → 归档 brief → wiki_linter → 标记 DONE
+│   ├── h-collab.md              # 从 task_brief 生成跨团队协作文档（api/process/data/integration/custom）+ collab 状态文件 + launch_spec COLLAB 标记
+│   ├── h-collab-update.md       # 记录外部反馈 → 更新文档 → --signoff 移除 COLLAB 标记；BLOCKED 状态仅记录不阻断
+│   ├── h-pr.md                  # secrets_linter + scope_guard → gh pr create → PR URL 写回 task_brief；launch_spec → WAITING_APPROVAL
+│   ├── h-ci.md                  # 拉取 CI 运行数据 → 分类失败（编译/测试/安全/覆盖率）→ failure_memory + 路由建议
+│   ├── h-release.md             # 发布前门禁（队列/工作区/分支/密钥）→ WAL changelog → mvn 版本设置 → tag + push；支持 --dry-run
 │   └── h-incident.md            # 包装 ingest_incident.py + 按 TEMPLATE 写 incident .md（强制 "提醒未来 LLM" 质量自检）
-├── skills/                          # 29 个 active skill，每次会话被 Claude Code 自动加载
+├── skills/                          # 28 个 active skill，每次会话被 Claude Code 自动加载
 │   ├── skill-index/                 # 中央导航（active 集合 + archive 索引）
+│   ├── ac-verify/                   # 归档前端到端的 AC 验证，含通过/失败证据
 │   ├── adversarial-review/          # 单轮对抗性审查（HIGH risk Review 阶段）
 │   ├── ai-slop-cleaner/             # 回归安全清理：死代码、重复、过度抽象
 │   ├── architecture-decision-records/ # 将架构决策记录为结构化 ADR
@@ -54,28 +62,26 @@ CLAUDE.md                      # 唯一入口
 │   ├── code-review-checklist/       # 交付前强制代码审查，对照全部项目标准
 │   ├── cognitive-bias-checklist/    # 防止设计决策中的幻觉和过度自信
 │   ├── decision-frameworks/         # SWOT、5-Why、第一性原理用于根因分析和架构选择
+│   ├── impl-plan/                   # 将规格分解为检查点驱动的实现计划
+│   ├── input-classifier/            # 将原始输入（PRD、想法、bug、ticket）规范化为结构化意图+范围+AC
 │   ├── java-architecture-standards/ # 强制：三层架构、API 设计、POJO、反 JOIN、错误码
 │   ├── java-coding-style/           # 强制：Checkstyle、Javadoc、工具类边界、函数式模式
 │   ├── java-testing-standards/      # 强制：测试隔离、Mock 规范、三场景覆盖规则
-│   ├── linter-severity-standard/    # 门禁脚本的 FAIL/WARN/IGNORE 严重级别标准
 │   ├── local-code-intelligence/     # 零成本本地工具：BM25 wiki 搜索、符号索引、失败记忆
 │   ├── mybatis-sql-standard/        # 反 JOIN、索引利用、隐式类型转换预防
 │   ├── product-manager-expert/      # PRD 生成和 PRD 消化→技术需求+验收标准
 │   ├── remember/                    # 将发现的知识归入正确的持久化层
-│   ├── requirement-intake/          # 将原始输入（PRD、想法、bug）规范化为结构化意图+范围+AC
+│   ├── root-cause-debug/            # 强制：任何修复前必须完成根因调查（Phase 1 必须完成）
 │   ├── security-review-checklist/   # 密钥、授权、IDOR、数据泄露、依赖安全清单
 │   ├── skill-creator/               # 为可重复工作流创建或更新 SKILL.md
 │   ├── skill-graph-manager/         # 强制：维护双向技能知识图谱
 │   ├── spec-quality-checklist/      # AI 生成文档的自纠门禁（Python 门禁脚本之前运行）
 │   ├── stakeholder-conflict-resolver/ # 检测并解决多方利益冲突的需求
-│   ├── systematic-debugging/        # 强制：任何修复前必须完成根因调查
 │   ├── task-decomposition-guide/    # 通过 INVEST 准则和垂直切片分解大型 PRD/EPIC
 │   ├── test-driven-development/     # 在实现前从 AC 编写失败测试
 │   ├── ultraqa/                     # 结构化 QA 循环，含证据映射表（AC↔测试↔结果）
-│   ├── verify/                      # 归档前端到端的 AC 验证，含通过/失败证据
-│   ├── wal-documentation-rules/     # 强制：在 Archive 阶段将稳定知识提取为 WAL 片段
-│   └── writing-plans/               # 将规格分解为检查点驱动的实现计划
-├── skills-archive/                  # 12 个低频 skill — 不自动加载；由需要它的 rule / agent 在文件中直接 inline 引用路径
+│   └── wal-documentation-rules/     # 强制：在 Archive 阶段将稳定知识提取为 WAL 片段
+├── skills-archive/                  # 13 个低频 skill — 不自动加载；由需要它的 rule / agent 在文件中直接 inline 引用路径
 │   ├── ai-pipeline/                 # 完整 AI 工程流水线编排（Scenario PIPELINE）
 │   ├── blueprint/                   # 多会话、多 agent 项目计划（Scenario EPIC）
 │   ├── deepinit/                    # 新仓库深度初始化（Scenario GREENFIELD）
@@ -84,6 +90,7 @@ CLAUDE.md                      # 唯一入口
 │   ├── external-research/           # CVE / 合规 / 平台期外部调研（Scenario D, PIPELINE）
 │   ├── greenfield-scaffold/         # 从零开始的项目脚手架（Scenario GREENFIELD）
 │   ├── incident-response/           # 生产事故分诊 + 复盘（Scenario A）
+│   ├── linter-severity-standard/    # 门禁脚本的 FAIL/WARN/IGNORE 严重级别标准
 │   ├── migration-planner/           # A→B 迁移 + 等价测试（Scenario B）
 │   ├── release/                     # 发布前门禁验证 + 分步执行（Scenario RELEASE）
 │   ├── self-improve/                # 锦标赛迭代优化 + 平台期检测（Scenario PIPELINE）
@@ -136,13 +143,14 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 
 | 项目 | 详情 |
 |------|------|
-| **角色** | `@Ambiguity Gatekeeper`, `@Requirement Engineer`, `@Focus Guard` |
-| **技能** | `requirement-intake`, `brainstorming`, `product-manager-expert`, `task-decomposition-guide` |
-| **活动** | ① 通过意图信号矩阵分类输入 → 确定风险等级（TRIVIAL/LOW/MEDIUM/HIGH） |
-| | ② **规格推断**：`Current: [X]. Required: [Y]. Delta: [Z]` — 差距即真正的范围 |
-| | ③ **BDD — AC 测试化翻译（强制）**：将每条需求转为 `Given [precondition], when [action], then [observable, measurable result]` — 模糊表述（"正确处理"、"正常工作"）被阻止 |
-| | ④ 影响分析：`code_index.py --impact-of <target>` → 识别隐藏依赖 |
-| | ⑤ 对抗性审查 Category A（仅 HIGH）："我们在解决正确的问题吗？" |
+| **角色** | `@Ambiguity Gatekeeper`（前置门禁）, `@Requirement Engineer`, `@System Architect`（Propose 阶段） |
+| **技能** | `input-classifier`, `brainstorming`, `product-manager-expert`, `task-decomposition-guide` |
+| **活动** | ① `input-classifier` 内联运行：分类原始输入 → 输出 `[Intake]` 块（含 `Input-Type` 和 `Route`） |
+| | ② **Idea/Feedback/Compliance/Security 类输入**：优先派遣 `ambiguity-gatekeeper` — FAIL 时阻断直到输入收紧；PASS 后派遣 `requirement-engineer` |
+| | ③ **规格推断**：`Current: [X]. Required: [Y]. Delta: [Z]` — 差距即真正的范围 |
+| | ④ **BDD — AC 测试化翻译（强制）**：将每条需求转为 `Given [precondition], when [action], then [observable, measurable result]` — 模糊表述（"正确处理"、"正常工作"）被阻止 |
+| | ⑤ 影响分析：`code_index.py --impact-of <target>` → 识别隐藏依赖 |
+| | ⑥ 对抗性审查 Category A（仅 HIGH）："我们在解决正确的问题吗？" |
 | **产出** | Spec Gap + AC 清单（Given/When/Then 格式）+ Hidden Scope → 输入 task_brief Machine Section |
 
 ### Phase 2: Propose — 架构设计与 Spec
@@ -178,7 +186,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 | 项目 | 详情 |
 |------|------|
 | **角色** | `@Lead Engineer`, `@Focus Guard` |
-| **技能** | `test-driven-development`, `java-architecture-standards`, `java-coding-style`, `mybatis-sql-standard`, `writing-plans` |
+| **技能** | `test-driven-development`, `java-architecture-standards`, `java-coding-style`, `mybatis-sql-standard`, `impl-plan` |
 | **活动** | ① 阅读 `task_brief.md` Machine Section — Allowed Scope + ACs + Hard Constraints |
 | | ② **RED**：从 AC 编写失败测试（在写任何实现代码前必须看到测试失败） |
 | | ③ **GREEN**：在 Allowed Scope 内实现 — `scope_guard.py` 强制边界 |
@@ -205,7 +213,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 | 项目 | 详情 |
 |------|------|
 | **角色** | `@Knowledge Extractor`, `@Documentation Curator`, `@Skill Graph Curator` |
-| **技能** | `wal-documentation-rules`, `verify` |
+| **技能** | `wal-documentation-rules`, `ac-verify` |
 | **活动** | ① 从完成的 task_brief 中提取稳定知识 |
 | | ② 将 **WAL 片段**写入领域目录：`api/wal/`, `data/wal/`, `domain/wal/` |
 | | ③ **Plan Deviation Reflection（PDD）**：对比计划与实际执行 — 范围漂移、依赖准确性、计划作废、AC 覆盖；显著偏差写入 `plan_deviation.md` |
@@ -269,19 +277,90 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 
 ## Slash 命令
 
-用户可直接调用的快捷指令，将多步固定流程封装为一次调用。本项目所有自建命令使用 `h-` 前缀（harness 缩写），避免与 Claude Code 内置命令（`/init`、`/review`、`/security-review` 等）和 skill 注册命令冲突。命令文件位于 `.claude/commands/<name>.md`，Claude Code 启动时自动加载——通过 `/h-<name> [args]` 调用。
+用户可直接调用的快捷指令，将多步固定流程封装为一次调用。本项目所有自建命令使用 `h-` 前缀（harness 缩写），避免与 Claude Code 内置命令（`/init`、`/review`、`/security-review` 等）冲突。命令文件位于 `.claude/commands/<name>.md`，Claude Code 启动时自动加载——通过 `/h-<name> [args]` 调用。
+
+### 需求接入 & 规划
 
 | 命令 | 阶段 | 效果 | 使用时机 |
 |------|------|------|---------|
+| `/h-from-ticket <source> [<slug>]` | Explorer 入口 | 拉取 GitHub/Jira/Linear ticket → `input-classifier` + `ambiguity-gatekeeper` → task_brief 骨架 + launch_spec 行（Explore 阶段）；ticket_ref/ticket_url 写入 frontmatter 供 PR 自动关闭 | Ticket 驱动开发；字段直接映射到 brief 各章节 |
 | `/h-decompose <slug> <prd-path>` | Explorer → Propose | PRD/EPIC 预校验 → task-decomposition-guide 拆解 → N 个 brief 骨架 → DAG 绑定 launch_spec | EPIC/PRD 涉及 ≥3 个域，需要 INVEST 合规切片 |
 | `/h-brief <slug>` | Propose 入口 | 按 schema 生成 task_brief + 1 行 launch_spec | 单个 STANDARD 任务起步（范围已知） |
 | `/h-design [slug]` | Propose 设计 | 用严格 Source Documents 契约派遣 system-architect；HIGH 写 ≥2 ADR；填 brief §8/§9 | HIGH/EPIC 需要设计备选方案；MEDIUM 需要 1 个显式选项 |
-| `/h-resume` | 任意时刻 | 只读：定位 IN_PROGRESS 任务 + 恢复 Machine Section 上下文 + 给出 Next Action | 会话中断后恢复 |
+
+### 日常开发
+
+| 命令 | 阶段 | 效果 | 使用时机 |
+|------|------|------|---------|
+| `/h-resume` | 任意时刻 | 只读：定位 IN_PROGRESS 任务 + 恢复 Machine Section 上下文 + 给出 Next Action；自动检测 COLLAB 阻断状态 | 会话中断后恢复 |
+| `/h-fix-bug [<issue-url>] [--priority p1\|p2\|p3]` | Explorer | GitHub issue 或手动输入 → `failure_memory` 查询 → `root-cause-debug` Phase 1（必须完成，才能写修复代码）→ launch_spec 行；p1/p2 触发 `h-incident` | QA 提的 bug 或线上反馈；优先级决定风险等级及是否创建 incident 文件 |
 | `/h-gates [--phase X] [--scenario Y]` | 阶段边界 / commit 前 | 跑所有适用 gate（scope、secrets、task_brief、scenario B/C/E）；失败记录到 failure_memory | Phase 转换或 commit 前的完整 diff 审计 |
 | `/h-archive` | Phase 6 | Plan Deviation Reflection → knowledge-extractor → 归档 brief → wiki_linter → 标记 launch_spec DONE | STANDARD 任务收尾 |
+
+### 跨团队协作
+
+| 命令 | 阶段 | 效果 | 使用时机 |
+|------|------|------|---------|
+| `/h-collab <slug> [--type api\|process\|data\|integration\|custom]` | Propose 与 Implement 之间 | 从 task_brief 生成结构化协作文档；类型未指定时自动推断；创建 collab 状态文件 + launch_spec COLLAB 标记；外部交付为手动操作 | 任务需要与外部团队（前端、第三方、QA、运维）对齐后才能编码 |
+| `/h-collab-update <slug> [--signoff] [--reviewer <name>]` | 任意时刻（跨会话） | 收集反馈（批准/问题/变更请求/阻断）→ 更新文档 → 更新 collab 状态；`--signoff` 移除 COLLAB 标记；BLOCKED 状态仅记录，不改变 launch_spec | 收到外部团队对协作文档的反馈后 |
+
+### 交付
+
+| 命令 | 阶段 | 效果 | 使用时机 |
+|------|------|------|---------|
+| `/h-pr [slug]` | QA 完成后 | `secrets_linter` + `scope_guard` 前置门禁 → `gh pr create`（含 Human Section + AC 清单）；PR URL 写回 task_brief；launch_spec → WAITING_APPROVAL；有 ticket_url 时自动添加 Closes # | STANDARD 任务完成后创建 PR |
+| `/h-ci [--run-id <id>] [--from-file <log>]` | push 后 | 拉取 CI 运行数据 → 按类型/严重度分类失败 → `failure_memory` 记录 → 路由建议（flake 判断 / 修复任务 / 告警） | push 后或 PR 反馈中分析 CI 失败 |
+| `/h-release <version> [--dry-run]` | 发布时 | 前置门禁（队列完整性、工作区干净、发布分支、密钥扫描）→ WAL changelog → `mvn versions:set` → `mvn test` → tag + push；`--dry-run` 仅打印计划，不执行 git 操作 | 切发布版本 |
+
+### 生产
+
+| 命令 | 阶段 | 效果 | 使用时机 |
+|------|------|------|---------|
 | `/h-incident <source> <slug>` | 任意时刻 | 包装 `ingest_incident.py` + 按 TEMPLATE 写结构化 incident `.md`；强制 `## 提醒未来 LLM` 质量自检 | 真实生产事故（Sentry/Jira/oncall/复盘）进入记忆系统 |
 
 每个命令文件都是强约束的：步骤顺序固定、STOP 条件明确、Allowed Edit 边界显式。完整契约见 `.claude/commands/h-<name>.md`。
+
+---
+
+## 日常开发工作流
+
+命令套件覆盖从 ticket 到生产的完整循环。各步骤根据任务风险等级自由组合。
+
+```
+  [Ticket / Bug 报告]
+        │
+        ▼
+  /h-from-ticket <url>          ← GitHub / Jira / Linear ticket → task_brief 骨架
+  /h-fix-bug [<issue-url>]      ← Bug 报告 → root-cause-debug → task_brief（对应风险等级）
+        │
+        ▼ （STANDARD 任务）
+  /h-decompose | /h-brief       ← 定义范围，创建 task_brief
+  /h-design [slug]              ← 架构设计（HIGH 风险写 ADR）
+        │
+        ▼ （需要外部团队对齐时）
+  /h-collab <slug>              ← 生成协作文档（api/process/data/integration）
+        ↕  ← 手动交付，收到回复后：
+  /h-collab-update <slug>       ← 记录反馈，应用变更，--signoff 解除阻断
+        │
+        ▼ （Implement）
+  /h-resume                     ← 会话中断后恢复上下文
+  /h-gates [--phase Implement]  ← Phase 转换前的门禁审计
+        │
+        ▼ （Archive）
+  /h-archive                    ← Plan Deviation Reflection → WAL → 标记 DONE
+        │
+        ▼ （交付）
+  /h-pr [slug]                  ← 创建 PR（先跑 secrets + scope 门禁）
+  /h-ci [--run-id <id>]         ← 分析 push 后的 CI 失败
+        │
+        ▼ （发布）
+  /h-release <version>          ← 前置门禁 → changelog → tag + push
+        │
+        ▼ （生产）
+  /h-incident <source> <slug>   ← 将真实事故记录进 failure_memory
+```
+
+**跨会话持续性：** collab 状态（`runs/collabs/<date>_<slug>_collab.md`）和 launch_spec 中的 `COLLAB:<slug>` 标记跨会话持久存在。`/h-resume` 自动检测 COLLAB 标记并展示待处理的协作文档状态。
 
 ---
 
