@@ -192,17 +192,17 @@ Tests are derived from BDD ACs, not invented by implementer.
 
 **Step B — Classify, then dispatch by input type**
 
-Run `requirement-intake` skill INLINE on the main agent (this skill never dispatches — it is the front-door classifier). It emits an `[Intake]` block with `Input-Type` and `Route`. Then dispatch by Input-Type:
+Run `input-classifier` skill INLINE on the main agent (this skill never dispatches — it is the front-door classifier). It emits an `[Intake]` block with `Input-Type` and `Route`. Then dispatch by Input-Type:
 
 | `[Intake] Input-Type` | Dispatch |
 |---|---|
 | PRD | Run `product-manager-expert` Mode A (Ingestion) → `task-decomposition-guide` |
-| Idea / Feedback / Compliance | Dispatch **`requirement-engineer`** sub-agent |
-| Security | Dispatch **`requirement-engineer`** + apply `security-review-checklist` |
-| Bug / Signal | Switch to Scenario DEBUG → `systematic-debugging` (skip Phase 1) |
+| Idea / Feedback / Compliance | Dispatch **`ambiguity-gatekeeper`** → PASS: dispatch `requirement-engineer`; FAIL: relay `[Must-Ask Questions]` via `AskUserQuestion`, wait for answers, re-enter Step B with enriched input |
+| Security | Dispatch **`ambiguity-gatekeeper`** → PASS: dispatch `requirement-engineer` + apply `security-review-checklist`; FAIL: relay questions, wait, re-enter |
+| Bug / Signal | Switch to Scenario DEBUG → `root-cause-debug` (skip Phase 1) |
 | Performance | LEARN baseline first; re-classify as Change after data is collected |
 
-Why this split: `requirement-intake` is a thin classifier (Inline). `product-manager-expert` is heavy PRD work (PRD only). `requirement-engineer` is the AC transcription engine for non-PRD inputs. Three names, three contracts, no overlap.
+Why this split: `input-classifier` is a thin classifier (Inline). `ambiguity-gatekeeper` is a semantic gate — reads project context and detects undefined scope, untestable goals, and unbounded blast radius before AC transcription begins; the `[triage]` hook only catches surface-level vagueness. `product-manager-expert` is heavy PRD work (PRD only). `requirement-engineer` is the AC transcription engine for non-PRD inputs. Four names, four contracts, no overlap.
 
 **Step C — Additional layered dispatches (compose on top of Step B)**
 
@@ -214,7 +214,24 @@ Why this split: `requirement-intake` is a thin classifier (Inline). `product-man
 
 Sub-agents do NOT inherit `CLAUDE.md` / rules / memory. Every dispatch MUST include the `## Memory Snapshot` section from [dispatch-template.md](dispatch-template.md), copying any `type=user` and `type=feedback` entries relevant to the task.
 
-#### 1.1 Sub-agent return contract (requirement-engineer)
+#### 1.1 Sub-agent return contract (ambiguity-gatekeeper)
+
+When dispatched for an Idea / Feedback / Compliance / Security input, `ambiguity-gatekeeper` MUST return this structured block:
+
+```
+[Status]: PASS | FAIL
+[Undefined Scope]: <what is missing — unbounded blast radius, no measurable goal, missing precondition; or "none">
+[Must-Ask Questions]: <numbered clarifying questions with project context; or "none">
+[Reason]: <one-line summary of the blocking ambiguity; or "none" on PASS>
+```
+
+Main agent behavior on return:
+- **PASS** → proceed to `requirement-engineer` dispatch (adding `security-review-checklist` for Security type).
+- **FAIL** → relay every `[Must-Ask Questions]` item via `AskUserQuestion`. After receiving user answers, re-enter Step B with the enriched input. Do NOT proceed to `requirement-engineer` until `ambiguity-gatekeeper` returns PASS.
+
+The `[triage]` hook (`ambiguity_gate.py`) is a surface-level keyword filter and does NOT substitute for this dispatch. `ambiguity-gatekeeper` has `Read / Bash / Grep / Glob` tools and reasons over actual project context.
+
+#### 1.2 Sub-agent return contract (requirement-engineer)
 
 When dispatched, `requirement-engineer` MUST return this exact structured block. The main agent parses it before proceeding.
 
@@ -237,7 +254,7 @@ Rules for `[Source Documents]` (anti-summarization contract — see also `.claud
 
 The main agent MUST raise every `Must-Ask` question through `AskUserQuestion` before entering Phase 2. Skipping is not allowed.
 
-#### 1.2 Phase 1 steps
+#### 1.3 Phase 1 steps
 
 1. **Dispatch decision** (per 1.0): inline or sub-agent.
 2. **Specification gap**: `Current: [X]. Required: [Y]. Delta: [Z].`

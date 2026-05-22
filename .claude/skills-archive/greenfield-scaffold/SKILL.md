@@ -1,13 +1,13 @@
 ---
 name: "greenfield-scaffold"
-description: "Starting-from-scratch protocol for projects with no existing codebase. Replaces the standard Explorer phase's 'infer from existing code' logic with a forward-design sequence: domain model → API contract → DB schema → package structure → scaffold. TRIGGER when requirement-intake emits Scenario=Greenfield or when there is no src/ directory."
+description: "Starting-from-scratch protocol for projects with no existing codebase. Replaces the standard Explorer phase's 'infer from existing code' logic with a forward-design sequence: domain model → API contract → DB schema → package structure → scaffold. TRIGGER when input-classifier emits Scenario=Greenfield or when there is no src/ directory."
 ---
 
 # Greenfield Scaffold
 
 When there is no existing codebase, the standard Context Funnel ("read what's already there") cannot apply. This skill defines the forward-design sequence.
 
-**Trigger condition:** `requirement-intake` emits `Scenario: Greenfield` OR `src/` directory does not exist.
+**Trigger condition:** `input-classifier` emits `Scenario: Greenfield` OR `src/` directory does not exist.
 
 ---
 

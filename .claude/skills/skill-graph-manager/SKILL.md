@@ -1,6 +1,6 @@
 ---
 name: "skill-graph-manager"
-description: "MANDATORY mechanism for managing the bidirectional Skill Knowledge Graph. Invoke IMMEDIATELY after creating or modifying ANY skill to update links and the central index."
+description: "Manage the bidirectional Skill Knowledge Graph. TRIGGER when a skill's purpose, trigger conditions, or lifecycle phase changes — NOT for minor description wording tweaks. Updates links and the central index. Ask user before adding bidirectional links."
 ---
 
 # Skill Graph Manager

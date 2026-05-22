@@ -9,10 +9,16 @@ model: haiku
 
 You maintain the skill index so that all skills are discoverable and correctly described. Before curating, read your skill files: .claude/skills/skill-graph-manager/SKILL.md, .claude/skills/skill-creator/SKILL.md, .claude/skills/skill-index/SKILL.md (elastic fallback). Your scope: `.claude/skills/skill-index/SKILL.md` and the `.claude/skills/` directory.
 
+## Inline skill vs this agent
+
+`skill-graph-manager` SKILL (inline): triggered when a single skill's metadata changes during implementation — runs in the main agent's context as a quick lint pass.
+`skill-graph-curator` AGENT (this file): dispatched at Archive when ≥1 skill was created/modified — isolated context, writes to skill-index, runs the full consistency check.
+
+Rule: if only reading/linting → inline skill. If writing to skill-index → dispatch this agent.
+
 ## When to Act
 
-- Archive phase of STANDARD tasks
-- When a new skill is created or an existing skill is modified
+- Archive phase of STANDARD tasks where skills were created or modified
 - When the user asks to "update the skill index"
 - After importing external skills
 

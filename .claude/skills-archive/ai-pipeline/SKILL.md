@@ -24,8 +24,8 @@ Do not use when the user requests a single phase explicitly (e.g., “just write
 
 ## Pipeline (Repo Lifecycle Mapping)
 
-0. **Intake**: `requirement-intake` — classify and normalize the raw input before anything else. Emits `[Intake]` block with Intent/Profile/Scenario/AC-Candidates. Skip only for explicit @shortcuts or single-phase invocations.
-1. **Design**: `brainstorming` (when creative) → `writing-plans` or `blueprint`
+0. **Intake**: `input-classifier` — classify and normalize the raw input before anything else. Emits `[Intake]` block with Intent/Profile/Scenario/AC-Candidates. Skip only for explicit @shortcuts or single-phase invocations.
+1. **Design**: `brainstorming` (when creative) → `impl-plan` or `blueprint`
 2. **Decisions**: `architecture-decision-records`
 3. **Evaluation**: `eval-harness` (define pass/fail and verification commands)
 4. **Approval Gate**: if risk is MEDIUM/HIGH, stop after spec and wait for approval
@@ -33,7 +33,7 @@ Do not use when the user requests a single phase explicitly (e.g., “just write
 6. **Improve (optional)**: `self-improve` (bounded iterations, user-approved)
 6.1 **External Research (conditional)**: if `self-improve` score has plateaued for 2+ iterations, invoke `external-research` to find new approaches before continuing. External research can only be invoked once per plateau.
 7. **Cleanup**: `ai-slop-cleaner` (regression-safe)
-8. **Verify**: `verify` (single pass) or `ultraqa` (bounded cycles)
+8. **Verify**: `ac-verify` (single pass) or `ultraqa` (bounded cycles)
 9. **Archive**: write WAL fragments + archive the task_brief
 10. **Remember (optional)**: invoke `remember` skill to extract lessons learned into long-term memory. Use when the task surfaced non-obvious project constraints, anti-patterns, or validated approaches.
 
@@ -41,7 +41,7 @@ Do not use when the user requests a single phase explicitly (e.g., “just write
 
 ### Step 0 — Intake + Scope
 
-Run `requirement-intake` on the raw input. Use its `[Intake]` block as the seed for Steps 1–2.
+Run `input-classifier` on the raw input. Use its `[Intake]` block as the seed for Steps 1–2.
 
 Capture:
 - Objective (what changes, what must not)

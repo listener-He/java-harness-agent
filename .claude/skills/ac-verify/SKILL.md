@@ -1,6 +1,6 @@
 ---
-name: verify
-description: "Lightweight single-pass AC verification before Archive — run implementation against each AC, produce pass/fail evidence. FAIL blocks Archive and rolls back to Phase 4. Mutually exclusive with ultraqa: choose verify when AC count ≤ 3 AND risk ≠ HIGH; otherwise use ultraqa. See .claude/rules/skill-precedence.md Zone C."
+name: ac-verify
+description: "Lightweight single-pass AC verification before Archive — run implementation against each AC, produce pass/fail evidence. FAIL blocks Archive and rolls back to Phase 4. Mutually exclusive with ultraqa: choose ac-verify when AC count ≤ 3 AND risk ≠ HIGH; otherwise use ultraqa. See .claude/rules/skill-precedence.md Zone C."
 ---
 
 # Verify
@@ -47,5 +47,5 @@ Use this skill to turn “it should work” into concrete, observable evidence.
 ## Related Skills
 
 - [ultraqa](../ultraqa/SKILL.md): Use when you need a bounded “fail → diagnose → fix → re-verify” loop
-- [systematic-debugging](../systematic-debugging/SKILL.md): Use when verification fails and you must find root cause before fixing
+- [root-cause-debug](../root-cause-debug/SKILL.md): Use when verification fails and you must find root cause before fixing
 - [code-review-checklist](../code-review-checklist/SKILL.md): Run before delivery for self-review gates

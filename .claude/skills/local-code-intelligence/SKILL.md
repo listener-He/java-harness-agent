@@ -153,5 +153,5 @@ Indexes are stored in `.claude/runs/local_intel/` (gitignored).
 
 - [wal-documentation-rules](../wal-documentation-rules/SKILL.md): uses code index to find affected mappers during Scenario B1/B2
 - [security-review-checklist](../security-review-checklist/SKILL.md): uses `--what-touches-table` to find all data access paths for sensitive tables
-- [systematic-debugging](../systematic-debugging/SKILL.md): uses `--who-calls` to trace call chains during root-cause investigation
+- [root-cause-debug](../root-cause-debug/SKILL.md): uses `--who-calls` to trace call chains during root-cause investigation
 - [task-decomposition-guide](../task-decomposition-guide/SKILL.md): uses `--impact-of` to size blast radius before decomposing an EPIC

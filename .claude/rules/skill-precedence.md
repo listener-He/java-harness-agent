@@ -45,10 +45,10 @@ Security-sensitive changes (auth, secrets, IDOR risk) additionally run [security
 
 | Condition | Verification skill | Test-standard skill |
 |---|---|---|
-| AC count ≤ 3 AND risk ≠ HIGH | [verify](../skills/verify/SKILL.md) | [java-testing-standards](../skills/java-testing-standards/SKILL.md) if Java |
+| AC count ≤ 3 AND risk ≠ HIGH | [ac-verify](../skills/ac-verify/SKILL.md) | [java-testing-standards](../skills/java-testing-standards/SKILL.md) if Java |
 | AC count ≥ 4 OR risk = HIGH | [ultraqa](../skills/ultraqa/SKILL.md) | [java-testing-standards](../skills/java-testing-standards/SKILL.md) if Java |
 
-**Mutual exclusion:** `verify` and `ultraqa` — pick one based on the condition above. `ultraqa` is the structured cycling superset; `verify` is the lightweight single-pass.
+**Mutual exclusion:** `ac-verify` and `ultraqa` — pick one based on the condition above. `ultraqa` is the structured cycling superset; `ac-verify` is the lightweight single-pass.
 
 `java-testing-standards` is orthogonal (rules for test code itself) and **always composes** with whichever verification skill runs, as long as the tests are Java.
 
@@ -73,9 +73,9 @@ PATCH profile: skip the entire zone. Wiki refresh deferred to `@wiki-update`.
 
 | Skill | When |
 |---|---|
-| [systematic-debugging](../skills/systematic-debugging/SKILL.md) | Always — bug/error with unknown root cause |
+| [root-cause-debug](../skills/root-cause-debug/SKILL.md) | Always — bug/error with unknown root cause |
 
-No competition in this window. `systematic-debugging` MUST complete its Phase 1 (root cause) before any fix is proposed.
+No competition in this window. `root-cause-debug` MUST complete its Phase 1 (root cause) before any fix is proposed.
 
 ---
 
@@ -84,11 +84,24 @@ No competition in this window. `systematic-debugging` MUST complete its Phase 1 
 | Skill | When |
 |---|---|
 | [local-code-intelligence](../skills/local-code-intelligence/SKILL.md) | Always — run wiki_search, code_index, failure_memory |
-| [requirement-intake](../skills/requirement-intake/SKILL.md) | Raw input lacks structured intent+scope+AC |
+| [input-classifier](../skills/input-classifier/SKILL.md) | Raw input lacks structured intent+scope+AC |
 | [adversarial-review](../skills/adversarial-review/SKILL.md) Category A | HIGH risk only — one round |
 | [task-decomposition-guide](../skills/task-decomposition-guide/SKILL.md) | EPIC / PRD / multi-task scope |
 
-**Composition:** these chain, they don't compete. `requirement-intake` normalizes input; `local-code-intelligence` gathers context; `adversarial-review` critiques the framing; `task-decomposition-guide` slices large work.
+**Composition:** these chain, they don't compete. `input-classifier` normalizes input; `local-code-intelligence` gathers context; `adversarial-review` critiques the framing; `task-decomposition-guide` slices large work.
+
+---
+
+### Zone G — Propose/Review phase reasoning tools
+
+These two **compose** (run in order), not compete. Neither replaces the other.
+
+| Order | Skill | Role |
+|---|---|---|
+| First | [decision-frameworks](../skills/decision-frameworks/SKILL.md) | Build structured options (SWOT / 5-Why / First Principles / Decision Matrix). Use when the problem space is ambiguous or multiple alternatives exist. |
+| Second | [cognitive-bias-checklist](../skills/cognitive-bias-checklist/SKILL.md) | Meta-cognitive scan on the reasoning quality. Run AFTER decision-frameworks produces its output — checks for anchoring, confirmation bias, overconfidence, etc. |
+
+**Trigger condition:** Zone G fires only when a design decision is being made (Propose or Review phase). Skip both for PATCH tasks. Skip `cognitive-bias-checklist` if `decision-frameworks` didn't run (no options to scan).
 
 ---
 
@@ -99,6 +112,10 @@ When this matrix and a skill's individual description disagree:
 1. **This file wins** for trigger-window selection (which skills run).
 2. **The skill's own file wins** for content rules (how the chosen skill executes).
 3. If you find a new conflict not covered here, add a row rather than silently picking one skill.
+
+## Global vs Local Skill Priority
+
+When a project skill (`.claude/skills/<name>/SKILL.md`) and a global harness skill share the same name, **the project-local skill wins**. This is enforced by naming project skills with disambiguation suffixes (e.g., `ac-verify` instead of `verify`, `root-cause-debug` instead of `systematic-debugging`, `input-classifier` instead of `requirement-intake`). When in doubt, prefer the name listed under `.claude/skills/` over any same-named global skill.
 
 ## Index maintenance
 

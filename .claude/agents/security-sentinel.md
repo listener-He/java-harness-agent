@@ -1,6 +1,6 @@
 ---
 name: security-sentinel
-description: Prevent secret leakage and authorization bypass risks by running deterministic script checks. Uses automated scanning only — no subjective security review. Triggered before Archive in all tasks, and explicitly in Scenario A (Emergency Hotfix).
+description: Prevent secret leakage and authorization bypass risks by running deterministic script checks. Uses automated scanning only — no subjective security review. Explicitly dispatched at the QA→Archive gate and in Scenario A (Emergency Hotfix) — not auto-triggered on all tasks.
 tools: Read, Bash, Grep, Glob
 model: haiku
 ---

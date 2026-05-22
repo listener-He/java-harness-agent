@@ -1,6 +1,6 @@
 ---
-name: "requirement-intake"
-description: "FRONT-DOOR CLASSIFIER (runs INLINE on the main agent, never dispatched). Tags raw input as one of PRD / Idea / Bug / Signal / Performance / Security / Compliance / Feedback and emits an [Intake] block telling the main agent WHERE TO ROUTE — to product-manager-expert (PRD), systematic-debugging (Bug/Signal), requirement-engineer (Idea/Feedback/Compliance/Security), or Explorer (everything else). DOES NOT translate to ACs itself — that is requirement-engineer's job. TRIGGER when input has no @shortcut and is longer than one line."
+name: "input-classifier"
+description: "FRONT-DOOR CLASSIFIER (runs INLINE on the main agent, never dispatched). Tags raw input as one of PRD / Idea / Bug / Signal / Performance / Security / Compliance / Feedback and emits an [Intake] block telling the main agent WHERE TO ROUTE — to product-manager-expert (PRD), root-cause-debug (Bug/Signal), requirement-engineer (Idea/Feedback/Compliance/Security), or Explorer (everything else). DOES NOT translate to ACs itself — that is requirement-engineer's job. TRIGGER when input has no @shortcut and is longer than one line."
 ---
 
 # Requirement Intake — Input Normalization Layer
@@ -48,7 +48,7 @@ Read the raw input and assign ONE type:
 ### Bug
 1. Extract: affected user flow + symptom + reproducibility (always/sometimes/once).
 2. Identify the first system boundary where failure occurs (UI? API? Service? DB?).
-3. Route directly to `systematic-debugging` with pre-filled context:
+3. Route directly to `root-cause-debug` with pre-filled context:
    - Symptom: [extracted]
    - Suspected boundary: [extracted]
    - Reproducibility: [extracted]
@@ -56,7 +56,7 @@ Read the raw input and assign ONE type:
 ### Signal (stack trace / failing test / error log)
 1. The signal IS the requirement — no translation needed.
 2. Extract: error class + file + line (or failing test method name).
-3. Route directly to `systematic-debugging` with the signal as the starting hypothesis anchor.
+3. Route directly to `root-cause-debug` with the signal as the starting hypothesis anchor.
 4. Skip symptom extraction (signal is already precise).
 
 ### Performance
@@ -104,7 +104,7 @@ AC-Candidates:
   - (2–4 items)
 Open-Questions: (max 2 — only truly blocking before any work can start)
   - <question>
-Route: → <Explorer | systematic-debugging | task-decomposition-guide | Scenario X | greenfield-scaffold | migration-planner>
+Route: → <Explorer | root-cause-debug | task-decomposition-guide | Scenario X | greenfield-scaffold | migration-planner>
 ```
 
 **Rules:**
@@ -117,14 +117,14 @@ Route: → <Explorer | systematic-debugging | task-decomposition-guide | Scenari
 ## Integration
 
 **In CLAUDE.md Initial Action Decision Tree:**
-Add as Rule -1 (before Rule 0): "Input has no @shortcut AND is longer than a one-liner? → Apply `requirement-intake` before Intent Signal Matrix."
+Add as Rule -1 (before Rule 0): "Input has no @shortcut AND is longer than a one-liner? → Apply `input-classifier` before Intent Signal Matrix."
 
 **In ROUTER.md:**
 The `[Intake]` block enriches the Intent Signal Matrix. When an `[Intake]` block is present, use its `Intent` and `Profile` as the starting classification (still subject to manual override by user).
 
 **Feeds into:**
 - `task-decomposition-guide` (for PRD with multiple requirements)
-- `systematic-debugging` (for Bug and Signal types)
+- `root-cause-debug` (for Bug and Signal types)
 - `product-manager-expert` PRD Ingestion Mode (for PRD type)
 - Direct Explorer phase (for Idea, Compliance, Feedback types)
 - `greenfield-scaffold` (when no existing codebase context)

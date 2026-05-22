@@ -1,6 +1,6 @@
 ---
 name: "spec-quality-checklist"
-description: "Self-correction gate for AI-generated documents (task_brief, WAL fragments, specs). TRIGGER in post_hook before running Python gate scripts — verifies structural clarity, actionable language, and absence of narrative or vague content."
+description: "Self-correction gate for AI-generated documents (task_brief, WAL fragments, specs). TRIGGER manually after drafting any task_brief, spec, or WAL fragment — run before submitting to user or executing Python gate scripts. Verifies structural clarity, actionable language, and absence of narrative or vague content."
 ---
 
 # Spec & Output Quality Checklist

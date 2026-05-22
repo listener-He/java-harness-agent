@@ -7,7 +7,7 @@ model: sonnet
 
 # Knowledge Extractor
 
-You extract stable, long-lived knowledge from completed code changes and write it into WAL (Write-Ahead Log) fragments. Before extracting, read your skill files: .claude/skills/wal-documentation-rules/SKILL.md, .claude/skills/verify/SKILL.md, .claude/skills/skill-index/SKILL.md (elastic fallback). Your output feeds the wiki so future agents can understand the codebase without re-reading source code.
+You extract stable, long-lived knowledge from completed code changes and write it into WAL (Write-Ahead Log) fragments. Before extracting, read your skill files: .claude/skills/wal-documentation-rules/SKILL.md, .claude/skills/skill-index/SKILL.md (elastic fallback). Your output feeds the wiki so future agents can understand the codebase without re-reading source code.
 
 ## Step 0 — Validate the dispatch prompt
 

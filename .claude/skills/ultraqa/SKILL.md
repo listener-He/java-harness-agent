@@ -1,6 +1,6 @@
 ---
 name: ultraqa
-description: "Structured QA cycling workflow: test → verify → fix → repeat until all ACs pass. Use when AC count ≥ 4 OR risk = HIGH. Requires an Evidence Mapping Table (AC ↔ Test ↔ Result). Mutually exclusive with verify (which is the lightweight alternative for smaller cases). See .claude/rules/skill-precedence.md Zone C."
+description: "Structured QA cycling workflow: test → verify → fix → repeat until all ACs pass. Use when AC count ≥ 4 OR risk = HIGH. Requires an Evidence Mapping Table (AC ↔ Test ↔ Result). Mutually exclusive with ac-verify (which is the lightweight alternative for smaller cases). See .claude/rules/skill-precedence.md Zone C."
 ---
 
 # UltraQA — Bounded QA Cycling (Repo-Aligned)
@@ -11,7 +11,7 @@ Run a bounded "verify → diagnose → fix → re-verify" loop until the stated 
 
 - Respect repo anti-loop rules (compilation/test fix retries are bounded).
 - Do not assume external state directories.
-- Prefer existing project gates/commands; if unknown, use `verify` to define a minimal evidence path.
+- Prefer existing project gates/commands; if unknown, use `ac-verify` to define a minimal evidence path.
 
 ---
 
@@ -48,7 +48,7 @@ For cycle N:
 1. Run the narrowest verification for the goal
 2. If PASS: fill "Actual" + mark ✅ PASS in the Evidence Mapping Table
 3. If FAIL:
-   - Use `systematic-debugging` to identify root cause (no random fixes)
+   - Use `root-cause-debug` to identify root cause (no random fixes)
    - Apply the smallest fix
    - Re-run the same verification
    - Fill "Actual" with the failure signal
@@ -74,5 +74,5 @@ For cycle N:
 
 ## Related Skills
 
-- [verify](../verify/SKILL.md): Single-pass verification and evidence reporting
-- [systematic-debugging](../systematic-debugging/SKILL.md): Root-cause discipline when verification fails
+- [ac-verify](../ac-verify/SKILL.md): Single-pass verification and evidence reporting
+- [root-cause-debug](../root-cause-debug/SKILL.md): Root-cause discipline when verification fails

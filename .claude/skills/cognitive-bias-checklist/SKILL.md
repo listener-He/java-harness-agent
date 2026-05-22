@@ -1,6 +1,6 @@
 ---
 name: "cognitive-bias-checklist"
-description: "Cognitive bias checklist for deep analysis and architectural design. TRIGGER during Propose/Review phases to prevent hallucinations, overconfidence, and narrow thinking in design decisions."
+description: "Meta-cognitive check on reasoning quality: prevents hallucinations, overconfidence, anchoring, and narrow thinking. TRIGGER at Propose/Review phase AFTER decision-frameworks produces options — run as a second-pass bias scan on the reasoning, not as a framework for building options. Composes with decision-frameworks (which runs first); do NOT substitute one for the other. See skill-precedence.md Zone G."
 ---
 
 # Cognitive Bias Detection Checklist

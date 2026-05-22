@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Conduct rigorous, tech-lead-level code inspection of newly written code. Focus on correctness, performance, security, and maintainability. Use before QA and Archive phases, or whenever the user asks for a code review.
+description: Conduct rigorous, tech-lead-level code inspection of newly written code. Focus on correctness, performance, security, and maintainability. Use at Phase 3 Review (after Propose, before Implement), or whenever the user asks for a code review.
 tools: Read, Bash, Grep, Glob
 model: sonnet
 ---

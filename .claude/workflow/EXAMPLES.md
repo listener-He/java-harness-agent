@@ -17,7 +17,7 @@ A concrete walkthrough showing how a STANDARD task flows across turns, respectin
 **Human:** "Add a cancel endpoint for orders. Only the order owner can cancel, and only when status is PROCESSING."
 
 **Agent actions:**
-1. Runs `requirement-intake` → emits `[Intake] Input-Type: Feature / Profile: STANDARD / Scenario: Standard`
+1. Runs `input-classifier` → emits `[Intake] Input-Type: Feature / Profile: STANDARD / Scenario: Standard`
 2. Runs `pre_hook` → loads `java-architecture-standards`, reads wiki preferences
 3. Runs `wiki_search.py --query "order cancel status"` → finds `domain/index.md` with OrderStatus enum
 4. **Specification Inference:**

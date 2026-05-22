@@ -1,6 +1,6 @@
 ---
 name: stakeholder-conflict-resolver
-description: "Multi-stakeholder requirement conflict resolution protocol. Detects when two or more requirements from different stakeholders are mutually exclusive, partially overlapping, or impose contradictory constraints. Produces a structured conflict map and a resolution decision (negotiate / defer / escalate). TRIGGER when requirement-intake emits Input-Type: Multi-stakeholder (A9 frame) or when adversarial-review Category A finds a CRITICAL mutual-exclusion finding."
+description: "Multi-stakeholder requirement conflict resolution protocol. Detects when two or more requirements from different stakeholders are mutually exclusive, partially overlapping, or impose contradictory constraints. Produces a structured conflict map and a resolution decision (negotiate / defer / escalate). TRIGGER when: (a) user mentions conflicting instructions or requirements from different parties (PM vs tech lead, legal vs product, frontend vs backend); (b) adversarial-review Category A returns a CRITICAL mutual-exclusion finding; (c) product-manager-expert PRD ingestion finds two requirement units that directly contradict each other."
 ---
 
 # Stakeholder Conflict Resolver
@@ -8,9 +8,9 @@ description: "Multi-stakeholder requirement conflict resolution protocol. Detect
 When multiple stakeholders contribute requirements, conflicts are inevitable. This skill makes conflicts explicit, structured, and resolvable rather than silently embedding contradictions into the implementation.
 
 **Trigger condition:**
-- `requirement-intake` emits `Input-Type: Multi-stakeholder` (A9)
+- User mentions conflicting instructions or requirements from different parties (PM, tech lead, legal, product, frontend, backend)
+- Two requirements pulled from the same PRD directly contradict each other (found during `product-manager-expert` ingestion)
 - `adversarial-review` Category A returns CRITICAL finding: mutual exclusion between two requirements
-- User reports conflicting instructions from different parties
 
 ---
 

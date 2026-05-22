@@ -26,7 +26,7 @@ Source files: `.claude/agents/` (12 agents), `.claude/skills/` (29 skills), `.cl
 | DB migration / DDL | Scenario B1 (additive = PATCH) or B2 (mutating = HIGH + Approval Gate) — migration-planner |
 | Breaking API change | Scenario C — api_breaking_gate |
 | EPIC / 跨 3+ domain | task-decomposition-guide + Foreman 派发 |
-| Bug 根因未知 | Scenario DEBUG — systematic-debugging (Phase 1 强制) |
+| Bug 根因未知 | Scenario DEBUG — root-cause-debug (Phase 1 强制) |
 
 ---
 
@@ -34,8 +34,8 @@ Source files: `.claude/agents/` (12 agents), `.claude/skills/` (29 skills), `.cl
 
 | Phase | Agent | Key Skills | Notes |
 | --- | --- | --- | --- |
-| 1. Explorer | 主 agent (inline) | local-code-intelligence, requirement-intake, adversarial-review (HIGH) | convert AC to Given/When/Then; run code_index for impact |
-| 2. Propose | system-architect (HIGH) / 主 agent (MEDIUM) | brainstorming, writing-plans, cognitive-bias-checklist, decision-frameworks | write task_brief; HIGH writes one ADR per actual irreversible decision (or explicit 'mechanical' note if none) |
+| 1. Explorer | 主 agent (inline) | local-code-intelligence, input-classifier, adversarial-review (HIGH) | convert AC to Given/When/Then; run code_index for impact |
+| 2. Propose | system-architect (HIGH) / 主 agent (MEDIUM) | brainstorming, impl-plan, cognitive-bias-checklist, decision-frameworks | write task_brief; HIGH writes one ADR per actual irreversible decision (or explicit 'mechanical' note if none) |
 | 3. Review | code-reviewer | adversarial-review (HIGH), security-review-checklist (auth/data) | PATCH uses inline code-review-checklist skill instead |
 | Approval Gate (HIGH) | 主 agent + AskUserQuestion | — | present Human Section; full / partial / reject |
 | 4. Implement | lead-engineer | test-driven-development, java-architecture-standards, java-coding-style, mybatis-sql-standard (if MyBatis) | PreToolUse hook auto-enforces Allowed Scope |
@@ -94,7 +94,7 @@ Source files: `.claude/agents/` (12 agents), `.claude/skills/` (29 skills), `.cl
 - `security-review-checklist` — Security checklist for Java backend code reviews. Covers secrets, input validation, authZ, IDOR, data exposure, dependency safety, error han…
 
 ### Zone C — QA
-- `verify` — Lightweight single-pass AC verification before Archive — run implementation against each AC, produce pass/fail evidence. FAIL blocks Archive…
+- `ac-verify` — Lightweight single-pass AC verification before Archive — run implementation against each AC, produce pass/fail evidence. FAIL blocks Archive…
 - `ultraqa` — Structured QA cycling workflow: test → verify → fix → repeat until all ACs pass. Use when AC count ≥ 4 OR risk = HIGH. Requires an Evidence …
 - `java-testing-standards` — Standards for Java test code (test isolation, mock guidelines, 3-scenario coverage: Happy Path, Exception, Edge Cases). Always applies when …
 
@@ -105,11 +105,11 @@ Source files: `.claude/agents/` (12 agents), `.claude/skills/` (29 skills), `.cl
 - `skill-graph-manager` — MANDATORY mechanism for managing the bidirectional Skill Knowledge Graph. Invoke IMMEDIATELY after creating or modifying ANY skill to update…
 
 ### Zone E — Debug
-- `systematic-debugging` — Mandatory root-cause investigation before any fix. TRIGGER when encountering any bug, test failure, unexpected behavior, or runtime exceptio…
+- `root-cause-debug` — Mandatory root-cause investigation before any fix. TRIGGER when encountering any bug, test failure, unexpected behavior, or runtime exceptio…
 
 ### Zone F — Explorer
 - `local-code-intelligence` — Three pure-local tools (BM25 wiki search, Java symbol index, failure memory) for zero-cost context. TRIGGER at Explorer phase before reading…
-- `requirement-intake` — FRONT-DOOR CLASSIFIER (runs INLINE on the main agent, never dispatched). Tags raw input as one of PRD / Idea / Bug / Signal / Performance / …
+- `input-classifier` — FRONT-DOOR CLASSIFIER (runs INLINE on the main agent, never dispatched). Tags raw input as one of PRD / Idea / Bug / Signal / Performance / …
 - `task-decomposition-guide` — MANDATORY MASTER skill for decomposing large PRDs or EPIC scenarios into manageable, verifiable, and parallelizable subtasks. TRIGGER at Exp…
 - `stakeholder-conflict-resolver` — Multi-stakeholder requirement conflict resolution protocol. Detects when two or more requirements from different stakeholders are mutually e…
 
@@ -123,7 +123,7 @@ Source files: `.claude/agents/` (12 agents), `.claude/skills/` (29 skills), `.cl
 - `skill-creator` — Create or update a SKILL.md when a workflow is repeatable and repository-specific enough to standardize. TRIGGER when user says 'create a sk…
 - `skill-index` — Skill navigator. List active skills, locate archived ones, choose the right sequence per scenario.
 - `spec-quality-checklist` — Self-correction gate for AI-generated documents (task_brief, WAL fragments, specs). TRIGGER in post_hook before running Python gate scripts …
-- `writing-plans` — Decompose a spec or requirements into a checkpoint-driven, bite-sized implementation plan before touching any code. TRIGGER during Propose p…
+- `impl-plan` — Decompose a spec or requirements into a checkpoint-driven, bite-sized implementation plan before touching any code. TRIGGER during Propose p…
 
 ---
 
@@ -145,7 +145,7 @@ Source files: `.claude/agents/` (12 agents), `.claude/skills/` (29 skills), `.cl
 
 | Scenario | Trigger | Mandatory read (skills-archive) |
 | --- | --- | --- |
-| DEBUG | bug with unknown root cause | systematic-debugging (Phase 1) |
+| DEBUG | bug with unknown root cause | root-cause-debug (Phase 1) |
 | EPIC | ≥3 domains / migration / massive refactor | task-decomposition-guide + dispatching-parallel-agents |
 | A — Hotfix | production incident | incident-response |
 | B — DB Migration | DDL / system migration | migration-planner + migration_gate.py |

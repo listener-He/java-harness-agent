@@ -15,17 +15,17 @@ Searches the broader world for new ideas, threat intelligence, regulatory guidan
 - Self-improve's internal researcher has run out of novel ideas within the codebase
 
 **Mode 2: Security / CVE Research**
-- `requirement-intake` emits `Input-Type: Security` (A6 frame)
+- `input-classifier` emits `Input-Type: Security` (A6 frame)
 - User reports a potential security vulnerability or references a CVE number
 - Need to understand attack vectors, mitigations, or patch patterns for a known class of vulnerability
 
 **Mode 3: Compliance Research**
-- `requirement-intake` emits `Input-Type: Compliance` (A8 frame)
+- `input-classifier` emits `Input-Type: Compliance` (A8 frame)
 - User references a regulation (GDPR, PCI-DSS, SOC2, HIPAA, etc.)
 - Need to map regulatory requirements to technical implementation constraints
 
 **Mode 4: Competitor / Benchmark Research**
-- `requirement-intake` emits `Input-Type: Feedback/Idea` with competitor comparison signal
+- `input-classifier` emits `Input-Type: Feedback/Idea` with competitor comparison signal
 - User asks "how does X solve this?" or "what's the industry standard for Y?"
 - Need reference implementations or design patterns from analogous systems
 

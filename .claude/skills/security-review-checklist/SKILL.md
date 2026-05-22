@@ -103,5 +103,5 @@ At the end of the review, append a brief Security Review Report:
 ## Related Skills
 
 - [code-review-checklist](../code-review-checklist/SKILL.md): run alongside this skill for HIGH risk changes
-- [verify](../verify/SKILL.md): final evidence-driven validation after all review checks pass
+- [ac-verify](../ac-verify/SKILL.md): final evidence-driven validation after all review checks pass
 - [linter-severity-standard](../linter-severity-standard/SKILL.md): bypass justification protocol if a check cannot be satisfied

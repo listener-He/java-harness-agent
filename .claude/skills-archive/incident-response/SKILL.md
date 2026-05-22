@@ -1,6 +1,6 @@
 ---
 name: incident-response
-description: "Production emergency triage and post-mortem protocol. Phase 1: rapid triage (classify severity, identify blast radius, issue immediate mitigation). Phase 2: root cause investigation using Hypothesis Falsification. Phase 3: post-mortem with structured Action Items and 5-Why chain. TRIGGER when requirement-intake emits Input-Type: Incident (A9) or user reports a production outage, data corruption, security breach, or SLA violation."
+description: "Production emergency triage and post-mortem protocol. Phase 1: rapid triage (classify severity, identify blast radius, issue immediate mitigation). Phase 2: root cause investigation using Hypothesis Falsification. Phase 3: post-mortem with structured Action Items and 5-Why chain. TRIGGER when input-classifier emits Input-Type: Incident (A9) or user reports a production outage, data corruption, security breach, or SLA violation."
 ---
 
 # Incident Response
@@ -8,7 +8,7 @@ description: "Production emergency triage and post-mortem protocol. Phase 1: rap
 Production emergencies require a different mode: triage first, diagnose second, fix third, learn fourth. This skill enforces that order.
 
 **Trigger condition:**
-- `requirement-intake` emits `Input-Type: Incident`
+- `input-classifier` emits `Input-Type: Incident`
 - User reports: production outage, data corruption event, security breach, SLA violation, on-call page
 
 ---
@@ -55,7 +55,7 @@ Do NOT wait for root cause to apply mitigation on P0/P1.
 
 ## Phase 2: Root Cause Investigation
 
-Use the `systematic-debugging` skill with its Hypothesis Falsification Protocol:
+Use the `root-cause-debug` skill with its Hypothesis Falsification Protocol:
 
 1. **Hierarchical Localization**: Module → File → Method → Line
 2. **State Hypothesis**: "The failure is caused by [specific mechanism]"
@@ -146,7 +146,7 @@ Action Item quality rules:
 
 ### Action Item Feed
 
-Feed AIs back into the task queue via `requirement-intake` (Input-Type: Bug or Tech-Debt) so they enter the standard lifecycle rather than being lost in a post-mortem document.
+Feed AIs back into the task queue via `input-classifier` (Input-Type: Bug or Tech-Debt) so they enter the standard lifecycle rather than being lost in a post-mortem document.
 
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: systematic-debugging
+name: root-cause-debug
 description: "Mandatory root-cause investigation before any fix. TRIGGER when encountering any bug, test failure, unexpected behavior, or runtime exception. MUST complete Phase 1 (Root Cause Investigation via Hierarchical Localization Protocol) before proposing fixes — never jump straight to solutions."
 ---
 

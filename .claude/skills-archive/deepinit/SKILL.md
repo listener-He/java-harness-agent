@@ -1,6 +1,6 @@
 ---
 name: deepinit
-description: "Deep codebase initialization. Two outputs: (1) hierarchical CLAUDE.md files for human navigation; (2) a machine-readable context_brief.md that other skills (brainstorming, greenfield-scaffold, requirement-intake) can load directly as structured context. TRIGGER when initializing a new repo, onboarding an agent to an unfamiliar codebase, or when requirement-intake needs codebase context and no context_brief.md exists."
+description: "Deep codebase initialization. Two outputs: (1) hierarchical CLAUDE.md files for human navigation; (2) a machine-readable context_brief.md that other skills (brainstorming, greenfield-scaffold, input-classifier) can load directly as structured context. TRIGGER when initializing a new repo, onboarding an agent to an unfamiliar codebase, or when input-classifier needs codebase context and no context_brief.md exists."
 ---
 
 # deepinit — Deep Codebase Initialization
@@ -310,7 +310,7 @@ Reusable React components organized by feature and complexity.
 
 After all CLAUDE.md files are written and validated, synthesize a single machine-readable `context_brief.md` under `.claude/runs/task-briefs/<YYYY-MM-DD>_<slug>_context_brief.md`.
 
-This file is consumed by: `requirement-intake`, `brainstorming`, `greenfield-scaffold`, `adversarial-review` (Category C), and any skill that needs codebase context without navigating the full file tree.
+This file is consumed by: `input-classifier`, `brainstorming`, `greenfield-scaffold`, `adversarial-review` (Category C), and any skill that needs codebase context without navigating the full file tree.
 
 ### context_brief.md Template
 
@@ -350,7 +350,7 @@ These are invariants extracted from the codebase that MUST be preserved by any c
 - **Coverage approach**: {unit / integration / both}
 - **Known gaps**: {areas without tests, if detectable}
 
-## 7. Open Questions (for requirement-intake)
+## 7. Open Questions (for input-classifier)
 Things that could not be determined from static analysis — a consuming skill should resolve these:
 - {question 1 — e.g., "Authentication strategy not visible from code alone"}
 - {question 2}

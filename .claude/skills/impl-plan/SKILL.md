@@ -1,6 +1,6 @@
 ---
-name: writing-plans
-description: "Decompose a spec or requirements into a checkpoint-driven, bite-sized implementation plan before touching any code. TRIGGER during Propose phase after a design option is selected and task scope is known. Output saved to .claude/runs/task-briefs/<slug>_plan.md."
+name: impl-plan
+description: "Decompose a spec or requirements into a checkpoint-driven, bite-sized implementation plan before touching any code. TRIGGER during Propose phase after brainstorming selects a design option and task scope is known. Output saved to .claude/runs/task-briefs/<slug>_plan.md."
 ---
 
 # Writing Plans
@@ -140,13 +140,13 @@ When executing a written plan in this session:
    - Mark completed only after verification evidence exists
 4. Stop immediately when:
    - A blocker appears (missing dependency, failing verification, unclear instruction)
-   - The same failure repeats (avoid thrashing; switch to `systematic-debugging`)
+   - The same failure repeats (avoid thrashing; switch to `root-cause-debug`)
 5. Completion protocol:
    - Run `code-review-checklist`
-   - Run `verify` to produce an evidence summary
+   - Run `ac-verify` to produce an evidence summary
    - Enter Archive phase and write WAL if required
 
 ## Related Skills
 
 - **verify** - Evidence before completion
-- **systematic-debugging** - Root-cause discipline when execution fails
+- **root-cause-debug** - Root-cause discipline when execution fails

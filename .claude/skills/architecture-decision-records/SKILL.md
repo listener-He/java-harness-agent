@@ -1,6 +1,6 @@
 ---
 name: architecture-decision-records
-description: "Capture architectural decisions made during coding sessions as structured ADRs. Auto-detects decision moments, records context, alternatives considered, and rationale. Maintains an ADR log so future developers understand why the codebase is shaped the way it is. TRIGGER when: user says \"record this decision\" or \"ADR this\", or when significant architectural choices are made during the AI engineering pipeline."
+description: "Capture architectural decisions as structured ADRs. TRIGGER when: user says 'record this decision' or 'ADR this', OR when lifecycle.md Phase 2 (HIGH risk Propose) requires an ADR for an actual irreversible architectural decision (transport, persistence model, sync vs async, framework, API contract). Do NOT trigger for MEDIUM risk or purely mechanical CRUD tasks — lifecycle.md explicitly allows zero ADRs with an explicit 'mechanical implementation' note."
 ---
 
 # Architecture Decision Records

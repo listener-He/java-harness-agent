@@ -1,6 +1,6 @@
 ---
 name: "migration-planner"
-description: "A→B system migration protocol where the core requirement is behavioral equivalence, not new features. Generates an equivalence test suite BEFORE migration begins. Migration is done when equivalence tests pass. TRIGGER when requirement-intake emits Scenario=Migration or when the request is 'migrate from X to Y'."
+description: "A→B system migration protocol where the core requirement is behavioral equivalence, not new features. Generates an equivalence test suite BEFORE migration begins. Migration is done when equivalence tests pass. TRIGGER when input-classifier emits Scenario=Migration or when the request is 'migrate from X to Y'."
 ---
 
 # Migration Planner
