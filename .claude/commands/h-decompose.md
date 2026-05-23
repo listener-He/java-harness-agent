@@ -40,12 +40,18 @@ Call the skill explicitly with the validated input. The skill enforces INVEST an
 
 Required output file: `.claude/runs/task-briefs/<YYYY-MM-DD>_<slug>_tasks.md` (use today's date).
 
-The `_tasks.md` MUST follow the format `brief_from_decomposition.py` expects:
-- `### Task <id>: <name>` headers per subtask
-- Per-subtask fields: `Goal`, `Type`, `Dependencies`, `Effort` (Simple|Medium|Complex), `Handoff Artifact`
-- Per-subtask `Acceptance Criteria` as `- [ ] <text>` checkbox list
+`_tasks.md` per-subtask format (per task-decomposition-guide §1.5 + §4):
 
-If `brief_from_decomposition.py --tasks <file>` (dry-run via `--help` is not available; just attempt parse and check) rejects the format, revise once, then STOP.
+| Field | MUST contain |
+|---|---|
+| `Type` | `Change` OR `Research` (drives downstream routing) |
+| `Subtype` | Change: `Vertical Slice` / `Technical Chore` / `Migration`; Research: `quick` / `deep` |
+| `Effort` | Change: `Simple` / `Medium` / `Complex`; Research: `quick` / `deep` |
+| `Dependencies` | other subtask IDs or `None` |
+| `Acceptance Criteria` | `- [ ] <text>` checkbox list; Change uses Given/When/Then; Research uses §1 Question + quota |
+| `Handoff Artifact` | Change: `task_brief.md` or intermediate spec; Research: `research_report.md` |
+
+If `brief_from_decomposition.py --tasks <file>` rejects the format, revise once, then STOP.
 
 ## Step 4 — INVEST quality gate (inline self-check)
 
@@ -62,33 +68,46 @@ Before scaffolding briefs, audit each subtask in the `_tasks.md`:
 
 If any reject criterion fires, revise the `_tasks.md` once. Second revision-required signal → STOP and ask user.
 
-## Step 5 — Scaffold per-subtask briefs (skip if `--no-scaffold`)
+## Step 5 — Scaffold per-subtask artifacts (skip if `--no-scaffold`)
 
-Run:
+Split by Type:
 
-```
-python3 .claude/scripts/tools/brief_from_decomposition.py --tasks .claude/runs/task-briefs/<date>_<slug>_tasks.md
-```
+| Type | Scaffold action |
+|---|---|
+| Change | `brief_from_decomposition.py --tasks <file>` → writes `task-briefs/<slug>_part_<i>_task_brief.md` |
+| Research | Skip script. Main agent inline-writes `reports/<date>_<slug>_part_<i>_research.md` with RESEARCH frontmatter + 7-section TODO skeleton (mirrors the report scaffold step from the research entry command) |
 
-The script writes one skeleton per subtask under `.claude/runs/task-briefs/<slug>_part_<i>_task_brief.md`. It pre-fills only what decomposition already knows; substantive content stays as placeholders to be filled at each subtask's own Propose phase.
+Both branches: substantive content stays placeholder; filled at each subtask's own Propose / R1 phase.
 
-If the script exits non-zero, surface stderr verbatim and STOP. Do not proceed to launch_spec binding with partial scaffolds.
+If `brief_from_decomposition.py` exits non-zero on Change subtasks → surface stderr verbatim and STOP. Do not bind partial scaffolds to launch_spec.
 
 ## Step 6 — Bind all subtasks to launch_spec
 
-For each scaffolded brief from Step 5:
+For each scaffolded artifact from Step 5:
 
-- Resolve or create the latest `.claude/runs/launch-specs/launch_spec_<YYYY-MM-DD>.md` (same logic as `/h-brief` Step 6: use latest if exists, create with table header otherwise).
-- **Risk inference (two-stage — Effort is SIZE proxy, not RISK proxy)**:
-  1. **Size baseline from Effort**: `Simple → LOW`, `Medium → MEDIUM`, `Complex → MEDIUM`. Do NOT auto-promote Complex to HIGH; a large but mechanical refactor is MEDIUM, not HIGH.
-  2. **Keyword upgrade to HIGH**: scan the subtask's `Goal` + `Acceptance Criteria` text for any HIGH-tier danger keyword from `.claude/rules/lifecycle.md` Risk Classification table — `auth`, mutating DDL (`ALTER` / `DROP` / `MODIFY` / `RENAME` / `migration`), public API breaking change, payment / financial logic, `secret` / `token` / `credential`, error code definition, lifecycle / policy / routing files. Match → upgrade to HIGH regardless of Effort.
-  3. **Hard floor**: if `Depends On` includes a HIGH-risk upstream subtask, this subtask is at minimum MEDIUM (correctness depends on something HIGH-risk).
-- Append one row per subtask:
-  ```
-  | <slug>_part_<i> | <risk per the rule above> | Propose | PENDING | <Depends On from _tasks.md, mapped to other part_<j> slugs, or "none"> | <brief path> |
-  ```
+Resolve or create the latest `.claude/runs/launch-specs/launch_spec_<YYYY-MM-DD>.md` (latest if exists, else create with table header).
 
-All rows start as `PENDING`. Dependencies form a DAG — if you detect a cycle, STOP and report; cycles must be resolved at the decomposition layer (Step 3), not by editing launch_spec rows.
+**Risk literal by Type:**
+
+| Type | Rule |
+|---|---|
+| Research | `RES` literal; Phase = `Research`; bypass Change-side risk inference |
+| Change | apply two-stage rule below |
+
+**Change two-stage risk inference (Effort is SIZE proxy, not RISK proxy):**
+
+1. Size baseline from Effort: `Simple → LOW`, `Medium → MEDIUM`, `Complex → MEDIUM`. Do NOT auto-promote Complex to HIGH; a large mechanical refactor is MEDIUM.
+2. Keyword upgrade to HIGH: scan `Goal` + `Acceptance Criteria` for any HIGH-tier keyword from `lifecycle.md` Risk Classification — `auth`, mutating DDL (`ALTER` / `DROP` / `MODIFY` / `RENAME` / `migration`), public API breaking change, payment / financial logic, `secret` / `token` / `credential`, error code definition, lifecycle / policy / routing files. Match → HIGH.
+3. Hard floor: `Depends On` includes a HIGH upstream subtask → at minimum MEDIUM.
+
+**Row format per Type:**
+
+```
+| <slug>_part_<i> | <LOW|MEDIUM|HIGH> | Propose  | PENDING | <deps or "none"> | <brief path>  |   # Change
+| <slug>_part_<i> | RES                | Research | PENDING | <deps or "none"> | <report path> |   # Research
+```
+
+All rows start `PENDING`. Dependencies form a DAG — cycle detected → STOP, fix at Step 3 decomposition layer (NOT by editing launch_spec rows).
 
 ## Step 7 — Report
 

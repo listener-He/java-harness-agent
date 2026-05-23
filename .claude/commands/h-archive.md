@@ -1,15 +1,25 @@
 ---
-description: Archive current STANDARD task — WAL fragments → move task_brief → wiki lint → mark DONE
+description: Archive current STANDARD/RESEARCH task — gate → move artifact → wiki lint → mark DONE
 argument-hint: [slug]
 ---
 
-Execute Phase 6 (Archive) per `.claude/rules/lifecycle.md` and Zone D of `.claude/rules/skill-precedence.md`. Steps are sequential; a failure in any step STOPS the flow and reports — do not skip ahead.
+Phase 6 / Phase R3 Archive. Sequential steps; any failure STOPS the flow.
 
-## Step 1 — Resolve target task_brief
+## Step 0 — Resolve target + dispatch by mode
 
-- If `$ARGUMENTS` is non-empty: treat it as the slug, resolve to the latest matching `.claude/runs/task-briefs/*_<slug>_task_brief.md`.
-- Else: run `python3 .claude/scripts/harness/find_active_task_brief.py` — stdout is the IN_PROGRESS row's task_brief path (empty if none).
-- If neither yields a valid path → STOP and report: `No active task_brief — pass slug as argument or ensure launch_spec has an IN_PROGRESS row`.
+Resolve target artifact path:
+- `$ARGUMENTS` non-empty → treat as slug → latest `.claude/runs/task-briefs/*_<slug>_task_brief.md` OR `.claude/runs/reports/*_<slug>_research.md`
+- Else → `python3 .claude/scripts/harness/find_active_task_brief.py` (resolves IN_PROGRESS row's Artifact path)
+
+Dispatch by path pattern (first match wins):
+
+| Artifact path pattern | Mode | Branch |
+|---|---|---|
+| `.claude/runs/task-briefs/*_task_brief.md` | STANDARD | Step 1 → Step 8 (below) |
+| `.claude/runs/reports/*_research.md` | RESEARCH | Step 1R → Step 4R (further below) |
+| (no match) | — | STOP, report `No active task — pass slug as argument or ensure launch_spec has an IN_PROGRESS row` |
+
+## Step 1 — Resolve target task_brief (STANDARD branch)
 
 Read the resolved task_brief's Machine Section before continuing. Capture: AC list, Allowed Scope, declared dependencies.
 
@@ -145,9 +155,75 @@ Output exactly this block, nothing else:
 [Next]: <one sentence — usually "ready for next task" or a deferred-AC follow-up>
 ```
 
-## Hard constraints (apply to YOU executing this command)
+## RESEARCH branch (Phase R3 Archive)
 
-- **Allowed edit set**: `.claude/wiki/**/wal/`, the resolved task_brief, the target `launch_spec_*.md`, and any ADR/memory files written in Step 4. NO source-code edits.
-- **Anti-loop**: max 2 retries per step. Second failure of the same step → STOP and ask user.
-- **Step ordering is fixed**: do not pre-emptively reorder or merge steps. Step 2 must precede Step 3 (extractor depends on the reflection section).
-- **PATCH profile tasks must not invoke this command** — Archive WAL is only for STANDARD profile (per `.claude/rules/policy.md` Part 2). If `$ARGUMENTS` resolves to a PATCH task_brief, STOP and report.
+Invoked when Step 0 dispatch resolved the artifact to `.claude/runs/reports/*_research.md`. Do NOT execute STANDARD Steps 1–8 in this branch.
+
+### Step 1R — Validate report (blocking)
+
+```bash
+python3 .claude/scripts/gates/research_report_gate.py --require <report path>
+```
+
+| Exit | Action |
+|---|---|
+| 0 (PASS) | Continue Step 2R |
+| 1 (WARN) | Surface inline, ask user continue/revise |
+| 2 (FAIL) | STOP. Roll back to Phase R2 Synthesize. Max 2 retries per anti-loop. Third FAIL → ask user. Record via `failure_memory.py record --intent Research --phase Synthesize --gate research_report_gate.py --pattern <gate-message>` |
+
+### Step 2R — Optional WAL (single AskUserQuestion, default Skip)
+
+Per `policy.md` RESEARCH Profile Write-back:
+
+```
+Q: Extract reusable knowledge to WAL? (Report itself is the primary knowledge artifact.)
+- [✓] Skip (recommended) — no WAL written; report archive is the citable record
+- [ ] Extract — research surfaced stable reusable facts independent of §5 Recommendations
+```
+
+- **Skip** → no WAL written; no stub file (RESEARCH default; no justification required).
+- **Extract** → follow-up multi-select limited to ≤ 2 dimensions from {Domain, API, Data, Architecture}. Then dispatch `knowledge-extractor` per `.claude/rules/dispatch-template.md` with `[Chosen Dimensions]: <list>`. Source Documents: the report file with `#L<a>-L<b>` pointers to §3 Findings + §7 Evidence Index.
+
+### Step 3R — Move report + mark DONE
+
+```bash
+mkdir -p .claude/wiki/archive/reports
+mv .claude/runs/reports/<file> .claude/wiki/archive/reports/<file>
+```
+
+- Edit latest `.claude/runs/launch-specs/launch_spec_*.md`: row `Status: IN_PROGRESS` → `DONE`. MUST NOT touch other rows.
+
+### Step 4R — Wiki lint + final report
+
+```bash
+python3 .claude/scripts/wiki/wiki_linter.py
+```
+
+- OK / WARN → proceed (cap on `archive/reports/` is 3000 lines per policy override)
+- FAIL → STOP, do NOT mark DONE; report the linter output
+
+Final block:
+
+```
+[Archive Status]: COMPLETE | FAILED
+[Mode]: RESEARCH
+[Slug]: <slug>
+[Archived Report]: .claude/wiki/archive/reports/<file>
+[Gate]: PASS | WARN(<one-line>)
+[WAL]: Skip | <dimensions>
+[wiki_linter]: OK | WARN(<one-line>) | FAIL(<one-line>)
+[Recommendations]: <count> Option blocks in §5 — list each "If chosen, run: ..." line verbatim for user as next-step candidates
+```
+
+§5 next-step candidates MUST be surfaced verbatim; MUST NOT auto-trigger.
+
+## Hard constraints (apply to BOTH branches)
+
+| Rule | Value |
+|---|---|
+| Allowed edit set (STANDARD) | `.claude/wiki/**/wal/`, the resolved task_brief, target `launch_spec_*.md`, ADR/memory files from Step 4 |
+| Allowed edit set (RESEARCH) | the resolved report, target `launch_spec_*.md`, optional WAL via sub-agent |
+| Source-code edits | FORBIDDEN in both branches |
+| Anti-loop | max 2 retries per step; second same-step failure → STOP, ask user |
+| Step ordering | fixed; STANDARD Step 2 MUST precede Step 3 (extractor depends on reflection); RESEARCH Steps 1R-4R MUST execute in order |
+| PATCH profile | STOP if `$ARGUMENTS` resolves to PATCH task_brief (Archive WAL is STANDARD-only per policy) |

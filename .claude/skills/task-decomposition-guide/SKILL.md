@@ -47,6 +47,33 @@ Before finalizing any subtask breakdown, you MUST ensure EVERY generated task sa
 - **S (Small):** Is it small enough to fit within a single LLM context window or be completed in a few days? If it feels like an Epic itself, split it again.
 - **T (Testable):** Does it have explicit, verifiable Acceptance Criteria (AC)?
 
+## 🧭 1.5 Subtask Type Classification (run before Vertical Slicing)
+
+Every generated subtask MUST carry `Type ∈ {Change, Research}`. This drives the downstream entry command, risk column, and DAG dependency rule.
+
+### Classification rules (first match wins)
+
+| Signal | Type |
+|---|---|
+| User text contains "先调研再实现" / "先评估再决定" / "先看看再…" two-stage structure | Split into 2 subtasks: Research first, Change second, Change `Depends On` Research |
+| Subtask goal verb in research set (analyze / research / evaluate / assess / feasibility / 调研 / 分析 / 评估 / 可行性) AND no Change verb | Research |
+| Subtask has measurable code/file outcome (endpoint / DB column / class) | Change |
+| Subtask has only "want to know X" / "compare A vs B" outcome | Research |
+| Default | Change |
+
+### Per-Type schema (extends INVEST output)
+
+| Field | Change | Research |
+|---|---|---|
+| Effort | Simple / Medium / Complex | quick / deep (drives §3 quota) |
+| Acceptance Criteria | Given/When/Then ACs | report §1 Question + §3 quota |
+| Artifact | task_brief.md | research_report.md |
+| Risk literal | LOW / MEDIUM / HIGH | RES |
+
+### DAG rule: Research → Change ordering
+
+When a Research subtask R produces §5 Recommendations with `If chosen, run: ...` next-step options, downstream Change subtask C MUST list R in its `Depends On`. C's task_brief §1 Context inherits R's §5.chosen option verbatim when work resumes.
+
 ## 🔪 2. Decomposition Strategies (Vertical Slicing is King)
 
 **❌ Anti-Pattern (Horizontal Slicing):**
@@ -78,16 +105,16 @@ Always output a highly readable Markdown report containing an Overview Panel and
 - PRD Health/Risk Warning: (Flag vague requirements, missing NFRs, or high-risk third-party integrations here).
 
 **2. 📦 Task Breakdown**
-Use the following format for each task:
+Per-subtask format (all fields MUST be present; Type drives the rest):
 
 ```markdown
 ### 📋 Task [ID]: [Task Name]
-- **Goal:** [One sentence summary of the business value]
-- **Type:** [Vertical Slice | Technical Chore | Migration]
-- **Effort:** [Simple (2h) | Medium (4h) | Complex (8h+)]
-- **Dependencies:** [List blocking Task IDs or 'None']
-- **Acceptance Criteria (Testable):** 
-  - [ ] Criteria 1 (e.g., API returns 200 with JWT)
-  - [ ] Criteria 2 (e.g., DB record is created with correct tenant_id)
-- **Handoff Artifact:** [What file/spec must this task produce for the next step? e.g., `intermediate_auth_spec.md`]
+- **Goal:** [One sentence — business value or research question]
+- **Type:** Change | Research
+- **Subtype:** [Change: Vertical Slice | Technical Chore | Migration] | [Research: quick | deep]
+- **Effort:** [Change: Simple (2h) | Medium (4h) | Complex (8h+)] | [Research: quick | deep]
+- **Dependencies:** [blocking Task IDs or 'None']
+- **Acceptance Criteria (Testable):**
+  - [ ] [Change: Given/When/Then AC] | [Research: §1 Question answerable with §3 ≥ <quota> findings]
+- **Handoff Artifact:** [Change: task_brief.md or intermediate spec] | [Research: research_report.md]
 ```

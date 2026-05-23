@@ -45,13 +45,14 @@ Return exactly this structured block — main agent parses it line by line:
 [Reason]: <one-line summary of the blocking ambiguity; or "none" on PASS>
 ```
 
-`[Suggested Profile]` mapping:
-- `LEARN` — Missing action / discussion-only intent
-- `RESEARCH` — Research-class verbs present AND no Change-class verbs
-- `PATCH` — Single small change, low risk
-- `STANDARD` — Multi-step change, or research+change co-occurring
+`[Suggested Profile]` selection rule (mutually exclusive, first match wins):
 
-Main agent consumes this field to pick the entry command: `/h-research` for RESEARCH, `/h-brief` for PATCH/STANDARD, no command for LEARN.
+| Rule | Profile |
+|---|---|
+| No action verb (discussion only) | LEARN |
+| Research verb present AND no Change verb | RESEARCH |
+| Change verb + single small scope | PATCH |
+| Change verb + multi-step OR research+change co-occur | STANDARD |
 
 ## Gate
 

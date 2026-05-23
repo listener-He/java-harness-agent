@@ -9,7 +9,8 @@ This file is intentionally English-only to maximize agent execution reliability.
 2. Read the process links to learn where the contract is checked, frozen, and enforced.
 
 ## Templates
-- **[Task Brief Schema](task_brief_schema.md)**: the proposal contract. It can also carry optional handoff sections (API contract + acceptance criteria) when collaboration is needed.
+- **[Task Brief Schema](task_brief_schema.md)**: the proposal contract for STANDARD/PATCH profiles. May carry optional handoff sections (API contract + acceptance criteria) when collaboration is needed.
+- **[Research Report Schema](research_report_schema.md)**: the report contract for RESEARCH profile (analysis / feasibility / baseline). 7-section structure with evidence-pointer enforcement.
 
 Sub-agent dispatch contract (Claude Code internal `Agent` tool) lives in [../../rules/dispatch-template.md](../../rules/dispatch-template.md), not under `schema/`.
 

@@ -36,7 +36,7 @@ This is **non-blocking** — the user's declared intent wins. The block exists s
 - Python caches: `__pycache__/`, `*.pyc`
 - Build/IDE artifacts: `target/`, `build/`, `.idea/`, `.vscode/`, `.DS_Store`
 
-**Only commit:** source code, archived task briefs (`.claude/wiki/archive/`), archived collab deliverables (`.claude/wiki/archive/collabs/`), and `.claude/**/wal/` fragments.
+**Only commit:** source code, archived task briefs (`.claude/wiki/archive/`), archived research reports (`.claude/wiki/archive/reports/`), archived collab deliverables (`.claude/wiki/archive/collabs/`), and `.claude/**/wal/` fragments.
 
 ---
 
@@ -64,14 +64,20 @@ After extraction, replace the active `task_brief.md` in `runs/task-briefs/` with
 python3 .claude/scripts/tools/archive_session_artifacts.py --slug <feature_slug>
 ```
 
-## Anti-Bloat: 500-line Hard Limit
+## Anti-Bloat: Per-directory Line Limits
 
-When any wiki index file exceeds 500 lines:
+| Path prefix | Cap |
+|---|---|
+| (default) | 500 |
+| `.claude/wiki/archive/reports/` | 3000 |
+
+On overflow:
 1. Split content into focused sub-documents per topic
-2. Rewrite original `index.md` as a lean routing graph (links + 1-2 line summaries)
-3. If top-level structure changes, update `KNOWLEDGE_GRAPH.md`
+2. Rewrite original `index.md` as a lean routing graph
+3. Update `KNOWLEDGE_GRAPH.md` if top-level structure changed
+4. Research reports approaching 3000 → split per schema "Size limit" (main + evidence appendix)
 
-Gate: `python3 .claude/scripts/wiki/wiki_linter.py` — FAIL if dead links or any file > 500 lines.
+Gate: `python3 .claude/scripts/wiki/wiki_linter.py` — FAIL on dead links OR cap exceeded. Per-directory table owned by linter (wired in PR-3).
 
 ## Extraction Rules
 
@@ -80,6 +86,16 @@ Gate: `python3 .claude/scripts/wiki/wiki_linter.py` — FAIL if dead links or an
 - **STANDARD tasks: WAL write-back is user-elected.** During Archive, `h-archive` scans the diff, suggests WAL dimensions (Domain / API / Rules / Data / Architecture) with pre-checks based on what was actually changed, then asks the user via multi-select. Only chosen dimensions are written. **None** is a valid choice — it writes a single stub file recording the explicit decision. HIGH risk + None additionally requires a one-line justification (e.g., "config-only change; no domain knowledge to capture") to prevent habitual skipping; MEDIUM may skip with no justification. **Discipline preserved:** the question itself is mandatory — silent zero-WAL is not allowed.
 - PATCH tasks: no WAL required, no question asked. Wiki refresh deferred to `@wiki-update`.
 - New tables/schemas go into WAL data domain (`wiki/data/wal/`) as Markdown with DDL code blocks — NOT as root `.sql` files.
+
+## RESEARCH Profile Write-back
+
+| Rule | Value |
+|---|---|
+| WAL default | Skip (report itself is the knowledge artifact) |
+| Archive-time WAL question | Mandatory single AskUserQuestion; user MUST pick Skip or Extract |
+| Extract cap | ≤ 2 dimensions per research task; > 2 → use STANDARD follow-up instead |
+| Extract trigger | Research surfaced stable reusable facts independent of §5 Recommendations |
+| `signals_yellow` effect | Amplifies §3 evidence rigor (≥ 10 entries), does NOT change WAL default |
 
 ---
 

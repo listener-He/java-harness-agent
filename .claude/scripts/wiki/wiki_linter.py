@@ -15,6 +15,23 @@ WIKI_DIR = ".claude/wiki"
 
 EXIT_FAIL = 2
 
+# Per-directory line caps (policy.md Anti-Bloat). Default = 500.
+# Matching is longest-prefix-wins on the normalized path.
+DEFAULT_MAX_LINES = 500
+PATH_LINE_CAPS = {
+    os.path.normpath(".claude/wiki/archive/reports"): 3000,
+}
+
+
+def _max_lines_for(path: str) -> int:
+    norm = os.path.normpath(path)
+    best_match = ""
+    for prefix in PATH_LINE_CAPS:
+        if norm.startswith(prefix + os.sep) or norm == prefix:
+            if len(prefix) > len(best_match):
+                best_match = prefix
+    return PATH_LINE_CAPS[best_match] if best_match else DEFAULT_MAX_LINES
+
 def check_wiki():
     if not os.path.exists(WIKI_DIR):
         print(f"❌ 目录不存在: {WIKI_DIR}")
@@ -38,9 +55,10 @@ def check_wiki():
         with open(file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
 
-        # Check size (500 行防膨胀预警)
-        if len(lines) > 500:
-            oversized_files.append((file_path, len(lines)))
+        # Per-directory cap (policy.md Anti-Bloat). Default 500; overrides via PATH_LINE_CAPS.
+        cap = _max_lines_for(file_path)
+        if len(lines) > cap:
+            oversized_files.append((file_path, len(lines), cap))
 
         # WAL fragments are historical records — their links point to repo-root paths
         # and are not expected to resolve from within the wal/ directory. Skip link checks.
@@ -90,10 +108,10 @@ def check_wiki():
     print("📊 === LLM Wiki 图谱体检报告 ===")
     print(f"扫描文件总数: {len(all_md_files)}")
     
-    print("\n⚠️  【超长文件预警】 (>500行，建议按业务拆分):")
+    print("\n⚠️  【超长文件预警】 (per-directory cap, 默认 500 行):")
     if oversized_files:
-        for f, lines in oversized_files:
-            print(f"  - [WARN] {f} ({lines} 行)")
+        for f, lines, cap in oversized_files:
+            print(f"  - [WARN] {f} ({lines} 行, cap={cap})")
     else:
         print("  ✅ 无超长文件")
 

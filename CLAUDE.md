@@ -79,18 +79,27 @@ Production incident facts live under `.claude/wiki/incidents/<date>_<slug>.md`. 
 
 **Ingesting a new incident:** run `python3 .claude/scripts/local_intel/ingest_incident.py --help` — script saves the raw fact + prints a template; you write `.claude/wiki/incidents/<date>_<slug>.md` per the template. The `## 提醒未来 LLM` field is what every future session sees — write it well.
 
-## Two Modes
+## Three Modes
 
 | Mode | When | Flow |
 |---|---|---|
-| **Vibe** | LEARN, TRIVIAL, simple PATCH, "just do it" | Act directly. No task_brief, no Explorer, no WAL. |
+| **Vibe** | LEARN, TRIVIAL, simple PATCH | Act directly. No task_brief, no Explorer, no WAL. |
+| **Research** | 调研 / 分析 / 评估 / 可行性 — deliverable is report, not code | Investigate → Synthesize → Archive. Produces `research_report.md`. Skip Propose/Review/Approval. Risk-orthogonal. |
 | **Standard** | MEDIUM/HIGH risk, public API/DB/auth changes, EPIC | Explorer → Propose → Review → [Approval if HIGH] → Implement → QA → Archive |
 
 ### Vibe Eligibility (white-list, not fallback)
 
 Enter Vibe ONLY if: probe ALL-GREEN or heuristic-skipped (see [lifecycle.md](.claude/rules/lifecycle.md) Step 0 + Risk Classification), OR explicit `@vibe`/`@patch`/`@quickfix`/`@learn`, OR diff < 3 lines obviously cosmetic. `@vibe`/`@patch` while probe shows red signals → emit `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override).
 
-Any other input enters at least **PATCH(LOW)** with a Slim Spec — one paragraph stating scope + AC before code. Force a mode with `@vibe` / `@patch` / `@standard` / `@learn`.
+Any other input enters at least **PATCH(LOW)** with a Slim Spec — one paragraph stating scope + AC before code. Force a mode with `@vibe` / `@patch` / `@standard` / `@learn` / `@research`.
+
+### Research Eligibility (any trigger fires)
+
+- `@research` / `@analyze` / `@feasibility` shortcut
+- `[triage] suggested: RESEARCH` (research verb present, no Change verb)
+- Scenario D (Performance Tuning baseline)
+
+Research vs Vibe: mutually exclusive. Vibe = conversation only; Research = committed file. Both apply → Research wins.
 
 Standard mode composes PDD + SDD/SPEC + BDD + TDD — see [.claude/wiki/purpose.md](.claude/wiki/purpose.md).
 
@@ -117,3 +126,4 @@ Standard-required → emit one line before any output: `[Risk: HIGH | Scenario: 
 | Active skill index (+ archive index) | [.claude/skills/skill-index/SKILL.md](.claude/skills/skill-index/SKILL.md) |
 | Wiki root | [.claude/wiki/KNOWLEDGE_GRAPH.md](.claude/wiki/KNOWLEDGE_GRAPH.md) |
 | Task brief schema | [.claude/wiki/schema/task_brief_schema.md](.claude/wiki/schema/task_brief_schema.md) |
+| Research report schema | [.claude/wiki/schema/research_report_schema.md](.claude/wiki/schema/research_report_schema.md) |

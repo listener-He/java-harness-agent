@@ -10,10 +10,15 @@ Single source of truth for: how a request gets classified, what phases follow, w
 
 | Profile | When | Artifacts | Approval Gate |
 |---|---|---|---|
-| **LEARN** | Read/explain/understand code | None | No |
+| **LEARN** | Read/explain/understand code (conversation only) | None | No |
+| **RESEARCH** | Analysis / feasibility / baseline — produces a report, NOT code | research_report.md + launch_spec | No |
 | **PATCH** | TRIVIAL or LOW risk change | None (TRIVIAL) / Slim Spec (LOW) | No |
 | **STANDARD** | MEDIUM or HIGH risk change | task_brief.md + launch_spec | MEDIUM: FYI only; HIGH: required |
 | **MAINTENANCE** | Wiki/WAL operations, no code changes | WAL fragments | No |
+
+LEARN vs RESEARCH discriminator:
+- LEARN → conversation only, no artifact
+- RESEARCH → committed file at `.claude/wiki/archive/reports/`
 
 ## Step 0 — Triage Probe (auto-injected via UserPromptSubmit hook)
 
@@ -28,6 +33,7 @@ The probe synthesizes four signals into a `suggested_profile`:
 How to use the suggestion:
 - No `[triage]` block printed → input was heuristic-skipped (too short, pure question, `@learn`/`@read` shortcut). Proceed by normal shortcut rules.
 - `[triage]` present → **adopt the suggested profile or higher**. The probe never downgrades; you may only escalate further.
+- `suggested: RESEARCH` — risk-orthogonal. MUST NOT escalate RESEARCH to PATCH/STANDARD on danger keywords; treat `signals_yellow` as evidence-rigor amplifier within RESEARCH. RESEARCH → PATCH/STANDARD transition is user-driven only (explicit "now do it" after reviewing §5 Recommendations).
 - User used `@vibe`/`@patch` AND probe shows red signals → emit a `[Probe Override]` block at turn start enumerating ignored signals, then proceed in the requested mode. See [policy.md](policy.md#probe-override).
 
 ## Risk Classification
@@ -46,6 +52,7 @@ Pick the tier whose Probe Signals row best matches your `[triage]` output. When 
 - **LOW:** `Implement → QA → Archive` — no task_brief, no WAL; Slim Spec = one paragraph stating scope + AC before code.
 - **MEDIUM:** `Explorer → Propose(task_brief) → Review → Implement → QA → Archive`
 - **HIGH:** `Explorer → Propose(task_brief, ADR per actual decision) → Review(adversarial) → Approval Gate → Implement → QA → Archive`
+- **RESEARCH:** `Investigate → Synthesize → Archive` — no Propose/Review/Approval/ADR. Produces `research_report.md`. Trigger: `@research` shortcut OR `[Suggested Profile]: RESEARCH`. Risk-orthogonal: danger keywords → `signals_yellow` (rigor amplifier), NOT escalation. Detail: [RESEARCH Phase Flow](#research-phase-flow).
 
 ### Boundary rules
 
@@ -90,8 +97,17 @@ These override the default risk classification. When a scenario specifies a **Re
 
 ### Scenario D — Performance Tuning
 **Trigger:** Performance-focused request (slow query, high latency, memory/CPU).
-**Routing:** LEARN first (gather baseline evidence: bottleneck + metric + proposed fix). Then re-route as Change.
+**Routing:** RESEARCH first (baseline evidence → §5 Recommendations). User picks an Option → STANDARD task with §5.chosen as Context input.
 **Read (optional):** `.claude/skills-archive/external-research/SKILL.md` if baseline reveals an unknown systemic pattern.
+
+### Scenario RESEARCH — Analysis / Feasibility / Baseline
+**Trigger (any):** `@research` shortcut; OR research-class verb (analyze/research/evaluate/assess/feasibility/调研/分析/评估/可行性) with no Change verb co-occurring; OR `[Suggested Profile]: RESEARCH` from gatekeeper.
+**Routing:** Profile RESEARCH. Flow: Investigate → Synthesize → Archive. Skip Propose/Review/Approval/ADR. WAL default Skip.
+**Allowed edits:** ONLY `.claude/runs/reports/<...>_research.md` + active `launch_spec_*.md` row.
+**Forbidden edits:** `src/`, `pom.xml`, `*.sql`, migration files, any `task_brief.md`.
+**Artifact:** `.claude/runs/reports/<YYYY-MM-DD>_<slug>_research.md` per `wiki/schema/research_report_schema.md`. Archive moves to `wiki/archive/reports/<...>_research.md` (committed).
+**Gate (Archive only):** `python3 .claude/scripts/gates/research_report_gate.py --require <path>`
+**Read (optional):** `.claude/skills-archive/external-research/SKILL.md`.
 
 ### Scenario E — Dependency Upgrade
 **Trigger:** Changes to `pom.xml` dependencies.
@@ -130,6 +146,7 @@ Maintenance tasks have no code phases (no Explorer/Propose/Implement/QA). Detail
 | Shortcut | Profile | Effect |
 |---|---|---|
 | `@read` / `@learn` | LEARN | Read-only; never write code, never run gates |
+| `@research` / `@analyze` / `@feasibility` | RESEARCH | Produce report artifact, NOT code; skip Approval/ADR; default no WAL |
 | `@vibe` / `@patch` / `@quickfix` | PATCH | Act directly; skip Explorer/Propose/WAL even if heuristics suggest LOW |
 | `@standard` | STANDARD | Force task_brief + lifecycle, even if heuristics suggest PATCH |
 | `@gc` / `@librarian` | MAINTENANCE | Librarian compact flow |
@@ -137,8 +154,9 @@ Maintenance tasks have no code phases (no Explorer/Propose/Implement/QA). Detail
 | `@capabilities` / `@cap` | MAINTENANCE | Documentation Curator regenerates `.claude/CAPABILITIES.md` |
 | `@wiki-update` / `@milestone` | MAINTENANCE | Knowledge Extractor flow |
 
-Flags: `--risk low|medium|high`, `--launch`, `--no-launch`, `--test "<cmd>"`, `--yes` (auto-confirm).
+Flags: `--risk low|medium|high`, `--launch`, `--no-launch`, `--test "<cmd>"`, `--yes` (auto-confirm). RESEARCH uses `--scope quick|deep` (risk-orthogonal).
 `@learn` MUST NOT combine with `--launch` or `--writeback`.
+`@research` MUST NOT combine with `--writeback` — WAL opt-in is a single archive-time AskUserQuestion, default Skip.
 
 When no shortcut is given, classify by the Risk Classification table; default to the lower tier when ambiguous.
 
@@ -290,15 +308,61 @@ Do NOT fix by expanding scope. Wait for human decision.
 2. Plan Deviation Reflection: scope drift? dependency accuracy? plan invalidations? deferred ACs?
 3. Move task_brief to `.claude/wiki/archive/`
 
+<a id="research-phase-flow"></a>
+## RESEARCH Phase Flow
+
+```
+Investigate → Synthesize → Archive
+```
+
+### Phase R1: Investigate
+- MUST refine §1 Question via single `AskUserQuestion` if input ambiguous; no iteration loop
+- MUST append findings to §3 inline as collected; each bullet carries ≥ 1 evidence pointer per schema
+- MUST NOT `Edit`/`Write` outside `.claude/runs/reports/<this-report>.md`
+- Bounded exploration: § 2 step count > 12 with §3 not converging → emit `[Investigation Runaway]`, ask user to scope down
+
+### Phase R2: Synthesize
+- §4 Analysis MUST cite §3 bullets by number
+- §4 MUST mark uncertainty with `[high confidence]` / `[inferred]` / `[speculative]`
+- §5 Recommendations: 0–4 Option blocks per schema; each ends with explicit next-step
+- §7 Evidence Index MUST be backfilled (dedup §3 pointers)
+- §6 Open Questions per schema template
+
+### Phase R3: Archive
+- Gate (blocking): `python3 .claude/scripts/gates/research_report_gate.py --require <path>` — FAIL → roll back to R2 (max 2 retries)
+- WAL: single AskUserQuestion, default Skip; Extract limited to ≤ 2 dimensions
+- `mv .claude/runs/reports/<file>` → `.claude/wiki/archive/reports/<file>`
+- launch_spec row → `Status=DONE, Phase=Archive`
+- §5 Recommendations options surfaced as candidate next-step prompts; MUST NOT auto-trigger
+
+### Failure recording (failure_memory)
+
+| Pattern | Record key |
+|---|---|
+| R1 runaway (no §3 progress in 12 steps) | `--intent Research --phase Investigate --pattern "runaway"` |
+| R2 findings-without-synthesis (§3 ≥ 5 but §4 < 100 chars) | `--intent Research --phase Synthesize --pattern "findings-without-synthesis"` |
+| Gate FAIL on first archive | standard failure_memory flow |
+
 ## State Files
 
-Only two: `launch_spec_*.md` (task queue) and `task_brief.md` (per-task contract).
+Only two: `launch_spec_*.md` (task queue) and a per-task contract — either `task_brief.md` (STANDARD/PATCH) or `research_report.md` (RESEARCH).
 
 **Launch spec statuses:** PENDING | IN_PROGRESS | WAITING_APPROVAL | DONE | FAILED
 
-**Collab in-progress marker:** When a task is awaiting external review, its status stays `IN_PROGRESS` and the Artifact column gets a `| COLLAB:<slug>` suffix pointing to `.claude/runs/collabs/<date>_<slug>_collab.md`. This avoids adding a new status that breaks existing scripts — `find_active_task_brief.py` continues to find the row, and `/h-resume` reads the COLLAB marker to surface the pending review.
+**Risk column:** `LOW` | `MEDIUM` | `HIGH` (STANDARD/PATCH); `RES` (RESEARCH, risk-orthogonal).
 
-**Resume protocol:** Find IN_PROGRESS row → read Artifact → load task_brief Machine Section. If Artifact contains `| COLLAB:<slug>`, also read the collab state file and surface open questions before resuming implementation.
+**Phase column for RESEARCH:** single value `Research` covering R1/R2/R3 internally — launch_spec does NOT churn on sub-phase transitions.
+
+**Artifact column path patterns:**
+
+| Pattern | Profile | Resume context |
+|---|---|---|
+| `.claude/runs/task-briefs/<...>_task_brief.md` | STANDARD / PATCH | load Machine Section |
+| `.claude/runs/reports/<...>_research.md` | RESEARCH | load §1 Question + §3 progress |
+
+**Collab in-progress marker:** Awaiting external review → status stays `IN_PROGRESS`, Artifact column appends `| COLLAB:<slug>` → `.claude/runs/collabs/<date>_<slug>_collab.md`. Resume script reads the marker to surface pending review.
+
+**Resume protocol:** Find IN_PROGRESS row → read Artifact → dispatch by path pattern (table above). Honor COLLAB suffix if present.
 
 ---
 
@@ -318,8 +382,9 @@ These run automatically. The agent does not need to invoke them manually.
 
 **triage_probe UserPromptSubmit semantics (Step 0 routing input — see Part 1):**
 - Skips silently when prompt < 15 chars, contains `@learn`/`@read`/`@cap`/maintenance shortcuts, or is a question without an action verb
-- Synthesizes four signals (blast_radius, failure_history, ambiguity, danger_keywords) into `suggested_profile` ∈ {VIBE, PATCH, STANDARD-MEDIUM, STANDARD-HIGH}
-- Prints `[triage]` block only when profile > VIBE or there are red signals; silent on ALL-GREEN VIBE
+- Synthesizes five signals (blast_radius, failure_history, ambiguity, danger_keywords, intent_class) → `suggested_profile` ∈ {VIBE, RESEARCH, PATCH, STANDARD-MEDIUM, STANDARD-HIGH}
+- `intent_class=RESEARCH` (computed by `ambiguity_gate.classify_intent`) short-circuits Change-side escalation: danger keywords → `signals_yellow`, not `signals_red`
+- Prints `[triage]` block when profile > VIBE OR any red/yellow signal; silent on ALL-GREEN VIBE
 - Each upstream subprocess capped at 3s; total budget typically < 600ms
 - Quiet env: `CLAUDE_TRIAGE_QUIET=1`
 
@@ -360,6 +425,10 @@ These run automatically. The agent does not need to invoke them manually.
 
 ### QA → Archive
 - Run `python3 .claude/scripts/gates/secrets_linter.py --paths "<changed files>"`
+
+### RESEARCH → Archive (R3)
+- `python3 .claude/scripts/gates/research_report_gate.py --require <report path>` (blocking)
+- FAIL → R2 (max 2 retries). PASS → WAL AskUserQuestion (default Skip) → `mv` into `wiki/archive/reports/`.
 
 ## Scenario-Specific Gates
 
