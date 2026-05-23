@@ -31,7 +31,7 @@ These **compete** for the same window. Pick exactly ONE primary reviewer per pro
 
 | Profile | Primary reviewer | Additional |
 |---|---|---|
-| TRIVIAL / LOW (PATCH) | [code-review-checklist](../skills/code-review-checklist/SKILL.md) (inline, self-correction loop) | — |
+| Vibe / Patch (PATCH profile) | [code-review-checklist](../skills/code-review-checklist/SKILL.md) (inline, self-correction loop) | — |
 | MEDIUM (STANDARD) | [code-reviewer](../agents/code-reviewer.md) sub-agent (isolated context) | — |
 | HIGH (STANDARD) | [code-reviewer](../agents/code-reviewer.md) sub-agent | [adversarial-review](../skills/adversarial-review/SKILL.md) Category B (one round) |
 

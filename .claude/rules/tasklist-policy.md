@@ -28,7 +28,7 @@ That's the full list. Nothing else opens TaskList.
 | Anti-trigger | Why no |
 |---|---|
 | STANDARD-MEDIUM full 6-phase tracking | `launch_spec` status + `task_brief` Phase already cover this — duplicate state machine |
-| PATCH / LOW profile | Task is short; opening TaskList is decoration |
+| PATCH profile (Vibe / Patch modes) | Task is short; opening TaskList is decoration |
 | LEARN profile | No work product; nothing to mark done |
 | Single tool call (one Bash, one Edit) | TaskList unit is a user-observable interval, not a tool call |
 | Sub-agent dispatch | The dispatch IS the atomic unit; don't wrap it |

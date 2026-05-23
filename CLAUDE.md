@@ -79,19 +79,30 @@ Production incident facts live under `.claude/wiki/incidents/<date>_<slug>.md`. 
 
 **Ingesting a new incident:** run `python3 .claude/scripts/local_intel/ingest_incident.py --help` — script saves the raw fact + prints a template; you write `.claude/wiki/incidents/<date>_<slug>.md` per the template. The `## 提醒未来 LLM` field is what every future session sees — write it well.
 
-## Three Modes
+## Four Modes
 
-| Mode | When | Flow |
-|---|---|---|
-| **Vibe** | LEARN, TRIVIAL, simple PATCH | Act directly. No task_brief, no Explorer, no WAL. |
-| **Research** | 调研 / 分析 / 评估 / 可行性 — deliverable is report, not code | Investigate → Synthesize → Archive. Produces `research_report.md`. Skip Propose/Review/Approval. Risk-orthogonal. |
-| **Standard** | MEDIUM/HIGH risk, public API/DB/auth changes, EPIC | Explorer → Propose → Review → [Approval if HIGH] → Implement → QA → Archive |
+| Mode | When | Profile (routing) | Flow |
+|---|---|---|---|
+| **Vibe** | TRIVIAL: probe ALL-GREEN AND no danger keyword, OR `@vibe`/`@quickfix`/`@learn`, OR diff <3 lines cosmetic | LEARN / PATCH(TRIVIAL) | Act directly. No spec, no Explorer, no WAL. |
+| **Patch** | LOW: probe `suggested=PATCH` (any single soft signal — blast 3–6 files, ambiguity FAIL, ≥2 recurring failures, MEDIUM keyword), OR explicit `@patch` | PATCH(LOW) | **Slim Spec** (one paragraph: scope + AC) → Implement → QA → Archive. No task_brief, no WAL prompt. |
+| **Research** | 调研 / 分析 / 评估 / 可行性 — deliverable is report, not code | RESEARCH | Investigate → Synthesize → Archive. Produces `research_report.md`. Skip Propose/Review/Approval. Risk-orthogonal. |
+| **Standard** | MEDIUM/HIGH risk, public API/DB/auth changes, EPIC | STANDARD | Explorer → Propose → Review → [Approval if HIGH] → Implement → QA → Archive |
+
+**Vocabulary:** *Mode* = user-facing label (Title-case, this table). *Profile* = internal routing tier (ALL-CAPS, see [lifecycle.md Profiles](.claude/rules/lifecycle.md#profiles)). Risk tiers (TRIVIAL/LOW/MEDIUM/HIGH) live inside Profiles.
 
 ### Vibe Eligibility (white-list, not fallback)
 
-Enter Vibe ONLY if: probe ALL-GREEN or heuristic-skipped (see [lifecycle.md](.claude/rules/lifecycle.md) Step 0 + Risk Classification), OR explicit `@vibe`/`@patch`/`@quickfix`/`@learn`, OR diff < 3 lines obviously cosmetic. `@vibe`/`@patch` while probe shows red signals → emit `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override).
+Enter Vibe ONLY if **all** hold: probe ALL-GREEN (or heuristic-skipped) AND no HIGH-tier danger keyword — OR an explicit `@vibe`/`@quickfix`/`@learn` shortcut — OR a diff <3 lines obviously cosmetic.
 
-Any other input enters at least **PATCH(LOW)** with a Slim Spec — one paragraph stating scope + AC before code. Force a mode with `@vibe` / `@patch` / `@standard` / `@learn` / `@research`.
+`@vibe` while probe shows red signals → emit `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override).
+
+### Patch Eligibility (white-list, not fallback)
+
+Enter Patch ONLY if: probe `suggested=PATCH` (per [lifecycle.md Risk Classification](.claude/rules/lifecycle.md#risk-classification)) — OR an explicit `@patch` shortcut.
+
+Patch MUST emit a **Slim Spec** (one paragraph stating scope + AC) before any code. No task_brief required.
+
+`@patch` while probe shows red signals → emit `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override).
 
 ### Research Eligibility (any trigger fires)
 
@@ -99,7 +110,9 @@ Any other input enters at least **PATCH(LOW)** with a Slim Spec — one paragrap
 - `[triage] suggested: RESEARCH` (research verb present, no Change verb)
 - Scenario D (Performance Tuning baseline)
 
-Research vs Vibe: mutually exclusive. Vibe = conversation only; Research = committed file. Both apply → Research wins.
+Research vs Vibe/Patch: mutually exclusive. Vibe/Patch = code path; Research = committed report file. Both apply → Research wins.
+
+Anything that fits none of the above → at least **Standard**. Force a mode with `@vibe` / `@patch` / `@standard` / `@learn` / `@research`.
 
 Standard mode composes PDD + SDD/SPEC + BDD + TDD — see [.claude/wiki/purpose.md](.claude/wiki/purpose.md).
 
@@ -111,6 +124,7 @@ Standard mode composes PDD + SDD/SPEC + BDD + TDD — see [.claude/wiki/purpose.
 4. Intent ambiguous: ask one clarifying question, then proceed.
 
 Vibe-eligible request → act, no classification line.
+Patch-eligible → emit a one-paragraph Slim Spec before code, then act.
 Standard-required → emit one line before any output: `[Risk: HIGH | Scenario: B] → task_brief required`.
 
 ## Single Sources of Truth
