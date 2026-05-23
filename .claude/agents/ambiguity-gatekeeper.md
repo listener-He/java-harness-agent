@@ -25,6 +25,8 @@ A request passes when ALL of these are present:
 | Missing outcome but action + target clear | ASK: "What does 'done' look like? — a passing test, a specific response?" |
 | Missing action (discussion only) | PASS as LEARN intent. No blocking. |
 | Vague adjectives ("better", "faster") without metrics | ASK: "How will we measure this? — latency under X ms, coverage above Y%?" |
+| Research-class verbs (analyze/research/evaluate/feasibility/调研/分析/评估/可行性) AND no Change verbs | PASS. Set `[Suggested Profile]=RESEARCH`. Recommend `/h-research` to the main agent. |
+| Research-class AND Change-class verbs co-occur (e.g. "分析后实现") | PASS. Set `[Suggested Profile]=STANDARD`. Note in `[Reason]`: "research is preamble to change — route to /h-brief; surface findings as Explorer evidence". |
 
 ## Runaway Exploration Stop
 
@@ -37,10 +39,19 @@ Return exactly this structured block — main agent parses it line by line:
 
 ```
 [Status]: PASS | FAIL
+[Suggested Profile]: LEARN | RESEARCH | PATCH | STANDARD
 [Undefined Scope]: <what is missing — unbounded blast radius, no measurable goal, missing precondition; or "none">
 [Must-Ask Questions]: <numbered clarifying questions with project context; or "none">
 [Reason]: <one-line summary of the blocking ambiguity; or "none" on PASS>
 ```
+
+`[Suggested Profile]` mapping:
+- `LEARN` — Missing action / discussion-only intent
+- `RESEARCH` — Research-class verbs present AND no Change-class verbs
+- `PATCH` — Single small change, low risk
+- `STANDARD` — Multi-step change, or research+change co-occurring
+
+Main agent consumes this field to pick the entry command: `/h-research` for RESEARCH, `/h-brief` for PATCH/STANDARD, no command for LEARN.
 
 ## Gate
 

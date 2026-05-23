@@ -36,6 +36,52 @@ _STOP_WORDS = {
 }
 
 
+# Module-level so triage_probe can import these for RESEARCH classification.
+CHANGE_ACTION_SIGNALS = [
+    "implement", "add", "create", "fix", "refactor", "optimize", "design",
+    "migrate", "update", "remove", "delete", "integrate", "deploy", "test", "review",
+    "build", "generate", "write", "change", "modify",
+    "设计", "实现", "修复", "新增", "改造", "优化", "落地", "上线", "测试",
+]
+
+RESEARCH_ACTION_SIGNALS = [
+    "analyze", "research", "investigate", "evaluate", "assess",
+    "audit", "explore", "study", "survey", "examine", "compare",
+    "feasibility", "baseline",
+    "分析", "调研", "评估", "研究", "探索", "考察",
+    "审视", "对比", "可行性", "基线",
+]
+
+
+def classify_intent(intent: str) -> str:
+    """Return 'RESEARCH' if research verbs present and no Change verbs; else 'CHANGE'.
+
+    Research-only signals route the prompt toward /h-research; mixed signals
+    (e.g. "先分析再实现") default to CHANGE since the eventual deliverable is code.
+
+    Chinese verb/noun ambiguity: "实现" is both verb (implement) and noun
+    (implementation). Strip common noun-form contexts before Change-verb match
+    so "分析 X 的实现" classifies as RESEARCH, not CHANGE.
+    """
+    t = _normalize(intent)
+
+    # Noun-form contexts where a Change-class word is actually a noun ("X 的实现").
+    # Order matters: longer phrases first so they strip before their substrings.
+    NOUN_CONTEXTS = (
+        "当前实现", "现有实现", "已有实现", "当前设计", "现有设计", "现有架构",
+        "的实现", "的设计", "的改造", "的优化", "的修复",
+    )
+    t_for_change = t
+    for nc in NOUN_CONTEXTS:
+        t_for_change = t_for_change.replace(nc, " ")
+
+    has_research = _has_any(t, RESEARCH_ACTION_SIGNALS)
+    has_change = _has_any(t_for_change, CHANGE_ACTION_SIGNALS)
+    if has_research and not has_change:
+        return "RESEARCH"
+    return "CHANGE"
+
+
 def _has_content_word(text: str) -> bool:
     """Return True if the text contains at least one content word (non-stop-word, len >= 4).
     This is an open-ended fallback so that business domain objects (table names, service
@@ -62,24 +108,20 @@ def _check_intent(intent: str) -> tuple[int, list[str]]:
         # Chinese equivalents
         "流程", "门控", "生命周期",
     ]
-    action_signals = [
-        # English
-        "implement", "add", "create", "fix", "refactor", "optimize", "design",
-        "migrate", "update", "remove", "delete", "integrate", "deploy", "test", "review",
-        "build", "generate", "write", "change", "modify",
-        # Chinese
-        "设计", "实现", "修复", "新增", "改造", "优化", "落地", "上线", "测试",
-    ]
     success_signals = [
         # English
         "pass", "deliver", "working", "verified", "evidence",
         "test case", "doc", "documented", "returns",
+        "report", "findings", "analysis",
         # Chinese
         "验收", "通过", "可用", "跑通", "门禁", "测试用例", "接口返回", "文档",
+        "报告", "分析报告", "调研报告", "可行性报告",
     ]
 
     has_process_object = _has_any(t, process_object_signals)
-    has_action = _has_any(t, action_signals)
+    # Research verbs count as valid actions — pure research prompts ("分析下 X")
+    # must not FAIL the gate just because they lack Change verbs.
+    has_action = _has_any(t, CHANGE_ACTION_SIGNALS) or _has_any(t, RESEARCH_ACTION_SIGNALS)
     has_success = _has_any(t, success_signals)
 
     # Fallback: if no hardcoded process object matched, check for any content word
@@ -140,17 +182,28 @@ def main() -> int:
     code = max(code1, code2)
     reasons = reasons1 + reasons2
 
+    intent_class = classify_intent(args.intent)
+    hint_line = ""
+    if intent_class == "RESEARCH":
+        hint_line = "HINT: research-class intent → /h-research (RESEARCH profile)"
+
     if code == 0:
         print("OK: ambiguity gate pass")
+        if hint_line:
+            print(hint_line)
         return 0
     if code == EXIT_WARN:
         print("WARN: ambiguity gate")
         for r in reasons:
             print(f"- {r}")
+        if hint_line:
+            print(hint_line)
         return EXIT_WARN
     print("FAIL: ambiguity gate")
     for r in reasons:
         print(f"- {r}")
+    if hint_line:
+        print(hint_line)
     return EXIT_FAIL
 
 

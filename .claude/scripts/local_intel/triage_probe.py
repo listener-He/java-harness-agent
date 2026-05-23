@@ -38,7 +38,13 @@ import code_index  # noqa: E402
 import failure_memory  # noqa: E402
 import ambiguity_gate  # noqa: E402
 
-PROFILE_RANK = {"VIBE": 0, "PATCH": 1, "STANDARD-MEDIUM": 2, "STANDARD-HIGH": 3}
+PROFILE_RANK = {
+    "VIBE": 0,
+    "RESEARCH": 1,
+    "PATCH": 2,
+    "STANDARD-MEDIUM": 3,
+    "STANDARD-HIGH": 4,
+}
 
 # Shortcuts where the user has already declared intent; probe must not override.
 HARD_SKIP_SHORTCUTS = (
@@ -191,14 +197,42 @@ def _scan_danger_keywords(prompt: str) -> tuple[list[str], list[str]]:
 
 
 def _synthesize(blast: dict, failure: dict, ambiguity: str,
-                high_kw: list[str], medium_kw: list[str]) -> tuple[str, list[str]]:
-    """Combine signals → (profile, signals_red).
+                high_kw: list[str], medium_kw: list[str],
+                intent_class: str) -> tuple[str, list[str], list[str]]:
+    """Combine signals → (profile, signals_red, signals_yellow).
 
     Conservative thresholds: a single soft signal lands at PATCH, never MEDIUM.
     MEDIUM requires either large blast radius (≥7), high-recurrence failures
     (≥3), or a soft signal that compounds. HIGH is reserved for HIGH-tier
     danger keywords (auth, schema, framework routing files).
+
+    RESEARCH short-circuits Change-side escalation: when intent_class=RESEARCH,
+    danger keywords and large blast radius become signals_yellow (heightened
+    evidence rigor) rather than signals_red (profile escalation). The user's
+    declared intent is "produce a report", not "change code" — even when the
+    research touches sensitive areas.
     """
+    signals_yellow: list[str] = []
+
+    if intent_class == "RESEARCH":
+        profile = "RESEARCH"
+        signals: list[str] = []
+        if high_kw:
+            signals_yellow.append(
+                f"research touches sensitive area ({', '.join(high_kw[:2])}) — "
+                "require ≥ 10 evidence entries"
+            )
+        if blast["files"] >= 7:
+            signals_yellow.append(
+                f"research spans {blast['files']} files — keep §1 Question scoped"
+            )
+        if failure["recurring"] >= 2:
+            signals_yellow.append(
+                f"failure history: {failure['recurring']} recurring patterns — "
+                "factor into Findings"
+            )
+        return profile, signals, signals_yellow
+
     profile = "VIBE"
     signals: list[str] = []
 
@@ -238,7 +272,7 @@ def _synthesize(blast: dict, failure: dict, ambiguity: str,
     elif medium_kw:
         signals.append(f"keywords: {', '.join(medium_kw[:3])}")
 
-    return profile, signals
+    return profile, signals, signals_yellow
 
 
 def main() -> int:
@@ -275,11 +309,16 @@ def main() -> int:
     failure = _probe_failure_history()
     ambiguity = _probe_ambiguity(prompt)
     high_kw, medium_kw = _scan_danger_keywords(prompt)
-    profile, signals = _synthesize(blast, failure, ambiguity, high_kw, medium_kw)
+    intent_class = ambiguity_gate.classify_intent(prompt[:500])
+    profile, signals, signals_yellow = _synthesize(
+        blast, failure, ambiguity, high_kw, medium_kw, intent_class
+    )
 
     result = {
         "suggested_profile": profile,
+        "intent_class": intent_class,
         "signals_red": signals,
+        "signals_yellow": signals_yellow,
         "blast_radius": blast,
         "failure_history": failure,
         "ambiguity": ambiguity,
@@ -292,7 +331,7 @@ def main() -> int:
         return 0
 
     # Human-readable: silent when probe sees nothing worth flagging.
-    if profile == "VIBE" and not signals:
+    if profile == "VIBE" and not signals and not signals_yellow:
         return 0
 
     print("[triage]")
@@ -300,6 +339,10 @@ def main() -> int:
     if signals:
         print("signals_red:")
         for s in signals:
+            print(f"  - {s}")
+    if signals_yellow:
+        print("signals_yellow:")
+        for s in signals_yellow:
             print(f"  - {s}")
     if high_kw or medium_kw:
         print(f"keywords: {', '.join(high_kw + medium_kw)}")
