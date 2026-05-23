@@ -31,10 +31,10 @@ gh run list --limit 10 --status failure --json databaseId,name,conclusion,headBr
 ```
 Present the list to user via `AskUserQuestion`:
 - "Which failed CI run do you want to ingest?"
-  - One option per run: `#<id> — <name> on <branch> at <createdAt>`
-  - "None of these — I'll provide a file path"
+  - One option per run: `#<id> — <name> on <branch> at <createdAt>` (cap at 4 per Claude Code's `maxItems: 4`; if more failures exist, list the 4 most recent)
+  - Do NOT add a manual "None of these" option — it duplicates Claude Code's auto-appended `Other` free-text and steals a slot. Users who want to provide a file path or out-of-list run id type it into `Other`.
 
-After user selects → `gh run view <selected-id> --log-failed [--repo <repo>]`.
+After user selects a listed id → `gh run view <selected-id> --log-failed [--repo <repo>]`. If user typed a file path via `Other` → read that file directly.
 
 If `gh run list` returns empty (no failures) → STOP: `No failed CI runs found in the last 10 runs.`
 

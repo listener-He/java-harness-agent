@@ -36,10 +36,10 @@ RELEASE_BRANCHES=$(git branch -r --list 'origin/release/*' 'origin/release-*' 'o
 Q: Active release/hotfix branches detected. Pick PR base:
 - <DEFAULT_BRANCH> (recommended) — feature PR or routine fix
 - <first release branch> — hotfix targeting active release line
-- Other release branch — provide branch name via Other free-text
+- <second release branch, if exists> — hotfix targeting that release line
 ```
 
-Limit options to 4 (Claude Code spec); if > 2 release branches exist, list the two most recent and rely on Other for the rest.
+Cap at 3 manual options so Claude Code's auto-appended `Other` (free-text branch name) fits within `maxItems: 4`. If more than 2 release branches exist, list the two most recent and rely on `Other` for the rest. Do NOT add a manual option whose label starts with "Other" — it visually collides with the auto-appended `Other` slot.
 
 ## Step 3 — Pre-PR gates
 

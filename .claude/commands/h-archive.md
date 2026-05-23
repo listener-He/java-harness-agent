@@ -28,7 +28,7 @@ Q: Artifact path "<resolved>" does not match a known archive mode. How to procee
 - Abort — I'll diagnose the launch_spec manually
 ```
 
-If user picks STANDARD or RESEARCH, follow up with a single text input asking for the actual file path (use `AskUserQuestion` with one option labeled "(paste path)" so `Other` auto-captures the response). Then re-enter the dispatch table with the corrected path. Abort → STOP with no state change.
+If user picks STANDARD or RESEARCH, ask in plain text in your next message: `Paste the actual <task_brief|report> file path.` Do NOT call `AskUserQuestion` for this follow-up — its schema requires `minItems: 2` options, and a pure free-text prompt is cleaner as plain text. Once user provides the path, re-enter the dispatch table with the corrected path. Abort → STOP with no state change.
 
 ## Step 1 — Resolve target task_brief (STANDARD branch)
 
