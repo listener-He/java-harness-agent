@@ -17,7 +17,18 @@ Dispatch by path pattern (first match wins):
 |---|---|---|
 | `.claude/runs/task-briefs/*_task_brief.md` | STANDARD | Step 1 → Step 8 (below) |
 | `.claude/runs/reports/*_research.md` | RESEARCH | Step 1R → Step 4R (further below) |
-| (no match) | — | STOP, report `No active task — pass slug as argument or ensure launch_spec has an IN_PROGRESS row` |
+| (no match) | — | invoke `AskUserQuestion` per block below |
+
+When no pattern matches but `find_active_task_brief.py` returned non-empty (path exists but unrecognized), or `$ARGUMENTS` slug resolved to ambiguous candidates, invoke `AskUserQuestion`:
+
+```
+Q: Artifact path "<resolved>" does not match a known archive mode. How to proceed?
+- Treat as STANDARD — point me at the task_brief path
+- Treat as RESEARCH — point me at the report path
+- Abort — I'll diagnose the launch_spec manually
+```
+
+If user picks STANDARD or RESEARCH, follow up with a single text input asking for the actual file path (use `AskUserQuestion` with one option labeled "(paste path)" so `Other` auto-captures the response). Then re-enter the dispatch table with the corrected path. Abort → STOP with no state change.
 
 ## Step 1 — Resolve target task_brief (STANDARD branch)
 

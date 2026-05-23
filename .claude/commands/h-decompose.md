@@ -25,7 +25,29 @@ Branch on input-type:
 
 **PRD path** — invoke `product-manager-expert` skill Mode A (Ingestion) on the input.
 - Read its output: validated requirement list, conflicts flagged (if any).
-- If CRITICAL conflicts → STOP and surface them. Do not proceed to decomposition with embedded conflicts.
+- CRITICAL conflicts present → invoke `AskUserQuestion` block below; do NOT default to STOP.
+
+**Conflict triage** AskUserQuestion (fires only when `product-manager-expert` returns `[Conflicts]` with severity=CRITICAL):
+
+Mode A — `[Conflicts]` field IS structured (one conflict per line with id):
+
+```
+Q: <N> CRITICAL conflict(s) detected by product-manager-expert. Select per-conflict action (multiSelect):
+- conflict-<id-1>: <one-line summary>
+    Subscribe options: defer (annotate [Dep-Risk]) | fix-now (block decomposition) | skip-subtask (drop affected requirement)
+- conflict-<id-2>: <one-line summary>
+- ...
+```
+
+Use one AskUserQuestion with multiSelect for action; loop per conflict if > 4 (Claude Code limit). All conflicts must be resolved before continuing.
+
+Mode B — `[Conflicts]` field is unstructured prose (degraded fallback):
+
+```
+Q: Conflicts detected but not individually addressable. How to proceed?
+- Abort (recommended) — STOP /h-decompose; user resolves conflicts in PRD source first
+- Proceed anyway — surface conflicts in [Dep-Risk Flags] of final report; decompose with embedded ambiguity
+```
 
 **EPIC path** — invoke `adversarial-review` skill with Category C, EPIC frame:
 > "Assume the task decomposition has a hidden sequential dependency that makes parallel execution impossible. Which two tasks, and what shared state forces the ordering?"

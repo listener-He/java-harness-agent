@@ -15,8 +15,31 @@ Read the brief in full. Capture: slug, risk, spec_mode, §1 Context (title line)
 
 ## Step 2 — Parse remaining `$ARGUMENTS`
 
-- `--base <branch>` (optional): target branch for the PR. Default: `main` (or the repo's default branch via `gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name'`).
+- `--base <branch>` (optional): target branch for the PR. When absent, apply detection rule below.
 - `--draft` (optional): create as a draft PR.
+
+**Base branch detection** (fires only when `--base` was not provided):
+
+```bash
+DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name')
+RELEASE_BRANCHES=$(git branch -r --list 'origin/release/*' 'origin/release-*' 'origin/hotfix/*' | sed 's|origin/||' | xargs)
+```
+
+| Detection result | Action |
+|---|---|
+| No release/hotfix branches found | Use `$DEFAULT_BRANCH` silently; record in [Report] block |
+| At least one release/hotfix branch found | invoke `AskUserQuestion` block below |
+
+**Release branch confirm** AskUserQuestion:
+
+```
+Q: Active release/hotfix branches detected. Pick PR base:
+- <DEFAULT_BRANCH> (recommended) — feature PR or routine fix
+- <first release branch> — hotfix targeting active release line
+- Other release branch — provide branch name via Other free-text
+```
+
+Limit options to 4 (Claude Code spec); if > 2 release branches exist, list the two most recent and rely on Other for the rest.
 
 ## Step 3 — Pre-PR gates
 

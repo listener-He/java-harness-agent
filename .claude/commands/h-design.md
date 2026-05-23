@@ -20,12 +20,28 @@ Read the brief in full. Capture:
 
 | Brief state | Action |
 |---|---|
-| `spec_mode: SLIM` (LOW risk) | STOP — SLIM mode doesn't carry §8/§9; fill the 5 SLIM sections directly without dispatching an architect. |
-| `risk: MEDIUM`, §8 already substantive (no `TODO(h-brief)` markers) | STOP — design already done; if you want to revise, edit the brief manually or delete the section first. |
-| `risk: HIGH`, §8 ADR section finalized (either ≥1 ADR file linked OR explicit `Mechanical implementation — no irreversible architectural decision; no ADR required.` line) | STOP — design already done. |
+| `spec_mode: SLIM` (LOW risk) | invoke `AskUserQuestion` "SLIM routing" block below |
+| `risk: MEDIUM`, §8 already substantive (no `TODO(h-brief)` markers) | invoke `AskUserQuestion` "already-designed" block below |
+| `risk: HIGH`, §8 ADR section finalized (either ≥1 ADR file linked OR explicit `Mechanical implementation — no irreversible architectural decision; no ADR required.` line) | invoke `AskUserQuestion` "already-designed" block below |
 | `risk: MEDIUM` or `HIGH`, §8/§9 placeholder or missing (when dimension declared) | Proceed to Step 3. |
 
-Refusing re-design is deliberate — accidentally re-dispatching the architect mid-Implement is a major scope-creep vector.
+**SLIM routing** AskUserQuestion:
+
+```
+Q: Brief is spec_mode: SLIM. SLIM does not carry §8/§9 architecture sections. How to proceed?
+- Edit SLIM sections directly (recommended) — open the brief, fill the 5 SLIM sections without dispatching architect
+- Force re-classification — STOP /h-design; user re-runs the brief-scaffold command with --risk medium|high first
+```
+
+**Already-designed** AskUserQuestion:
+
+```
+Q: §8/§9 already substantive (last edited <ISO timestamp from git log>). Re-design risks scope creep. How to proceed?
+- Keep current design (recommended) — STOP /h-design; resume next phase
+- Force re-design — delete §8 (and §9 if present) inline, then proceed to Step 3 dispatch
+```
+
+User picks "Force re-design" → main agent deletes the matching section bodies in-place (leave headers), then continues to Step 3. Any other choice → STOP with no state change.
 
 ## Step 3 — Build dispatch prompt and invoke `system-architect`
 

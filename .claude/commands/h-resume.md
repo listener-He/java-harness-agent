@@ -24,9 +24,18 @@ List `.claude/runs/launch-specs/launch_spec_*.md`. Then:
 | launch_spec has `WAITING_APPROVAL` rows | `Task <slug> is WAITING_APPROVAL — surface its task_brief Human Section, ask user to approve/reject before resuming.` Read that brief's Human Section and present it. |
 | `IN_PROGRESS` row Artifact column contains `\| COLLAB:<collab-slug>` | Read `.claude/runs/collabs/*_<collab-slug>_collab.md`. Surface `status`, `open_questions`, and `deliverable_path`. Report: `Task is IN_PROGRESS but pending external collab review. Run /h-collab-update <collab-slug> to log feedback or sign off before continuing implementation.` |
 | launch_spec has only `PENDING` rows | `N pending tasks. Suggest starting <first-pending-slug> next.` List dependencies if any row has unmet `Depends On`. |
-| `IN_PROGRESS` row exists but Artifact path is broken (file missing or already in `.claude/wiki/archive/`) | `Inconsistency: IN_PROGRESS points to missing/archived brief <path>. Likely a prior Archive run did not update launch_spec. Ask user whether to mark DONE or restore.` |
+| `IN_PROGRESS` row exists but Artifact path is broken (file missing or already in `.claude/wiki/archive/`) | INCONSISTENT — invoke `AskUserQuestion` per block below; do NOT auto-fix without explicit selection. |
 
-After diagnosis, STOP and wait for user. Do not auto-fix inconsistencies.
+When INCONSISTENT, invoke `AskUserQuestion`:
+
+```
+Q: IN_PROGRESS row points to <Artifact path> which is missing or already archived. How to resolve?
+- Mark DONE (recommended) — prior /h-archive likely succeeded but didn't update launch_spec; flip row to DONE
+- Restore IN_PROGRESS pointer — recover artifact from archive if path is in wiki/archive/; manual editing required
+- Investigate manually — STOP, surface diagnostic dump, await user instruction
+```
+
+User selection drives the action; do NOT execute any state change before the answer. After the chosen action completes (or "Investigate manually" → diagnostic dump), STOP.
 
 ## Step 3 — Load task_brief Machine Section
 
@@ -75,7 +84,8 @@ Optionally append: `[Notes]: <anything anomalous worth flagging>`.
 
 ## Hard constraints
 
-- **Read-only command** — do NOT edit any file. No fixes, no auto-recovery, no status changes to launch_spec rows.
+- **Read-only by default** — Steps 1, 3, 4, 5 MUST NOT edit any file. Auto-recovery is FORBIDDEN.
+- **Single user-authorized write exception**: Step 2 INCONSISTENT branch + user selects "Mark DONE" → flip the broken IN_PROGRESS row to DONE in the target `launch_spec_*.md`. NO other writes permitted.
 - **No code execution** beyond the listed probe scripts (`find_active_task_brief.py`, optional `failure_memory.py summary`).
 - **No sub-agent dispatch** — this is a synchronous probe.
 - Anti-loop: if any probe script fails twice, STOP and report the script error verbatim.

@@ -20,7 +20,18 @@ If risk=LOW → spec_mode=SLIM. If risk=MEDIUM or HIGH → spec_mode=STANDARD.
 ## Step 2 — Compute paths
 
 - Brief path: `.claude/runs/task-briefs/<YYYY-MM-DD>_<slug>_task_brief.md` (use today's date)
-- If file already exists → STOP and report. Do not overwrite; ask user whether to pick a new slug or explicitly delete the existing brief first.
+- If file already exists → invoke `AskUserQuestion` "slug collision" block below. Do NOT silently overwrite.
+
+**Slug collision** AskUserQuestion:
+
+```
+Q: Brief already exists at <path> (created <ISO timestamp from file mtime>). How to proceed?
+- Pick new slug (recommended) — provide alternate slug via Other; re-enter Step 2 with the new slug
+- Resume prior brief — STOP /h-brief; use the resume command to continue prior work
+- Delete prior + retry — main agent deletes prior file in-place, then re-renders Step 4
+```
+
+User picks "Delete prior + retry" → main agent `rm` the prior file, then proceeds to Step 3. Other choices → STOP with no state change.
 
 ## Step 3 — Decide `dimensions:` (STANDARD only; skip for SLIM)
 

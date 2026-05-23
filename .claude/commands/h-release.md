@@ -63,7 +63,39 @@ Follow the release skill's execution flow directly:
 **Step 3 (skill):** Determine version.
 - If version arg provided → validate semver, use it.
 - If `patch`/`minor`/`major` shorthand → compute from current version in pom.xml.
-- If absent → show current version + computed variants, ask via `AskUserQuestion`.
+- If absent → invoke "version bump" `AskUserQuestion` block below. MUST be explicit — version bump is irreversible (tag + push).
+
+**Version bump** AskUserQuestion (fires only when `[version]` argument was absent):
+
+Read current version from `pom.xml` (parse `<version>` of root project). Compute three candidates.
+
+```
+Q: Current version: v<current>. Pick bump tier:
+- patch (recommended for fixes) — v<current+patch>
+- minor (recommended for features) — v<current+minor>
+- major (recommended for breaking changes) — v<current+major>
+```
+
+Preview block per option:
+
+```
+patch:
+  next: v<current+patch>
+  changelog header: "## v<current+patch> — <date>"
+  Use when: bug fixes / internal refactors / no behavior change
+
+minor:
+  next: v<current+minor>
+  changelog header: "## v<current+minor> — <date>"
+  Use when: backward-compatible feature additions
+
+major:
+  next: v<current+major>
+  changelog header: "## v<current+major> — <date>"
+  Use when: breaking API changes / removed features / incompatible schema changes
+```
+
+Single-select only (preview supported only on single-select per Claude Code spec). User selection becomes `<version>` for the remaining steps.
 
 ## Step 5 — Generate WAL changelog
 

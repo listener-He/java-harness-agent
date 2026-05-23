@@ -8,9 +8,31 @@ Phase R1 entry for RESEARCH profile. Produces `research_report.md`; binds to `la
 ## Step 1 — Parse `$ARGUMENTS`
 
 - `<slug>` (required, kebab-or-snake-case) — STOP if missing.
-- `--scope quick|deep` (default `quick`) — drives §3 quota (quick ≥ 5 findings; deep ≥ 15).
+- `--scope quick|deep` — when absent, invoke the "scope confirm" `AskUserQuestion` block below before proceeding. Do NOT silently default to `quick` — choice affects §3 quota (5 vs 15 findings) and is hard to revise mid-investigation.
 
 If invoked after `[triage] suggested: RESEARCH` without a slug → propose one (≤ 4 words, kebab-case), confirm via `AskUserQuestion`, then proceed.
+
+**Scope confirm** AskUserQuestion (fires only when `--scope` was not on the command line):
+
+```
+Q: Pick research scope. Drives §3 Findings quota and gate behavior at archive.
+- quick (recommended) — §3 ≥ 5 findings; total ≥ 80 lines; quick exploration of well-bounded question
+- deep — §3 ≥ 15 findings; total ≥ 200 lines; broad / cross-system investigation
+```
+
+Preview block per option:
+
+```
+quick:
+  scope: quick
+  §3 quota: ≥ 5 evidence-pointed findings
+  Use when: question is well-bounded (one module / one decision)
+
+deep:
+  scope: deep
+  §3 quota: ≥ 15 evidence-pointed findings
+  Use when: cross-system / multi-option / unknown-unknowns investigation
+```
 
 ## Step 2 — Compute path
 
