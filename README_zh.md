@@ -42,6 +42,7 @@ CLAUDE.md                      # 唯一入口
 │   ├── h-decompose.md           # PRD/EPIC 预校验 → task-decomposition-guide 拆解 → N 个 brief 骨架 → DAG 绑定 launch_spec
 │   ├── h-brief.md               # 按 schema 生成 task_brief + 双向绑定 launch_spec
 │   ├── h-design.md              # 用严格 Source Documents 契约派遣 system-architect → HIGH 写 ≥2 ADR → 填 brief §8/§9
+│   ├── h-research.md            # 脚手架 RESEARCH 模式报告（按 schema 渲染 7 个章节）；--scope quick|deep 决定 §3 findings 配额；launch_spec 绑定为 RES/Research/IN_PROGRESS
 │   ├── h-resume.md              # 只读：定位 IN_PROGRESS 任务 + 恢复 Machine Section + 给出 Next Action（自动检测 COLLAB 阻断状态）
 │   ├── h-fix-bug.md             # ticket/手动输入 → root-cause-debug Phase 1（必须完成）→ 按风险创建 launch_spec 行；p1/p2 触发 h-incident
 │   ├── h-gates.md               # Phase/Scenario 感知的 gate 套件 + failure_memory 失败记录
@@ -287,6 +288,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 | `/h-decompose <slug> <prd-path>` | Explorer → Propose | PRD/EPIC 预校验 → task-decomposition-guide 拆解 → N 个 brief 骨架 → DAG 绑定 launch_spec | EPIC/PRD 涉及 ≥3 个域，需要 INVEST 合规切片 |
 | `/h-brief <slug>` | Propose 入口 | 按 schema 生成 task_brief + 1 行 launch_spec | 单个 STANDARD 任务起步（范围已知） |
 | `/h-design [slug]` | Propose 设计 | 用严格 Source Documents 契约派遣 system-architect；HIGH 写 ≥2 ADR；填 brief §8/§9 | HIGH/EPIC 需要设计备选方案；MEDIUM 需要 1 个显式选项 |
+| `/h-research <slug> [--scope quick\|deep]` | RESEARCH 入口 | 按 schema 脚手架 `research_report.md`（7 个章节）+ launch_spec 绑定为 `RES`/`Research`/`IN_PROGRESS`；`--scope` 决定 §3 findings 配额（5 vs 15 条） | 调研 / 分析 / 可行性 / 基线评估；`[triage]` 建议 RESEARCH；交付物是报告不是代码 |
 
 ### 日常开发
 
@@ -371,6 +373,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 | 模式 | 适用场景 | 生命周期 | 写回 | 产物 |
 |------|---------|---------|------|------|
 | **LEARN** | 阅读/理解代码 | 无 | 否 | 无 |
+| **RESEARCH** | 调研 / 分析 / 可行性 / 基线评估 — 交付物是报告不是代码 | `Investigate → Synthesize → Archive` | 可选（默认跳过；归档时按需启用） | `research_report.md` |
 | **PATCH** (TRIVIAL) | 拼写、日志、空检查、单域 bug 修复（≤3 文件，不动公开 API/DB/认证） | `Implement → QA → Archive` | 否 | 无 |
 | **PATCH** (LOW) | 跨两个相关域的小 bug 修复（4–6 文件，仍不动公开 API/DB/认证） | `Implement → QA → Archive` | 否 | 无 |
 | **STANDARD** (MEDIUM) | 功能开发、新 API、跨模块调用 | 完整 6 阶段（无门禁） | 是 (WAL) | `task_brief.md` |

@@ -42,6 +42,7 @@ CLAUDE.md                      # Single entry point
 │   ├── h-decompose.md           # PRD/EPIC pre-validation → task-decomposition-guide → N brief skeletons → DAG bound to launch_spec
 │   ├── h-brief.md               # Schema-compliant task_brief + bidirectional launch_spec binding
 │   ├── h-design.md              # Dispatch system-architect with strict Source Documents → write ≥2 ADRs (HIGH) → fill brief §8/§9
+│   ├── h-research.md            # Scaffold RESEARCH profile report skeleton (7 sections per schema); --scope quick|deep drives §3 findings quota; bind launch_spec at RES/Research/IN_PROGRESS
 │   ├── h-resume.md              # Read-only: locate IN_PROGRESS task + restore Machine Section + report Next Action
 │   ├── h-fix-bug.md             # Ticket/manual → root-cause-debug Phase 1 (MUST complete) → launch_spec row at correct risk level; p1/p2 triggers h-incident
 │   ├── h-gates.md               # Phase/scenario-aware gate suite + failure_memory recording
@@ -287,6 +288,7 @@ User-invokable shortcuts that wrap multi-step lifecycle flows into single invoca
 | `/h-decompose <slug> <prd-path>` | Explorer → Propose | PRD/EPIC pre-validation → task-decomposition-guide → N brief skeletons → DAG bound to launch_spec | EPIC/PRD spanning ≥3 domains; need INVEST-compliant slicing |
 | `/h-brief <slug>` | Propose entry | Schema-compliant task_brief + 1 launch_spec row | Single STANDARD task starting from a known scope |
 | `/h-design [slug]` | Propose design | Dispatch system-architect with strict Source Documents contract; write ≥2 ADRs (HIGH); fill brief §8/§9 | HIGH/EPIC needs design alternatives; MEDIUM needs 1 explicit option |
+| `/h-research <slug> [--scope quick\|deep]` | RESEARCH entry | Scaffold `research_report.md` skeleton (7 sections per schema) + bind to launch_spec at `RES`/`Research`/`IN_PROGRESS`; `--scope` drives §3 quota (5 vs 15 findings) | Analysis / feasibility / baseline (调研/分析/可行性); `[triage]` suggested RESEARCH; deliverable is a report, not code |
 
 ### Daily Development
 
@@ -320,7 +322,7 @@ User-invokable shortcuts that wrap multi-step lifecycle flows into single invoca
 
 Each command file is opinionated: hard step ordering, fixed STOP conditions, explicit Allowed Edit boundaries. See `.claude/commands/h-<name>.md` for the full contract per command.
 
-**Note — no `/h-implement` or `/h-qa`**: the Implement and QA phases are intentionally NOT wrapped in commands. Those phases are the core write-code / write-test / run-tests work that the LLM does directly under the active `task_brief` contract — there is no state transition or gate orchestration to wrap. The `h-*` commands cover entry/exit (`/h-from-ticket`, `/h-decompose`, `/h-brief`, `/h-pr`, `/h-archive`), design (`/h-design`), audit (`/h-gates`), and special scenarios (`/h-fix-bug`, `/h-incident`, `/h-ci`, `/h-release`). Implement/QA happen in between, plain.
+**Note — no `/h-implement` or `/h-qa`**: the Implement and QA phases are intentionally NOT wrapped in commands. Those phases are the core write-code / write-test / run-tests work that the LLM does directly under the active `task_brief` contract — there is no state transition or gate orchestration to wrap. The `h-*` commands cover entry/exit (`/h-from-ticket`, `/h-decompose`, `/h-brief`, `/h-pr`, `/h-archive`), design (`/h-design`), research (`/h-research`), audit (`/h-gates`), and special scenarios (`/h-fix-bug`, `/h-incident`, `/h-ci`, `/h-release`). Implement/QA happen in between, plain.
 
 ---
 
@@ -373,6 +375,7 @@ Every user request is classified into an **intent** and routed to a **profile**:
 | Profile | Use case | Lifecycle | Write-back | Artifact |
 |---------|----------|-----------|------------|----------|
 | **LEARN** | Read/explain code | None | No | None |
+| **RESEARCH** | Analysis / feasibility / baseline (调研/分析) — deliverable is a report, not code | `Investigate → Synthesize → Archive` | Optional (default Skip; opt-in at archive) | `research_report.md` |
 | **PATCH** (TRIVIAL) | Typos, logging, null checks, single-domain bugfix (≤3 files, no public API/DB/auth change) | `Implement → QA → Archive` | No | None |
 | **PATCH** (LOW) | Small bugfix spanning two related domains (4–6 files, still no public API/DB/auth change) | `Implement → QA → Archive` | No | None |
 | **STANDARD** (MEDIUM) | Feature, new API, cross-module | Full 6-phase (no gate) | Yes (WAL) | `task_brief.md` |
