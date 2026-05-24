@@ -85,7 +85,7 @@ Findings are facts. Interpretations go in §4.
 
 ## Size limit
 
-- Hard cap: 3000 lines per single report (override of default 500-line wiki cap; see `policy.md`).
+- Hard cap: 10000 lines per single report (override of default 3000-line wiki cap; see `policy.md`).
 - Approaching cap → split:
   - Main: `<slug>_research.md` keeps §1/§2/§4/§5/§6 + §3 summary
   - Appendix: `<slug>_evidence_<topic>.md` carries full §3 + §7

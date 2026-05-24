@@ -26,6 +26,9 @@ AGENTS_DIR = Path(".claude/agents")
 SKILLS_DIR = Path(".claude/skills")
 DEFAULT_OUT = Path(".claude/CAPABILITIES.md")
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "wiki"))
+from wiki_linter import DEFAULT_MAX_LINES as WIKI_MAX_LINES  # noqa: E402
+
 
 # --- frontmatter parsing -----------------------------------------------------
 
@@ -161,7 +164,7 @@ QUICK_ROUTING: list[tuple[str, str]] = [
     ("整理 / 合并 wiki", "`@gc` → librarian (compact flow)"),
     ("萃取 / 清理过期 wiki", "`@distill` → librarian (distill flow，需人审批)"),
     ("提取知识到 WAL", "`@wiki-update` → knowledge-extractor"),
-    ("拆分超长 index (>500 行)", "knowledge-architect"),
+    (f"拆分超长 index (>{WIKI_MAX_LINES} 行)", "knowledge-architect"),
     ("写文档 / README / Javadoc / 迁移指南", "documentation-curator (Mode A — free-form documentation)"),
     ("看现在有什么能力", "`@capabilities` → documentation-curator (Mode B — 本报告)"),
     ("生产事故 / hotfix", "Scenario A — incident-response (skills-archive)"),

@@ -69,7 +69,14 @@ If non-empty → STOP: `Uncommitted changes detected. Commit or stash before cre
 
 Format: `<type>(<scope>): <brief title>`
 
-- `<type>`: infer from task_brief §5 Business Logic or labels — `feat` / `fix` / `refactor` / `chore` / `docs`. Default `feat` if uncertain.
+- `<type>`: infer via priority chain (first match wins). Default `feat` only if every check below misses:
+  1. Slug starts with `fix-` (matches `/h-fix-bug` output) → `fix`
+  2. launch_spec row note contains `Scenario A` (Emergency Hotfix) or `Scenario DEBUG` → `fix`
+  3. launch_spec row note contains `Scenario E` (Dependency) OR §5 Business Logic mentions dependency / library / version upgrade → `chore`
+  4. §1 Context first verb (after trimming whitespace and Chinese 把/将) is `refactor` / `重构` / `simplify` / `rewrite` → `refactor`
+  5. Brief frontmatter `dimensions` contains `api` AND §5 describes a new endpoint / breaking change → `feat`
+  6. Slug starts with `docs-` OR Allowed Scope contains only `.md` files → `docs`
+  7. Otherwise → `feat`
 - `<scope>`: derive from primary Allowed Scope path (e.g. `order`, `auth`, `payment`).
 - `<brief title>`: first non-blank line of §1 Context (the one-sentence task name). Strip trailing period.
 

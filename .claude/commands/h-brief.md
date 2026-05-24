@@ -11,11 +11,13 @@ Extract:
 
 - `<slug>` (required, kebab-or-snake-case) — STOP and ask user if missing.
 - `--risk low|medium|high` (optional) — explicit risk tier.
-- `--slim` (optional) — force `spec_mode: SLIM` (only legal when risk=LOW).
+- `--slim` (optional) — **alias for `--risk low`**; identical effect, kept as ergonomic shorthand.
 
-If `--risk` is absent: look for the `[triage]` block earlier in this conversation. Use `suggested_profile` to set risk (VIBE → reject this command; PATCH → LOW; STANDARD-MEDIUM → MEDIUM; STANDARD-HIGH → HIGH). If no `[triage]` found and conversation has no risk discussion → ask user via `AskUserQuestion` before proceeding. Do not silently default.
+**Conflict rule:** `--slim` together with `--risk medium|high` is contradictory → STOP and ask user to pick one. `--slim` alone or `--risk low` alone are both fine.
 
-If risk=LOW → spec_mode=SLIM. If risk=MEDIUM or HIGH → spec_mode=STANDARD.
+If neither flag is provided: look for the `[triage]` block earlier in this conversation. Use `suggested_profile` to set risk (VIBE → reject this command; PATCH → LOW; STANDARD-MEDIUM → MEDIUM; STANDARD-HIGH → HIGH). If no `[triage]` found and conversation has no risk discussion → ask user via `AskUserQuestion` before proceeding. Do not silently default.
+
+`spec_mode` is derived automatically from risk — no separate flag needed: LOW → SLIM, MEDIUM/HIGH → STANDARD.
 
 ## Step 2 — Compute paths
 
@@ -41,9 +43,14 @@ Infer from Allowed Scope already discussed in this conversation. Default mapping
 |---|---|
 | `controller/`, `web/`, `*.controller.*`, `api/` | `api` |
 | `mapper/`, `dao/`, `entity/`, `repository/`, migration SQL | `data` |
+| `service/`, `*Service.java`, `usecase/`, `application/` | `domain` |
+| `event/`, `*Event.java`, `*Listener.java`, `outbox/` | `domain` + `patterns` |
+| `saga/`, `state-machine/`, `*Saga.java`, `*StateMachine.java` | `domain` + `patterns` |
 | new bounded context / state machine / aggregate root | `domain` |
 | new component, deployment topology change, new 3rd-party dep | `tech_arch` |
 | explicit Strategy/Factory/Saga/Outbox/ACL discussion | `patterns` |
+
+Allowed dimension keywords are exactly: `domain`, `api`, `data`, `tech_arch`, `patterns`. Do not invent new ones — `task_brief_gate.py` will reject anything else.
 
 Empty `dimensions: []` is legal for pure internal refactor / harness tooling — use it deliberately, not as a fallback for laziness.
 
@@ -115,7 +122,7 @@ Output exactly this block:
 [Launch Spec]: <path> (row appended)
 [task_brief_gate]: OK | WARN(<one-line>) | FAIL(<one-line>)
 [Open Placeholders]: <count, with section numbers — e.g. "3 in §3 §4 §8">
-[Next Action]: <one specific sentence — e.g. "fill §3 API Contract using endpoint discussed above, then move to Review">
+[Next Action]: Run /h-design <slug> (MEDIUM/HIGH with `tech_arch` or `patterns` dimension), OR begin Implement directly (LOW, or no architectural dimension declared). If placeholders remain in spec-floor sections §1/§5/§6/§7: fill via conversation BEFORE /h-design.
 ```
 
 ## Hard constraints

@@ -150,7 +150,7 @@ Output exactly this block:
   ...
 [Parallelizable Now]: <list of subtasks with no unmet deps>
 [Dep-Risk Flags]: <list from Step 2, or "none">
-[Next Action]: <one specific sentence — typically "Start with /h-resume to pick up <first-parallelizable> via its part_<i> brief">
+[Next Action]: Run /h-resume to enter <first-parallelizable-part-slug>. For parallel work on multiple parts, flip the next part's launch_spec row from PENDING to IN_PROGRESS first, then re-run /h-resume.
 ```
 
 ## Hard constraints

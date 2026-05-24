@@ -23,6 +23,23 @@ Read the collab state file. Capture: `status`, `type`, `deliverable`, `task_brie
 
 Also read the deliverable file at the `deliverable` path — needed to show context when asking for feedback.
 
+**Pre-flight: handle already-signed-off collab.** If `status: SIGNED_OFF` and `--signoff` was NOT passed, invoke `AskUserQuestion`:
+
+```
+Q: This collab is already signed off (signed_off_by: <name>, date: <date>).
+   How do you want to re-engage with it?
+- Add follow-up note only (recommended) — append to feedback_log without changing status; launch_spec untouched
+- Re-open for amendments — flip status back to PENDING_REVIEW; re-append `| COLLAB:<date>-<slug>` marker to launch_spec Artifact column; then proceed to Step 3
+- Cancel — STOP with no changes
+```
+
+Branch on selection:
+- **Add follow-up** → ask the user for the note text (plain follow-up question in chat), append a `feedback_log` entry with `summary: <note>`, `changes_applied: no`, `questions_added: 0`, `blockers: none`. Status STAYS `SIGNED_OFF`. Skip Steps 3–6; jump to Step 7 Report with `[Collab Update Status]: UPDATED` and `[Collab Status]: SIGNED_OFF`.
+- **Re-open** → in the collab state file, change `status: SIGNED_OFF` → `status: PENDING_REVIEW`, clear `signed_off_by` and `signed_off_date`, leave `feedback_log` intact. In the launch_spec, locate the slug's row and append `| COLLAB:<YYYYMMDD>-<slug>` back to the Artifact column. Then continue to Step 3.
+- **Cancel** → STOP, zero writes.
+
+If `--signoff` IS passed on an already-signed-off collab, treat as idempotent: skip to Step 7 with `[Collab Update Status]: UPDATED` and a note that status was already SIGNED_OFF.
+
 ## Step 3 — Collect feedback
 
 If `--signoff` is NOT set → collect feedback via `AskUserQuestion`:

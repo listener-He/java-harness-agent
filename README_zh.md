@@ -102,11 +102,62 @@ CLAUDE.md                      # 唯一入口
 │   ├── schema/                # 契约模板（task_brief、subagent_contract）
 │   └── wiki/                  # 领域、API、数据、架构、规格、测试、审查、偏好
 ├── scripts/
-│   ├── gates/                 # 确定性门禁脚本（scope_guard、secrets_linter 等）
-│   ├── wiki/                  # Wiki 维护（压缩、检查、schema 校验）
-│   ├── tools/                 # 引导、归档、GC 辅助
-│   ├── local_intel/           # 零成本本地搜索（wiki_search、code_index、failure_memory）
-│   └── harness/               # 引擎
+│   ├── gates/                                  # 21 个确定性门禁脚本（block / warn / pass 三级输出）
+│   │   ├── _severity.py                        # 严重度分类辅助（内部）
+│   │   ├── _severity_audit.py                  # 严重度输出审计 harness
+│   │   ├── ambiguity_gate.py                   # 输入歧义探测（UserPromptSubmit hook）
+│   │   ├── api_breaking_gate.py                # public API 破坏性变更检查（Scenario C）
+│   │   ├── bypass_audit_gate.py                # 审计绕过安全的尝试（--no-verify 等）
+│   │   ├── comment_linter_java.py              # Java 注释风格校验
+│   │   ├── consistency_gate.py                 # 跨文件一致性检查
+│   │   ├── delivery_capsule_gate.py            # 交付包验证
+│   │   ├── dependency_gate.py                  # pom.xml 依赖检查（Scenario E）
+│   │   ├── impact_gate.py                      # 变更影响半径评估
+│   │   ├── linter.py                           # 通用 linter runner
+│   │   ├── migration_gate.py                   # SQL 迁移检查（Scenario B1/B2）
+│   │   ├── research_report_gate.py             # research_report.md 校验（Phase R3 门禁）
+│   │   ├── run.py                              # 门禁套件 runner
+│   │   ├── scope_guard.py                      # Allowed Scope 强制（PreToolUse hook + /h-gates）
+│   │   ├── secrets_linter.py                   # 密钥泄漏扫描（PostToolUse hook + PR 前 + 发版前）
+│   │   ├── skill_index_linter.py               # SKILL.md 索引一致性检查
+│   │   ├── subagent_return_gate.py             # 校验 sub-agent 的结构化返回格式
+│   │   ├── task_brief_gate.py                  # task_brief.md 结构校验（Propose→Implement 边界）
+│   │   ├── wal_template_gate.py                # WAL fragment 模板合规
+│   │   └── writeback_gate.py                   # Archive WAL 存在性检查（支持 --accept-stub 对应 None）
+│   ├── harness/                                # 7 个运行时入口（Claude Code hooks + engine）
+│   │   ├── engine.py                           # 中央运行时：门禁分派 + 严重度聚合
+│   │   ├── find_active_task_brief.py           # 从 launch_spec 的 IN_PROGRESS 行定位活跃 task_brief
+│   │   ├── post_tool_use_hook.py               # PostToolUse hook 入口（对改动文件跑 secrets_linter）
+│   │   ├── pre_tool_use_hook.py                # PreToolUse hook 入口（Edit/Write 前跑 scope_guard）
+│   │   ├── stop_hook.py                        # Stop hook（每轮结束检查）
+│   │   ├── subagent_stop_hook.py               # SubagentStop hook（校验 sub-agent 返回）
+│   │   └── user_prompt_submit_hook.py          # UserPromptSubmit hook（注入 failure-memory + ambiguity + triage）
+│   ├── local_intel/                            # 8 个零成本本地情报工具
+│   │   ├── code_index.py                       # Java 符号索引 + --impact-of 调用方枚举
+│   │   ├── failure_memory.py                   # 门禁失败台账（query / record / summary）
+│   │   ├── incident_hint.py                    # PostToolUse 辅助：编辑相关文件时浮出 incident.md
+│   │   ├── ingest_incident.py                  # 事故原始事实摄取 + 输出模板提示
+│   │   ├── skill_hint.py                       # PostToolUse 辅助：浮出相关 SKILL.md
+│   │   ├── triage_probe.py                     # UserPromptSubmit 分流：5 信号 → suggested_profile
+│   │   ├── turn_health_check.py                # 每轮健康诊断
+│   │   └── wiki_search.py                      # BM25 搜索 .claude/wiki/
+│   ├── tools/                                  # 6 个辅助脚本（一次性操作）
+│   │   ├── archive_session_artifacts.py        # 把 task_brief 从 runs/ 移到 wiki/archive/
+│   │   ├── bootstrap.py                        # 首次项目引导
+│   │   ├── brief_from_decomposition.py         # 从拆分文件生成每个子任务的 brief 骨架
+│   │   ├── capabilities_report.py              # 重新生成 .claude/CAPABILITIES.md
+│   │   ├── import_external_skills.py           # 从外部源导入 skill
+│   │   └── librarian_gc.py                     # Wiki GC 编排器（@gc / @librarian 调用）
+│   └── wiki/                                   # 9 个 wiki 维护脚本
+│       ├── compactor.py                        # WAL fragment 合并到主 wiki
+│       ├── distill_threshold.py                # 计算 distill 的过期阈值
+│       ├── distill.py                          # 提取 + 删除过期或重复的知识文件
+│       ├── graph_checker.py                    # 知识图链接完整性
+│       ├── pref_tag_checker.py                 # 偏好标签一致性
+│       ├── schema_checker.py                   # Wiki 文档 schema 校验
+│       ├── wiki_compactor.py                   # Wiki 级压缩编排器
+│       ├── wiki_linter.py                      # Wiki 体检（死链 / 超长 / 孤岛）
+│       └── zero_residue_audit.py               # 零残留清理审计（distill 之后）
 ├── workflow/
 │   ├── role_matrix.json       # 角色到阶段的挂载表
 │   ├── EXAMPLES.md            # STANDARD 任务的端到端示例
@@ -295,7 +346,8 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 | 命令 | 阶段 | 效果 | 使用时机 |
 |------|------|------|---------|
 | `/h-resume` | 任意时刻 | 只读：定位 IN_PROGRESS 任务 + 恢复 Machine Section 上下文 + 给出 Next Action；自动检测 COLLAB 阻断状态 | 会话中断后恢复 |
-| `/h-fix-bug [<issue-url>] [--priority p1\|p2\|p3]` | Explorer | GitHub issue 或手动输入 → `failure_memory` 查询 → `root-cause-debug` Phase 1（必须完成，才能写修复代码）→ launch_spec 行；p1/p2 触发 `h-incident` | QA 提的 bug 或线上反馈；优先级决定风险等级及是否创建 incident 文件 |
+| `/h-status [--all] [--days <N>] [--slug <prefix>]` | 任意时刻 | 只读：列出 launch_spec 所有行，按状态分组（IN_PROGRESS / WAITING_APPROVAL / PENDING 可并行 / PENDING 被阻塞 / DONE / FAILED），按优先级链算出 Next Action | 全局队列视图；忘了在做什么时、`/h-release` 前（要求队列清空）、待办积压时 |
+| `/h-fix-bug [<issue-url>] [--priority p1\|p2\|p3]` | Explorer | GitHub issue 或手动输入 → `failure_memory` 查询 → `root-cause-debug` Phase 1（必须完成，才能写修复代码）→ launch_spec 行；p1/p2 触发 `h-incident`，且禁止走 inline-PATCH 路径 | QA 提的 bug 或线上反馈；优先级决定风险等级及是否创建 incident 文件 |
 | `/h-gates [--phase X] [--scenario Y]` | 阶段边界 / commit 前 | 跑所有适用 gate（scope、secrets、task_brief、scenario B/C/E）；失败记录到 failure_memory | Phase 转换或 commit 前的完整 diff 审计 |
 | `/h-archive` | Phase 6 | Plan Deviation Reflection → knowledge-extractor → 归档 brief → wiki_linter → 标记 launch_spec DONE | STANDARD 任务收尾 |
 
@@ -321,6 +373,113 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 | `/h-incident <source> <slug>` | 任意时刻 | 包装 `ingest_incident.py` + 按 TEMPLATE 写结构化 incident `.md`；强制 `## 提醒未来 LLM` 质量自检 | 真实生产事故（Sentry/Jira/oncall/复盘）进入记忆系统 |
 
 每个命令文件都是强约束的：步骤顺序固定、STOP 条件明确、Allowed Edit 边界显式。完整契约见 `.claude/commands/h-<name>.md`。
+
+### 命令使用指南
+
+当你卡在"该用哪个命令"或"下一步跳哪个"时翻这一节。上面的表格说明每个命令**做什么**；本节帮你决定**用哪个**。
+
+#### 入口决策树 ——"我手上有什么？"
+
+| 起点 | 跑哪个命令 |
+|---|---|
+| GitHub Issue / Jira / Linear ticket | `/h-from-ticket` |
+| PRD / EPIC（多需求文档） | `/h-decompose` |
+| Bug（不知道根因 / 报错） | `/h-fix-bug` |
+| "调研 / 评估 / 可行性 / 分析" | `/h-research` |
+| 生产事故（已发生，要记录） | `/h-incident` |
+| CI 挂了（要分类 + 路由） | `/h-ci` |
+| 对话中已经讨论清楚需求 | `/h-brief` |
+| 会话断了 / 切机器重连 | `/h-resume` |
+| 忘了在做什么 / 看全局队列 | `/h-status` |
+| 发版打 tag | `/h-release` |
+
+> **Vibe / Patch（TRIVIAL/LOW）不走任何 `/h-*` 命令。** 直接说"修一下 X"即可，主 agent 内联处理；TaskList/WAL/brief 都不需要。`/h-*` 是 MEDIUM/HIGH/RESEARCH/EPIC 才走的"结构化通道"。
+
+#### 阶段流程图 ——"已经在做任务，下一步跳哪个？"
+
+```
+启动                Propose           Implement         交付         归档
+────────          ──────────         ──────────       ───────      ──────
+/h-from-ticket  → /h-brief    →    （写代码） →     /h-pr    →   /h-archive
+/h-decompose      /h-design                          （建 PR）    （移到 wiki/archive,
+/h-fix-bug        （HIGH 强制）                                    写 WAL, 标记 DONE）
+                      │
+                      └── /h-collab  ←→  /h-collab-update    （任何 phase 都可插）
+                                         （跨团队对齐时）
+
+旁路工具（不在主链路上，按需触发）：
+  /h-gates     跑全套 gate（commit / phase 切换 / PR 前）
+  /h-resume    单任务深度恢复
+  /h-status    全局队列概览（每任务一行）
+  /h-ci        CI 挂了之后吃 log 进系统
+  /h-incident  已经修完的事故记录到 wiki/incidents/
+  /h-release   发版（要求 launch_spec 队列清空）
+
+RESEARCH 路径（无代码）：
+  /h-research  →  （调研 §3 Findings）  →  /h-archive
+```
+
+##### "下一步该跑哪个" —— 阶段速判
+
+| 当前状态 | 下一步 |
+|---|---|
+| 刚达成需求共识 | `/h-from-ticket`（有 issue）或 `/h-brief`（凭对话） |
+| `/h-brief` 跑完，骨架已有 | `/h-design <slug>`（HIGH 必走，MEDIUM 看是否声明 `tech_arch`/`patterns`） |
+| `/h-design` 跑完，进入 Review | 内联 review；HIGH 走 Approval Gate |
+| Approval 通过，开始写代码 | 不用跑命令，直接写；用 `/h-gates --phase implement` 跑 compile/test |
+| 代码 + 测试都过了 | `/h-pr` |
+| PR 合并 | `/h-archive` |
+| 哪一步都不知道自己在哪 | `/h-resume`（单任务）或 `/h-status`（全局） |
+
+#### 容易混淆的"双胞胎"
+
+| 用哪个 | 区分关键 |
+|---|---|
+| `h-brief` **vs** `h-from-ticket` | 对话中已说清需求 → `h-brief`；从 GitHub/Jira/Linear 拉 → `h-from-ticket` |
+| `h-brief` **vs** `h-decompose` | 单个任务 → `h-brief`；多需求 PRD/EPIC → `h-decompose` |
+| `h-fix-bug` **vs** `h-from-ticket` | bug + 不知道根因 → `h-fix-bug`（强制根因分析）；ticket + 已知做什么 → `h-from-ticket` |
+| `h-incident` **vs** `h-fix-bug` | 还没修，要找根因 → `h-fix-bug`；已经修完，沉淀给未来 → `h-incident` |
+| `h-design` **vs** 自然 Propose | MEDIUM/HIGH + 声明了 `tech_arch`/`patterns` dimension → `h-design`；纯 CRUD 不需要 |
+| `h-research` **vs** `h-brief` | 产物是**报告**（决策依据，不写代码）→ `h-research`；产物是**代码** → `h-brief` |
+| `h-pr` **vs** `h-archive` | `h-pr` = 建 PR（IN_PROGRESS 保持）；`h-archive` = PR 合并后收尾（IN_PROGRESS → DONE） |
+| `h-gates` **vs** PreToolUse hook | hook 是每次 Edit 单文件 tripwire；`h-gates` 是 phase 切换 / commit 前的全量审计 |
+| `h-collab` **vs** `h-collab-update` | 第一次起跨团队文档 → `h-collab`；外部回了反馈，要记录 → `h-collab-update` |
+| `h-resume` **vs** `h-status` | `h-resume` = 单任务深度恢复（读 task_brief Machine Section）；`h-status` = 全局浅扫（每任务一行），回答"我现在有几个任务、卡在哪、能并行哪个" |
+
+#### 常见卡壳
+
+**Q：刚说完任务，到底跑 `/h-brief` 还是直接干？**
+看 `[triage]` 块的 `suggested:`：VIBE/PATCH → 直接干；STANDARD-MEDIUM/HIGH → `/h-brief`；RESEARCH → `/h-research`。没看到 `[triage]`？自问："这事改的是 auth/migration/error code 吗？多于 5 个文件吗？"——任一是 → `/h-brief`。
+
+**Q：`/h-brief` 问我 risk，我不知道选哪个**
+- **HIGH**：动 auth、动 schema 修改（ALTER/DROP/RENAME）、动 lifecycle/policy/error code、动 secrets。**注意**：纯 `CREATE TABLE` 不是 HIGH，是 B1 / LOW。
+- **MEDIUM**：影响 ≥ 7 个文件，或动 public API/Controller，或失败历史已出现 ≥ 3 次相关 pattern。
+- **LOW**：其它所有情况。
+
+**Q：`/h-brief` 问我 dimensions，schema 关键字是哪些？**
+只有 5 个：`api`（controller/Mapping/DTO）、`data`（mapper/entity/SQL）、`domain`（service/event/saga/业务规则/状态机）、`tech_arch`（新组件/部署/依赖）、`patterns`（Strategy/Factory/Saga/Outbox/ACL）。可单选、多选；空数组（纯 refactor）也合法。
+
+**Q：跑完 `/h-design`，下一步呢？**
+- **MEDIUM** → 直接进 Implement（写代码），compile/test 通过后 `/h-pr`
+- **HIGH** → 先触发 Approval Gate（手动确认 Human Section），然后才能 Implement
+- 忘了当前阶段 → `/h-resume` 重读 launch_spec
+
+**Q：忘了 slug 是什么**
+`/h-resume` 会打印当前 IN_PROGRESS 任务的 slug；或 `/h-status` 看全部；或 `ls .claude/runs/task-briefs/` 看文件名。大多数命令的 `[slug]` 都可省略，会自动从 launch_spec 拉。
+
+**Q：`/h-archive` 跑出来说 "SLIM 不能跑"**
+Step 1.5 守门：`spec_mode: SLIM` 任务不走 WAL 流程。手动 `mv .claude/runs/task-briefs/<file> .claude/wiki/archive/`，然后改 launch_spec 行 `IN_PROGRESS` → `DONE`。
+
+**Q：命令 chain 里有 `/h-collab`，但我们项目不跨团队**
+`/h-collab` 是可选旁路，不在主流水线上。**忽略即可**。跨团队（前端/三方/QA/ops）需要文档对齐时才用。
+
+#### 反 anti-pattern
+
+- **不要把 `/h-*` 当成 Vibe 的替代品**。简单改动直接说"改一下 X"，不要套 `/h-brief --slim`。
+- **不要 chain 调用 `/h-*`**。它们是 LLM prompt 模板，不是可调用函数。"执行 inline" = 你（main agent）按 Steps 跑，不是 `Bash` 跑。
+- **不要在 PATCH 任务上跑 `/h-archive`**。Step 1.5 会拒。
+- **不要在没 `[triage] suggested: RESEARCH` 时跑 `/h-research`**（除非显式 `@research`）。它和 `/h-brief` 互斥。
+- **`/h-release` 跑之前先 `/h-archive` 所有 IN_PROGRESS 任务**。否则 Gate A 会拒。
 
 ---
 

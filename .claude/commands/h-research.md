@@ -117,7 +117,7 @@ Row format:
 [Report Path]: <path>
 [Launch Spec]: <path> (row appended, IN_PROGRESS)
 [Gate]: skeleton parsed; substantive gate deferred to archive
-[Next Action]: Begin R1 — <one specific first step inferred from slug + scope>
+[Next Action]: Begin R1 investigation — <first concrete step inferred from slug + scope>. When §3 Findings + §4 Analysis converge to §5 Recommendations: run /h-archive to validate the report and ship.
 ```
 
 ## Hard constraints

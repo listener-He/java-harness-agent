@@ -14,8 +14,8 @@ Extract:
   - `jira`: ticket ID (e.g. `PROJ-123`)
   - `linear`: issue ID or URL
   - `manual`: any slug for naming purposes
-- `--slim` (optional): force LOW risk / SLIM spec mode
 - `--risk low|medium|high` (optional): explicit override
+- `--slim` (optional): **alias for `--risk low`** — ergonomic shorthand, identical effect. Conflicts with `--risk medium|high` (STOP if both passed). `spec_mode` derives from risk: LOW → SLIM, MEDIUM/HIGH → STANDARD.
 
 If `<source>` or `<ticket-ref>` are missing or invalid → STOP and ask user to re-invoke with corrected args.
 
@@ -92,10 +92,17 @@ Write `.claude/runs/task-briefs/<YYYY-MM-DD>_<slug>_task_brief.md` following `.c
 | `milestone` | Human Section: target release context |
 | Acceptance criteria lines (if present in body) | §7 AC — convert to Given/When/Then format |
 
-For §7 ACs: if ticket body contains explicit "Acceptance Criteria" or "Definition of Done" section, convert each bullet to a Given/When/Then AC. If absent, write:
-```
-<!-- TODO(h-from-ticket): AC not found in ticket — define before Review phase. Source: <ticket-ref> -->
-```
+For §7 ACs, apply detection rules in order (first match wins):
+
+1. **Explicit "Acceptance Criteria" / "Definition of Done" / "验收标准" section** → convert each bullet to Given/When/Then.
+2. **GitHub Issue task list** — lines matching `^[-*] \[ \]` (unchecked checkboxes, any nesting): each becomes a candidate AC. Rewrite each as Given/When/Then. Skip `^[-*] \[x\]` (already-done sub-tasks, not pending ACs). Example:
+   - `- [ ] User can log in with email + password` →
+     `Given a registered user with valid credentials, when they submit the login form, then they are authenticated and redirected to /home.`
+   - When 4+ checkboxes are found AND none are clearly user-observable behavior (e.g. "Add unit tests", "Update README" — implementation tasks not ACs), fall through to rule 3 instead of fabricating Given/When/Then from chores.
+3. **Neither pattern present** — write the placeholder:
+   ```
+   <!-- TODO(h-from-ticket): AC not found in ticket — define before Review phase. Source: <ticket-ref> -->
+   ```
 
 For SLIM spec: fill the 5 SLIM sections (Change Summary / Scope of Change / Risk & Rollback / Verification & Evidence).
 
@@ -144,7 +151,7 @@ Output exactly this block:
 [AC Status]: EXTRACTED(<N> ACs) | PLACEHOLDER (missing from ticket)
 [Ambiguity Gate]: PASS | PASS-after-<N>-questions
 [task_brief_gate]: OK | WARN(<one-line>) | FAIL(<one-line>)
-[Next Action]: <one specific sentence — e.g. "Run Explorer phase: local-code-intelligence → input-classifier, then /h-brief to fill §7 ACs before Review">
+[Next Action]: Run Explorer phase inline (`local-code-intelligence` + `input-classifier`), then /h-design <slug> if MEDIUM/HIGH with architectural dimension, OR begin Implement directly if LOW. If §7 ACs are placeholders: fill them via conversation BEFORE moving past Explorer.
 ```
 
 ## Hard constraints

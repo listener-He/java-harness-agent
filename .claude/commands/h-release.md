@@ -1,5 +1,5 @@
 ---
-description: Drive Scenario RELEASE — load/build release rules, version bump, changelog from WAL, tag, push, verify CI
+description: Release pipeline — queue completeness check, version bump, changelog from WAL fragments, tag + push, CI verification
 argument-hint: [version] [--dry-run] [--refresh] [--base <branch>]
 ---
 
@@ -44,10 +44,18 @@ git rev-parse --abbrev-ref HEAD
 ```
 Must equal `--base` value (default `main`). If not → STOP: `Not on release branch '<base>'. Switch branches or use --base.`
 
-### Gate D — Secrets scan
+### Gate D — Secrets scan (scope = full delta since last release tag)
 ```bash
-python3 .claude/scripts/gates/secrets_linter.py --paths "$(git diff HEAD~1 HEAD --name-only)"
+LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+if [ -n "$LAST_TAG" ]; then
+  CHANGED_FILES=$(git diff "$LAST_TAG..HEAD" --name-only)
+else
+  CHANGED_FILES=$(git log --name-only --pretty=format: -50 | sort -u | grep -v '^$')
+fi
+python3 .claude/scripts/gates/secrets_linter.py --paths "$CHANGED_FILES"
 ```
+**Why this range** (not `HEAD~1 HEAD`): a release ships every commit since `LAST_TAG`, not just the last one. Scanning only the latest commit lets earlier secret leaks slip through. If no prior tag exists (first release), fall back to last 50 commits.
+
 Exit 2 → STOP. Exit 1 (WARN) → surface, continue.
 
 ## Step 4 — Execute release skill Steps 0–3 (rules + version)

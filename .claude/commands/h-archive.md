@@ -34,6 +34,14 @@ If user picks STANDARD or RESEARCH, ask in plain text in your next message: `Pas
 
 Read the resolved task_brief's Machine Section before continuing. Capture: AC list, Allowed Scope, declared dependencies.
 
+## Step 1.5 — Reject SLIM/PATCH-mode brief
+
+Read the resolved task_brief frontmatter. If `spec_mode: SLIM` (or any value other than `STANDARD` / `RESEARCH`), STOP with the message:
+
+> Archive WAL is STANDARD/RESEARCH-only per policy. SLIM/PATCH tasks do not require WAL fragments. To finalize a SLIM task: move the brief to `.claude/wiki/archive/` manually (or via `archive_session_artifacts.py --slug <slug>`), then flip the launch_spec row to DONE.
+
+Do NOT proceed to Step 2. This guard exists because path-based dispatch in Step 0 cannot distinguish SLIM from STANDARD — both live under `runs/task-briefs/`. Frontmatter is the only authoritative discriminator.
+
 ## Step 2 — Plan Deviation Reflection (mandatory, feeds extraction)
 
 Append a `## Plan Deviation Reflection` section to the task_brief covering each bullet (write "none" if not applicable, do NOT silently omit):
@@ -163,7 +171,7 @@ Output exactly this block, nothing else:
 [remember entries]: <list or "n/a — no cross-session knowledge">
 [wiki_linter]: OK | WARN(<one-line>) | FAIL(<one-line>)
 [Plan Deviations]: <one-sentence summary>
-[Next]: <one sentence — usually "ready for next task" or a deferred-AC follow-up>
+[Next]: Run /h-status to see remaining queue. If empty: /h-brief or /h-from-ticket for new work, or /h-release if preparing a version. If deferred-AC remains: name the AC + which task picks it up.
 ```
 
 ## RESEARCH branch (Phase R3 Archive)
@@ -210,7 +218,7 @@ mv .claude/runs/reports/<file> .claude/wiki/archive/reports/<file>
 python3 .claude/scripts/wiki/wiki_linter.py
 ```
 
-- OK / WARN → proceed (cap on `archive/reports/` is 3000 lines per policy override)
+- OK / WARN → proceed (cap on `archive/reports/` is 10000 lines per policy override)
 - FAIL → STOP, do NOT mark DONE; report the linter output
 
 Final block:
@@ -237,4 +245,4 @@ Final block:
 | Source-code edits | FORBIDDEN in both branches |
 | Anti-loop | max 2 retries per step; second same-step failure → STOP, ask user |
 | Step ordering | fixed; STANDARD Step 2 MUST precede Step 3 (extractor depends on reflection); RESEARCH Steps 1R-4R MUST execute in order |
-| PATCH profile | STOP if `$ARGUMENTS` resolves to PATCH task_brief (Archive WAL is STANDARD-only per policy) |
+| PATCH profile | Step 1.5 enforces this — preserved here as audit reminder |

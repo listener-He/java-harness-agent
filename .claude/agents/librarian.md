@@ -54,11 +54,11 @@ python3 .claude/scripts/tools/librarian_gc.py --clean
 This removes WAL fragments that have been successfully merged.
 
 ### Step 4: Check for bloat
-After merging, check if any target index exceeds 500 lines:
+After merging, check if any target index exceeds 3000 lines:
 ```bash
 wc -l .claude/wiki/wiki/*/index.md
 ```
-If any file exceeds 500 lines → invoke the Knowledge Architect to split it.
+If any file exceeds 3000 lines → invoke the Knowledge Architect to split it.
 
 ### Step 5: Update KNOWLEDGE_GRAPH.md
 If the merge added new top-level sections or renamed existing ones, update `.claude/wiki/KNOWLEDGE_GRAPH.md` to reflect the changes.

@@ -110,7 +110,17 @@ Ask via `AskUserQuestion`:
   - Known flake → record in failure_memory with pattern `flake: <test class>` and STOP.
 
 ### type = `oom`
-Treat as `test` routing (DEBUG task), but set risk = HIGH and add note: `OOM in CI — check heap config and test isolation before Implement`.
+OOM is almost never a flake — the test-route flake/regression question is the wrong frame. Ask via `AskUserQuestion`:
+
+- "OOM in CI — what's the most likely cause?"
+  - Heap config too small for new workload — adjust CI heap setting; no fix task needed
+  - Test isolation / memory leak in new code — create DEBUG task to find the leak
+  - Unknown — create DEBUG task at HIGH risk for investigation
+
+Branch on selection:
+- **Heap config** → already recorded in failure_memory at Step 4. Surface inline: `[CI OOM — heap config]: adjust -Xmx / -XX:MaxRAMPercentage in CI workflow (likely .github/workflows/*.yml or pom surefire config). No fix task created.` STOP.
+- **Test leak** → create launch_spec row: `| ci-oom-leak-<date> | MEDIUM | Explore | PENDING | none | (no brief yet) |` with note `Scenario DEBUG — test isolation/leak suspected. Run /h-brief after root-cause analysis.`
+- **Unknown** → create launch_spec row: `| ci-oom-debug-<date> | HIGH | Explore | PENDING | none | (no brief yet) |` with note `Scenario DEBUG — OOM root cause unknown. Heap config and isolation both candidates; investigate before fixing.`
 
 ### type = `coverage`
 Warn only — no task created:
@@ -147,8 +157,7 @@ Output exactly this block:
 [failure_memory]: recorded
 [Routing]:
   - <action taken, e.g. "DEBUG task created: ci-test-debug-<date>" or "incident recorded" or "warn only">
-[Next Action]: <one specific sentence>
-```
+[Next Action]: <start with a command — e.g. "Run /h-resume to pick up the created DEBUG task" or "Run /h-incident to escalate" or "No follow-up — coverage warning only">
 
 ## Hard constraints
 

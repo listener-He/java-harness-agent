@@ -37,7 +37,7 @@ Build the gate list from the detected (or overridden) context:
 |---|---|
 | Explore | `failure_memory.py query --intent Change --phase Explorer` (read-only) |
 | Propose | `task_brief_gate.py --require <brief>` |
-| Implement | `scope_guard.py --task-brief <brief>` (audit full diff); `mvn compile -q` if there are `.java` files in diff |
+| Implement | `scope_guard.py --task-brief <brief>` (audit full diff); `mvn compile -q` if `.java` **OR** `pom.xml` in diff |
 | QA | (no extra full-suite gate; tests + AC mapping are LLM-driven) |
 | Archive | universal + scenario gates only |
 
@@ -85,7 +85,7 @@ Emit exactly this block:
 | scope_guard | ... | ... |
 | <each gate run> | ... | ... |
 
-[Next Action]: <one specific sentence — e.g. "Fix scope_guard FAIL: <path> is outside Allowed Scope; either add to brief or revert.">
+[Next Action]: <start with a command — e.g. "Fix scope_guard FAIL by reverting <path> or updating brief, then re-run /h-gates" or "All OK — proceed to next phase via /h-resume or /h-pr">
 ```
 
 Overall `[Gates Status]` rules:
@@ -97,7 +97,7 @@ Overall `[Gates Status]` rules:
 
 - **Read-only command** — do NOT edit any file. Gates may write to `.claude/runs/local_intel/failure_memory.json` themselves via the failure-memory record path, but **you** must not directly modify it.
 - **No sub-agent dispatch** — this is a pure script orchestrator.
-- **No mvn compile** unless explicitly authorized by `--all` or `--phase implement`, because compile can be slow and may surface unrelated errors. Default Implement-phase run includes `mvn compile -q` only if `.java` files appear in diff.
+- **No mvn compile** unless explicitly authorized by `--all` or `--phase implement`, because compile can be slow and may surface unrelated errors. Default Implement-phase run includes `mvn compile -q` only if `.java` files **OR `pom.xml`** appear in diff (pom edits can break the build even without `.java` edits — dependency rename, plugin version bump, etc.).
 - Anti-loop: each gate runs at most ONCE per invocation. If a gate has flaky failure (timeout, environment issue), report it as ERROR — do not retry.
 - **Failure memory recording**: for every FAIL above, after report emission, run:
   ```

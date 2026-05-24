@@ -68,16 +68,18 @@ python3 .claude/scripts/tools/archive_session_artifacts.py --slug <feature_slug>
 
 | Path prefix | Cap |
 |---|---|
-| (default) | 500 |
-| `.claude/wiki/archive/reports/` | 3000 |
+| (default) | 3000 |
+| `.claude/wiki/archive/reports/` | 10000 |
+
+Python source of truth: `.claude/scripts/wiki/wiki_linter.py` (`DEFAULT_MAX_LINES`, `PATH_LINE_CAPS`).
 
 On overflow:
 1. Split content into focused sub-documents per topic
 2. Rewrite original `index.md` as a lean routing graph
 3. Update `KNOWLEDGE_GRAPH.md` if top-level structure changed
-4. Research reports approaching 3000 → split per schema "Size limit" (main + evidence appendix)
+4. Research reports approaching 10000 → split per schema "Size limit" (main + evidence appendix)
 
-Gate: `python3 .claude/scripts/wiki/wiki_linter.py` — FAIL on dead links OR cap exceeded. Per-directory table owned by linter (wired in PR-3).
+Gate: `python3 .claude/scripts/wiki/wiki_linter.py` — FAIL on dead links OR cap exceeded.
 
 ## Extraction Rules
 

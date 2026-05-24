@@ -1,5 +1,5 @@
 ---
-description: Force Propose-phase design pipeline — dispatch system-architect, write ADRs (HIGH), fill brief §8/§9
+description: Run structured design step on an existing brief — dispatch system-architect, write ADRs (HIGH risk), fill §8 Technical Architecture / §9 Design Patterns
 argument-hint: [slug]
 ---
 
@@ -21,9 +21,11 @@ Read the brief in full. Capture:
 | Brief state | Action |
 |---|---|
 | `spec_mode: SLIM` (LOW risk) | invoke `AskUserQuestion` "SLIM routing" block below |
-| `risk: MEDIUM`, §8 already substantive (no `TODO(h-brief)` markers) | invoke `AskUserQuestion` "already-designed" block below |
+| `risk: MEDIUM`, `tech_arch` in dimensions, §8 substantive (no `TODO(h-brief)` markers) | invoke `AskUserQuestion` "already-designed" block below |
 | `risk: HIGH`, §8 ADR section finalized (either ≥1 ADR file linked OR explicit `Mechanical implementation — no irreversible architectural decision; no ADR required.` line) | invoke `AskUserQuestion` "already-designed" block below |
-| `risk: MEDIUM` or `HIGH`, §8/§9 placeholder or missing (when dimension declared) | Proceed to Step 3. |
+| `risk: MEDIUM` or `HIGH`, dimension declared (`tech_arch` and/or `patterns`) AND corresponding section placeholder/missing | Proceed to Step 3 |
+| `risk: MEDIUM`, NO `tech_arch` AND NO `patterns` in dimensions | STOP: `Nothing to design — neither tech_arch nor patterns dimension declared. Re-run /h-brief to add the dimension, or skip /h-design entirely if no architectural work is needed.` |
+| `risk: HIGH`, NO `tech_arch` AND NO `patterns` in dimensions | STOP: `HIGH risk without an architectural dimension is suspicious. Re-run /h-brief to declare tech_arch or patterns, OR add the explicit "Mechanical implementation — no irreversible architectural decision; no ADR required." line to §8 manually and re-run /h-design.` |
 
 **SLIM routing** AskUserQuestion:
 
@@ -118,7 +120,7 @@ Output exactly this block:
 [§8 Status]: SUBSTANTIVE | PLACEHOLDER | NOT-REQUIRED (tech_arch not declared)
 [§9 Status]: SUBSTANTIVE | PLACEHOLDER | NOT-REQUIRED (patterns not declared)
 [task_brief_gate]: OK | WARN(<one-line>) | FAIL(<one-line>)
-[Next Action]: <one specific sentence — e.g. "ready for Review phase: dispatch code-reviewer and adversarial-review Category B (HIGH)">
+[Next Action]: Begin Review phase — dispatch `code-reviewer` sub-agent (MEDIUM/HIGH) + `adversarial-review` Category B (HIGH only). After Review passes: HIGH → Approval Gate (present Human Section), then /h-resume to enter Implement; MEDIUM → /h-resume directly to Implement.
 ```
 
 ## Hard constraints

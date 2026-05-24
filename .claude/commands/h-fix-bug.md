@@ -1,5 +1,5 @@
 ---
-description: Drive Scenario DEBUG — collect bug info, query failure_memory, root-cause analysis, create fix task, optionally record production incident
+description: Bug → fix pipeline — collect symptoms, query past incidents, force root-cause-first analysis, then create the fix task (no code until root cause confirmed)
 argument-hint: [ticket-ref] [--source github|jira|linear|manual] [--production] [--severity p1|p2|p3]
 ---
 
@@ -118,7 +118,7 @@ For p3 (test-only bugs): skip this step entirely — do not create an incident f
 
 ## Step 7 — Fix scope proposal
 
-Present the fix plan for user confirmation via `AskUserQuestion`:
+Present the fix plan for user confirmation via `AskUserQuestion`. **Option set depends on inferred risk from Step 5** — production-grade bugs (p1/p2) MUST go through a spec, never inline:
 
 ```
 Root Cause: <from Step 4>
@@ -128,13 +128,22 @@ Files likely in scope: <from blast radius analysis>
 
 How do you want to proceed?
 ```
-Options:
-- "Fix it now (inline PATCH)" — proceed directly to Implement; no task_brief required for LOW
-- "Write a Slim Spec first (MEDIUM)" — invoke `/h-brief <slug> --risk medium --slim` before Implement
-- "Full STANDARD task_brief (HIGH)" — invoke `/h-brief <slug> --risk high` before Implement
+
+**Risk = LOW (p3, test-env bug)** — three options:
+- "Fix it now (inline PATCH)" — proceed directly to Implement; no task_brief
+- "Write a Slim Spec first" — invoke `/h-brief <slug> --slim` before Implement
 - "Stop here — I'll fix it manually" — STOP, report findings only
 
-**FORBIDDEN before user confirms:** do NOT write any fix code. Scenario DEBUG: root cause phase must complete and user must approve before any code is written.
+**Risk = MEDIUM (p2, production degraded)** — inline PATCH is **NOT** offered:
+- "Write a Slim Spec (recommended)" — invoke `/h-brief <slug> --risk medium --slim` before Implement
+- "Full STANDARD task_brief" — invoke `/h-brief <slug> --risk medium` before Implement
+- "Stop here — I'll fix it manually" — STOP, report findings only
+
+**Risk = HIGH (p1, production down)** — only structured options:
+- "Full STANDARD task_brief (required)" — invoke `/h-brief <slug> --risk high` before Implement
+- "Stop here — I'll fix it manually" — STOP, report findings only
+
+**FORBIDDEN before user confirms:** do NOT write any fix code. Scenario DEBUG: root cause phase must complete and user must approve before any code is written. **Also forbidden:** offering inline PATCH for p1/p2 production bugs — they ship to live users; the spec cost is an investment in safety, not bureaucracy.
 
 ## Step 8 — Transition to fix
 
@@ -177,6 +186,7 @@ Output exactly this block:
 - **Root cause MUST precede any fix code** — this is Scenario DEBUG's core rule. No exceptions.
 - **p3 bugs do NOT create incident files** — incident records are for production impact only.
 - **p1 bugs are always HIGH risk** — do not downgrade, even if the fix looks simple.
+- **p1/p2 production bugs CANNOT take the inline-PATCH path** — Step 7 enforces this. Even a one-liner production fix gets a Slim Spec; the few minutes it takes are cheap insurance against re-incident.
 - **`--production` + p3 is a contradiction** — if user sets both, ask for clarification before proceeding.
 - **No source-code edits in Steps 1–7** — Scenario DEBUG profile: FORBIDDEN from modifying code until root cause is confirmed and user approves fix scope.
 - Anti-loop: if root-cause-debug skill fails to find root cause twice → STOP, record in failure_memory, ask user for more evidence. Do not guess.

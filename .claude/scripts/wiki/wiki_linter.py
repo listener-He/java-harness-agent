@@ -15,11 +15,10 @@ WIKI_DIR = ".claude/wiki"
 
 EXIT_FAIL = 2
 
-# Per-directory line caps (policy.md Anti-Bloat). Default = 500.
-# Matching is longest-prefix-wins on the normalized path.
-DEFAULT_MAX_LINES = 500
+# Per-directory line caps (policy.md Anti-Bloat). Longest-prefix wins.
+DEFAULT_MAX_LINES = 3000
 PATH_LINE_CAPS = {
-    os.path.normpath(".claude/wiki/archive/reports"): 3000,
+    os.path.normpath(".claude/wiki/archive/reports"): 10000,
 }
 
 
@@ -55,7 +54,7 @@ def check_wiki():
         with open(file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
 
-        # Per-directory cap (policy.md Anti-Bloat). Default 500; overrides via PATH_LINE_CAPS.
+        # Per-directory cap (policy.md Anti-Bloat). Default DEFAULT_MAX_LINES; overrides via PATH_LINE_CAPS.
         cap = _max_lines_for(file_path)
         if len(lines) > cap:
             oversized_files.append((file_path, len(lines), cap))
@@ -108,7 +107,7 @@ def check_wiki():
     print("📊 === LLM Wiki 图谱体检报告 ===")
     print(f"扫描文件总数: {len(all_md_files)}")
     
-    print("\n⚠️  【超长文件预警】 (per-directory cap, 默认 500 行):")
+    print(f"\n⚠️  【超长文件预警】 (per-directory cap, 默认 {DEFAULT_MAX_LINES} 行):")
     if oversized_files:
         for f, lines, cap in oversized_files:
             print(f"  - [WARN] {f} ({lines} 行, cap={cap})")

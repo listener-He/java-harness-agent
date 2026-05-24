@@ -52,7 +52,7 @@ CLAUDE.md                      # Single entry point
 │   ├── h-pr.md                  # secrets_linter + scope_guard → gh pr create → write PR URL into task_brief; launch_spec stays IN_PROGRESS with `| PR #<n>` Artifact marker
 │   ├── h-ci.md                  # Fetch CI run data → classify failures (compile/test/security/coverage) → failure_memory + routing recommendation
 │   ├── h-release.md             # Pre-release gates (queue/tree/branch/secrets) → WAL changelog → mvn versions:set → tag + push; --dry-run supported
-│   └── h-incident.md            # Wrap ingest_incident.py + write incident .md from TEMPLATE (enforces 提醒未来 LLM smell test)
+│   └── h-incident.md            # Wrap ingest_incident.py + write incident .md from TEMPLATE (enforces the "Reminder for Future LLM" smell test)
 ├── skills/                          # 28 skills auto-loaded by Claude Code on every session
 │   ├── skill-index/                 # Central navigator (active set + archive references)
 │   ├── ac-verify/                   # End-to-end AC verification with pass/fail evidence before Archive
@@ -102,11 +102,62 @@ CLAUDE.md                      # Single entry point
 │   ├── schema/                # Contract templates (task_brief, subagent_contract)
 │   └── wiki/                  # Domain, API, Data, Architecture, Specs, Testing, Reviews, Preferences
 ├── scripts/
-│   ├── gates/                 # Deterministic gate scripts (scope_guard, secrets_linter, etc.)
-│   ├── wiki/                  # Wiki maintenance (compactor, linter, schema checker)
-│   ├── tools/                 # Bootstrap, archive, GC helpers
-│   ├── local_intel/           # Zero-cost local search (wiki_search, code_index, failure_memory)
-│   └── harness/               # Engine
+│   ├── gates/                                  # 21 deterministic gate scripts (block / warn / pass)
+│   │   ├── _severity.py                        # Severity classification helper (internal)
+│   │   ├── _severity_audit.py                  # Severity output audit harness
+│   │   ├── ambiguity_gate.py                   # Input-ambiguity probe (UserPromptSubmit hook)
+│   │   ├── api_breaking_gate.py                # Public API breaking-change check (Scenario C)
+│   │   ├── bypass_audit_gate.py                # Audit attempts to bypass safety (--no-verify, etc.)
+│   │   ├── comment_linter_java.py              # Java comment-style enforcement
+│   │   ├── consistency_gate.py                 # Cross-file consistency check
+│   │   ├── delivery_capsule_gate.py            # Delivery package validation
+│   │   ├── dependency_gate.py                  # pom.xml dependency check (Scenario E)
+│   │   ├── impact_gate.py                      # Change blast-radius assessment
+│   │   ├── linter.py                           # Generic linter runner
+│   │   ├── migration_gate.py                   # SQL migration check (Scenario B1/B2)
+│   │   ├── research_report_gate.py             # research_report.md validation (Phase R3 gate)
+│   │   ├── run.py                              # Gate suite runner
+│   │   ├── scope_guard.py                      # Allowed-Scope enforcement (PreToolUse hook + /h-gates)
+│   │   ├── secrets_linter.py                   # Secret-leak scan (PostToolUse hook + pre-PR + pre-release)
+│   │   ├── skill_index_linter.py               # SKILL.md index consistency check
+│   │   ├── subagent_return_gate.py             # Validate sub-agent structured-return format
+│   │   ├── task_brief_gate.py                  # task_brief.md structural validation (Propose→Implement)
+│   │   ├── wal_template_gate.py                # WAL fragment template compliance
+│   │   └── writeback_gate.py                   # Archive WAL presence check (supports --accept-stub for None)
+│   ├── harness/                                # 7 runtime entry points (Claude Code hooks + engine)
+│   │   ├── engine.py                           # Central runtime: gate dispatch + severity aggregation
+│   │   ├── find_active_task_brief.py           # Locate active task_brief from launch_spec IN_PROGRESS row
+│   │   ├── post_tool_use_hook.py               # PostToolUse hook entry (runs secrets_linter on changed file)
+│   │   ├── pre_tool_use_hook.py                # PreToolUse hook entry (runs scope_guard before Edit/Write)
+│   │   ├── stop_hook.py                        # Stop hook (end-of-turn checks)
+│   │   ├── subagent_stop_hook.py               # SubagentStop hook (validates sub-agent return)
+│   │   └── user_prompt_submit_hook.py          # UserPromptSubmit hook (injects failure-memory + ambiguity + triage)
+│   ├── local_intel/                            # 8 zero-cost local intelligence tools
+│   │   ├── code_index.py                       # Java symbol index + --impact-of caller enumeration
+│   │   ├── failure_memory.py                   # Gate failure ledger (query / record / summary)
+│   │   ├── incident_hint.py                    # PostToolUse helper: surface incident.md for edited files
+│   │   ├── ingest_incident.py                  # Incident raw-fact ingestion + emit template prompt
+│   │   ├── skill_hint.py                       # PostToolUse helper: surface relevant SKILL.md
+│   │   ├── triage_probe.py                     # UserPromptSubmit triage: 5-signal → suggested_profile
+│   │   ├── turn_health_check.py                # Per-turn health diagnostics
+│   │   └── wiki_search.py                      # BM25 search over .claude/wiki/
+│   ├── tools/                                  # 6 helper scripts (one-shot operations)
+│   │   ├── archive_session_artifacts.py        # Move task_brief from runs/ to wiki/archive/
+│   │   ├── bootstrap.py                        # First-time project bootstrap
+│   │   ├── brief_from_decomposition.py         # Generate per-subtask brief skeletons from decomposition
+│   │   ├── capabilities_report.py              # Regenerate .claude/CAPABILITIES.md
+│   │   ├── import_external_skills.py           # Import skills from an external source
+│   │   └── librarian_gc.py                     # Wiki GC orchestrator (called by @gc / @librarian)
+│   └── wiki/                                   # 9 wiki maintenance scripts
+│       ├── compactor.py                        # Merge WAL fragments into main wiki
+│       ├── distill_threshold.py                # Compute staleness threshold for distill
+│       ├── distill.py                          # Extract + delete stale or duplicate knowledge files
+│       ├── graph_checker.py                    # Knowledge graph link integrity
+│       ├── pref_tag_checker.py                 # Preference tag consistency
+│       ├── schema_checker.py                   # Schema validation for wiki documents
+│       ├── wiki_compactor.py                   # Wiki-level compaction orchestrator
+│       ├── wiki_linter.py                      # Wiki health (dead links, overlength caps, islands)
+│       └── zero_residue_audit.py               # Audit zero-residue cleanups (after distill)
 ├── workflow/
 │   ├── role_matrix.json       # Role-to-phase mount table
 │   ├── EXAMPLES.md            # Walkthrough of a STANDARD task
@@ -128,19 +179,19 @@ The STANDARD lifecycle implements a **PDD → BDD → SDD/SPEC → TDD → BDD**
 
 ```
          ┌── PDD ──┐  ┌──── BDD ────┐                                     ┌──── BDD ────┐
-         │依赖+并行  │  │ 写可执行规格  │                                     │ 行为验证     │
-         │ DAG      │  │ Given/When/  │    ┌── SDD (契约驱动) ──┐           │ AC↔测试↔结果 │
-         ▼          ▼  ▼              ▼    ▼                     ▼           ▼              ▼
+         │deps+par  │  │ exec spec    │                                     │ behavior     │
+         │ DAG      │  │ Given/When/  │    ┌── SDD (contract-driven) ──┐    │ AC↔test↔result│
+         ▼          ▼  ▼              ▼    ▼                            ▼   ▼              ▼
 Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Implement ─→ QA ─→ Archive
           │              │          │                        │          │        │
-          需求澄清     架构设计   设计审查                TDD实现    测试验证  知识沉淀
-          │              │          │    │                  │          │        │
+        Req. clarify  Arch. design  Design review        TDD impl    Test verify  Knowledge
+          │              │          │                        │          │        │
           ▼              ▼          ▼    ▼                  ▼          ▼        ▼
        Spec Gap     task_brief  Plan   Approved        Red→Green   Evidence   WAL
-       + AC list    +依赖+并行  Review Contract         →Refactor   Mapping    +偏差回顾
+       + AC list    +deps+par   Review Contract         →Refactor   Mapping    +Deviation
 ```
 
-### Phase 1: Explorer — 需求澄清 + BDD 规格编写
+### Phase 1: Explorer — Requirement Clarification + BDD Spec Writing
 
 | Item | Detail |
 |------|--------|
@@ -154,7 +205,7 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 | | ⑥ Adversarial review Category A (HIGH only): "are we solving the right problem?" |
 | **Output** | Spec Gap + AC list (Given/When/Then) + Hidden Scope → feeds into task_brief Machine Section |
 
-### Phase 2: Propose — 架构设计与 Spec (Architecture Design & Specification)
+### Phase 2: Propose — Architecture Design & Specification
 
 | Item | Detail |
 |------|--------|
@@ -166,10 +217,10 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 | | ④ Define **Allowed Scope** — explicit file whitelist that constrains implementation |
 | | ⑤ Write `task_brief.md` — the **universal contract**: |
 | | &nbsp;&nbsp;&nbsp; • Machine Section (English): Allowed Scope + ACs + Task Dependencies + Hard Constraints |
-| | &nbsp;&nbsp;&nbsp; • Human Section (Chinese): 做什么/为什么 + 怎么做 + 待确认项 |
+| | &nbsp;&nbsp;&nbsp; • Human Section (written in Chinese): WHAT / WHY + HOW + open items pending confirmation |
 | **Output** | `task_brief.md` — single artifact shared by all agents and humans |
 
-### Phase 3: Review — 设计审查 (Design Review)
+### Phase 3: Review — Design Review
 
 | Item | Detail |
 |------|--------|
@@ -182,7 +233,7 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 | | ⑤ CRITICAL finding → rollback to Phase 2. MINOR → annotate ACs, proceed |
 | **Output** | Approved `task_brief.md` (HIGH) or FYI summary (MEDIUM) |
 
-### Phase 4: Implement — TDD 驱动实现 (TDD-Driven Implementation)
+### Phase 4: Implement — TDD-Driven Implementation
 
 | Item | Detail |
 |------|--------|
@@ -196,7 +247,7 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 | | ⑥ **YIELD**: Stop and ask human for permission to proceed to QA |
 | **Output** | Modified source files, passing tests, compile-clean |
 
-### Phase 5: QA — 测试验证 + BDD 行为验证
+### Phase 5: QA — Test Verification + BDD Behavior Validation
 
 | Item | Detail |
 |------|--------|
@@ -209,7 +260,7 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 | | ⑤ MAX 2 retries on failure → 3rd failure: STOP, ask human |
 | **Output** | Test evidence, review report (all ACs PASS) |
 
-### Phase 6: Archive — 知识沉淀 (Knowledge Persistence)
+### Phase 6: Archive — Knowledge Persistence
 
 | Item | Detail |
 |------|--------|
@@ -226,11 +277,11 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 
 ## Maintenance Workflows (Non-Code Operations)
 
-When the user requests pure knowledge/wiki maintenance (整理, 提取, 扫描, 拆分, GC), the task routes to the **MAINTENANCE** profile — no code phases, no task_brief, no compile checks.
+When the user requests pure knowledge/wiki maintenance (compact, extract, scan, split, GC), the task routes to the **MAINTENANCE** profile — no code phases, no task_brief, no compile checks.
 
 ### WAL Compaction (GC)
 
-**Trigger**: `@gc`, `@librarian`, or "整理 wiki", "合并碎片", "做 GC"
+**Trigger**: `@gc`, `@librarian`, or phrases like "compact wiki", "merge fragments", "run GC"
 
 | Step | Action | Role |
 |------|--------|------|
@@ -242,7 +293,7 @@ When the user requests pure knowledge/wiki maintenance (整理, 提取, 扫描, 
 
 ### Wiki Refresh
 
-**Trigger**: `@wiki-update`, `@milestone`, or "提取知识", "沉淀 wiki", "刷新知识库"
+**Trigger**: `@wiki-update`, `@milestone`, or phrases like "extract knowledge", "persist to wiki", "refresh knowledge base"
 
 | Step | Action | Role |
 |------|--------|------|
@@ -253,7 +304,7 @@ When the user requests pure knowledge/wiki maintenance (整理, 提取, 扫描, 
 
 ### Document Split
 
-**Trigger**: Any wiki file exceeds 500 lines, or "拆分文档", "index 太大"
+**Trigger**: Any wiki file exceeds 500 lines, or phrases like "split document", "index too large"
 
 | Step | Action | Role |
 |------|--------|------|
@@ -265,7 +316,7 @@ When the user requests pure knowledge/wiki maintenance (整理, 提取, 扫描, 
 
 ### Project Scan
 
-**Trigger**: "扫描项目", "审计代码库", "分析代码结构"
+**Trigger**: phrases like "scan project", "audit codebase", "analyze code structure"
 
 | Step | Action | Role |
 |------|--------|------|
@@ -288,14 +339,15 @@ User-invokable shortcuts that wrap multi-step lifecycle flows into single invoca
 | `/h-decompose <slug> <prd-path>` | Explorer → Propose | PRD/EPIC pre-validation → task-decomposition-guide → N brief skeletons → DAG bound to launch_spec | EPIC/PRD spanning ≥3 domains; need INVEST-compliant slicing |
 | `/h-brief <slug>` | Propose entry | Schema-compliant task_brief + 1 launch_spec row | Single STANDARD task starting from a known scope |
 | `/h-design [slug]` | Propose design | Dispatch system-architect with strict Source Documents contract; write ≥2 ADRs (HIGH); fill brief §8/§9 | HIGH/EPIC needs design alternatives; MEDIUM needs 1 explicit option |
-| `/h-research <slug> [--scope quick\|deep]` | RESEARCH entry | Scaffold `research_report.md` skeleton (7 sections per schema) + bind to launch_spec at `RES`/`Research`/`IN_PROGRESS`; `--scope` drives §3 quota (5 vs 15 findings) | Analysis / feasibility / baseline (调研/分析/可行性); `[triage]` suggested RESEARCH; deliverable is a report, not code |
+| `/h-research <slug> [--scope quick\|deep]` | RESEARCH entry | Scaffold `research_report.md` skeleton (7 sections per schema) + bind to launch_spec at `RES`/`Research`/`IN_PROGRESS`; `--scope` drives §3 quota (5 vs 15 findings) | Analysis / feasibility / baseline investigation; `[triage]` suggested RESEARCH; deliverable is a report, not code |
 
 ### Daily Development
 
 | Command | Phase | Effect | When to use |
 |---------|-------|--------|-------------|
 | `/h-resume` | Any | Read-only: locate IN_PROGRESS task + restore Machine Section context + report Next Action; detects COLLAB-blocked state | Resuming an interrupted session |
-| `/h-fix-bug [<issue-url>] [--priority p1|p2|p3]` | Explorer | GitHub issue or manual input → `failure_memory` query → `root-cause-debug` Phase 1 (MUST complete before any fix) → launch_spec row; p1/p2 triggers `h-incident` | Bug reports from QA or production; priority determines risk level and whether incident file is created |
+| `/h-status [--all] [--days <N>] [--slug <prefix>]` | Any | Read-only: list all launch_spec rows grouped by status (IN_PROGRESS / WAITING_APPROVAL / PENDING parallelizable / PENDING blocked / DONE / FAILED); compute Next Action from priority chain | Global queue view when you've forgotten what's in flight, before `/h-release` (which requires queue clean), or for backlog triage |
+| `/h-fix-bug [<issue-url>] [--priority p1|p2|p3]` | Explorer | GitHub issue or manual input → `failure_memory` query → `root-cause-debug` Phase 1 (MUST complete before any fix) → launch_spec row; p1/p2 triggers `h-incident` and is restricted from inline-PATCH path | Bug reports from QA or production; priority determines risk level and whether incident file is created |
 | `/h-gates [--phase X] [--scenario Y]` | Phase boundary / pre-commit | Run all applicable gates (scope, secrets, task_brief, scenario B/C/E); record failures into failure_memory | Auditing full diff before phase transition or commit |
 | `/h-archive` | Phase 6 | Plan Deviation Reflection → knowledge-extractor → archive brief → wiki_linter → mark launch_spec DONE | STANDARD task completion |
 
@@ -322,7 +374,114 @@ User-invokable shortcuts that wrap multi-step lifecycle flows into single invoca
 
 Each command file is opinionated: hard step ordering, fixed STOP conditions, explicit Allowed Edit boundaries. See `.claude/commands/h-<name>.md` for the full contract per command.
 
-**Note — no `/h-implement` or `/h-qa`**: the Implement and QA phases are intentionally NOT wrapped in commands. Those phases are the core write-code / write-test / run-tests work that the LLM does directly under the active `task_brief` contract — there is no state transition or gate orchestration to wrap. The `h-*` commands cover entry/exit (`/h-from-ticket`, `/h-decompose`, `/h-brief`, `/h-pr`, `/h-archive`), design (`/h-design`), research (`/h-research`), audit (`/h-gates`), and special scenarios (`/h-fix-bug`, `/h-incident`, `/h-ci`, `/h-release`). Implement/QA happen in between, plain.
+**Note — no `/h-implement` or `/h-qa`**: the Implement and QA phases are intentionally NOT wrapped in commands. Those phases are the core write-code / write-test / run-tests work that the LLM does directly under the active `task_brief` contract — there is no state transition or gate orchestration to wrap. The `h-*` commands cover entry/exit (`/h-from-ticket`, `/h-decompose`, `/h-brief`, `/h-pr`, `/h-archive`), design (`/h-design`), research (`/h-research`), audit (`/h-gates`), status (`/h-resume`, `/h-status`), and special scenarios (`/h-fix-bug`, `/h-incident`, `/h-ci`, `/h-release`). Implement/QA happen in between, plain.
+
+### Command Usage Guide
+
+Read this section when stuck on **which command to invoke** or **what comes next**. Tables above describe what each command DOES; this section helps you decide WHICH one to RUN.
+
+#### Entry Decision Tree — "What do I have on hand?"
+
+| Starting point | Run |
+|---|---|
+| GitHub Issue / Jira / Linear ticket | `/h-from-ticket` |
+| PRD / EPIC (multi-requirement doc) | `/h-decompose` |
+| Bug (unknown root cause / error) | `/h-fix-bug` |
+| "Research / evaluate / feasibility / analysis" | `/h-research` |
+| Production incident (already resolved, record it) | `/h-incident` |
+| CI failure (classify + route) | `/h-ci` |
+| Requirement already discussed in conversation | `/h-brief` |
+| Session interrupted / switching machines | `/h-resume` |
+| Forgot what's in flight / global queue view | `/h-status` |
+| Cutting a release tag | `/h-release` |
+
+> **Vibe / Patch (TRIVIAL/LOW) does NOT take any `/h-*`.** Just say "fix X" — the agent handles it inline; no TaskList, no WAL, no brief. `/h-*` is for MEDIUM/HIGH/RESEARCH/EPIC structured channels only.
+
+#### Phase Flow Chain — "I'm mid-task, what's next?"
+
+```
+Entry              Propose            Implement          Delivery       Archive
+────────          ──────────          ──────────        ────────       ──────
+/h-from-ticket  → /h-brief    →     (write code) →    /h-pr    →    /h-archive
+/h-decompose      /h-design                            (open PR)     (move to wiki/archive,
+/h-fix-bug        (HIGH forced)                                       write WAL, mark DONE)
+                      │
+                      └── /h-collab  ←→  /h-collab-update    (pluggable at any phase)
+                                         (cross-team alignment)
+
+Side tools (off the main chain, on-demand):
+  /h-gates     run full gate suite (commit / phase boundary / pre-PR)
+  /h-resume    recover one task's context after a session break
+  /h-status    global queue snapshot (every task on one screen)
+  /h-ci        ingest CI failure into the workflow
+  /h-incident  record an already-resolved incident into wiki/incidents/
+  /h-release   release (requires launch_spec queue empty)
+
+RESEARCH path (no code):
+  /h-research  →  (investigate §3 Findings)  →  /h-archive
+```
+
+##### Phase "what's next" quick judge
+
+| Current state | Next |
+|---|---|
+| Just reached requirement agreement | `/h-from-ticket` (have issue) or `/h-brief` (from conversation) |
+| `/h-brief` done, skeleton in place | `/h-design <slug>` (HIGH must run, MEDIUM iff `tech_arch`/`patterns` declared) |
+| `/h-design` done, into Review | Inline review; HIGH → Approval Gate |
+| Approval passed, writing code | No command needed — just code; use `/h-gates --phase implement` for compile/test orchestration |
+| Code + tests pass | `/h-pr` |
+| PR merged | `/h-archive` |
+| Lost track of where I am | `/h-resume` (single task) or `/h-status` (everything) |
+
+#### Disambiguation — Which command for similar-looking cases
+
+| Use which | Distinguishing key |
+|---|---|
+| `h-brief` **vs** `h-from-ticket` | Requirement already clear from conversation → `h-brief`; pulling from GitHub/Jira/Linear → `h-from-ticket` |
+| `h-brief` **vs** `h-decompose` | Single task → `h-brief`; multi-requirement PRD/EPIC → `h-decompose` |
+| `h-fix-bug` **vs** `h-from-ticket` | Bug + unknown root cause → `h-fix-bug` (root-cause-first); ticket + known scope → `h-from-ticket` |
+| `h-incident` **vs** `h-fix-bug` | Still investigating / fixing → `h-fix-bug`; already fixed, recording for future → `h-incident` |
+| `h-design` **vs** natural Propose | MEDIUM/HIGH with declared `tech_arch`/`patterns` dimension → `h-design`; pure CRUD without architectural decision → skip |
+| `h-research` **vs** `h-brief` | Deliverable is a **report** (decision input, no code) → `h-research`; deliverable is **code** → `h-brief` |
+| `h-pr` **vs** `h-archive` | `h-pr` opens the PR (status stays IN_PROGRESS); `h-archive` closes the loop after merge (IN_PROGRESS → DONE) |
+| `h-gates` **vs** PreToolUse hook | Hook is per-Edit tripwire (single file); `h-gates` is phase-boundary / pre-commit audit (full diff) |
+| `h-collab` **vs** `h-collab-update` | First time creating cross-team doc → `h-collab`; logging external feedback → `h-collab-update` |
+| `h-resume` **vs** `h-status` | `h-resume` = deep recovery of one task (loads task_brief Machine Section); `h-status` = shallow global scan (one row per task) — answers "how many tasks do I have, where are they stuck, which can run in parallel" |
+
+#### Common Stuck Moments
+
+**Q: Just finished describing a task — should I run `/h-brief` or just start?**
+Check the `[triage]` block's `suggested:` value: VIBE/PATCH → just start; STANDARD-MEDIUM/HIGH → `/h-brief`; RESEARCH → `/h-research`. No `[triage]`? Ask: does this touch auth/migration/error codes, or > 5 files? If yes → `/h-brief`.
+
+**Q: `/h-brief` asks for risk — which do I pick?**
+- **HIGH**: touches auth, schema-mutating DDL (ALTER / DROP / RENAME), lifecycle/policy/error codes, secrets. (Pure `CREATE TABLE` is NOT HIGH — it's B1/LOW.)
+- **MEDIUM**: affects ≥ 7 files, OR touches public API/Controller, OR same failure pattern recurred ≥ 3 times.
+- **LOW**: everything else.
+
+**Q: `/h-brief` asks for dimensions — which keywords are allowed?**
+Exactly 5: `api` (controller/Mapping/DTO), `data` (mapper/entity/SQL), `domain` (service/event/saga/business rules/state machine), `tech_arch` (new component/deployment/dependency), `patterns` (Strategy/Factory/Saga/Outbox/ACL). Single or multi-select; empty `[]` is legal for pure refactor.
+
+**Q: Finished `/h-design`, what next?**
+- MEDIUM → straight to Implement (write code), then `/h-pr` after compile + test pass
+- HIGH → Approval Gate triggers first (manually confirm Human Section), THEN Implement
+- Lost track of phase → `/h-resume` reloads launch_spec context
+
+**Q: Forgot the slug.**
+`/h-resume` prints current IN_PROGRESS slug. Or `/h-status` for the full list. Or `ls .claude/runs/task-briefs/`. Most commands also accept an empty `[slug]` and auto-fetch from launch_spec.
+
+**Q: `/h-archive` says 'SLIM cannot run'.**
+Step 1.5 guard: `spec_mode: SLIM` tasks don't take WAL flow. Manually `mv .claude/runs/task-briefs/<file> .claude/wiki/archive/`, then flip the launch_spec row `IN_PROGRESS` → `DONE`.
+
+**Q: Command chain mentions `/h-collab` but we don't work cross-team.**
+`/h-collab` is an optional side tool. **Ignore.** Only use when frontend / third-party / QA / ops need alignment before code is written.
+
+#### Anti-Patterns
+
+- **Don't use `/h-*` as a Vibe substitute.** Simple changes get "fix X"; don't wrap in `/h-brief --slim`.
+- **Don't chain-call `/h-*` via shell.** They are LLM prompt templates, not callable functions. "Execute inline" means YOU (main agent) follow the Steps, not `Bash` runs.
+- **Don't run `/h-archive` on a PATCH task.** Step 1.5 will reject.
+- **Don't run `/h-research` without `[triage] suggested: RESEARCH`** (unless you explicitly invoke `@research`). It is mutually exclusive with `/h-brief`.
+- **Run `/h-archive` on every IN_PROGRESS task BEFORE `/h-release`** — otherwise Gate A rejects the release.
 
 ---
 
@@ -375,7 +534,7 @@ Every user request is classified into an **intent** and routed to a **profile**:
 | Profile | Use case | Lifecycle | Write-back | Artifact |
 |---------|----------|-----------|------------|----------|
 | **LEARN** | Read/explain code | None | No | None |
-| **RESEARCH** | Analysis / feasibility / baseline (调研/分析) — deliverable is a report, not code | `Investigate → Synthesize → Archive` | Optional (default Skip; opt-in at archive) | `research_report.md` |
+| **RESEARCH** | Analysis / feasibility / baseline — deliverable is a report, not code | `Investigate → Synthesize → Archive` | Optional (default Skip; opt-in at archive) | `research_report.md` |
 | **PATCH** (TRIVIAL) | Typos, logging, null checks, single-domain bugfix (≤3 files, no public API/DB/auth change) | `Implement → QA → Archive` | No | None |
 | **PATCH** (LOW) | Small bugfix spanning two related domains (4–6 files, still no public API/DB/auth change) | `Implement → QA → Archive` | No | None |
 | **STANDARD** (MEDIUM) | Feature, new API, cross-module | Full 6-phase (no gate) | Yes (WAL) | `task_brief.md` |

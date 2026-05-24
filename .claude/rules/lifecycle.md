@@ -136,7 +136,7 @@ These override the default risk classification. When a scenario specifies a **Re
 | "提取/沉淀知识", `@wiki-update` | Knowledge Extractor | Diff → Extract → WAL fragments → Lint |
 | "萃取 wiki / 清理过期", `@distill` | Librarian | Scan → Plan → Human-approve → Execute → Lint |
 | "看能力 / 我有哪些 agent", `@capabilities` / `@cap` | Documentation Curator | Regenerate `.claude/CAPABILITIES.md` |
-| "拆分文档", index > 500 lines | Knowledge Architect | Check → Deduplicate → Split → Rewrite index |
+| "拆分文档", index > 3000 lines | Knowledge Architect | Check → Deduplicate → Split → Rewrite index |
 | "扫描项目", "审计代码库" | Explorer (inline) | Scan → Index → Report |
 
 Maintenance tasks have no code phases (no Explorer/Propose/Implement/QA). Detailed checklists for each role are in `.claude/agents/`.

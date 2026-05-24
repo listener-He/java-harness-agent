@@ -21,7 +21,7 @@ This file is the root of the wiki. Use it to navigate by drilling down through i
 - **[API](wiki/api/index.md)**: Exposed APIs and contracts. *(Format: Markdown tables with Method, Path, Auth)*
 - **[Data](wiki/data/index.md)**: Database tables, indexes, ER notes. *(Format: Markdown tables with Store Type, Retention)*
 - **[Architecture](wiki/architecture/index.md)**: Architecture decisions, security baseline, ADRs. *(Format: ADR tracking list)*
-- **[Preferences](wiki/preferences/index.md)**: Project-specific constraints, security rules, and do-not-do lists. *(Tags: `[Security]`, `[DB]`, etc. If any file exceeds 500 lines, it MUST be split).*
+- **[Preferences](wiki/preferences/index.md)**: Project-specific constraints, security rules, and do-not-do lists. *(Tags: `[Security]`, `[DB]`, etc. If any file exceeds 3000 lines, it MUST be split).*
 
 ## 3. Cold Storage
 - **[Archive](archive/index.md)**: extracted or obsolete documents kept for traceability.
