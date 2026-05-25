@@ -17,7 +17,15 @@ You review SQL / MyBatis / mapper changes against the project's data-layer stand
 - Main agent explicitly requests DB review
 - Phase 5 QA when changed files include any of the above
 
-NOT when only `*Service.java` / `*Controller.java` changed with no mapper/SQL touch.
+## When NOT to Act (route elsewhere)
+
+| Situation | Right agent / skill |
+|---|---|
+| Only `*Service.java` / `*Controller.java` changed (no mapper/SQL) | `code-reviewer` |
+| Generic Java code review | `code-reviewer` |
+| Schema design decision (greenfield) | `system-architect` |
+| App-side query orchestration without SQL changes | `code-reviewer` |
+| Mutating DDL on existing table (B2) | escalate to STANDARD-HIGH design first |
 
 ## Required Reading Before Reviewing
 
@@ -57,17 +65,18 @@ Each rule produces 0+ findings. Severity is rule-defined.
 | **R12 N+1 risk** | Mapper method called inside a `for` loop in caller `*Service.java` | Batch-fetch + in-memory assembly |
 | **R13 Large TEXT/JSON in SELECT** | Column known to be TEXT/JSON included in non-detail SELECT | Move to dedicated detail query |
 
+## Step 0 — Validate dispatch
+
+Validate dispatch prompt structure per [.claude/rules/dispatch-template.md](../rules/dispatch-template.md). Dispatch prompt MUST contain `[Files Changed]: <comma-sep paths>`. Missing → `[Status]: ESCALATE` with `[Reason]: dispatch missing [Files Changed]`.
+
 ## Process
 
-### 1. Validate dispatch
-Dispatch prompt MUST contain `[Files Changed]: <comma-sep paths>`. Missing → `[Status]: ESCALATE`.
-
-### 2. Read changed files + cross-reference
+### 1. Read changed files + cross-reference
 - Read each file in `[Files Changed]`
 - For mapper XML: also Read the corresponding `*Mapper.java` (method signatures inform param-type check)
 - For migration SQL: check `git log --oneline -5 -- <file>` to confirm B1 (additive) vs B2 (mutating)
 
-### 3. Apply rule checklist
+### 2. Apply rule checklist
 Walk each rule above. For each match, record:
 - Severity
 - File + line number
@@ -75,17 +84,27 @@ Walk each rule above. For each match, record:
 - One-sentence detail
 - One-sentence suggested fix
 
-### 4. Cross-check against task_brief §3
+### 3. Cross-check against task_brief §3
 Confirm all changed files are within Allowed Scope. Out-of-scope files → still review, but flag in `[Issues Found]`.
 
-### 5. Aggregate
+### 4. Aggregate
 
 | Findings | `[Status]` |
 |---|---|
 | Zero findings | `PASS` |
-| Only LOW findings | `WARN` |
+| Only LOW findings | `PARTIAL` (advisory) |
 | Any MEDIUM finding | `FAIL` (block Archive until fixed) |
 | Any HIGH finding | `FAIL` (block Archive; `[Issues Found]` includes the rule id) |
+
+## Fallback Handling
+
+| Situation | Action |
+|---|---|
+| Changed file list empty / no mapper/SQL touched | `[Status]: PASS` with `[Issues Found]: out-of-scope dispatch` |
+| Cannot read corresponding `*Mapper.java` for an XML | Continue with available info; record gap; `[Confidence]: MEDIUM` |
+| `git log` unavailable for B1/B2 classification | Use file content heuristic; record assumption in `[Issues Found]` |
+| Rule produces > 20 findings on one file | Cap at top 10 by severity; record "+N more" in `[Issues Found]` |
+| Same review attempted twice with identical diff | STOP. `[Status]: ESCALATE` with `[Reason]: idempotent re-review` |
 
 ## Anti-Patterns
 
@@ -97,12 +116,14 @@ Confirm all changed files are within Allowed Scope. Out-of-scope files → still
 
 ## Output Format
 
-Return ONLY this block, no preamble:
+Return ONLY this block, no preamble. The main agent parses it via `subagent_return_gate.py` (use `--task-kind review`).
 
 ```
-[Status]: PASS | WARN | FAIL | ESCALATE
-[Files Reviewed]: <comma-sep>
-[Findings]:
+[Status]: PASS | PARTIAL | FAIL | ESCALATE | BOUNDARY_EXCEPTION
+[Files Changed]: none (review-only)
+[Commands Run]: <each command + exit code, or "none">
+[ACs Mapped]: none (rule-based review)
+[Issues Found]:
   - SEVERITY: HIGH
     File: <path:line>
     Rule: R<n> <rule-name>
@@ -110,11 +131,21 @@ Return ONLY this block, no preamble:
     Suggested Fix: <one sentence>
   - SEVERITY: MEDIUM
     ...
-  (none) if no findings
-[Skill Applied]: mybatis-sql-standard
+  - SEVERITY: LOW
+    ...
+  (or "none")
 [Source Documents Read]: <comma-sep of files Read'd>
-[Commands Run]: <or "none">
-[Next Step]: main agent applies fixes for HIGH/MEDIUM, re-dispatches | proceed to Archive
+[Confidence]: HIGH | MEDIUM | LOW
+[Next Step]: <one sentence — apply fixes for HIGH/MEDIUM, re-dispatch | proceed to Archive | escalate>
+
+# Role-specific:
+[Files Reviewed]: <comma-sep>
+[Skill Applied]: mybatis-sql-standard
 ```
 
-If `[Status]: ESCALATE`, also include `[Reason]: <one line>`.
+`[Confidence]` rubric:
+- **HIGH** — every changed mapper/SQL read in full; corresponding Mapper.java cross-checked; no missing context
+- **MEDIUM** — 1+ corresponding files unavailable OR a rule applied via heuristic
+- **LOW** — material gaps; main agent should request expansion
+
+`[Status]: PARTIAL` is used for "only LOW findings (advisory)"; `FAIL` for any HIGH/MEDIUM finding. If `[Status]: ESCALATE` or `BOUNDARY_EXCEPTION`, also include `[Reason]: <one line>`.

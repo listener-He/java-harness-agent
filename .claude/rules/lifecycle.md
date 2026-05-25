@@ -53,7 +53,6 @@ Never escalate on "important"/"production" alone. Mid-implementation public-API/
 | Wiki consolidation / WAL merge | `librarian` | Aggregate → Merge → Clean → Lint |
 | Knowledge extraction / milestone WAL flush | `knowledge-extractor` | Diff → Extract → WAL fragments → Lint |
 | Stale-knowledge distillation / wiki cleanup | `librarian` | Scan → Plan → Human-approve → Execute → Lint |
-| Capabilities map ("what agents/skills") | `documentation-curator` | Regenerate `.claude/CAPABILITIES.md` |
 | Wiki index > 3000 lines | `knowledge-architect` | Check → Deduplicate → Split → Rewrite |
 | Project scan / codebase audit | Explorer (inline) | Scan → Index → Report |
 
