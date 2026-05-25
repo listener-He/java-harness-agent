@@ -1,11 +1,6 @@
-# CLAUDE.md — Project Entry Point
-
-Single entry point for AI coding assistants on this repo. Lazy-load everything else.
-
 ## Hard Rules (always apply)
 
 1. **Anti-loop**: max 3 retries per gate/linter, max 2 for compile fixes. Exceed → STOP, ask human.
-2. **Never commit**: `.claude/runs/`, `__pycache__/`, `target/`, `build/`, `.idea/`, `.vscode/`, `.DS_Store`. Only commit source, archived task_briefs (`.claude/wiki/archive/`), and `.claude/**/wal/` fragments.
 
 <HARD-GATE id="design-before-code">
 STANDARD: do NOT Edit/Write `src/**`, `*.sql`, migrations, or `pom.xml` until `task_brief.md` §3 Allowed Scope AND §5 ACs filled AND Phase 3 Review passed.
