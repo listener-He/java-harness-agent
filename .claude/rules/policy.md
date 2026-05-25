@@ -27,7 +27,7 @@ User invoked <shortcut>; ignoring probe signals:
 Proceeding in <Vibe|Patch> at user's explicit request.
 ```
 
-This is **non-blocking** — the user's declared intent wins. The block exists solely for auditability so silent escalations cannot happen and over-eager Vibe usage is visible in the transcript.
+Non-blocking; user intent wins. The block is for audit only — prevents silent escalations and surfaces over-eager Vibe usage.
 
 ## Commit Policy
 
@@ -85,7 +85,7 @@ Gate: `python3 .claude/scripts/wiki/wiki_linter.py` — FAIL on dead links OR ca
 
 - Do NOT directly edit shared `index.md` files during automated runs. Write to `wal/` fragments.
 - WAL fragments are merged later by the Librarian (via `@gc`).
-- **STANDARD tasks: WAL write-back is user-elected.** During Archive, `h-archive` scans the diff, suggests WAL dimensions (Domain / API / Rules / Data / Architecture) with pre-checks based on what was actually changed, then asks the user via multi-select. Only chosen dimensions are written. **None** is a valid choice — it writes a single stub file recording the explicit decision. HIGH risk + None additionally requires a one-line justification (e.g., "config-only change; no domain knowledge to capture") to prevent habitual skipping; MEDIUM may skip with no justification. **Discipline preserved:** the question itself is mandatory — silent zero-WAL is not allowed.
+- **STANDARD: WAL write-back is user-elected.** `h-archive` scans diff → suggests dimensions (Domain / API / Rules / Data / Architecture) → multi-select. Only chosen dimensions written. **None** is valid (writes a stub recording the decision). HIGH+None requires a one-line justification; MEDIUM+None does not. The question itself is mandatory — silent zero-WAL is not allowed.
 - PATCH tasks: no WAL required, no question asked. Wiki refresh deferred to `@wiki-update`.
 - New tables/schemas go into WAL data domain (`wiki/data/wal/`) as Markdown with DDL code blocks — NOT as root `.sql` files.
 
@@ -103,33 +103,30 @@ Gate: `python3 .claude/scripts/wiki/wiki_linter.py` — FAIL on dead links OR ca
 
 # Part 3 — Agent Invocation & Dispatch
 
-Two ways to engage a role. Pick by isolation needs, not by ceremony.
+Pick by isolation needs, not ceremony.
 
 | Mechanism | What it really is | When to use |
 |---|---|---|
 | **Inline role adoption** | Main agent reads a role's `.md` and follows its instructions in the current conversation. No isolation, no tool boundary. | Architecture design or implementation that needs the full project context (CLAUDE.md + rules + wiki). |
 | **Sub-agent dispatch** (`Agent` tool) | Claude Code spawns a fresh agent with its own context and the role's `tools` allowlist. Receives only the prompt you give it. | Well-scoped, bounded work: code review, scope guard, doc updates, knowledge extraction, secret scans. |
 
-Honest note: "inline role adoption" is just *you, reading a markdown file*. Claude Code doesn't enforce a special "mounted role" state — the discipline is yours. Sub-agent dispatch IS enforced by the harness.
-
-Roles live in [.claude/agents/](../agents/). The `Agent` tool picks one by name; check its `tools:` frontmatter to know what it can do.
+Roles live in [.claude/agents/](../agents/). The `Agent` tool picks one by name; check its `tools:` frontmatter for capabilities.
 
 ### Inline preference for small STANDARD-MEDIUM tasks
 
-For STANDARD-MEDIUM tasks where **AC count ≤ 3 AND single domain AND no cross-cutting concerns**, **prefer inline role adoption** for `lead-engineer`. The main agent reads `.claude/agents/lead-engineer.md` and acts as that role within the current conversation; Allowed Scope / ACs / Hard Constraints stay in scope via the active task_brief. This saves the dispatch prompt overhead (~50 lines + a re-Read of source files the main agent already has in context) without losing rigor.
+STANDARD-MEDIUM with **AC count ≤ 3 AND single domain AND no cross-cutting concerns** → prefer inline `lead-engineer`: main agent reads `.claude/agents/lead-engineer.md` and acts as that role. Allowed Scope / ACs / Hard Constraints stay in scope via the active task_brief.
 
-Stay with **sub-agent dispatch** when ANY of the following holds — isolation is the actual product, not overhead:
-- AC count ≥ 4 (heavier work; isolation prevents context bleed and confirmation bias)
-- Multi-domain or HIGH risk (fresh-context review catches what main agent normalized away)
-- Role is `code-reviewer` or `adversarial-review` — isolation is the whole point; **never inline these**
-- Role is `knowledge-extractor` (Archive write-back) — isolation produces clean WAL fragments
-- Role is `requirement-engineer`, `system-architect`, `security-sentinel` — these benefit from clean context per dispatch
+Dispatch (not inline) when ANY of:
+- AC count ≥ 4
+- Multi-domain OR HIGH risk
+- Role is `code-reviewer` or `adversarial-review` (**never inline**)
+- Role is `knowledge-extractor`, `requirement-engineer`, `system-architect`, or `security-sentinel`
 
-When in doubt, dispatch. The inline shortcut is a planned optimization for the recognizable "small mechanical Java change" case, not a general default.
+When in doubt, dispatch.
 
 ## Dispatch payload (sub-agents)
 
-**MANDATORY:** every sub-agent dispatch prompt MUST be built from the template at [dispatch-template.md](dispatch-template.md). The template captures the contract, anti-loop limits, scope, and structured-return format that sub-agents otherwise wouldn't know about (they don't inherit CLAUDE.md / rules / memory). Required sections, validation rules, and worked examples all live there. Missing section → sub-agent returns `[Status]: ESCALATE`; main agent re-dispatches.
+**MANDATORY:** build every sub-agent dispatch prompt from [dispatch-template.md](dispatch-template.md). Missing required section → sub-agent returns `[Status]: ESCALATE`; main agent re-dispatches.
 
 ## Handoff (Standard mode)
 
@@ -139,8 +136,6 @@ When work crosses sessions or roles:
 2. Finds the `IN_PROGRESS` row
 3. Loads the `task_brief.md` listed in its Artifact column
 4. Resumes from the Phase in the launch spec
-
-The Machine Section is the universal contract — any role can act from it.
 
 ## Special Scenarios — Foreman Pattern (EPIC)
 

@@ -198,7 +198,7 @@ Tests are derived from BDD ACs, not invented by implementer.
 
 ### Phase 1: Explorer
 
-> **Asymmetric division of labor.** Heavy reasoning (parsing long input, AC transcription, adversarial review) is dispatched to sub-agents to keep the main agent's context clean. Interactive actions (`AskUserQuestion`, echo confirmation) stay on the main agent — sub-agents do NOT have access to `AskUserQuestion`, that is the hard boundary.
+> Sub-agents have no `AskUserQuestion` tool. Keep interactive actions (`AskUserQuestion`, echo confirmation) on the main agent; dispatch heavy reasoning (long-input parsing, AC transcription, adversarial review) to sub-agents.
 
 #### 1.0 Dispatch decision (three-step triage)
 
@@ -222,8 +222,6 @@ Run `input-classifier` skill INLINE on the main agent (this skill never dispatch
 | Bug / Signal | Switch to Scenario DEBUG → `root-cause-debug` (skip Phase 1) |
 | Performance | LEARN baseline first; re-classify as Change after data is collected |
 
-Why this split: `input-classifier` is a thin classifier (Inline). `ambiguity-gatekeeper` is a semantic gate — reads project context and detects undefined scope, untestable goals, and unbounded blast radius before AC transcription begins; the `[triage]` hook only catches surface-level vagueness. `product-manager-expert` is heavy PRD work (PRD only). `requirement-engineer` is the AC transcription engine for non-PRD inputs. Four names, four contracts, no overlap.
-
 **Step C — Additional layered dispatches (compose on top of Step B)**
 
 | Condition | Additional dispatch |
@@ -239,8 +237,6 @@ Sub-agents do NOT inherit `CLAUDE.md` / rules / memory. Every dispatch MUST incl
 `ambiguity-gatekeeper` returns a `[Status]: PASS | FAIL` structured block — full contract in [ambiguity-gatekeeper.md](../agents/ambiguity-gatekeeper.md). Main agent behavior:
 - **PASS** → proceed to `requirement-engineer` dispatch (adding `security-review-checklist` for Security type).
 - **FAIL** → relay every `[Must-Ask Questions]` item via `AskUserQuestion`. After receiving user answers, re-enter Step B with the enriched input. Do NOT proceed to `requirement-engineer` until `ambiguity-gatekeeper` returns PASS.
-
-The `[triage]` hook (`ambiguity_gate.py`) is a surface-level keyword filter and does NOT substitute for this dispatch — `ambiguity-gatekeeper` reasons over actual project context with `Read / Bash / Grep / Glob` tools.
 
 #### 1.2 Sub-agent return handling (requirement-engineer)
 
