@@ -39,6 +39,8 @@ These **compete** for the same window. Pick exactly ONE primary reviewer per pro
 
 Security-sensitive changes (auth, secrets, IDOR risk) additionally run [security-review-checklist](../skills/security-review-checklist/SKILL.md) on top of the primary reviewer.
 
+Mapper XML / `*Mapper.java` / migration `*.sql` changes additionally dispatch [database-reviewer](../agents/database-reviewer.md) on top of the primary reviewer — enforces `mybatis-sql-standard` rules (anti-JOIN, `${}` injection, audit columns, leftmost-prefix, etc.).
+
 ---
 
 ### Zone C — QA (Phase 5)

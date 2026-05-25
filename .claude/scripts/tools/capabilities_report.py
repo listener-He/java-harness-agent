@@ -96,9 +96,10 @@ def load_skills() -> list[dict]:
 # --- hardcoded routing (mirrors lifecycle.md / skill-precedence.md) ---------
 
 AGENT_CATEGORIES: dict[str, list[str]] = {
-    "Implementation": ["lead-engineer"],
+    "Implementation": ["lead-engineer", "java-build-resolver"],
     "Design": ["system-architect", "requirement-engineer"],
-    "Review": ["code-reviewer", "security-sentinel", "ambiguity-gatekeeper"],
+    "Review": ["code-reviewer", "database-reviewer", "security-sentinel", "ambiguity-gatekeeper"],
+    "Verification": ["test-runner"],
     "Knowledge / Governance": [
         "librarian", "knowledge-extractor", "knowledge-architect",
         "documentation-curator",
