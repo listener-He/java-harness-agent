@@ -74,7 +74,7 @@ Spec: .claude/runs/task-briefs/2026-05-17_order-cancel_task_brief.md
 ## Turn 3 — Implement
 
 **Agent actions:**
-1. `→ Scope: OrderController + OrderService. Role: @Lead Engineer + @Focus Guard. Confidence: HIGH`
+1. `→ Scope: OrderController + OrderService. Agent: @lead-engineer + @scope-guard. Confidence: HIGH`
 2. Reads `task_brief.md` Machine Section: Allowed Scope + AC + Hard Constraints
 3. Implements: `OrderController.cancelOrder()` → `OrderService.cancelOrder()` → uses existing `OrderMapper`
 4. Runs `shift_left_hook` → `mvn compile` passes
@@ -114,7 +114,7 @@ All rows PASS. QA passes.
 
 **Agent output to human:**
 ```
-→ Phase: Archive. Role: @Knowledge Extractor
+→ Phase: Archive. Agent: @knowledge-extractor
 WAL written: api + rules. Task brief archived.
 ```
 

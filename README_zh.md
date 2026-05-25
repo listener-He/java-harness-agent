@@ -165,9 +165,23 @@ CLAUDE.md                      # 唯一入口
 │   ├── role_matrix.json       # 角色到阶段的挂载表
 │   ├── EXAMPLES.md            # STANDARD 任务的端到端示例
 │   └── artifacts/             # 产物模板
-├── runs/                      # 运行时产物（task-briefs、launch-specs、缓存）
+├── runs/                      # 运行时产物 — 必须 git-ignore（task-briefs、launch-specs、缓存）
 └── settings.json              # 权限和钩子配置
 ```
+
+> ⚠️ **Git 忽略要求 — `.claude/runs/`**
+>
+> `.claude/runs/` 是**每次会话的运行时工作区**：活动的 `task_brief.md`、`launch_spec_*.md` 任务队列、distill 计划、研究草稿、`local_intel` 缓存索引（BM25、code-index、failure-memory）等。这些文件是临时的、机器相关的、被 hook 频繁重写——**绝对不能提交到 git**。
+>
+> 仓库的 `.gitignore` 已包含：
+> ```gitignore
+> ### Runtime artifacts (not committed) ###
+> .claude/runs/
+> ```
+>
+> 当你 fork 本仓库或把框架复制到新项目时，**请务必确认 `.gitignore` 保留该行**。一旦 `runs/` 被提交，会导致：跨机器状态污染、本地会话的 PII 泄露、每次 `task_brief.md` 修改产生合并冲突。
+>
+> Archive 流程：完成的 task_brief 通过 `archive_session_artifacts.py` 从 `.claude/runs/task-briefs/` 移动到 `.claude/wiki/archive/`，**后者是提交到 git 的**。只有归档快照进入 git 历史；活动工作区永不进入。
 
 ---
 

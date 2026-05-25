@@ -130,7 +130,7 @@ A skill that fails any of these in simulation will fail in production. Fix befor
 
 Save to `.claude/skills/<skill-name>/SKILL.md`. Then:
 
-1. Update the central index: `.claude/skills/skill-index/SKILL.md` (add a table row in the matching section: Default Enabled / Role-Required / Reactivated)
+1. Update the central index: `.claude/skills/skill-index/SKILL.md` (add a table row in the matching section: Default Enabled / Agent-Required / Reactivated)
 2. Run the index linter:
    ```bash
    python3 .claude/scripts/gates/skill_index_linter.py \

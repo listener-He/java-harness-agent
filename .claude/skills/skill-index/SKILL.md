@@ -37,7 +37,7 @@ These 29 skills live under `.claude/skills/<name>/SKILL.md` and are visible to t
 
 ### 0.0 Default Enabled (13) — daily workflow
 
-| Skill | Lifecycle Phase(s) | Primary Role |
+| Skill | Lifecycle Phase(s) | Primary Agent |
 |---|---|---|
 | [brainstorming](../brainstorming/SKILL.md) | Explorer / Propose | Requirement Engineer |
 | [task-decomposition-guide](../task-decomposition-guide/SKILL.md) | Propose / Review | System Architect |
@@ -53,7 +53,7 @@ These 29 skills live under `.claude/skills/<name>/SKILL.md` and are visible to t
 | [java-testing-standards](../java-testing-standards/SKILL.md) | QA | Code Reviewer |
 | [mybatis-sql-standard](../mybatis-sql-standard/SKILL.md) | Propose / Implement | System Architect / Lead Engineer |
 
-### 0.1 Role-Required & QA-Critical (8)
+### 0.1 Agent-Required & QA-Critical (8)
 
 | Skill | Required When |
 |---|---|
@@ -83,7 +83,7 @@ These were moved back from archive because they fit the daily flow.
 
 ### 0.3 Lifecycle Phase Map (STANDARD)
 
-| Phase | Role | Skills |
+| Phase | Agent | Skills |
 |---|---|---|
 | Pre-Explorer | — | `input-classifier` (if input is non-trivial) |
 | Explorer | Requirement Engineer | `local-code-intelligence` → `input-classifier` → (`ambiguity-gatekeeper` if Idea/Feedback/Compliance/Security) → brainstorming → (cognitive-bias-checklist) → (spec-quality-checklist) |
@@ -130,7 +130,7 @@ Auto-loading 12 rarely-used skill descriptions costs ~1,800 tok on every session
 
 ## Related
 
-- `.claude/agents/` — role catalog; each role file lists which skills it depends on
+- `.claude/agents/` — agent catalog; each agent file lists which skills it depends on
 - `.claude/rules/lifecycle.md` — when each lifecycle phase fires
 - `.claude/skills/skill-author/SKILL.md` — used when adding a new skill (will prompt you to register here)
 - `.claude/skills/authoring-standards/SKILL.md` — format authority for Skill / Sub-agent / Rule files; enforces Pre-Creation Protocol

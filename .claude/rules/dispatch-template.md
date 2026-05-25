@@ -11,7 +11,7 @@ Why this exists: sub-agents do NOT inherit `CLAUDE.md`, project rules, memory, o
 ## Template (copy verbatim, fill the `<…>` placeholders)
 
 ```
-# Dispatch: <role-name>
+# Dispatch: <agent-name>
 
 ## Inputs
 - **Task brief:** `<.claude/runs/task-briefs/…_task_brief.md>#L<machine-section-range>` — your contract. Allowed Scope, ACs (with AC-ids), and Hard Constraints all live in the Machine Section. **Read it FIRST.**

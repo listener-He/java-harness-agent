@@ -9,7 +9,7 @@ Orchestrate the full “idea → delivery” pipeline while staying strictly com
 
 ## Hard Compatibility Rules
 
-- Follow `CLAUDE.md` lifecycle gates and roles (including Approval Gate and Archive/WAL).
+- Follow `CLAUDE.md` lifecycle gates and agents (including Approval Gate and Archive/WAL).
 - All runtime artifacts MUST be written under `.claude/runs/task-briefs/<YYYY-MM-DD>_<slug>_*`.
 - No external state directories, no implicit git/CI automation.
 - No infinite loops. Any iterative improvement requires explicit user approval to continue.

@@ -48,7 +48,7 @@ Never escalate on "important"/"production" alone. Mid-implementation public-API/
 
 ## Maintenance Operations
 
-| Trigger | Role | Flow |
+| Trigger | Agent | Flow |
 |---|---|---|
 | Wiki consolidation / WAL merge | `librarian` | Aggregate → Merge → Clean → Lint |
 | Knowledge extraction / milestone WAL flush | `knowledge-extractor` | Diff → Extract → WAL fragments → Lint |

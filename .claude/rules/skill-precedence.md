@@ -58,7 +58,7 @@ Mapper XML / `*Mapper.java` / migration `*.sql` changes additionally dispatch [d
 
 ### Zone D — Archive phase
 
-| Skill | Role | When |
+| Skill | Function | When |
 |---|---|---|
 | [wal-documentation-rules](../skills/wal-documentation-rules/SKILL.md) | Foundational rules for WAL writes | Always for STANDARD Archive |
 | [knowledge-extractor](../agents/knowledge-extractor.md) sub-agent | Executes WAL writes per the rules | Default executor — preferred over inline |
@@ -98,7 +98,7 @@ No competition in this window. `root-cause-debug` MUST complete its Phase 1 (roo
 
 These two **compose** (run in order), not compete. Neither replaces the other.
 
-| Order | Skill | Role |
+| Order | Skill | Function |
 |---|---|---|
 | First | [decision-frameworks](../skills/decision-frameworks/SKILL.md) | Build structured options (SWOT / 5-Why / First Principles / Decision Matrix). Use when the problem space is ambiguous or multiple alternatives exist. |
 | Second | [cognitive-bias-checklist](../skills/cognitive-bias-checklist/SKILL.md) | Meta-cognitive scan on the reasoning quality. Run AFTER decision-frameworks produces its output — checks for anchoring, confirmation bias, overconfidence, etc. |

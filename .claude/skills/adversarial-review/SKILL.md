@@ -17,7 +17,7 @@ A bounded critique protocol. The adversary is not trying to veto — it is tryin
 |---|---|---|---|
 | Explorer (after Specification Inference) | **A — Requirements** | STANDARD, any risk | `requirement-engineer` |
 | Propose / Review | **B — Design** | STANDARD, risk ≥ MEDIUM | `system-architect` |
-| Special scenario start (Greenfield / Migration / EPIC) | **C — Scenario** | Any | Mounted role for that scenario |
+| Special scenario start (Greenfield / Migration / EPIC) | **C — Scenario** | Any | Scenario-mounted agent |
 
 **Do NOT trigger for:** PATCH/TRIVIAL tasks; after 1 round of the same category has already completed; when a human domain expert is actively reviewing.
 

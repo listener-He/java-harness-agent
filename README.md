@@ -165,9 +165,23 @@ CLAUDE.md                      # Single entry point
 │   ├── role_matrix.json       # Role-to-phase mount table
 │   ├── EXAMPLES.md            # Walkthrough of a STANDARD task
 │   └── artifacts/             # Artifact templates
-├── runs/                      # Runtime artifacts (task-briefs, launch-specs, cache)
+├── runs/                      # Runtime artifacts — MUST be git-ignored (task-briefs, launch-specs, cache)
 └── settings.json              # Permissions and hooks configuration
 ```
+
+> ⚠️ **Git-ignore requirement — `.claude/runs/`**
+>
+> The `.claude/runs/` directory holds **per-session runtime workspace**: active `task_brief.md` files, `launch_spec_*.md` task queues, distill plans, research drafts, and `local_intel` cache indexes (BM25, code-index, failure-memory). These are ephemeral, machine-specific, and frequently rewritten by hooks — they MUST NEVER be committed.
+>
+> This repository's `.gitignore` already lists:
+> ```gitignore
+> ### Runtime artifacts (not committed) ###
+> .claude/runs/
+> ```
+>
+> When you fork this repo or copy the framework into a new project, **verify your `.gitignore` keeps that line**. Committed `runs/` artifacts cause: cross-machine state pollution, leaked PII from local sessions, and merge conflicts on every `task_brief.md` edit.
+>
+> Archive flow: completed task briefs are moved (via `archive_session_artifacts.py`) from `.claude/runs/task-briefs/` into `.claude/wiki/archive/`, which **is** committed. Only the archived snapshot enters git history; the active workspace never does.
 
 ---
 

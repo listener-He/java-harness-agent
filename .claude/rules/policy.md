@@ -107,20 +107,20 @@ Pick by isolation needs, not ceremony.
 
 | Mechanism | What it really is | When to use |
 |---|---|---|
-| **Inline role adoption** | Main agent reads a role's `.md` and follows its instructions in the current conversation. No isolation, no tool boundary. | Architecture design or implementation that needs the full project context (CLAUDE.md + rules + wiki). |
-| **Sub-agent dispatch** (`Agent` tool) | Claude Code spawns a fresh agent with its own context and the role's `tools` allowlist. Receives only the prompt you give it. | Well-scoped, bounded work: code review, scope guard, doc updates, knowledge extraction, secret scans. |
+| **Inline agent adoption** | Main agent reads an agent's `.md` and follows its instructions in the current conversation. No isolation, no tool boundary. | Architecture design or implementation that needs the full project context (CLAUDE.md + rules + wiki). |
+| **Sub-agent dispatch** (`Agent` tool) | Claude Code spawns a fresh agent with its own context and the agent's `tools` allowlist. Receives only the prompt you give it. | Well-scoped, bounded work: code review, scope guard, doc updates, knowledge extraction, secret scans. |
 
-Roles live in [.claude/agents/](../agents/). The `Agent` tool picks one by name; check its `tools:` frontmatter for capabilities.
+Agents live in [.claude/agents/](../agents/). The `Agent` tool picks one by name; check its `tools:` frontmatter for capabilities.
 
 ### Inline preference for small STANDARD-MEDIUM tasks
 
-STANDARD-MEDIUM with **AC count ≤ 3 AND single domain AND no cross-cutting concerns** → prefer inline `lead-engineer`: main agent reads `.claude/agents/lead-engineer.md` and acts as that role. Allowed Scope / ACs / Hard Constraints stay in scope via the active task_brief.
+STANDARD-MEDIUM with **AC count ≤ 3 AND single domain AND no cross-cutting concerns** → prefer inline `lead-engineer`: main agent reads `.claude/agents/lead-engineer.md` and acts as that agent. Allowed Scope / ACs / Hard Constraints stay in scope via the active task_brief.
 
 Dispatch (not inline) when ANY of:
 - AC count ≥ 4
 - Multi-domain OR HIGH risk
-- Role is `code-reviewer` or `adversarial-review` (**never inline**)
-- Role is `knowledge-extractor`, `requirement-engineer`, `system-architect`, or `security-sentinel`
+- Agent is `code-reviewer` or `adversarial-review` (**never inline**)
+- Agent is `knowledge-extractor`, `requirement-engineer`, `system-architect`, or `security-sentinel`
 
 When in doubt, dispatch.
 
@@ -130,7 +130,7 @@ When in doubt, dispatch.
 
 ## Handoff (Standard mode)
 
-When work crosses sessions or roles:
+When work crosses sessions or agents:
 
 1. Incoming agent reads `.claude/runs/launch-specs/launch_spec_*.md`
 2. Finds the `IN_PROGRESS` row
