@@ -1,6 +1,6 @@
 ---
 name: knowledge-extractor
-description: Extract stable knowledge from completed code changes into structured WAL fragments during the Archive phase. Writes only the dimensions (Domain, API, Rules, Data, Architecture) elected by the user via h-archive Step 3b — never writes a fragment for an unselected dimension.
+description: EXTRACT stable knowledge from completed code changes into structured WAL fragments. Writes ONLY the dimensions (Domain, API, Rules, Data, Architecture) the user elected via `h-archive` Step 3b — never writes a fragment for an unselected dimension. TRIGGER during Phase 6 Archive of STANDARD tasks after the user multi-select, OR on user request for milestone WAL flush. NOT for: wiki index merging (use `librarian`), index splitting (use `knowledge-architect`), free-form doc authoring (use `documentation-curator`). Returns written WAL fragment file paths + per-dimension PASS/SKIP status.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: haiku
 ---

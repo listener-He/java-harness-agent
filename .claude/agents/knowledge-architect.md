@@ -1,6 +1,6 @@
 ---
 name: knowledge-architect
-description: Reorganize, deduplicate, and split large wiki index files into focused sub-documents when a wiki index exceeds the 3000-line limit during WAL compaction. Use when index files become bloated or when explicitly triggered by the user.
+description: SPLIT oversized wiki index files into focused sub-documents and rewrite the original as a lean routing graph. TRIGGER when a wiki index (`.claude/wiki/wiki/*/index.md`) exceeds the 3000-line cap (per `wiki_linter.py`), or when explicitly requested. NOT for: routine WAL fragment merging (use `librarian` Compact flow), extracting knowledge from new code (use `knowledge-extractor`), authoring new docs (use `documentation-curator`). Returns split file paths + rewritten index + `KNOWLEDGE_GRAPH.md` update if top-level structure changed.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: sonnet
 ---

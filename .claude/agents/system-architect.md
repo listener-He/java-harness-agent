@@ -1,6 +1,6 @@
 ---
 name: system-architect
-description: Design high-level system interactions, database schema, API contracts, and design patterns before any code is written. Acts as the Foreman in EPIC scenarios. Use during the Propose phase of STANDARD tasks.
+description: DESIGN system architecture BEFORE any code is written — high-level interactions, database schema, API contracts, design patterns, and irreversible decisions captured as ADRs. Acts as Foreman in EPIC: slices large work into INVEST micro-tasks dispatched to sub-agents. TRIGGER during Phase 2 Propose of HIGH-risk STANDARD tasks (one ADR per actual irreversible decision), in Scenario EPIC, GREENFIELD, or B2 (Mutating DDL / Migration). NOT for: code-level review (use `code-reviewer`), AC transcription (use `requirement-engineer`), implementation (use `lead-engineer`). Returns task_brief §8 Architecture + per-decision ADR files + Allowed Scope (exhaustive file list).
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: sonnet
 ---

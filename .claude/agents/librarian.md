@@ -1,6 +1,6 @@
 ---
 name: librarian
-description: Prevent WAL graveyard bloat by periodically merging scattered WAL fragments into the main wiki, performing garbage collection, and distilling (extracting + deleting) stale or duplicate knowledge files. Use when the user requests wiki consolidation, WAL garbage collection, or stale-knowledge distillation, or says "整理 wiki".
+description: MAINTAIN wiki health via two flows. **Compact**: merge scattered WAL fragments into stable index files + garbage-collect merged fragments. **Distill**: scan for stale/duplicate knowledge files, propose a plan, execute deletions ONLY after human `[x]` approval. TRIGGER when user requests wiki consolidation, WAL garbage collection, or stale-knowledge distillation, or says "整理 wiki" / "合并 wiki" / "萃取 wiki" / "清理过期". NOT for: WAL fragment authoring (use `knowledge-extractor`), oversized-index splitting (use `knowledge-architect`), doc writing (use `documentation-curator`). Returns merge log + `wiki_linter.py` PASS; Distill returns plan file path requiring user approval before execute mode.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: sonnet
 ---

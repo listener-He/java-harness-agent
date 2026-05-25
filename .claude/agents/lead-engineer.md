@@ -1,6 +1,6 @@
 ---
 name: lead-engineer
-description: Translate the task_brief.md Machine Section into concrete, compilable code. Strictly adheres to Allowed Scope, existing project patterns, and coding standards. Use during the Implement phase of STANDARD tasks.
+description: IMPLEMENT code per `task_brief.md` Machine Section — translate Allowed Scope + ACs (Given/When/Then) + Hard Constraints into concrete, compilable Java/Maven changes following project standards. TRIGGER during Phase 4 Implement of STANDARD tasks; main agent prefers INLINE adoption for MEDIUM with AC ≤ 3 + single domain + no cross-cutting concerns (per `policy.md` Inline Preference). NOT for: design (use `system-architect`), build error diagnosis (use `java-build-resolver`), code review of own work (dispatch `code-reviewer` after), test execution (use `test-runner`). Returns change set + per-AC implementation status + commit message; main agent runs compile/tests.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: sonnet
 ---

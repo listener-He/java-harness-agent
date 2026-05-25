@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Conduct rigorous, tech-lead-level code inspection of newly written code. Focus on correctness, performance, security, and maintainability. Use at Phase 3 Review (after Propose, before Implement), or whenever the user asks for a code review.
+description: REVIEW newly written code (the diff) for correctness, performance, security, and maintainability — fresh-context inspection in an isolated sub-agent. TRIGGER after Phase 4 Implement on MEDIUM/HIGH STANDARD tasks (Zone B primary reviewer per `skill-precedence.md`); also when user explicitly asks for a code review. NOT for: design/architecture review (use `system-architect` or `adversarial-review` Category B), inline self-review on Vibe/Patch (use `code-review-checklist` skill), MyBatis/SQL review (use `database-reviewer`). Returns severity-ordered findings + go/no-go for Archive.
 tools: Read, Bash, Grep, Glob
 model: sonnet
 ---

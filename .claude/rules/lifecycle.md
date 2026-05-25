@@ -1,5 +1,3 @@
-# Routing, Lifecycle & Hooks
-
 ## Profiles
 
 | Profile | When | Artifact | Approval |
