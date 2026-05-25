@@ -88,7 +88,7 @@ Run `--impact-of <target_file>` BEFORE writing `## Allowed Scope`. Add all impac
 files to the scope list (or explicitly document why they're excluded).
 
 **Integration with impact_gate.py:**
-`impact_gate.py` (mounted by `focus_guard` role) uses this index automatically.
+`impact_gate.py` uses this index automatically.
 If the index is absent, the gate downgrades to WARN (non-blocking).
 
 **Index location:** `.claude/runs/local_intel/code_index.json` (gitignored, rebuild with `--build`)

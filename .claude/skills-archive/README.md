@@ -11,7 +11,7 @@ The cleanup pipeline already excludes it, two ways:
 
 So while no script explicitly says "skip skills-archive," the existing scope rules make it untouchable. This is by design.
 
-## What the Librarian (`@gc` / `@distill` / `@librarian`) should do here
+## What `librarian` should do here
 
 The Librarian agent (`.claude/agents/librarian.md`) drives `distill.py`. Because of guarantee #1 above, it physically cannot remove files in this directory. But it MAY surface a manual recommendation like "skill X here looks unreferenced; consider removing in a STANDARD task." That recommendation is informational — acting on it requires the path below.
 
@@ -21,7 +21,7 @@ Only when ALL of the following hold:
 
 1. Every reference in `lifecycle.md` AND every `.claude/commands/h-*.md` has been removed in the same change set.
 2. A WAL Architecture fragment (under `.claude/wiki/wiki/architecture/wal/`) records why the skill became obsolete.
-3. The removal goes through a STANDARD-profile task with explicit user approval — **never** via `@distill`, `@gc`, or any automated path.
+3. The removal goes through a STANDARD-profile task with explicit user approval — **never** via `librarian` distillation or any other automated path.
 
 The directory name (`skills-archive`) predates the "permanent vs deprecated" distinction. Renaming to e.g. `skills-conditional/` would be more honest, but it ripples through every `lifecycle.md` Scenario reference and every `h-*.md` command. Until that ripple is paid for in a dedicated task, this README is the single source of truth: **PERMANENT**.
 

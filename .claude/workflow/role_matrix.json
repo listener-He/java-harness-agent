@@ -30,17 +30,6 @@
         }
       ]
     },
-    "skill_graph_curator": {
-      "gates": [
-        {
-          "script": ".claude/scripts/gates/skill_index_linter.py",
-          "args": [
-            "--index", ".claude/skills/skill-index/SKILL.md",
-            "--skills-dir", ".claude/skills"
-          ]
-        }
-      ]
-    },
     "system_architect": {
       "gates": [
         {
@@ -122,7 +111,7 @@
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "Archive",
-      "roles": ["knowledge_extractor", "documentation_curator", "skill_graph_curator", "librarian"]
+      "roles": ["knowledge_extractor", "documentation_curator", "librarian"]
     },
     {
       "intent": "Change",

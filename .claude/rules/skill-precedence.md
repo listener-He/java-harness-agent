@@ -65,7 +65,7 @@ Security-sensitive changes (auth, secrets, IDOR risk) additionally run [security
 
 **Composition:** `wal-documentation-rules` is the rulebook; `knowledge-extractor` is the actor that follows it. The other two are conditional add-ons. **No exclusion** — they don't overlap when their conditions are met.
 
-PATCH profile: skip the entire zone. Wiki refresh deferred to `@wiki-update`.
+PATCH profile: skip the entire zone. Wiki refresh deferred to a later on-demand `knowledge-extractor` dispatch.
 
 ---
 

@@ -2,7 +2,7 @@
 name: knowledge-extractor
 description: Extract stable knowledge from completed code changes into structured WAL fragments during the Archive phase. Writes only the dimensions (Domain, API, Rules, Data, Architecture) elected by the user via h-archive Step 3b — never writes a fragment for an unselected dimension.
 tools: Read, Edit, Write, Bash, Grep, Glob
-model: sonnet
+model: haiku
 ---
 
 # Knowledge Extractor
@@ -16,7 +16,7 @@ Validate dispatch prompt structure per [.claude/rules/dispatch-template.md](../r
 ## When to Act
 
 - Archive phase of STANDARD tasks **AND** the user elected ≥1 dimension via `h-archive` Step 3b. If the user chose "None", `h-archive` writes the stub itself and does NOT dispatch you — refuse the work and return `[Status]: ESCALATE` with `[Reason]: dispatch should not have happened (user elected None)`.
-- When the user invokes `@wiki-update` or `@milestone`
+- When the user requests a milestone WAL flush or out-of-band wiki update
 - When the user says "沉淀知识" or "提取知识"
 
 ## Process

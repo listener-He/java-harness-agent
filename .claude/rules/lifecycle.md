@@ -132,12 +132,12 @@ These override the default risk classification. When a scenario specifies a **Re
 
 | Trigger | Role | Flow |
 |---|---|---|
-| "整理/合并 wiki", `@gc` | Librarian | Aggregate → Merge → Clean → Lint |
-| "提取/沉淀知识", `@wiki-update` | Knowledge Extractor | Diff → Extract → WAL fragments → Lint |
-| "萃取 wiki / 清理过期", `@distill` | Librarian | Scan → Plan → Human-approve → Execute → Lint |
-| "看能力 / 我有哪些 agent", `@capabilities` / `@cap` | Documentation Curator | Regenerate `.claude/CAPABILITIES.md` |
-| "拆分文档", index > 3000 lines | Knowledge Architect | Check → Deduplicate → Split → Rewrite index |
-| "扫描项目", "审计代码库" | Explorer (inline) | Scan → Index → Report |
+| User requests wiki consolidation / WAL merge | `librarian` | Aggregate → Merge → Clean → Lint |
+| User requests knowledge extraction or milestone WAL flush | `knowledge-extractor` | Diff → Extract → WAL fragments → Lint |
+| User requests stale-knowledge distillation / wiki cleanup | `librarian` | Scan → Plan → Human-approve → Execute → Lint |
+| User asks "what agents/skills do I have" / capabilities map | `documentation-curator` | Regenerate `.claude/CAPABILITIES.md` |
+| Wiki index exceeds 3000 lines | `knowledge-architect` | Check → Deduplicate → Split → Rewrite index |
+| User requests project scan / codebase audit | Explorer (inline) | Scan → Index → Report |
 
 Maintenance tasks have no code phases (no Explorer/Propose/Implement/QA). Detailed checklists for each role are in `.claude/agents/`.
 
@@ -149,10 +149,6 @@ Maintenance tasks have no code phases (no Explorer/Propose/Implement/QA). Detail
 | `@research` / `@analyze` / `@feasibility` | RESEARCH | Produce report artifact, NOT code; skip Approval/ADR; default no WAL |
 | `@vibe` / `@patch` / `@quickfix` | PATCH | Act directly; skip Explorer/Propose/WAL even if heuristics suggest LOW |
 | `@standard` | STANDARD | Force task_brief + lifecycle, even if heuristics suggest PATCH |
-| `@gc` / `@librarian` | MAINTENANCE | Librarian compact flow |
-| `@distill` | MAINTENANCE | Librarian distill flow (scan → human approval → execute) |
-| `@capabilities` / `@cap` | MAINTENANCE | Documentation Curator regenerates `.claude/CAPABILITIES.md` |
-| `@wiki-update` / `@milestone` | MAINTENANCE | Knowledge Extractor flow |
 
 Flags: `--risk low|medium|high`, `--launch`, `--no-launch`, `--test "<cmd>"`, `--yes` (auto-confirm). RESEARCH uses `--scope quick|deep` (risk-orthogonal).
 `@learn` MUST NOT combine with `--launch` or `--writeback`.
@@ -377,7 +373,7 @@ Real Claude Code hooks are configured in `.claude/settings.json`. This part docu
 These run automatically. The agent does not need to invoke them manually.
 
 **triage_probe UserPromptSubmit semantics (Step 0 routing input — see Part 1):**
-- Skips silently when prompt < 15 chars, contains `@learn`/`@read`/`@cap`/maintenance shortcuts, or is a question without an action verb
+- Skips silently when prompt < 15 chars, contains `@learn` / `@read` shortcuts, or is a question without an action verb
 - Synthesizes five signals (blast_radius, failure_history, ambiguity, danger_keywords, intent_class) → `suggested_profile` ∈ {VIBE, RESEARCH, PATCH, STANDARD-MEDIUM, STANDARD-HIGH}
 - `intent_class=RESEARCH` (computed by `ambiguity_gate.classify_intent`) short-circuits Change-side escalation: danger keywords → `signals_yellow`, not `signals_red`
 - Prints `[triage]` block when profile > VIBE OR any red/yellow signal; silent on ALL-GREEN VIBE

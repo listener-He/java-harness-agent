@@ -84,9 +84,9 @@ Gate: `python3 .claude/scripts/wiki/wiki_linter.py` — FAIL on dead links OR ca
 ## Extraction Rules
 
 - Do NOT directly edit shared `index.md` files during automated runs. Write to `wal/` fragments.
-- WAL fragments are merged later by the Librarian (via `@gc`).
+- WAL fragments are merged later by `librarian` (on-demand wiki consolidation).
 - **STANDARD: WAL write-back is user-elected.** `h-archive` scans diff → suggests dimensions (Domain / API / Rules / Data / Architecture) → multi-select. Only chosen dimensions written. **None** is valid (writes a stub recording the decision). HIGH+None requires a one-line justification; MEDIUM+None does not. The question itself is mandatory — silent zero-WAL is not allowed.
-- PATCH tasks: no WAL required, no question asked. Wiki refresh deferred to `@wiki-update`.
+- PATCH tasks: no WAL required, no question asked. Wiki refresh deferred to a later on-demand `knowledge-extractor` dispatch.
 - New tables/schemas go into WAL data domain (`wiki/data/wal/`) as Markdown with DDL code blocks — NOT as root `.sql` files.
 
 ## RESEARCH Profile Write-back

@@ -95,7 +95,7 @@ If any field fails the smell test, revise before writing.
 
 ## Step 7 — Wiki lint (non-blocking)
 
-Run `python3 .claude/scripts/wiki/wiki_linter.py`. Surface output but do not block — a new incident may legitimately be an "island" (not yet linked from any index); that's a `@gc` / `@librarian` job, not yours.
+Run `python3 .claude/scripts/wiki/wiki_linter.py`. Surface output but do not block — a new incident may legitimately be an "island" (not yet linked from any index); that's a `librarian` consolidation job, not yours.
 
 ## Step 8 — Report
 

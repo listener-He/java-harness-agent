@@ -47,7 +47,7 @@ These 28 skills live under `.claude/skills/<name>/SKILL.md` and are visible to t
 | [ac-verify](../ac-verify/SKILL.md) | QA / Archive | Code Reviewer / Knowledge Extractor |
 | [code-review-checklist](../code-review-checklist/SKILL.md) | QA | Code Reviewer |
 | [wal-documentation-rules](../wal-documentation-rules/SKILL.md) | Archive | Knowledge Extractor |
-| [skill-graph-manager](../skill-graph-manager/SKILL.md) | Any (skills change) | Skill Graph Curator |
+| [skill-graph-manager](../skill-graph-manager/SKILL.md) | Any (skills change) | Main agent (inline) |
 | [java-architecture-standards](../java-architecture-standards/SKILL.md) | Propose / Implement | System Architect / Lead Engineer |
 | [java-coding-style](../java-coding-style/SKILL.md) | Implement | Lead Engineer |
 | [java-testing-standards](../java-testing-standards/SKILL.md) | QA | Code Reviewer |
@@ -88,7 +88,7 @@ These were moved back from archive because they fit the daily flow.
 | Explorer | Requirement Engineer | `local-code-intelligence` → `input-classifier` → (`ambiguity-gatekeeper` if Idea/Feedback/Compliance/Security) → brainstorming → (cognitive-bias-checklist) → (spec-quality-checklist) |
 | Propose / Review | System Architect | brainstorming (one ADR per actual irreversible decision via `architecture-decision-records`; zero ADRs allowed with explicit "mechanical" note) → task-decomposition-guide → decision-frameworks |
 | Review (HIGH only) | Devil's Advocate | `adversarial-review` (one isolated round) |
-| Implement | Lead Engineer + Focus Guard | impl-plan → java-architecture-standards / java-coding-style / mybatis-sql-standard → root-cause-debug / test-driven-development |
+| Implement | `lead-engineer` (scope_guard.py hook enforces Allowed Scope) | impl-plan → java-architecture-standards / java-coding-style / mybatis-sql-standard → root-cause-debug / test-driven-development |
 | QA | Code Reviewer | code-review-checklist → java-testing-standards → ultraqa → (security-review-checklist) |
 | Cleanup | Lead Engineer | (optional) `ai-slop-cleaner` |
 | Archive | Knowledge Extractor | wal-documentation-rules → `ac-verify` → `remember` (cross-session lessons) |

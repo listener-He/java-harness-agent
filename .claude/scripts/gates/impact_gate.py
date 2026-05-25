@@ -13,9 +13,10 @@ Exit codes:
   2 = FAIL  (out-of-scope impacts found, blocking for MEDIUM/HIGH)
 
 Integration:
-  - Mounted by focus_guard role (STANDARD/PATCH Implement phase)
   - Called by run.py when artifact-tag 'impact' is present
   - Also useful to run manually before finalizing a focus card
+  - PreToolUse `scope_guard.py` is the live enforcement gate; this script is
+    a manual / orchestration-time impact checker
 """
 
 import argparse

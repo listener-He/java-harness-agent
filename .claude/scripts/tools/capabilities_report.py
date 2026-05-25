@@ -98,10 +98,10 @@ def load_skills() -> list[dict]:
 AGENT_CATEGORIES: dict[str, list[str]] = {
     "Implementation": ["lead-engineer"],
     "Design": ["system-architect", "requirement-engineer"],
-    "Review": ["code-reviewer", "focus-guard", "security-sentinel", "ambiguity-gatekeeper"],
+    "Review": ["code-reviewer", "security-sentinel", "ambiguity-gatekeeper"],
     "Knowledge / Governance": [
         "librarian", "knowledge-extractor", "knowledge-architect",
-        "documentation-curator", "skill-graph-curator",
+        "documentation-curator",
     ],
 }
 
