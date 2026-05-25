@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Gate Runner (Role-aware)
+Gate Runner (Agent-aware)
 
-This tool mounts roles dynamically by (intent, profile, phase) using:
-- .claude/workflow/role_matrix.json
+This tool mounts agents dynamically by (intent, profile, phase) using:
+- .claude/workflow/agent_matrix.json
 
 It runs deterministic gates and writes a markdown report to:
 - .claude/runs/task-briefs/gates_report_<timestamp>.md
@@ -71,8 +71,8 @@ def _run_script(script: str, args: list[str]) -> tuple[int, str]:
         return code, out
 
 
-def _resolve_roles(matrix: dict, intent: str, profile: str, phase: str) -> list[str]:
-    roles: list[str] = []
+def _resolve_agents(matrix: dict, intent: str, profile: str, phase: str) -> list[str]:
+    agents: list[str] = []
     for m in matrix.get("mounts", []):
         if m.get("intent") != intent:
             continue
@@ -80,8 +80,8 @@ def _resolve_roles(matrix: dict, intent: str, profile: str, phase: str) -> list[
             continue
         if m.get("phase") != phase:
             continue
-        roles.extend(m.get("roles", []))
-    return roles
+        agents.extend(m.get("agents", []))
+    return agents
 
 
 def _safe_key(text: str) -> str:
@@ -204,7 +204,7 @@ def main() -> int:
     parser.add_argument("--task-id", default="", help="stable task id for retry counting; default=intent:profile:topic:date")
     parser.add_argument("--max-failures-per-script", type=int, default=3, help="per task/script failure cap")
     parser.add_argument("--end-task", action="store_true", help="clear retry state for this task after run (success/fail)")
-    parser.add_argument("--matrix", default=".claude/workflow/role_matrix.json")
+    parser.add_argument("--matrix", default=".claude/workflow/agent_matrix.json")
     args = parser.parse_args()
 
     matrix = _load_json(args.matrix)
@@ -232,9 +232,9 @@ def main() -> int:
     }
     artifact_tags = _parse_artifact_tags(args.artifact_tags)
 
-    roles = _resolve_roles(matrix, args.intent, args.profile, args.phase)
-    if not roles:
-        print("WARN: no roles mounted for this phase")
+    agents = _resolve_agents(matrix, args.intent, args.profile, args.phase)
+    if not agents:
+        print("WARN: no agents mounted for this phase")
         return EXIT_WARN
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -253,14 +253,14 @@ def main() -> int:
         rep.write(f"- max-failures-per-script: {args.max_failures_per_script}\n")
         rep.write(f"- verify-level: {args.verify_level}\n")
         rep.write(f"- artifact-tags: {sorted(artifact_tags)}\n\n")
-        rep.write("## Mounted Roles\n")
-        for r in roles:
-            rep.write(f"- {r}\n")
+        rep.write("## Mounted Agents\n")
+        for a in agents:
+            rep.write(f"- {a}\n")
         rep.write("\n## Gate Results\n")
 
-        for role in roles:
-            role_def = matrix.get("roles", {}).get(role, {})
-            for gate in role_def.get("gates", []):
+        for agent in agents:
+            agent_def = matrix.get("agents", {}).get(agent, {})
+            for gate in agent_def.get("gates", []):
                 script = gate.get("script")
                 raw_args = gate.get("args", [])
                 rendered_args = []
@@ -273,7 +273,7 @@ def main() -> int:
                     rendered_args.append(rendered)
                 run_it, reason = _should_run_gate(script, rendered_args, args.verify_level, artifact_tags, ctx)
                 if not run_it:
-                    rep.write(f"### {role}: {script}\n")
+                    rep.write(f"### {agent}: {script}\n")
                     rep.write(f"- exit: SKIP\n")
                     rep.write(f"- reason: {reason}\n\n")
                     continue
@@ -282,7 +282,7 @@ def main() -> int:
                 current_failures = int(task_state.get(script_key, 0))
                 if current_failures > args.max_failures_per_script:
                     overall = EXIT_FAIL
-                    rep.write(f"### {role}: {script}\n")
+                    rep.write(f"### {agent}: {script}\n")
                     rep.write("- exit: BLOCKED\n")
                     rep.write(
                         f"- reason: failure count exceeded {args.max_failures_per_script}; human help required\n\n"
@@ -293,7 +293,7 @@ def main() -> int:
                 overall = max(overall, code)
                 if code == EXIT_FAIL:
                     task_state[script_key] = current_failures + 1
-                rep.write(f"### {role}: {script}\n")
+                rep.write(f"### {agent}: {script}\n")
                 rep.write(f"- exit: {code}\n")
                 rep.write(f"- failure-count: {task_state.get(script_key, current_failures)}\n")
                 rep.write("\n```text\n")

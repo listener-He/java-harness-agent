@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "roles": {
+  "agents": {
     "ambiguity_gatekeeper": {
       "gates": [
         {
@@ -87,43 +87,43 @@
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "Explorer",
-      "roles": ["ambiguity_gatekeeper", "requirement_engineer"]
+      "agents": ["ambiguity_gatekeeper", "requirement_engineer"]
     },
     {
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "Propose",
-      "roles": ["system_architect"]
+      "agents": ["system_architect"]
     },
     {
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "Implement",
-      "roles": ["lead_engineer", "security_sentinel"]
+      "agents": ["lead_engineer", "security_sentinel"]
     },
     {
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "QA",
-      "roles": ["code_reviewer"]
+      "agents": ["code_reviewer"]
     },
     {
       "intent": "Change",
       "profile": "STANDARD",
       "phase": "Archive",
-      "roles": ["knowledge_extractor", "documentation_curator", "librarian"]
+      "agents": ["knowledge_extractor", "documentation_curator", "librarian"]
     },
     {
       "intent": "Change",
       "profile": "PATCH",
       "phase": "Implement",
-      "roles": ["security_sentinel"]
+      "agents": ["security_sentinel"]
     },
     {
       "intent": "Change",
       "profile": "PATCH",
       "phase": "QA",
-      "roles": ["code_reviewer"]
+      "agents": ["code_reviewer"]
     }
   ]
 }

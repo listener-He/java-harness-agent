@@ -118,7 +118,7 @@ def _default_targets() -> list[dict[str, str]]:
         },
         {
             "rel_zip": "superpowers技能移植/skill-creator.zip",
-            "fallback_name": "skill-creator",
+            "fallback_name": "skill-author",
         },
     ]
 

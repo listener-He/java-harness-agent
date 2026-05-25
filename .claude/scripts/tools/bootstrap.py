@@ -18,7 +18,7 @@ Usage: python3 bootstrap.py <target-project-dir>
 Copies the framework into <target-project-dir>:
   - CLAUDE.md                          (project entry point)
   - .claude/rules/                     (lifecycle, policy, dispatch-template, skill-precedence)
-  - .claude/agents/                    (role definitions)
+  - .claude/agents/                    (agent definitions)
   - .claude/skills/                    (skill knowledge graph)
   - .claude/scripts/                   (gates, harness, tools, wiki, local_intel)
   - .claude/wiki/                      (KNOWLEDGE_GRAPH, schema, purpose)
@@ -59,7 +59,7 @@ WIKI_FILES = [
 
 WORKFLOW_FILES = [
     ".claude/workflow/EXAMPLES.md",
-    ".claude/workflow/role_matrix.json",
+    ".claude/workflow/agent_matrix.json",
     ".claude/workflow/artifacts/task_brief.md",
     ".claude/workflow/artifacts/delivery_capsule.md",
 ]

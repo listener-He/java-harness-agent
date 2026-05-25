@@ -53,6 +53,7 @@ CLAUDE.md                      # 唯一入口
 │   ├── h-collab.md              # 从 task_brief 生成跨团队协作文档（api/process/data/integration/custom）+ collab 状态文件 + launch_spec COLLAB 标记
 │   ├── h-collab-update.md       # 记录外部反馈 → 更新文档 → --signoff 移除 COLLAB 标记；BLOCKED 状态仅记录不阻断
 │   ├── h-pr.md                  # secrets_linter + scope_guard → gh pr create → PR URL 写回 task_brief；launch_spec → WAITING_APPROVAL
+│   ├── h-test-handoff.md        # 基于代码变更或 bug 修复生成给测试团队的交接文档（复现步骤、影响范围、推荐测试范围、回滚方案、待澄清问题）
 │   ├── h-ci.md                  # 拉取 CI 运行数据 → 分类失败（编译/测试/安全/覆盖率）→ failure_memory + 路由建议
 │   ├── h-release.md             # 发布前门禁（队列/工作区/分支/密钥）→ WAL changelog → mvn 版本设置 → tag + push；支持 --dry-run
 │   └── h-incident.md            # 包装 ingest_incident.py + 按 TEMPLATE 写 incident .md（强制 "提醒未来 LLM" 质量自检）
@@ -148,7 +149,6 @@ CLAUDE.md                      # 唯一入口
 │   │   ├── archive_session_artifacts.py        # 把 task_brief 从 runs/ 移到 wiki/archive/
 │   │   ├── bootstrap.py                        # 首次项目引导
 │   │   ├── brief_from_decomposition.py         # 从拆分文件生成每个子任务的 brief 骨架
-│   │   ├── capabilities_report.py              # 重新生成 .claude/CAPABILITIES.md
 │   │   ├── import_external_skills.py           # 从外部源导入 skill
 │   │   └── librarian_gc.py                     # Wiki GC 编排器（由 `librarian` Compact flow 调用）
 │   └── wiki/                                   # 9 个 wiki 维护脚本
@@ -162,7 +162,7 @@ CLAUDE.md                      # 唯一入口
 │       ├── wiki_linter.py                      # Wiki 体检（死链 / 超长 / 孤岛）
 │       └── zero_residue_audit.py               # 零残留清理审计（distill 之后）
 ├── workflow/
-│   ├── role_matrix.json       # 角色到阶段的挂载表
+│   ├── agent_matrix.json      # 智能体到阶段的挂载表
 │   ├── EXAMPLES.md            # STANDARD 任务的端到端示例
 │   └── artifacts/             # 产物模板
 ├── runs/                      # 运行时产物 — 必须 git-ignore（task-briefs、launch-specs、缓存）
@@ -380,6 +380,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 | 命令 | 阶段 | 效果 | 使用时机 |
 |------|------|------|---------|
 | `/h-pr [slug]` | QA 完成后 | `secrets_linter` + `scope_guard` 前置门禁 → `gh pr create`（含 Human Section + AC 清单）；PR URL 写回 task_brief；launch_spec → WAITING_APPROVAL；有 ticket_url 时自动添加 Closes # | STANDARD 任务完成后创建 PR |
+| `/h-test-handoff [slug] [--bug-fix] [--commits <range>] [--ticket <ref>]` | QA 完成后（合并前 / 发版前） | 读取 task_brief + git diff +（bug 修复时读 incident 文件）→ 生成给测试团队的交接文档：复现步骤、影响面、正/负向用例、回归风险点、不需测试范围、回滚方案、待澄清问题 → 输出到 `.claude/runs/qa-handoffs/<date>_<slug>_qa_handoff.md` | 测试团队与开发分离时把变更交接给 QA；高风险变更合并前再次校对 |
 | `/h-ci [--run-id <id>] [--from-file <log>]` | push 后 | 拉取 CI 运行数据 → 按类型/严重度分类失败 → `failure_memory` 记录 → 路由建议（flake 判断 / 修复任务 / 告警） | push 后或 PR 反馈中分析 CI 失败 |
 | `/h-release <version> [--dry-run]` | 发布时 | 前置门禁（队列完整性、工作区干净、发布分支、密钥扫描）→ WAL changelog → `mvn versions:set` → `mvn test` → tag + push；`--dry-run` 仅打印计划，不执行 git 操作 | 切发布版本 |
 

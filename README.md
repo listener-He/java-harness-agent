@@ -53,6 +53,7 @@ CLAUDE.md                      # Single entry point
 │   ├── h-collab.md              # Generate cross-team deliverable (api/process/data/integration/custom) + collab state file + COLLAB marker in launch_spec
 │   ├── h-collab-update.md       # Log external feedback → update deliverable → --signoff removes COLLAB marker; BLOCKED state recorded only
 │   ├── h-pr.md                  # secrets_linter + scope_guard → gh pr create → write PR URL into task_brief; launch_spec stays IN_PROGRESS with `| PR #<n>` Artifact marker
+│   ├── h-test-handoff.md        # Generate QA-team handoff doc from a code change or bug fix — reproduction steps, impact scope, recommended test scope, rollback, open questions
 │   ├── h-ci.md                  # Fetch CI run data → classify failures (compile/test/security/coverage) → failure_memory + routing recommendation
 │   ├── h-release.md             # Pre-release gates (queue/tree/branch/secrets) → WAL changelog → mvn versions:set → tag + push; --dry-run supported
 │   └── h-incident.md            # Wrap ingest_incident.py + write incident .md from TEMPLATE (enforces the "Reminder for Future LLM" smell test)
@@ -148,7 +149,6 @@ CLAUDE.md                      # Single entry point
 │   │   ├── archive_session_artifacts.py        # Move task_brief from runs/ to wiki/archive/
 │   │   ├── bootstrap.py                        # First-time project bootstrap
 │   │   ├── brief_from_decomposition.py         # Generate per-subtask brief skeletons from decomposition
-│   │   ├── capabilities_report.py              # Regenerate .claude/CAPABILITIES.md
 │   │   ├── import_external_skills.py           # Import skills from an external source
 │   │   └── librarian_gc.py                     # Wiki GC orchestrator (called by `librarian` Compact flow)
 │   └── wiki/                                   # 9 wiki maintenance scripts
@@ -162,7 +162,7 @@ CLAUDE.md                      # Single entry point
 │       ├── wiki_linter.py                      # Wiki health (dead links, overlength caps, islands)
 │       └── zero_residue_audit.py               # Audit zero-residue cleanups (after distill)
 ├── workflow/
-│   ├── role_matrix.json       # Role-to-phase mount table
+│   ├── agent_matrix.json      # Agent-to-phase mount table
 │   ├── EXAMPLES.md            # Walkthrough of a STANDARD task
 │   └── artifacts/             # Artifact templates
 ├── runs/                      # Runtime artifacts — MUST be git-ignored (task-briefs, launch-specs, cache)
@@ -380,6 +380,7 @@ User-invokable shortcuts that wrap multi-step lifecycle flows into single invoca
 | Command | Phase | Effect | When to use |
 |---------|-------|--------|-------------|
 | `/h-pr [slug]` | After QA | `secrets_linter` + `scope_guard` pre-gates → `gh pr create` with Human Section + AC checklist; PR URL written back to task_brief; launch_spec row stays `IN_PROGRESS` with `\| PR #<n>` Artifact marker (mirrors COLLAB pattern); auto-closes ticket if `ticket_url` in frontmatter | Creating a PR for a completed STANDARD task |
+| `/h-test-handoff [slug] [--bug-fix] [--commits <range>] [--ticket <ref>]` | After QA (pre-merge or pre-release) | Read task_brief + git diff + (incident file if bug-fix) → emit a QA briefing covering reproduction, impact surfaces, positive/negative test cases, regression risks, out-of-scope, rollback plan, open questions → `.claude/runs/qa-handoffs/<date>_<slug>_qa_handoff.md` | Handing the change to QA when test team is separate from dev; pre-merge sanity for high-risk changes |
 | `/h-ci [--run-id <id>] [--from-file <log>]` | After push | Fetch CI run data → classify failures by type/severity → `failure_memory` recording → routing recommendation (flake check / fix task / alert) | Analyzing CI failures after a push or as post-PR feedback |
 | `/h-release <version> [--dry-run]` | Release | Pre-release gates (queue completeness, clean tree, release branch, secrets) → WAL changelog → `mvn versions:set` → `mvn test` → tag + push; `--dry-run` prints all intended actions without git operations | Cutting a release version |
 
@@ -391,7 +392,7 @@ User-invokable shortcuts that wrap multi-step lifecycle flows into single invoca
 
 Each command file is opinionated: hard step ordering, fixed STOP conditions, explicit Allowed Edit boundaries. See `.claude/commands/h-<name>.md` for the full contract per command.
 
-**Note — no `/h-implement` or `/h-qa`**: the Implement and QA phases are intentionally NOT wrapped in commands. Those phases are the core write-code / write-test / run-tests work that the LLM does directly under the active `task_brief` contract — there is no state transition or gate orchestration to wrap. The `h-*` commands cover entry/exit (`/h-from-ticket`, `/h-decompose`, `/h-brief`, `/h-pr`, `/h-archive`), design (`/h-design`), research (`/h-research`), audit (`/h-gates`), status (`/h-resume`, `/h-status`), and special scenarios (`/h-fix-bug`, `/h-incident`, `/h-ci`, `/h-release`). Implement/QA happen in between, plain.
+**Note — no `/h-implement` or `/h-qa`**: the Implement and QA phases are intentionally NOT wrapped in commands. Those phases are the core write-code / write-test / run-tests work that the LLM does directly under the active `task_brief` contract — there is no state transition or gate orchestration to wrap. The `h-*` commands cover entry/exit (`/h-from-ticket`, `/h-decompose`, `/h-brief`, `/h-pr`, `/h-test-handoff`, `/h-archive`), design (`/h-design`), research (`/h-research`), audit (`/h-gates`), status (`/h-resume`, `/h-status`), and special scenarios (`/h-fix-bug`, `/h-incident`, `/h-ci`, `/h-release`). Implement/QA happen in between, plain.
 
 ### Command Usage Guide
 

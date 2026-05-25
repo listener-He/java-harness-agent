@@ -104,7 +104,7 @@ def _check_intent(intent: str) -> tuple[int, list[str]]:
         # Workflow process artifacts
         "hook", "hooks", "gate", "gates", "lifecycle", "router", "workflow",
         "wiki", "wal", "launch_spec", "task_brief",
-        "skill", "skills", "role_matrix", "agent", "agents",
+        "skill", "skills", "agent_matrix", "agent", "agents",
         # Chinese equivalents
         "流程", "门控", "生命周期",
     ]
