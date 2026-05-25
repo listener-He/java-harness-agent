@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""UserPromptSubmit hook.
+"""UserPromptSubmit hook — emits up to four context blocks:
 
-Injects up to three compact context blocks into the user prompt when applicable:
+  1. `[failure-memory]` — recurring failures, last 30 days.
+  2. distill nudge — wiki growth thresholds tripped.
+  3. `[ambiguity]` — prompt missing action/object/success signals.
+  4. `[triage]` — risk-signal-based profile suggestion.
 
-  1. Recurring failures from the last 30 days (failure_memory summary).
-  2. Wiki distillation nudge when growth thresholds are tripped.
-  3. Ambiguity nudge when the prompt has no action / object / success signals
-     and no explicit @shortcut overrides triage.
-
-Each block is silent when there is nothing to surface. Total token budget is
-well below the prompt-cache window.
+Triage runs first; empty stdout (VIBE-all-green or heuristic-skip) suppresses
+ambiguity + distill the same turn. failure_memory always emits.
 """
 from __future__ import annotations
 
@@ -101,18 +99,20 @@ def _emit_distill_nudge() -> None:
     print(out)
 
 
-def _emit_triage_probe(prompt_text: str) -> None:
-    """Inject [triage] block when probe suggests a profile above VIBE.
+def _capture_triage_probe(prompt_text: str) -> str:
+    """Run triage_probe and return its stdout (stripped).
 
-    Silent when probe heuristic-skips (short input, pure question) or when the
-    suggested profile is VIBE with no red signals. Subprocess is bounded by the
-    probe's internal 3s-per-tool timeouts.
+    Empty string ↔ probe was silent: heuristic-skipped (short / pure question /
+    @shortcut) or VIBE with no red/yellow signals. main() uses that signal to
+    gate the ambiguity + distill nudges for the same turn — a silent probe has
+    already classified the input as not-worth-escalating, so the downstream
+    nudges would only add noise.
     """
     if os.environ.get("CLAUDE_TRIAGE_QUIET") == "1":
-        return
+        return ""
     text = (prompt_text or "").strip()
     if not text:
-        return
+        return ""
     try:
         proc = subprocess.run(
             [sys.executable, TRIAGE_PROBE, "--quiet-on-skip"],
@@ -120,11 +120,8 @@ def _emit_triage_probe(prompt_text: str) -> None:
             timeout=10,
         )
     except subprocess.TimeoutExpired:
-        return
-    out = (proc.stdout or "").rstrip()
-    if not out:
-        return
-    print(out)
+        return ""
+    return (proc.stdout or "").rstrip()
 
 
 def _emit_ambiguity_check(prompt_text: str) -> None:
@@ -156,10 +153,16 @@ def _emit_ambiguity_check(prompt_text: str) -> None:
 
 def main() -> int:
     prompt_text = _read_prompt_from_stdin()
+
+    triage_output = _capture_triage_probe(prompt_text)
+    probe_quiet = not triage_output
+
     _emit_failure_memory()
-    _emit_distill_nudge()
-    _emit_ambiguity_check(prompt_text)
-    _emit_triage_probe(prompt_text)
+    if not probe_quiet:
+        _emit_distill_nudge()
+        _emit_ambiguity_check(prompt_text)
+    if triage_output:
+        print(triage_output)
     return 0
 
 

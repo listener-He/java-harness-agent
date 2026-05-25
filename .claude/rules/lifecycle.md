@@ -376,7 +376,7 @@ Real Claude Code hooks are configured in `.claude/settings.json`. This part docu
 |---|---|---|
 | PreToolUse | Before every Edit/Write | `pre_tool_use_hook.py` → `scope_guard.py` (blocks out-of-scope edits when an active task_brief exists; silent skip otherwise) |
 | PostToolUse | After every Edit/Write | `post_tool_use_hook.py` → `secrets_linter.py` on changed file |
-| UserPromptSubmit | Before every user prompt | `user_prompt_submit_hook.py` → emits up to four compact context blocks: `[failure-memory]`, distill nudge, `[ambiguity]`, `[triage]`. Each is silent when there is nothing to surface. |
+| UserPromptSubmit | Before every user prompt | `user_prompt_submit_hook.py`: triage runs first; empty triage stdout (VIBE-all-green or heuristic-skip) suppresses `[ambiguity]` + distill the same turn. `[failure-memory]` always emits. |
 
 These run automatically. The agent does not need to invoke them manually.
 

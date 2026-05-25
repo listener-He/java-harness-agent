@@ -7,6 +7,17 @@ Single entry point for AI coding assistants on this repo. Lazy-load everything e
 1. **Anti-loop**: max 3 retries per gate/linter, max 2 for compile fixes. Exceed → STOP, ask human.
 2. **Never commit**: `.claude/runs/`, `__pycache__/`, `target/`, `build/`, `.idea/`, `.vscode/`, `.DS_Store`. Only commit source, archived task_briefs (`.claude/wiki/archive/`), and `.claude/**/wal/` fragments.
 
+<HARD-GATE id="design-before-code">
+STANDARD: do NOT Edit/Write `src/**`, `*.sql`, migrations, or `pom.xml` until `task_brief.md` §3 Allowed Scope AND §5 ACs filled AND Phase 3 Review passed.
+Violation → STOP, emit `[Plan Invalidation]`, roll back to Propose.
+</HARD-GATE>
+
+<HARD-GATE id="evidence-before-archive">
+Archive (any code-producing profile) requires per-AC mapping: `AC-id → test/command → output → PASS|FAIL`.
+No mapping → do NOT mv to `.claude/wiki/archive/`, do NOT mark launch_spec DONE.
+PATCH inline in response; STANDARD in `task_brief.md` §10 QA Evidence.
+</HARD-GATE>
+
 Full safety/commit/artifact policy: [.claude/rules/policy.md](.claude/rules/policy.md).
 
 ## Behavioral Principles
@@ -122,6 +133,7 @@ Standard mode composes PDD + SDD/SPEC + BDD + TDD — see [.claude/wiki/purpose.
 2. Resuming an interrupted session: read `.claude/runs/launch-specs/launch_spec_*.md` and restore from Phase.
 3. User provided concrete paths or snippets: read them directly.
 4. Intent ambiguous: ask one clarifying question, then proceed.
+5. **Fallback** — no `[triage]` block this turn: act directly; if any skill in the available list has > 1% chance of applying, invoke `Skill` first.
 
 Vibe-eligible request → act, no classification line.
 Patch-eligible → emit a one-paragraph Slim Spec before code, then act.
