@@ -129,7 +129,7 @@ Standard mode composes PDD + SDD/SPEC + BDD + TDD — see [.claude/wiki/purpose.
 
 ## Session Start
 
-1. Read this file. Lazy-load `.claude/rules/*.md` only when the task needs them.
+1. Read this file. `lifecycle.md` is force-loaded via `@` import at the bottom; other `.claude/rules/*.md` lazy-load only when the task needs them.
 2. Resuming an interrupted session: read `.claude/runs/launch-specs/launch_spec_*.md` and restore from Phase.
 3. User provided concrete paths or snippets: read them directly.
 4. Intent ambiguous: ask one clarifying question, then proceed.
@@ -141,15 +141,16 @@ Standard-required → emit one line before any output: `[Risk: HIGH | Scenario: 
 
 ## Single Sources of Truth
 
-| Topic                                                | File |
-|------------------------------------------------------|---|
-| Routing + lifecycle + hooks (profiles, phases, gates) | [.claude/rules/lifecycle.md](.claude/rules/lifecycle.md) |
-| Safety + commit + WAL write-back + dispatch          | [.claude/rules/policy.md](.claude/rules/policy.md) |
-| Sub-agent dispatch prompt template (mandatory)       | [.claude/rules/dispatch-template.md](.claude/rules/dispatch-template.md) |
-| Skill precedence (conflict resolution for MANDATORY) | [.claude/rules/skill-precedence.md](.claude/rules/skill-precedence.md) |
-| TaskList usage (when to open / granularity)          | [.claude/rules/tasklist-policy.md](.claude/rules/tasklist-policy.md) |
-| Agent catalog                                        | [.claude/agents/](.claude/agents/) |
-| Active skill index (+ archive index)                 | [.claude/skills/skill-index/SKILL.md](.claude/skills/skill-index/SKILL.md) |
-| Wiki root                                            | [.claude/wiki/KNOWLEDGE_GRAPH.md](.claude/wiki/KNOWLEDGE_GRAPH.md) |
-| Task brief schema                                    | [.claude/wiki/schema/task_brief_schema.md](.claude/wiki/schema/task_brief_schema.md) |
+| Topic                                                | File                                                                                           |
+|------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| Routing + lifecycle + hooks (profiles, phases, gates) | [.claude/rules/lifecycle.md](@.claude/rules/lifecycle.md)                                     |
+| Safety + commit + WAL write-back + dispatch          | [.claude/rules/policy.md](.claude/rules/policy.md)                                             |
+| Sub-agent dispatch prompt template (mandatory)       | [.claude/rules/dispatch-template.md](.claude/rules/dispatch-template.md)                       |
+| Skill precedence (conflict resolution for MANDATORY) | [.claude/rules/skill-precedence.md](.claude/rules/skill-precedence.md)                         |
+| TaskList usage (when to open / granularity)          | [.claude/rules/tasklist-policy.md](.claude/rules/tasklist-policy.md)                           |
+| Agent catalog                                        | [.claude/agents/](.claude/agents/)                                                             |
+| Active skill index (+ archive index)                 | [.claude/skills/skill-index/SKILL.md](.claude/skills/skill-index/SKILL.md)                     |
+| Wiki root                                            | [.claude/wiki/KNOWLEDGE_GRAPH.md](.claude/wiki/KNOWLEDGE_GRAPH.md)                             |
+| Task brief schema                                    | [.claude/wiki/schema/task_brief_schema.md](.claude/wiki/schema/task_brief_schema.md)           |
 | Research report schema                               | [.claude/wiki/schema/research_report_schema.md](.claude/wiki/schema/research_report_schema.md) |
+
