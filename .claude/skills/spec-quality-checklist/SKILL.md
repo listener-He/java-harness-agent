@@ -43,3 +43,7 @@ description: "Self-correction gate for AI-generated documents (task_brief, WAL f
 - [ ] **Falsifiable:** Is there a condition under which the AC would definitively FAIL? (If no failure condition exists, the AC is not testable)
 - [ ] **Conflict-Free:** Do any two ACs contradict each other or contradict existing documented behavior?
 - [ ] **Complete:** Does each AC cover at least: (1) happy path, (2) one error/edge case?
+
+## Related Skills
+
+- [authoring-standards](../authoring-standards/SKILL.md): Optional self-validation pair at Step 5 — after drafting an artifact with `authoring-standards`, this checklist catches narrative content, vague language, and structural gaps.

@@ -49,3 +49,9 @@ Whenever you write a bidirectional link inside a `SKILL.md`, you MUST use this e
 - [<related-skill-1>](../<related-skill-1>/SKILL.md): <Brief explanation of why they are related, e.g., "The predecessor skill for requirements">
 - [<related-skill-2>](../<related-skill-2>/SKILL.md): <Brief explanation, e.g., "Provides the coding standards required by this skill">
 ```
+
+## Related Skills
+
+- [skill-author](../skill-author/SKILL.md): Upstream — `skill-author` Step 7 delegates "register in central index + maintain bidirectional links" to this skill.
+- [authoring-standards](../authoring-standards/SKILL.md): Upstream — after drafting an artifact, `authoring-standards` hands off registration to this skill.
+- [skill-index](../skill-index/SKILL.md): Maintenance target — every write this skill performs lands in that index file.

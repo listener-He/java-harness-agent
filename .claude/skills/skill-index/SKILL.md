@@ -5,7 +5,7 @@ description: "Skill navigator. List active skills, locate archived ones, choose 
 
 # Skill Index — Central Navigator
 
-This framework keeps 28 "active" skills auto-loaded by Claude Code. 13 lower-frequency skills are stored under `.claude/skills-archive/` and need to be re-activated on demand (see § Archive).
+This framework keeps 29 "active" skills auto-loaded by Claude Code. 13 lower-frequency skills are stored under `.claude/skills-archive/` and need to be re-activated on demand (see § Archive).
 
 **Scope:** A typical Claude Code install may surface external skills (`lark-*`, `claude-api`, `loop`, `schedule`, etc.). Those are global utilities — ignore unless asked by name.
 
@@ -33,7 +33,7 @@ This framework keeps 28 "active" skills auto-loaded by Claude Code. 13 lower-fre
 
 ## 0. Active (Auto-loaded by Claude Code)
 
-These 28 skills live under `.claude/skills/<name>/SKILL.md` and are visible to the Skill tool without further action.
+These 29 skills live under `.claude/skills/<name>/SKILL.md` and are visible to the Skill tool without further action.
 
 ### 0.0 Default Enabled (13) — daily workflow
 
@@ -53,7 +53,7 @@ These 28 skills live under `.claude/skills/<name>/SKILL.md` and are visible to t
 | [java-testing-standards](../java-testing-standards/SKILL.md) | QA | Code Reviewer |
 | [mybatis-sql-standard](../mybatis-sql-standard/SKILL.md) | Propose / Implement | System Architect / Lead Engineer |
 
-### 0.1 Role-Required & QA-Critical (7)
+### 0.1 Role-Required & QA-Critical (8)
 
 | Skill | Required When |
 |---|---|
@@ -62,7 +62,8 @@ These 28 skills live under `.claude/skills/<name>/SKILL.md` and are visible to t
 | [decision-frameworks](../decision-frameworks/SKILL.md) | System Architect — ambiguous root cause or design choice |
 | [ultraqa](../ultraqa/SKILL.md) | QA phase, AC count ≥ 4 OR HIGH risk |
 | [security-review-checklist](../security-review-checklist/SKILL.md) | HIGH risk change touching auth/data/secrets |
-| [skill-creator](../skill-creator/SKILL.md) | Adding/updating a SKILL.md |
+| [skill-author](../skill-author/SKILL.md) | Decide whether a new SKILL.md is warranted; drives the authoring pre-flight |
+| [authoring-standards](../authoring-standards/SKILL.md) | Once "yes", provides format rules for Skill / Sub-agent / Rule artifacts + Pre-Creation data-sufficiency gate |
 | [skill-index](./SKILL.md) | This file |
 
 ### 0.2 Reactivated — Reasoning, Knowledge & Cleanup (8)
@@ -131,4 +132,5 @@ Auto-loading 12 rarely-used skill descriptions costs ~1,800 tok on every session
 
 - `.claude/agents/` — role catalog; each role file lists which skills it depends on
 - `.claude/rules/lifecycle.md` — when each lifecycle phase fires
-- `.claude/skills/skill-creator/SKILL.md` — used when adding a new skill (will prompt you to register here)
+- `.claude/skills/skill-author/SKILL.md` — used when adding a new skill (will prompt you to register here)
+- `.claude/skills/authoring-standards/SKILL.md` — format authority for Skill / Sub-agent / Rule files; enforces Pre-Creation Protocol
