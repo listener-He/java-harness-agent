@@ -19,24 +19,26 @@
 ```
 CLAUDE.md                      # 唯一入口
 .claude/
-├── rules/                     # 路由、生命周期、钩子、派遣、安全、写回、技能优先级
-│   ├── lifecycle.md           # 执行模式 + 风险分级 + 各阶段细节（Explorer → Propose → Review → Implement → QA → Archive）+ 阶段门禁与钩子
+├── rules/                     # 路由、生命周期、钩子、派遣、安全、写回、技能优先级、TaskList
+│   ├── lifecycle.md           # 执行模式 + 风险分级 + 各阶段细节（Explorer → Propose → Review → Implement → QA → Archive）+ 阶段门禁与钩子（在 CLAUDE.md 通过 `@` import 强加载）
 │   ├── policy.md              # 硬约束 + 提交策略 + WAL 写回 + Agent 派遣（内联角色 vs 子智能体）
 │   ├── dispatch-template.md   # 子智能体 prompt 标准骨架（每次派遣必须使用）
-│   └── skill-precedence.md    # 同一触发窗口多个 MANDATORY 技能冲突时的优先级仲裁
-├── agents/                    # 角色目录 — 每个 .md 含 Claude Code frontmatter（name/description/tools/model），可通过 Agent 工具调用
-│   ├── ambiguity-gatekeeper.md   # 歧义守门员 · Ambiguity Gatekeeper — 阻断模糊输入，强制执行"就绪定义"三要素（动作动词 + 可识别目标 + 可度量结果）。探索超过 3 步未收敛即终止。工作阶段：Explorer 前。
-│   ├── requirement-engineer.md   # 需求工程师 · Requirement Engineer — 将原始用户需求翻译为 Given/When/Then 可测试验收标准。挑战模糊形容词（"快"、"好"），为每条需求定义快乐路径 + 2 个边界场景，最终执行认知偏差检查。工作阶段：Explorer。
-│   ├── system-architect.md       # 系统架构师 · System Architect — 在编码前设计技术方案，产出 task_brief.md（允许范围 + 验收标准 + 硬约束 + 任务依赖 DAG）。HIGH 风险时生成 ≥2 个 ADR 备选方案（含优缺点/失败条件）。EPIC 场景担任 Foreman。工作阶段：Propose → Review。
-│   ├── lead-engineer.md          # 首席工程师 · Lead Engineer — 将 task_brief Machine Section 转化为可编译、可测试的代码。遵循 TDD：RED（基于 AC 写失败测试）→ GREEN（最小实现）→ REFACTOR（清理重构）。严格遵循允许范围，每次变更后执行编译检查（最多重试 2 次）。工作阶段：Implement。
-│   ├── focus-guard.md            # 专注守卫 · Focus Guard — 范围边界强制执行。确保所有代码变更不超出 task_brief 允许范围。不审查代码质量，只检查边界合规。越界变更被阻止并输出 [Scope Violation]；必要的跨边界修改需发起 [Boundary Exception Request] 等待人工审批。工作阶段：Implement（伴随守卫）。
-│   ├── code-reviewer.md          # 代码审查员 · Code Reviewer — Tech-Lead 级代码审查，对照五维评分标准：正确性、安全性、性能、设计与可维护性、代码风格。输出 CRITICAL（阻断合并）/ MAJOR（应修复）/ MINOR（锦上添花）三级报告，附 file:line 精确定位。工作阶段：QA。
-│   ├── knowledge-extractor.md    # 知识提取器 · Knowledge Extractor — 从完成的代码变更中提取稳定知识，归类为 Domain（领域概念）、API（接口契约）、Rules（约束模式）、Data（数据模型）四个维度，写入 wal/ 目录为 WAL 碎片。不直接编辑共享的 index.md，合并工作留给 Librarian。工作阶段：Archive。
-│   ├── documentation-curator.md  # 文档管理员 · Documentation Curator — 维护面向用户的文档（README、Javadoc、API 文档）与代码保持同步。处理新增/变更/废弃的公开 API，遵循 Javadoc 规范（@param, @return, @throws）。不负责 wiki/WAL 内容。工作阶段：Archive。
-│   ├── skill-graph-curator.md    # 技能图谱管理员 · Skill Graph Curator — 维护技能索引一致性。确保每个技能目录有 SKILL.md、每份 SKILL.md 在索引中有记录。检测死链、重复项、孤立技能。执行 skill_index_linter 门禁。工作阶段：Archive。
-│   ├── knowledge-architect.md    # 知识架构师 · Knowledge Architect — 当 wiki 索引文件超过 500 行上限时，执行去重→按主题拆分→创建聚焦子文档→将父索引重写为精简路由图。必要时更新 KNOWLEDGE_GRAPH.md。工作阶段：Maintenance（由 GC 溢出触发）。
-│   ├── librarian.md              # 图书管理员 · Librarian — Wiki 健康维护者。收集分散的 WAL 碎片→合并到稳定的领域索引→垃圾回收已合并的碎片。发现索引超 500 行时自动调用 Knowledge Architect 拆分。触发方式：@gc / @librarian。工作阶段：Maintenance。
-│   └── security-sentinel.md      # 安全哨兵 · Security Sentinel — 确定性安全门禁。运行自动化扫描（secrets_linter.py）检测硬编码凭据、令牌、密钥、云凭证。仅报告客观通过/失败结果，不做主观安全审计。每次 Archive 前 + Scenario A（紧急热修复）触发。
+│   ├── skill-precedence.md    # 同一触发窗口多个 MANDATORY 技能冲突时的优先级仲裁
+│   └── tasklist-policy.md     # 何时使用 Claude Code 内置 TaskList（白名单：EPIC 子任务 / AC ≥ 4 / Approval Gate / 紧急热修复审计锚点）
+├── agents/                    # 13 个 agent — 每个 .md 含 Claude Code frontmatter（name/description/tools/model），可通过 Agent 工具调用
+│   ├── ambiguity-gatekeeper.md   # 歧义守门员 · Ambiguity Gatekeeper — 阻断模糊输入，强制 definition-of-ready（清晰范围 + 可测试结果 + 显式 AC）。返回 [Status]: PASS|FAIL；FAIL 携带 [Must-Ask Questions]。工作阶段：Phase 1 Step B（Idea/Feedback/Compliance/Security 类输入）。
+│   ├── requirement-engineer.md   # 需求工程师 · Requirement Engineer — 将原始 Idea/Feedback/Compliance/Security 输入翻译为 Given/When/Then 可测试 AC + 结构化 Must-Ask 问题清单。不调用 AskUserQuestion（子智能体无此工具）。工作阶段：Phase 1 Explorer。
+│   ├── system-architect.md       # 系统架构师 · System Architect — 在编码前设计架构：高层交互、库表设计、API 契约、不可逆决策（ADR）。EPIC 场景担任 Foreman，按 INVEST 拆分大任务到子智能体。工作阶段：Phase 2 Propose（HIGH 风险 / Scenario EPIC / GREENFIELD / B2）。
+│   ├── lead-engineer.md          # 首席工程师 · Lead Engineer — 按 task_brief Machine Section 编写 Java/Maven 可编译代码：允许范围 + ACs + 硬约束 → TDD（RED→GREEN→REFACTOR）。主智能体对 MEDIUM 且 AC ≤ 3 单域任务优先选择内联。工作阶段：Phase 4 Implement。
+│   ├── java-build-resolver.md    # Java 构建错误解析器 · Java Build Resolver — 诊断 mvn compile / test-compile / javac 失败，返回 [Root Cause] + [Suggested Fix]；主智能体应用修复并重跑（同一 root cause 最多派遣 2 次）。Model: haiku。工作阶段：Phase 4 编译失败时。
+│   ├── test-runner.md            # 测试运行器 · Test Runner — 在变更模块范围内运行 JUnit/Surefire，解析输出，返回 AC-id → 测试方法 → PASS|FAIL|SKIP 映射 + 最小失败片段。不修改代码。Model: haiku。工作阶段：Phase 5 QA（AC ≥ 4 或 HIGH 风险时）。
+│   ├── database-reviewer.md      # 数据库审查员 · Database Reviewer — 对 MyBatis mapper XML / *Mapper.java / 迁移 SQL 按 mybatis-sql-standard 审查（反 JOIN、${} 注入、审计列、最左前缀、N+1、手写 tenant_id 过滤）。HIGH/MEDIUM 发现阻断 Archive。工作阶段：Phase 5 QA 命中 mapper/SQL 变更时。
+│   ├── code-reviewer.md          # 代码审查员 · Code Reviewer — 对新写代码（diff）做正确性/性能/安全/可维护性审查，独立 sub-agent 干净上下文。不做设计审查（用 system-architect）或 SQL 审查（用 database-reviewer）。工作阶段：Phase 4 Implement 之后，MEDIUM/HIGH STANDARD。
+│   ├── security-sentinel.md      # 安全哨兵 · Security Sentinel — 跑确定性脚本扫描密钥泄漏 + 授权绕过风险，纯工具调用，不做主观安全审计。HIGH 置信命中阻断 Archive。工作阶段：QA → Archive gate + Scenario A（紧急热修复）。
+│   ├── knowledge-extractor.md    # 知识提取器 · Knowledge Extractor — 从完成的代码变更中提取稳定知识到 WAL 碎片。只写用户在 h-archive Step 3b 选中的维度（Domain/API/Rules/Data/Architecture）。Model: haiku。工作阶段：Phase 6 Archive。
+│   ├── documentation-curator.md  # 文档管理员 · Documentation Curator — 编写基于真实源码的文档：README、API/Javadoc、迁移指南、runbook、ADR explainer、能力矩阵。每个声明可追溯到文件路径或 commit。Model: haiku。工作阶段：用户请求（"写文档"、"draft README"、能力矩阵）。
+│   ├── librarian.md              # 图书管理员 · Librarian — 维护 wiki 健康两种 flow：**Compact**（合并 WAL 碎片到稳定索引 + GC）和 **Distill**（扫描 + 计划 + 人工批准后删除）。工作阶段：Maintenance（用户请求 wiki 合并 / 过期清理）。
+│   └── knowledge-architect.md    # 知识架构师 · Knowledge Architect — wiki 索引文件超过 3000 行（wiki_linter.py cap）时执行拆分到聚焦子文档 + 原文件重写为精简路由图。工作阶段：Maintenance（由 linter 溢出触发）。
 ├── commands/                    # 用户可调用的 slash 命令（h- 前缀，避免与 Claude Code 内置命令冲突）
 │   ├── h-from-ticket.md         # GitHub/Jira/Linear ticket → task_brief 骨架 + launch_spec 行（跑 ambiguity-gatekeeper + input-classifier）
 │   ├── h-decompose.md           # PRD/EPIC 预校验 → task-decomposition-guide 拆解 → N 个 brief 骨架 → DAG 绑定 launch_spec
@@ -44,6 +46,7 @@ CLAUDE.md                      # 唯一入口
 │   ├── h-design.md              # 用严格 Source Documents 契约派遣 system-architect → HIGH 写 ≥2 ADR → 填 brief §8/§9
 │   ├── h-research.md            # 脚手架 RESEARCH 模式报告（按 schema 渲染 7 个章节）；--scope quick|deep 决定 §3 findings 配额；launch_spec 绑定为 RES/Research/IN_PROGRESS
 │   ├── h-resume.md              # 只读：定位 IN_PROGRESS 任务 + 恢复 Machine Section + 给出 Next Action（自动检测 COLLAB 阻断状态）
+│   ├── h-status.md              # 全局队列快照——列出所有 launch_spec 行（PENDING/IN_PROGRESS/WAITING_APPROVAL/DONE/FAILED）+ 可并行的下一步建议
 │   ├── h-fix-bug.md             # ticket/手动输入 → root-cause-debug Phase 1（必须完成）→ 按风险创建 launch_spec 行；p1/p2 触发 h-incident
 │   ├── h-gates.md               # Phase/Scenario 感知的 gate 套件 + failure_memory 失败记录
 │   ├── h-archive.md             # Plan Deviation Reflection → knowledge-extractor → 归档 brief → wiki_linter → 标记 DONE
@@ -147,7 +150,7 @@ CLAUDE.md                      # 唯一入口
 │   │   ├── brief_from_decomposition.py         # 从拆分文件生成每个子任务的 brief 骨架
 │   │   ├── capabilities_report.py              # 重新生成 .claude/CAPABILITIES.md
 │   │   ├── import_external_skills.py           # 从外部源导入 skill
-│   │   └── librarian_gc.py                     # Wiki GC 编排器（@gc / @librarian 调用）
+│   │   └── librarian_gc.py                     # Wiki GC 编排器（由 `librarian` Compact flow 调用）
 │   └── wiki/                                   # 9 个 wiki 维护脚本
 │       ├── compactor.py                        # WAL fragment 合并到主 wiki
 │       ├── distill_threshold.py                # 计算 distill 的过期阈值
@@ -195,7 +198,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 
 | 项目 | 详情 |
 |------|------|
-| **角色** | `@Ambiguity Gatekeeper`（前置门禁）, `@Requirement Engineer`, `@System Architect`（Propose 阶段） |
+| **角色** | `ambiguity-gatekeeper`（前置门禁）, `requirement-engineer`, `system-architect`（Propose 阶段） |
 | **技能** | `input-classifier`, `brainstorming`, `product-manager-expert`, `task-decomposition-guide` |
 | **活动** | ① `input-classifier` 内联运行：分类原始输入 → 输出 `[Intake]` 块（含 `Input-Type` 和 `Route`） |
 | | ② **Idea/Feedback/Compliance/Security 类输入**：优先派遣 `ambiguity-gatekeeper` — FAIL 时阻断直到输入收紧；PASS 后派遣 `requirement-engineer` |
@@ -209,7 +212,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 
 | 项目 | 详情 |
 |------|------|
-| **角色** | `@System Architect` |
+| **角色** | `system-architect` |
 | **技能** | `brainstorming`, `java-architecture-standards`, `task-decomposition-guide`, `decision-frameworks`, `cognitive-bias-checklist` |
 | **活动** | ① **PDD — 计划作为一等产物**：声明任务依赖，≥3 个任务时绘制依赖图（DAG）；设定并行约束（软上限：3） |
 | | ② 生成 ≥2 个设计备选方案（HIGH：ADR 格式，含优缺点/失败条件） |
@@ -224,7 +227,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 
 | 项目 | 详情 |
 |------|------|
-| **角色** | `@System Architect` |
+| **角色** | `system-architect` |
 | **技能** | `code-review-checklist`, `java-architecture-standards`, `adversarial-review`（HIGH）, `spec-quality-checklist` |
 | **活动** | ① 对照项目标准和架构约束审查设计 |
 | | ② **Plan Review Checklist（PDD）**：完整性 → 一致性 → 可行性 → 风险覆盖 → 依赖合理性（≥3 个任务） |
@@ -237,7 +240,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 
 | 项目 | 详情 |
 |------|------|
-| **角色** | `@Lead Engineer`, `@Focus Guard` |
+| **角色** | `lead-engineer`（scope_guard.py PreToolUse hook 强制执行 Allowed Scope） |
 | **技能** | `test-driven-development`, `java-architecture-standards`, `java-coding-style`, `mybatis-sql-standard`, `impl-plan` |
 | **活动** | ① 阅读 `task_brief.md` Machine Section — Allowed Scope + ACs + Hard Constraints |
 | | ② **RED**：从 AC 编写失败测试（在写任何实现代码前必须看到测试失败） |
@@ -251,7 +254,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 
 | 项目 | 详情 |
 |------|------|
-| **角色** | `@Code Reviewer` |
+| **角色** | `code-reviewer` |
 | **技能** | `java-testing-standards`, `code-review-checklist`, `ultraqa`, `security-review-checklist`（HIGH） |
 | **活动** | ① 确保编译通过（`shift_left_hook`） |
 | | ② 运行测试套件 → 验证所有 AC 通过 |
@@ -264,7 +267,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 
 | 项目 | 详情 |
 |------|------|
-| **角色** | `@Knowledge Extractor`, `@Documentation Curator`, `@Skill Graph Curator` |
+| **角色** | `knowledge-extractor`, `documentation-curator` |
 | **技能** | `wal-documentation-rules`, `ac-verify` |
 | **活动** | ① 从完成的 task_brief 中提取稳定知识 |
 | | ② 将 **WAL 片段**写入领域目录：`api/wal/`, `data/wal/`, `domain/wal/` |
@@ -281,38 +284,38 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 
 ### WAL Compaction (GC) — 碎片整理
 
-**触发**: `@gc`, `@librarian`, 或 "整理 wiki", "合并碎片", "做 GC"
+**触发**: "整理 wiki", "合并碎片", "做 GC", "wiki 合并", "WAL 合并"
 
 | 步骤 | 操作 | 角色 |
 |------|------|------|
-| ① 聚合 | `librarian_gc.py --aggregate` — 收集所有未合并的 WAL 碎片 | `@Librarian` |
-| ② 合并 | 将聚合的知识合并到正确的领域索引文件 | `@Librarian` |
-| ③ 清理 | `librarian_gc.py --clean` — 删除已合并的碎片 | `@Librarian` |
-| ④ 检查 | 如有文件超过 500 行 → 触发文档拆分 | `@Knowledge Architect` |
+| ① 聚合 | `librarian_gc.py --aggregate` — 收集所有未合并的 WAL 碎片 | `librarian` |
+| ② 合并 | 将聚合的知识合并到正确的领域索引文件 | `librarian` |
+| ③ 清理 | `librarian_gc.py --clean` — 删除已合并的碎片 | `librarian` |
+| ④ 检查 | 如有文件超过 3000 行 → 触发文档拆分 | `knowledge-architect` |
 | **门禁** | `wiki_linter.py` — 无死链 | — |
 
 ### Wiki Refresh — 知识提取与沉淀
 
-**触发**: `@wiki-update`, `@milestone`, 或 "提取知识", "沉淀 wiki", "刷新知识库"
+**触发**: "提取知识", "沉淀 wiki", "刷新知识库", "milestone WAL 刷新"
 
 | 步骤 | 操作 | 角色 |
 |------|------|------|
-| ① 差异 | `git diff` 识别自上次更新以来的变更 | `@Knowledge Extractor` |
-| ② 提取 | 将稳定知识提取为结构化 WAL 碎片：[Domain], [API], [Rules] (+ [Data] 如有 schema) | `@Knowledge Extractor` |
-| ③ 写入 | 写入碎片到 `wiki/domain/wal/`, `wiki/api/wal/` 等 | `@Knowledge Extractor` |
+| ① 差异 | `git diff` 识别自上次更新以来的变更 | `knowledge-extractor` |
+| ② 提取 | 将稳定知识提取为结构化 WAL 碎片：[Domain], [API], [Rules] (+ [Data] 如有 schema) | `knowledge-extractor` |
+| ③ 写入 | 写入碎片到 `wiki/domain/wal/`, `wiki/api/wal/` 等 | `knowledge-extractor` |
 | **门禁** | `writeback_gate.py`（3 个必需章节）+ `wiki_linter.py` | — |
 
 ### Document Split — 文档拆分（防膨胀）
 
-**触发**: wiki 文件超过 500 行，或 "拆分文档", "index 太大"
+**触发**: wiki 文件超过 3000 行，或 "拆分文档", "index 太大"
 
 | 步骤 | 操作 | 角色 |
 |------|------|------|
-| ① 检查 | 验证文件超过 500 行限制；未超过则中止 | `@Knowledge Architect` |
-| ② 去重 | 移除膨胀文件中的重复条目 | `@Knowledge Architect` |
-| ③ 拆分 | 按主题拆分为专注的子文档 | `@Knowledge Architect` |
-| ④ 重写 | 将原文件重写为精简的路由索引（仅含链接） | `@Knowledge Architect` |
-| **门禁** | `wiki_linter.py` — 无死链，无文件仍超过 500 行 | — |
+| ① 检查 | 验证文件超过 3000 行限制；未超过则中止 | `knowledge-architect` |
+| ② 去重 | 移除膨胀文件中的重复条目 | `knowledge-architect` |
+| ③ 拆分 | 按主题拆分为专注的子文档 | `knowledge-architect` |
+| ④ 重写 | 将原文件重写为精简的路由索引（仅含链接） | `knowledge-architect` |
+| **门禁** | `wiki_linter.py` — 无死链，无文件仍超过 3000 行 | — |
 
 ### Project Scan — 项目扫描
 

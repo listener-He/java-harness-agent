@@ -19,24 +19,26 @@ Entry point: **[CLAUDE.md](CLAUDE.md)** — read first on every session start.
 ```
 CLAUDE.md                      # Single entry point
 .claude/
-├── rules/                     # Routing, lifecycle, hooks, dispatch, safety, write-back, skill precedence
-│   ├── lifecycle.md           # Profiles + risk classification + phase details (Explorer → Propose → Review → Implement → QA → Archive) + per-phase gates and hooks
+├── rules/                     # Routing, lifecycle, hooks, dispatch, safety, write-back, skill precedence, TaskList
+│   ├── lifecycle.md           # Profiles + risk classification + phase details (Explorer → Propose → Review → Implement → QA → Archive) + per-phase gates and hooks (force-loaded via `@` import in CLAUDE.md)
 │   ├── policy.md              # Hard constraints + commit policy + WAL write-back + agent dispatch (inline role adoption vs sub-agent)
 │   ├── dispatch-template.md   # Canonical sub-agent prompt skeleton (mandatory for every dispatch)
-│   └── skill-precedence.md    # Conflict resolution when multiple MANDATORY skills target the same trigger window
-├── agents/                    # Role catalog — each .md has Claude Code frontmatter (name/description/tools/model) and is invokable via the Agent tool
-│   ├── ambiguity-gatekeeper.md   # Gate: blocks work on vague input. Enforces "definition of ready" (action verb + target + measurable outcome). Stops runaway exploration >3 unconverging steps. Phase: before Explorer.
-│   ├── requirement-engineer.md   # Translates raw user requests → testable ACs in Given/When/Then. Challenges vague adjectives ("fast", "better"). Defines happy path + 2 edge cases per requirement. Runs cognitive bias check before finalizing. Phase: Explorer.
-│   ├── system-architect.md       # Designs the technical solution before code exists. Produces task_brief.md (Allowed Scope + ACs + Hard Constraints + Task DAG). HIGH risk: ≥2 ADR alternatives with Pros/Cons/Failure Conditions. Acts as Foreman in EPIC. Phase: Propose → Review.
-│   ├── lead-engineer.md          # Translates task_brief Machine Section → compilable, tested code. Follows TDD: RED (failing test from AC) → GREEN (minimum code) → REFACTOR (clean up). Copies existing patterns, stays in Allowed Scope. Phase: Implement.
-│   ├── focus-guard.md            # Scope enforcement gate. Ensures every file edit stays within task_brief Allowed Scope. Blocks out-of-scope changes; requests [Boundary Exception] for necessary cross-boundary edits. Does NOT review quality — only boundary compliance. Phase: Implement (guard).
-│   ├── code-reviewer.md          # Tech-lead code inspection against 5-dimension rubric: Correctness, Security, Performance, Design & Maintainability, Style. Reports CRITICAL (blocks merge) / MAJOR / MINOR findings with file:line references. Phase: QA.
-│   ├── knowledge-extractor.md    # Extracts stable knowledge from completed code → WAL fragments (Domain, API, Rules, Data). Categorizes changes, writes to wal/ directories. Does NOT edit shared index.md — merging is the Librarian's job. Phase: Archive.
-│   ├── documentation-curator.md  # Updates user-facing docs (README, Javadoc, API docs) to reflect code changes. Handles new/changed/removed public APIs. Follows Javadoc standards (@param, @return, @throws). Scope excludes wiki/WAL. Phase: Archive.
-│   ├── skill-graph-curator.md    # Maintains skill index consistency. Ensures every skill dir has SKILL.md and every SKILL.md is indexed. Detects dead links, duplicates, orphans. Runs skill_index_linter as gate. Phase: Archive.
-│   ├── knowledge-architect.md    # Splits bloated wiki indexes when >500 lines. Deduplicates → groups by topic → creates focused sub-documents → rewrites parent as lean routing index. Updates KNOWLEDGE_GRAPH.md. Phase: Maintenance (triggered by GC overflow).
-│   ├── librarian.md              # Wiki health maintainer. Aggregates scattered WAL fragments → merges into stable domain indexes → garbage-collects merged fragments. Invokes Knowledge Architect on index overflow. Trigger: @gc / @librarian. Phase: Maintenance.
-│   └── security-sentinel.md      # Deterministic security gate. Runs automated scan (secrets_linter.py) for hardcoded credentials, tokens, keys. Reports objective pass/fail — no subjective security review. Triggered before every Archive + Scenario A (Emergency Hotfix).
+│   ├── skill-precedence.md    # Conflict resolution when multiple MANDATORY skills target the same trigger window
+│   └── tasklist-policy.md     # When to open Claude Code's built-in TaskList (whitelist: EPIC sub-tasks / AC ≥ 4 / Approval Gate / Emergency Hotfix audit anchors)
+├── agents/                    # 13 agents — each .md has Claude Code frontmatter (name/description/tools/model) and is invokable via the Agent tool
+│   ├── ambiguity-gatekeeper.md   # GATE on ambiguous input — enforce definition-of-ready (clear scope + testable outcome + explicit AC) before AC transcription. Returns [Status]: PASS|FAIL; FAIL carries [Must-Ask Questions]. Phase: Phase 1 Step B (Idea/Feedback/Compliance/Security).
+│   ├── requirement-engineer.md   # Translate raw Idea/Feedback/Compliance/Security input → testable Given/When/Then ACs + structured Must-Ask question list. Does NOT call AskUserQuestion (no such tool on sub-agents). Phase: Phase 1 Explorer.
+│   ├── system-architect.md       # Design system architecture BEFORE any code — high-level interactions, schema, API contracts, irreversible decisions captured as ADRs. Acts as Foreman in EPIC (slices large work into INVEST micro-tasks). Phase: Phase 2 Propose (HIGH risk / Scenario EPIC / GREENFIELD / B2).
+│   ├── lead-engineer.md          # Implement per task_brief Machine Section — translate Allowed Scope + ACs + Hard Constraints into compilable Java/Maven changes following TDD (RED→GREEN→REFACTOR). Main agent prefers inline for MEDIUM with AC ≤ 3 + single domain. Phase: Phase 4 Implement.
+│   ├── java-build-resolver.md    # Diagnose Java/Maven build failures (mvn compile / test-compile / javac). Returns [Root Cause] + [Suggested Fix] block; main agent applies the fix and re-runs (max 2 dispatches per same root cause). Model: haiku. Phase: Phase 4 on compile failure.
+│   ├── test-runner.md            # Run JUnit/Surefire tests scoped to changed modules, parse output, return AC-id → test method → PASS|FAIL|SKIP mapping + minimal failure excerpts. Does NOT modify code. Model: haiku. Phase: Phase 5 QA when AC ≥ 4 OR risk = HIGH.
+│   ├── database-reviewer.md      # Review MyBatis mapper XML / *Mapper.java / migration SQL against mybatis-sql-standard (anti-JOIN, ${} injection, audit columns, leftmost-prefix, N+1, manual tenant_id filter). HIGH/MEDIUM findings block Archive. Phase: Phase 5 QA when mapper/SQL changes.
+│   ├── code-reviewer.md          # Review newly written code (diff) for correctness, performance, security, maintainability — fresh-context inspection in isolated sub-agent. NOT for design review (use system-architect) or SQL review (use database-reviewer). Phase: after Phase 4 Implement, MEDIUM/HIGH STANDARD.
+│   ├── security-sentinel.md      # Scan for secret leakage + authorization-bypass risks via deterministic scripts. Pure tool runner — no subjective security review. HIGH-confidence hit BLOCKS Archive. Phase: QA → Archive gate + Scenario A (Emergency Hotfix).
+│   ├── knowledge-extractor.md    # Extract stable knowledge from completed code changes into WAL fragments. Writes ONLY user-elected dimensions (Domain/API/Rules/Data/Architecture) via h-archive Step 3b. Model: haiku. Phase: Phase 6 Archive.
+│   ├── documentation-curator.md  # Author documentation grounded in real source — README, API/Javadoc, migration guide, runbook, ADR explainer, capabilities matrix. Every claim traceable to a file path or commit. Model: haiku. Phase: on user request ("write docs", "draft README", capabilities matrix).
+│   ├── librarian.md              # Maintain wiki health: **Compact** (merge WAL fragments into stable indexes + GC) and **Distill** (scan + plan + human-approved deletion). Phase: Maintenance (user requests wiki consolidation / stale-knowledge cleanup).
+│   └── knowledge-architect.md    # Split oversized wiki index files (> 3000 lines per wiki_linter.py cap) into focused sub-documents + rewrite original as a lean routing graph. Phase: Maintenance (triggered by linter overflow).
 ├── commands/                    # User-invokable slash commands (h- prefix, avoid Claude Code built-in collision)
 │   ├── h-from-ticket.md         # GitHub/Jira/Linear ticket → task_brief skeleton + launch_spec row (runs ambiguity-gatekeeper + input-classifier)
 │   ├── h-decompose.md           # PRD/EPIC pre-validation → task-decomposition-guide → N brief skeletons → DAG bound to launch_spec
@@ -44,6 +46,7 @@ CLAUDE.md                      # Single entry point
 │   ├── h-design.md              # Dispatch system-architect with strict Source Documents → write ≥2 ADRs (HIGH) → fill brief §8/§9
 │   ├── h-research.md            # Scaffold RESEARCH profile report skeleton (7 sections per schema); --scope quick|deep drives §3 findings quota; bind launch_spec at RES/Research/IN_PROGRESS
 │   ├── h-resume.md              # Read-only: locate IN_PROGRESS task + restore Machine Section + report Next Action
+│   ├── h-status.md              # Global queue snapshot — list all launch_spec rows (PENDING/IN_PROGRESS/WAITING_APPROVAL/DONE/FAILED) with parallelizable next steps
 │   ├── h-fix-bug.md             # Ticket/manual → root-cause-debug Phase 1 (MUST complete) → launch_spec row at correct risk level; p1/p2 triggers h-incident
 │   ├── h-gates.md               # Phase/scenario-aware gate suite + failure_memory recording
 │   ├── h-archive.md             # Plan Deviation Reflection → knowledge-extractor → archive brief → wiki_linter → mark DONE
@@ -147,7 +150,7 @@ CLAUDE.md                      # Single entry point
 │   │   ├── brief_from_decomposition.py         # Generate per-subtask brief skeletons from decomposition
 │   │   ├── capabilities_report.py              # Regenerate .claude/CAPABILITIES.md
 │   │   ├── import_external_skills.py           # Import skills from an external source
-│   │   └── librarian_gc.py                     # Wiki GC orchestrator (called by @gc / @librarian)
+│   │   └── librarian_gc.py                     # Wiki GC orchestrator (called by `librarian` Compact flow)
 │   └── wiki/                                   # 9 wiki maintenance scripts
 │       ├── compactor.py                        # Merge WAL fragments into main wiki
 │       ├── distill_threshold.py                # Compute staleness threshold for distill
@@ -195,7 +198,7 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 
 | Item | Detail |
 |------|--------|
-| **Roles** | `@Ambiguity Gatekeeper` (pre-gate), `@Requirement Engineer`, `@System Architect` (Propose) |
+| **Roles** | `ambiguity-gatekeeper` (pre-gate), `requirement-engineer`, `system-architect` (Propose) |
 | **Skills** | `input-classifier`, `brainstorming`, `product-manager-expert`, `task-decomposition-guide` |
 | **Activities** | ① `input-classifier` inline: classify raw input → emit `[Intake]` block with `Input-Type` and `Route` |
 | | ② **Idea/Feedback/Compliance/Security inputs**: dispatch `ambiguity-gatekeeper` first — FAIL blocks until input is tightened; PASS → dispatch `requirement-engineer` |
@@ -209,7 +212,7 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 
 | Item | Detail |
 |------|--------|
-| **Roles** | `@System Architect` |
+| **Roles** | `system-architect` |
 | **Skills** | `brainstorming`, `java-architecture-standards`, `task-decomposition-guide`, `decision-frameworks`, `cognitive-bias-checklist` |
 | **Activities** | ① **PDD — Plan as First-Class Artifact**: Declare task dependencies, draw dependency graph (DAG) when ≥3 tasks; set parallelism constraints (soft limit: 3) |
 | | ② Generate ≥2 design alternatives (HIGH: ADR format with Pros/Cons/Failure Conditions) |
@@ -224,7 +227,7 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 
 | Item | Detail |
 |------|--------|
-| **Roles** | `@System Architect` |
+| **Roles** | `system-architect` |
 | **Skills** | `code-review-checklist`, `java-architecture-standards`, `adversarial-review` (HIGH), `spec-quality-checklist` |
 | **Activities** | ① Review design against project standards and architecture constraints |
 | | ② **Plan Review Checklist (PDD)**: Completeness → Consistency → Feasibility → Risk Coverage → Dependency Soundness (≥3 tasks) |
@@ -237,7 +240,7 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 
 | Item | Detail |
 |------|--------|
-| **Roles** | `@Lead Engineer`, `@Focus Guard` |
+| **Roles** | `lead-engineer` (scope_guard.py PreToolUse hook enforces Allowed Scope) |
 | **Skills** | `test-driven-development`, `java-architecture-standards`, `java-coding-style`, `mybatis-sql-standard`, `impl-plan` |
 | **Activities** | ① Read `task_brief.md` Machine Section — Allowed Scope + ACs + Hard Constraints |
 | | ② **RED**: Write failing tests derived from ACs (must see test failure before writing code) |
@@ -251,7 +254,7 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 
 | Item | Detail |
 |------|--------|
-| **Roles** | `@Code Reviewer` |
+| **Roles** | `code-reviewer` |
 | **Skills** | `java-testing-standards`, `code-review-checklist`, `ultraqa`, `security-review-checklist` (HIGH) |
 | **Activities** | ① Ensure compile is clean (`shift_left_hook`) |
 | | ② Run test suite → verify all ACs pass |
@@ -264,7 +267,7 @@ Input ─→ Explorer ─→ Propose ─→ Review ─→ [Approval] ─→ Impl
 
 | Item | Detail |
 |------|--------|
-| **Roles** | `@Knowledge Extractor`, `@Documentation Curator`, `@Skill Graph Curator` |
+| **Roles** | `knowledge-extractor`, `documentation-curator` |
 | **Skills** | `wal-documentation-rules`, `ac-verify` |
 | **Activities** | ① Extract stable knowledge from completed task_brief |
 | | ② Write **WAL fragments** into domain directories: `api/wal/`, `data/wal/`, `domain/wal/` |
@@ -281,38 +284,38 @@ When the user requests pure knowledge/wiki maintenance (compact, extract, scan, 
 
 ### WAL Compaction (GC)
 
-**Trigger**: `@gc`, `@librarian`, or phrases like "compact wiki", "merge fragments", "run GC"
+**Trigger**: phrases like "compact wiki", "merge fragments", "run GC", "wiki consolidation"
 
 | Step | Action | Role |
 |------|--------|------|
-| ① Aggregate | `librarian_gc.py --aggregate` — collect all unmerged WAL fragments | `@Librarian` |
-| ② Merge | Merge aggregated knowledge into correct domain index files | `@Librarian` |
-| ③ Clean | `librarian_gc.py --clean` — delete merged fragments | `@Librarian` |
-| ④ Check | If any file exceeds 500 lines → trigger Document Split | `@Knowledge Architect` |
+| ① Aggregate | `librarian_gc.py --aggregate` — collect all unmerged WAL fragments | `librarian` |
+| ② Merge | Merge aggregated knowledge into correct domain index files | `librarian` |
+| ③ Clean | `librarian_gc.py --clean` — delete merged fragments | `librarian` |
+| ④ Check | If any file exceeds 3000 lines → trigger Document Split | `knowledge-architect` |
 | **Gate** | `wiki_linter.py` — no dead links | — |
 
 ### Wiki Refresh
 
-**Trigger**: `@wiki-update`, `@milestone`, or phrases like "extract knowledge", "persist to wiki", "refresh knowledge base"
+**Trigger**: phrases like "extract knowledge", "persist to wiki", "refresh knowledge base", "milestone WAL flush"
 
 | Step | Action | Role |
 |------|--------|------|
-| ① Diff | `git diff` to identify recent changes since last update | `@Knowledge Extractor` |
-| ② Extract | Extract stable knowledge into WAL fragments: [Domain], [API], [Rules] (+ [Data] if schema) | `@Knowledge Extractor` |
-| ③ Write | Write fragments into `wiki/domain/wal/`, `wiki/api/wal/`, etc. | `@Knowledge Extractor` |
+| ① Diff | `git diff` to identify recent changes since last update | `knowledge-extractor` |
+| ② Extract | Extract stable knowledge into WAL fragments: [Domain], [API], [Rules] (+ [Data] if schema) | `knowledge-extractor` |
+| ③ Write | Write fragments into `wiki/domain/wal/`, `wiki/api/wal/`, etc. | `knowledge-extractor` |
 | **Gate** | `writeback_gate.py` (3 required sections) + `wiki_linter.py` | — |
 
 ### Document Split
 
-**Trigger**: Any wiki file exceeds 500 lines, or phrases like "split document", "index too large"
+**Trigger**: Any wiki file exceeds 3000 lines, or phrases like "split document", "index too large"
 
 | Step | Action | Role |
 |------|--------|------|
-| ① Check | Verify file exceeds 500-line limit; abort if not | `@Knowledge Architect` |
-| ② Deduplicate | Remove repeated entries within the bloated file | `@Knowledge Architect` |
-| ③ Split | Split into focused sub-documents by topic | `@Knowledge Architect` |
-| ④ Rewrite | Rewrite original as a lean routing index with links | `@Knowledge Architect` |
-| **Gate** | `wiki_linter.py` — no dead links, no file still exceeds 500 | — |
+| ① Check | Verify file exceeds 3000-line limit; abort if not | `knowledge-architect` |
+| ② Deduplicate | Remove repeated entries within the bloated file | `knowledge-architect` |
+| ③ Split | Split into focused sub-documents by topic | `knowledge-architect` |
+| ④ Rewrite | Rewrite original as a lean routing index with links | `knowledge-architect` |
+| **Gate** | `wiki_linter.py` — no dead links, no file still exceeds 3000 | — |
 
 ### Project Scan
 
