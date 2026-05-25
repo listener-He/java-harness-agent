@@ -1,6 +1,6 @@
 ---
 name: "task-decomposition-guide"
-description: "MANDATORY MASTER skill for decomposing large PRDs or EPIC scenarios into manageable, verifiable, and parallelizable subtasks. TRIGGER at Explorer/Propose phase when input-type is EPIC or PRD, or when input-classifier emits scope requiring multiple implementation tasks. Enforces Agile INVEST criteria and Vertical Slicing."
+description: "Decomposes PRDs / EPICs into INVEST subtasks via Vertical Slicing. TRIGGER: Explorer/Propose with EPIC/PRD or multi-task scope. NOT FOR: single-task spec (use impl-plan); design (use brainstorming)."
 ---
 
 # Task Decomposition & Orchestration Guide

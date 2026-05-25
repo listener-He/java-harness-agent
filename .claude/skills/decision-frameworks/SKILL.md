@@ -1,6 +1,6 @@
 ---
 name: "decision-frameworks"
-description: "Root cause analysis and architecture selection using SWOT, 5-Why, and First Principles frameworks. TRIGGER during Explorer or Propose phase when the problem space is ambiguous, multiple solutions exist, or root cause is unknown — runs FIRST to build structured options. Follow with cognitive-bias-checklist as a second-pass bias scan on the output. See skill-precedence.md Zone G."
+description: "Builds options via SWOT / 5-Why / First Principles. TRIGGER: Explorer/Propose with ambiguous problem or unknown root cause. NOT FOR: bias-scanning output (use cognitive-bias-checklist after)."
 ---
 
 # Decision Frameworks & The "Sage" Protocol

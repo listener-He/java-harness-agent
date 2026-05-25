@@ -1,6 +1,6 @@
 ---
 name: "local-code-intelligence"
-description: "Three pure-local tools (BM25 wiki search, Java symbol index, failure memory) for zero-cost context. TRIGGER at Explorer phase before reading any source files, and before writing Allowed Scope — runs wiki_search.py, code_index.py, and failure_memory.py."
+description: "Gathers zero-cost context via BM25 wiki search + Java symbol index + failure memory. TRIGGER: Explorer phase, before reading source or writing Allowed Scope. NOT FOR: semantic / LLM-based retrieval."
 ---
 
 # Local Code Intelligence

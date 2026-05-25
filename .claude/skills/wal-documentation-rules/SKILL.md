@@ -1,6 +1,6 @@
 ---
 name: "wal-documentation-rules"
-description: "Rulebook for WAL fragment writes (domain, api, rules, data, architecture) during Archive — keeps the LLM Wiki synced without merge conflicts. User-elected per task via h-archive Step 3b; skipped entirely in PATCH. Executed by the knowledge-extractor sub-agent by default. See .claude/rules/skill-precedence.md Zone D."
+description: "Governs WAL fragment writes (domain/api/rules/data/architecture) at Archive. TRIGGER: STANDARD Archive, dimensions elected via h-archive. NOT FOR: PATCH; wiki authoring (use documentation-curator)."
 ---
 
 # Write-Ahead Log (WAL) Documentation Capture

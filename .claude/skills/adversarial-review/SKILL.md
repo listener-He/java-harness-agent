@@ -1,6 +1,6 @@
 ---
 name: "adversarial-review"
-description: "One-round isolated critique with scenario-specific adversarial injection. Three frame categories: (A) Requirements-level — are we solving the right problem?; (B) Design-level — are we solving it the right way?; (C) Scenario-level — special scenario highest risk. Hard limit: ONE round per category per phase. TRIGGER at Explorer phase (Category A) and Propose/Review phase (Category B/C) for STANDARD tasks."
+description: "Runs one-round adversarial critique. TRIGGER: HIGH-risk STANDARD — Explorer (Cat A), Propose/Review (Cat B/C). NOT FOR: code review (use code-reviewer); PATCH; >1 round per category."
 ---
 
 # Adversarial Review

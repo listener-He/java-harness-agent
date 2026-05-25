@@ -1,6 +1,6 @@
 ---
 name: stakeholder-conflict-resolver
-description: "Multi-stakeholder requirement conflict resolution protocol. Detects when two or more requirements from different stakeholders are mutually exclusive, partially overlapping, or impose contradictory constraints. Produces a structured conflict map and a resolution decision (negotiate / defer / escalate). TRIGGER when: (a) user mentions conflicting instructions or requirements from different parties (PM vs tech lead, legal vs product, frontend vs backend); (b) adversarial-review Category A returns a CRITICAL mutual-exclusion finding; (c) product-manager-expert PRD ingestion finds two requirement units that directly contradict each other."
+description: "Resolves cross-stakeholder requirement conflicts → map + decision. TRIGGER: parties in conflict; adversarial-review Cat A CRITICAL; PRD contradictions. NOT FOR: solo ambiguity (ambiguity-gatekeeper)."
 ---
 
 # Stakeholder Conflict Resolver

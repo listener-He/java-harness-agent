@@ -1,6 +1,6 @@
 ---
 name: architecture-decision-records
-description: "Capture architectural decisions as structured ADRs. TRIGGER when: user says 'record this decision' or 'ADR this', OR when lifecycle.md Phase 2 (HIGH risk Propose) requires an ADR for an actual irreversible architectural decision (transport, persistence model, sync vs async, framework, API contract). Do NOT trigger for MEDIUM risk or purely mechanical CRUD tasks — lifecycle.md explicitly allows zero ADRs with an explicit 'mechanical implementation' note."
+description: "Captures architectural decisions as ADRs. TRIGGER: 'ADR this' / 'record decision'; HIGH-risk Propose with irreversible choice (transport/persistence/framework). NOT FOR: MEDIUM risk; mechanical CRUD."
 ---
 
 # Architecture Decision Records

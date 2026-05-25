@@ -1,6 +1,6 @@
 ---
 name: "code-review-checklist"
-description: "Inline self-review checklist for TRIVIAL/LOW (PATCH) changes — evaluates code against project standards AFTER writing and BEFORE finalizing. For MEDIUM/HIGH (STANDARD) changes, the code-reviewer sub-agent supersedes this skill; do NOT run both. See .claude/rules/skill-precedence.md Zone B."
+description: "Runs inline self-review checklist after writing TRIVIAL/LOW (PATCH) code. TRIGGER: PATCH, after Implement, before finalize. NOT FOR: STANDARD MEDIUM/HIGH (use code-reviewer); never run both."
 ---
 
 # Code Review (CR) Checklist & Self-Correction Loop

@@ -1,6 +1,6 @@
 ---
 name: impl-plan
-description: "Decompose a spec or requirements into a checkpoint-driven, bite-sized implementation plan before touching any code. TRIGGER during Propose phase after brainstorming selects a design option and task scope is known. Output saved to .claude/runs/task-briefs/<slug>_plan.md."
+description: "Decomposes a spec into a checkpoint plan before coding. TRIGGER: Propose, after brainstorming picks a design. NOT FOR: PRD decomposition (use task-decomposition-guide); design (use brainstorming)."
 ---
 
 # Writing Plans

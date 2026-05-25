@@ -1,6 +1,6 @@
 ---
 name: "security-review-checklist"
-description: "Security checklist for Java backend code reviews. Covers secrets, input validation, authZ, IDOR, data exposure, dependency safety, error handling, and soft-delete safety. Run before delivery for HIGH risk or auth/data changes."
+description: "Reviews Java backend for secrets, input validation, authZ, IDOR, data exposure, dependency safety. TRIGGER: HIGH-risk delivery or auth/data changes. NOT FOR: secret scanning (use security-sentinel)."
 ---
 
 # Security Review Checklist

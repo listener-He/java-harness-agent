@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: Turn an idea or requirement into a design with explicit alternatives, ADR-format decisions, and constraint propagation. TRIGGER at Propose phase entry for STANDARD tasks — this IS the Propose phase opener. Hands off to impl-plan once a design option is selected.
+description: "Turns an idea into a design with alternatives + constraints. TRIGGER: Propose opener for STANDARD. NOT FOR: PATCH; AC transcription (requirement-engineer); ADR capture (architecture-decision-records)."
 ---
 
 # Brainstorming — Design with Alternatives and Constraint Propagation

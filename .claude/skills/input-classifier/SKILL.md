@@ -1,6 +1,6 @@
 ---
 name: "input-classifier"
-description: "FRONT-DOOR CLASSIFIER (runs INLINE on the main agent, never dispatched). Tags raw input as one of PRD / Idea / Bug / Signal / Performance / Security / Compliance / Feedback and emits an [Intake] block telling the main agent WHERE TO ROUTE — to product-manager-expert (PRD), root-cause-debug (Bug/Signal), requirement-engineer (Idea/Feedback/Compliance/Security), or Explorer (everything else). DOES NOT translate to ACs itself — that is requirement-engineer's job. TRIGGER when input has no @shortcut and is longer than one line."
+description: "Classifies raw input as PRD/Idea/Bug/Signal/Perf/Security/Compliance/Feedback → [Intake] routing block. TRIGGER: input has no @shortcut, >1 line. NOT FOR: AC transcription (requirement-engineer)."
 ---
 
 # Requirement Intake — Input Normalization Layer

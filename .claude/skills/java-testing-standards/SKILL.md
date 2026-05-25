@@ -1,6 +1,6 @@
 ---
 name: "java-testing-standards"
-description: "Standards for Java test code (test isolation, mock guidelines, 3-scenario coverage: Happy Path, Exception, Edge Cases). Always applies when test code is Java. Composes with ac-verify or ultraqa (the QA-flow skill chosen per Zone C). See .claude/rules/skill-precedence.md Zone C."
+description: "Defines Java test standards: isolation, mocks, 3-scenario coverage (Happy/Exception/Edge). TRIGGER: writing or reviewing Java tests. NOT FOR: choosing QA flow (use ac-verify or ultraqa per Zone C)."
 ---
 
 # Java Unit & Integration Testing Standards

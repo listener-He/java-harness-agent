@@ -1,6 +1,6 @@
 ---
 name: "product-manager-expert"
-description: "PRD-ONLY heavy PM skill. Mode A (Ingestion): codebase-aware validation + adversarial conflict check + AC translation + dependency ordering — feeds task-decomposition-guide. Mode B (Generation): Q&A clarification → market research → structured PRD draft → Mermaid prototypes. TRIGGER ONLY when input-classifier tags input as PRD, or when user explicitly asks to write a PRD. For non-PRD input (Idea/Feedback/Compliance) use requirement-engineer instead; for Bug/Signal use root-cause-debug."
+description: "Handles PRDs: Mode A ingests → ACs+deps; Mode B generates a draft. TRIGGER: input-classifier tags PRD, or user asks for one. NOT FOR: non-PRD (use requirement-engineer); Bug/Signal (root-cause-debug)."
 ---
 
 # Product Manager Expert

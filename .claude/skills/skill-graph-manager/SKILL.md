@@ -1,6 +1,6 @@
 ---
 name: "skill-graph-manager"
-description: "Manage the bidirectional Skill Knowledge Graph. TRIGGER when a skill's purpose, trigger conditions, or lifecycle phase changes — NOT for minor description wording tweaks. Updates links and the central index. Ask user before adding bidirectional links."
+description: "Manages the Skill Knowledge Graph + central index. TRIGGER: a skill's purpose/trigger/phase changes. NOT FOR: minor wording tweaks; first-time creation (use skill-author + authoring-standards)."
 ---
 
 # Skill Graph Manager

@@ -1,6 +1,6 @@
 ---
 name: remember
-description: "Classify knowledge discovered during a session into the correct persistence layer (project memory, notepad, or durable docs). TRIGGER at Archive phase when a non-obvious constraint, invariant, or design decision was uncovered that future sessions will need."
+description: "Classifies session knowledge into project memory / notepad / docs. TRIGGER: Archive, after uncovering a non-obvious constraint or decision. NOT FOR: WAL fragments (use wal-documentation-rules)."
 ---
 
 # Remember

@@ -1,6 +1,6 @@
 ---
 name: "cognitive-bias-checklist"
-description: "Meta-cognitive check on reasoning quality: prevents hallucinations, overconfidence, anchoring, and narrow thinking. TRIGGER at Propose/Review phase AFTER decision-frameworks produces options — run as a second-pass bias scan on the reasoning, not as a framework for building options. Composes with decision-frameworks (which runs first); do NOT substitute one for the other. See skill-precedence.md Zone G."
+description: "Scans reasoning for hallucination, overconfidence, anchoring. TRIGGER: Propose/Review AFTER decision-frameworks produces options (Zone G). NOT FOR: building options (use decision-frameworks first)."
 ---
 
 # Cognitive Bias Detection Checklist

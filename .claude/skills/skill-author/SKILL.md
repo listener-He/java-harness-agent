@@ -89,6 +89,24 @@ Critical reminders from the joint contract:
 - Code blocks for commands and templates only; never for narrative
 - Body ≤ 500 lines; split if larger
 
+#### Zone A Carve-out (Daily-Rules pattern) — `description` length exemption
+
+The 200-char rule applies to **routing-style skills** whose description is purely a router hint. A second design pattern exists by explicit license from `CLAUDE.md` § 5 ("Skill Files: Reference, Not Preflight Reading"): **Daily-Rules skills** whose description is *itself* the rulebook, so the agent makes the day-to-day decision without opening `SKILL.md`.
+
+Zone A skills (per `CLAUDE.md` § 5) are EXEMPT from the 200-char cap but MUST still:
+- Start with a verb (or be a YAML block scalar — `description: |` — whose first body line starts with a noun + verb-phrase, e.g. "Layer 1 (Architecture) for Java backend. Daily decisions you can make WITHOUT opening SKILL.md:")
+- Carry a TRIGGER clue (it can be the topic noun — e.g. "TRIGGER when touching mapper XML")
+- May omit NOT FOR (Zone A skills apply universally to their domain — there is no "route elsewhere" because the skill IS the domain authority)
+- End the description with `Open SKILL.md when deciding: <decisions that justify opening the file>` (preserves the second purpose: when to open the file for deeper reference)
+
+Current Zone A members (closed set; adding to it requires editing this file + `CLAUDE.md` § 5 in the same commit):
+1. `java-architecture-standards` — Layer 1 architectural Red Lines
+2. `java-coding-style` — Layer 2 style rules
+3. `mybatis-sql-standard` — Layer 3 persistence rules
+4. `test-driven-development` — TDD daily discipline
+
+A new skill is NOT Zone A by default. Authoring a Zone A skill requires explicit user confirmation that the description-as-rulebook tradeoff (higher per-session token cost; agent doesn't open SKILL.md) is wanted.
+
 ### Step 5 — Falsifiability Check (the test you can run alone)
 
 Before validating with a real prompt, ask yourself **two falsifiability questions**:

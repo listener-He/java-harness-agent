@@ -1,6 +1,6 @@
 ---
 name: ai-slop-cleaner
-description: "Clean AI-generated code slop with a regression-safe, deletion-first workflow and optional reviewer-only mode. Removes dead code, merges duplicates, reduces complexity without changing behavior. TRIGGER when: user says \"deslop\", \"anti-slop\", \"AI slop\", or wants to clean up bloated, repetitive, or over-abstracted code, or as Phase 5 of the AI engineering pipeline (after self-improve completes)."
+description: "Cleans AI code slop via deletion-first workflow. TRIGGER: 'deslop' / 'AI slop' / bloated code; AI pipeline Phase 5. NOT FOR: bug fixes (use root-cause-debug); behavior-changing refactors."
 ---
 
 # AI Slop Cleaner

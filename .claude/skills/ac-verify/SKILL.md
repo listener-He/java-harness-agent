@@ -1,6 +1,6 @@
 ---
 name: ac-verify
-description: "Lightweight single-pass AC verification before Archive — run implementation against each AC, produce pass/fail evidence. FAIL blocks Archive and rolls back to Phase 4. Mutually exclusive with ultraqa: choose ac-verify when AC count ≤ 3 AND risk ≠ HIGH; otherwise use ultraqa. See .claude/rules/skill-precedence.md Zone C."
+description: "Verifies each AC against implementation in a single pass before Archive. TRIGGER: Phase 5 QA with AC ≤ 3 AND risk ≠ HIGH. NOT FOR: AC ≥ 4 or HIGH risk (use ultraqa); writing tests (use lead-engineer)."
 ---
 
 # Verify
