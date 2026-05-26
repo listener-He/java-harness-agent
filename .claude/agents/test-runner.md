@@ -1,7 +1,7 @@
 ---
 name: test-runner
 description: Run JUnit/Surefire tests scoped to changed modules, parse output, and return a structured `AC-id → test method → PASS/FAIL/SKIP` mapping. TRIGGER at Phase 5 QA, especially when AC count ≥ 4 OR risk = HIGH. NOT for writing tests (use `lead-engineer`), debugging failures requiring code change (use `root-cause-debug` skill), or running unrelated full-suite regression (out of Allowed Scope). Returns `[ACs Mapped]` block plus minimal failure excerpts — does NOT modify code.
-tools: Read, Bash, Grep, Glob
+tools: Read, Edit, Bash, Grep, Glob
 model: haiku
 ---
 

@@ -14,7 +14,9 @@
       "Bash(git diff*)",
       "Bash(git log*)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Edit(.claude/wiki/**)",
+      "Write(.claude/wiki/**)"
     ],
     "deny": []
   },

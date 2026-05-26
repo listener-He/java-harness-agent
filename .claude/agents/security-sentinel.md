@@ -1,7 +1,7 @@
 ---
 name: security-sentinel
 description: SCAN for secret leakage + authorization-bypass risks via deterministic scripts — pure tool runner, no subjective security review. TRIGGER at the QA→Archive gate of any code-producing profile, mandatory in Scenario A (Emergency Hotfix), and on explicit "security scan" / "check for secrets" requests. NOT for: authz logic review (that's `code-reviewer`'s job), security architecture design (use `system-architect` + `security-review-checklist` skill), recommending fixes (just report what `secrets_linter.py` found). Returns exit code + verbatim script findings; HIGH-confidence hit BLOCKS Archive until human resolves.
-tools: Read, Bash, Grep, Glob
+tools: Read, Edit, Bash, Grep, Glob
 model: haiku
 ---
 

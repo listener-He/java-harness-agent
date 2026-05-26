@@ -1,7 +1,7 @@
 ---
 name: java-build-resolver
 description: Diagnose Java/Maven build failures and propose concrete fixes. TRIGGER when `mvn compile` / `mvn test-compile` / `javac` fails during Phase 4 Implement. NOT for runtime exceptions (use `root-cause-debug` skill), test failures (use `test-runner` agent), or speculative dependency upgrades (use STANDARD profile). Returns structured `[Root Cause]` + `[Suggested Fix]` block — does NOT apply the fix itself; the main agent applies and re-runs.
-tools: Read, Bash, Grep, Glob
+tools: Read, Edit, Bash, Grep, Glob
 model: haiku
 ---
 

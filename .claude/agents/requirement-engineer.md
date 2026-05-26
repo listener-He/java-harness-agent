@@ -1,7 +1,7 @@
 ---
 name: requirement-engineer
 description: AC TRANSCRIPTION ENGINE for non-PRD inputs. Converts a raw Idea / Feedback / Compliance / Security ask into testable Given/When/Then Acceptance Criteria plus a structured Must-Ask question list for the main agent to relay via AskUserQuestion. Returns one structured block (see Output Format) — does NOT call AskUserQuestion (no such tool on sub-agents). NOT for PRD ingestion (use product-manager-expert) or Bug/Signal (use root-cause-debug). Use when input-classifier routes to it, or for any STANDARD task that needs AC formalization.
-tools: Read, Bash, Grep, Glob
+tools: Read, Edit, Bash, Grep, Glob
 model: sonnet
 ---
 

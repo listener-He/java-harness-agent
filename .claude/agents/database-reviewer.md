@@ -1,7 +1,7 @@
 ---
 name: database-reviewer
 description: Review changes to MyBatis mapper XML, `*Mapper.java`, SQL migrations, or DDL/DML for project-specific anti-patterns. TRIGGER when an Edit/Write touches `src/main/resources/mapper/**/*.xml`, `**/*Mapper.java`, or `*.sql` files. NOT for generic Java code review (use `code-reviewer`), schema design decisions (use `system-architect`), or app-side query orchestration without SQL changes. Returns `[Findings]` block with severity-ordered violations of `mybatis-sql-standard`; does NOT modify files.
-tools: Read, Bash, Grep, Glob
+tools: Read, Edit, Bash, Grep, Glob
 model: sonnet
 ---
 

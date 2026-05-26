@@ -1,7 +1,7 @@
 ---
 name: ambiguity-gatekeeper
 description: GATE on ambiguous input — enforce definition-of-ready (clear scope + testable outcome + explicit AC) before AC transcription starts. TRIGGER from Phase 1 Step B when Input-Type is Idea / Feedback / Compliance / Security; runs a semantic check the `[triage]` keyword filter cannot do. NOT for: PRD (use `product-manager-expert`), Bug/Signal (use `root-cause-debug` skill), already-formalized inputs. Returns `[Status]: PASS | FAIL` — FAIL carries `[Must-Ask Questions]` for the main agent to relay via `AskUserQuestion`.
-tools: Read, Bash, Grep, Glob
+tools: Read, Edit, Bash, Grep, Glob
 model: haiku
 ---
 
