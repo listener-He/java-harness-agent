@@ -108,7 +108,21 @@ Run a single `AskUserQuestion` round (max 4 questions) when ANY of the following
 | Risk tier unclear (rule file) | "Should violating this rule HARD-GATE the workflow, or just emit a WARN?" |
 | Severity vocab not specified | "Use this project's standard HIGH/MEDIUM/LOW, or does this artifact have a custom scale?" |
 
-After asking, fold the answers into the Step 1 checklist before moving to Step 3. If a single question's answer is "I don't know" / "you decide", that's NOT licence to proceed — it's signal that Step 3 must be invoked.
+### Default Convergence Rule
+
+Every Step 2 question MUST be issued via `AskUserQuestion` with at least one option marked `(Recommended)`. The Recommended value MUST be derived from an **existing analog** (the same artifact family under `.claude/skills/`, `.claude/agents/`, or `.claude/rules/` — Step 3 form #2) OR an explicit project convention cited in `policy.md` / `skill-precedence.md` / `lifecycle.md`. If neither source yields a defensible default for a given question, do NOT manufacture one — drop the question here and let Step 3 catch the gap.
+
+**Folding answers** into the Step 1 checklist:
+
+| User response | Action |
+|---|---|
+| Explicit pick (one of the offered options) | Record value verbatim |
+| `(Recommended)` selected | Record value + `assumed-from <analog-path-or-rule>` annotation |
+| "I don't know" / "you decide" / "你看着办" | Adopt the Recommended; record value + `assumed-from <analog-path-or-rule>` annotation; **continue** (NOT a halt trigger) |
+| Active rejection without alternative | Re-ask once, narrower scope; if still no signal → fall through to Step 3 halt |
+| User offers a new option ("Other") | Record verbatim; flag for review at Step 5 self-validate |
+
+Anti-fabrication preserved: defaults are only legal when traceable to an analog or named convention; they never come from training-data heuristics or "what feels right". An earlier version of this protocol treated "you decide" itself as a halt signal — that conflated *information void* with *user-delegated default* and produced excessive halts on moderately specified requests. Step 3 still owns the halt path, but only when supporting-data forms are genuinely insufficient (not merely "user said you decide").
 
 ---
 
@@ -391,6 +405,7 @@ If any check fails → fix and re-validate. Three failures of the same check →
 | Mistake | Why it's wrong | Fix |
 |---|---|---|
 | Skip Step 3 ("just stub it, I'll fill it later") | Stubs become permanent; bad triggers pollute routing | Halt, request the dataset |
+| Step 2 `AskUserQuestion` without a `(Recommended)` option | "你看着办" cannot be folded → forces an unnecessary Step 3 halt; defeats the Default Convergence Rule | Every option list must include `(Recommended)` derived from an existing analog or a named convention (`policy.md` / `skill-precedence.md` / `lifecycle.md`). No analog → drop the question, let Step 3 surface the gap. |
 | Pre-fill all 5 sub-agent dimensions to look thorough (`dimensions: [domain, api, data, tech_arch, patterns]`) | Defeats the spec-floor + dimension-gated model | Pick honestly; `[]` is legal |
 | Use `[Status]: WARN` or `[Status]: OK` in a sub-agent | Breaks `subagent_return_gate.py` STATUS_VALUES check | Use `PASS | PARTIAL | FAIL | ESCALATE | BOUNDARY_EXCEPTION` only |
 | Severity vocab `CRITICAL/MAJOR/MINOR` | Inconsistent with project standard | Use HIGH/MEDIUM/LOW |
