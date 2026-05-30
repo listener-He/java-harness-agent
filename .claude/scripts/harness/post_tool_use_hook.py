@@ -19,6 +19,7 @@ _SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 SECRETS_LINTER = str(_SCRIPTS_DIR / "gates" / "secrets_linter.py")
 SKILL_HINT = str(_SCRIPTS_DIR / "local_intel" / "skill_hint.py")
 INCIDENT_HINT = str(_SCRIPTS_DIR / "local_intel" / "incident_hint.py")
+SESSION_STATS = str(_SCRIPTS_DIR / "local_intel" / "session_stats.py")
 
 
 def main() -> int:
@@ -68,6 +69,19 @@ def main() -> int:
         out = (proc.stdout or "").rstrip()
         if out:
             print(out)
+    except Exception:
+        pass
+
+    # Bump session edit counter for the reflect-threshold heuristic
+    # (T1.1). Pure sink — silent stdout, never blocks.
+    try:
+        subprocess.run(
+            [sys.executable, SESSION_STATS, "bump", "edit", file_path],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        )
     except Exception:
         pass
 

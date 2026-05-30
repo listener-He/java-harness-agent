@@ -131,6 +131,16 @@ def record_failure(intent: str, profile: str, phase: str,
         "task_id": task_id,
     })
     _save(data)
+    # T1.1: best-effort session-level failure counter. Feeds reflect_threshold
+    # to suggest /h-reflect when the user has hit ≥3 failures this session.
+    # Lazy import + broad except so failure_memory remains independently usable
+    # if session_stats is ever moved or removed.
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import session_stats  # type: ignore
+        session_stats.bump_failure()
+    except Exception:
+        pass
     return True
 
 

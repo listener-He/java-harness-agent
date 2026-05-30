@@ -18,6 +18,19 @@ from pathlib import Path
 
 _HARNESS_DIR = Path(__file__).resolve().parent
 TURN_HEALTH = str(_HARNESS_DIR.parent / "local_intel" / "turn_health_check.py")
+REFLECT_THRESHOLD = str(_HARNESS_DIR.parent / "local_intel" / "reflect_threshold.py")
+
+
+def _run_silent(script: str, timeout: int = 3) -> str:
+    """Run a script with empty stdin, return stripped stdout. Silent on any error."""
+    try:
+        proc = subprocess.run(
+            [sys.executable, script],
+            check=False, capture_output=True, text=True, timeout=timeout,
+        )
+    except Exception:
+        return ""
+    return (proc.stdout or "").rstrip()
 
 
 def main() -> int:
@@ -29,17 +42,13 @@ def main() -> int:
     if isinstance(payload, dict) and payload.get("stop_hook_active"):
         return 0
 
-    try:
-        proc = subprocess.run(
-            [sys.executable, TURN_HEALTH],
-            check=False, capture_output=True, text=True, timeout=3,
-        )
-    except Exception:
-        return 0
-
-    out = (proc.stdout or "").rstrip()
-    if out:
-        print(out)
+    # Order matters: turn_health surfaces consistency issues (compile stale,
+    # uncommitted pile, launch_spec drift) — fix those first. reflect_threshold
+    # nudges toward /h-reflect — applies even when state is healthy.
+    for script in (TURN_HEALTH, REFLECT_THRESHOLD):
+        out = _run_silent(script)
+        if out:
+            print(out)
     return 0
 
 
