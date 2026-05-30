@@ -1,5 +1,5 @@
 ---
-description: Scaffold a research report (no code change) and bind to launch_spec
+description: TRIGGER on RESEARCH profile (analyze / feasibility / baseline) — [triage] suggested:RESEARCH OR @research/@analyze/@feasibility shortcut. NOT FOR: code change (use /h-brief); literature review only without report (just chat). Returns: research_report.md scaffold + launch_spec binding.
 argument-hint: <slug> [--scope quick|deep]
 ---
 

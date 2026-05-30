@@ -1,5 +1,5 @@
 ---
-description: Release pipeline — queue completeness check, version bump, changelog from WAL fragments, tag + push, CI verification
+description: TRIGGER on Scenario RELEASE (version bump / deploy prep) OR user says 'cut release' / '发版'. NOT FOR: single PR merge (use /h-pr); CI failure investigation (use /h-ci). Returns: bumped version + WAL-sourced changelog + git tag + push + CI verification status.
 argument-hint: [version] [--dry-run] [--refresh] [--base <branch>]
 ---
 

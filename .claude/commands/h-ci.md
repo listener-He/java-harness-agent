@@ -1,5 +1,5 @@
 ---
-description: Ingest a CI/CD failure into the workflow — fetch run logs, classify failure type, route to debug task / incident / warn, record in failure_memory
+description: TRIGGER on red CI run (GitHub Actions failure) OR user says 'CI 挂了' / 'pipeline failed' with run-id. NOT FOR: local test failures (use /h-fix-bug); known incident (use /h-incident). Returns: classified routing + failure_memory record + optional debug task or incident.
 argument-hint: [--run-id <id>] [--repo <owner/repo>] [--from-file <path>]
 ---
 

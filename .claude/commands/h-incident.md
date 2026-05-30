@@ -1,5 +1,5 @@
 ---
-description: Ingest a production incident — run ingest_incident.py + write structured record per TEMPLATE
+description: TRIGGER on production incident (Sentry alert / oncall log / post-mortem) OR user says '记录事故' / 'log incident'. NOT FOR: bug pipeline (use /h-fix-bug); CI failure (use /h-ci); test-env issue. Returns: .claude/wiki/incidents/<date>_<slug>.md + raw fact + future-LLM reminder line.
 argument-hint: <source> <slug> [--from-file <path>]
 ---
 

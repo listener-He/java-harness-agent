@@ -1,5 +1,5 @@
 ---
-description: Bug → fix pipeline — collect symptoms, query past incidents, force root-cause-first analysis, then create the fix task (no code until root cause confirmed)
+description: TRIGGER on bug report (test or production) OR user says '修 bug' / '查 bug' / 'P1 down'. NOT FOR: CI failure (use /h-ci); CI/system-only issue (route per Scenario DEBUG). Returns: root-cause confirmation + (if production) incident record + fix task_brief; no code until root cause locked.
 argument-hint: [ticket-ref] [--source github|jira|linear|manual] [--production] [--severity p1|p2|p3]
 ---
 

@@ -1,5 +1,5 @@
 ---
-description: Decompose a PRD/EPIC into INVEST subtasks + scaffold per-subtask briefs + bind to launch_spec
+description: TRIGGER on PRD or EPIC input (multi-feature / multi-domain) OR user says '拆分需求' / 'break down this PRD'. NOT FOR: single-task brief (use /h-brief); ticket ingestion (use /h-from-ticket). Returns: _tasks.md + per-subtask brief skeletons + launch_spec rows linking all.
 argument-hint: <slug> <prd-path | --from-paste> [--input-type prd|epic] [--no-scaffold]
 ---
 

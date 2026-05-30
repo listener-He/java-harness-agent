@@ -1,5 +1,5 @@
 ---
-description: Distill knowledge from current workspace code into the wiki, reconciling stale claims under a user-bounded scope
+description: TRIGGER when wiki diverges from code reality OR user says 'reconcile wiki with code' / 'wiki 过时了 校对一下'. NOT FOR: WAL extraction at Archive (use knowledge-extractor via /h-archive); wiki internal dedup (use /h-distill via librarian). Returns: wiki diff log + reconciled claims.
 argument-hint: <scope-spec> [--dry-run] [--max-add N] [--allow-direct-replace]
 ---
 

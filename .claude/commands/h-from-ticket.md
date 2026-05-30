@@ -1,5 +1,5 @@
 ---
-description: Ingest a ticket (GitHub Issue / Jira / Linear / manual) into the workflow — fetch content, run ambiguity gate, bootstrap task_brief + launch_spec row
+description: TRIGGER on external ticket (GitHub Issue / Jira / Linear) needing workflow entry OR user pastes a ticket URL. NOT FOR: PRD/EPIC decomposition (use /h-decompose); bug already triaged (use /h-fix-bug). Returns: task_brief skeleton + ambiguity check + launch_spec row binding.
 argument-hint: <source> <ticket-ref> [--slim] [--risk low|medium|high]
 ---
 

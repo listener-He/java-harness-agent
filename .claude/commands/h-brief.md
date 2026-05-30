@@ -1,5 +1,5 @@
 ---
-description: Scaffold a new task_brief from schema + bidirectional bind to launch_spec
+description: TRIGGER at Phase 2 Propose start after risk classified OR user says 'create task brief' / '起草任务'. NOT FOR: PRD/EPIC decomposition (use /h-decompose); ticket ingestion (use /h-from-ticket); research report (use /h-research). Returns: schema-compliant task_brief + launch_spec binding.
 argument-hint: <slug> [--risk low|medium|high] [--slim]
 ---
 

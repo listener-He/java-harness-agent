@@ -1,5 +1,5 @@
 ---
-description: Archive current STANDARD/RESEARCH task — gate → move artifact → wiki lint → mark DONE
+description: TRIGGER on Phase 6 / Phase R3 (STANDARD/RESEARCH task ready to close) OR user says '归档' / 'archive'. NOT FOR: PATCH/SLIM (Step 1.5 rejects); cross-team handoff (use /h-collab); PR creation (use /h-pr). Returns: archive path + WAL fragments + linter status + record-success.
 argument-hint: [slug]
 ---
 
