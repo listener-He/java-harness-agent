@@ -69,28 +69,29 @@ MIN_LEN_FOR_PROBE = 15
 # `authentication` / `authorize` (substring did this by accident).
 DANGER_HIGH = (
     "auth", "authentication", "authorize", "authorization",
-    "认证", "permission", "权限", "rbac",
+    "认证", "permission", "permissions", "权限", "rbac",
     # Mutating DDL — touches existing live data. Additive `create table`
     # is intentionally NOT here; see Scenario B1 (PATCH).
     "alter table", "drop column", "drop table",
     "modify column", "rename column", "rename table",
-    "migration", "迁移",
+    "migration", "migrations", "迁移",
     "error code", "错误码", "errcode",
-    "secret", "token", "credential", "凭证",
+    "secret", "secrets", "token", "tokens",
+    "credential", "credentials", "凭证",
     "lifecycle", "lifecycle.md", "policy.md", "dispatch-template",
     "skill-precedence", "claude.md",
 )
 
-# `hooks` (plural) is enumerated alongside `hook` because word-boundary
-# matching no longer catches plurals via substring. Other plurals (`tokens`,
-# `secrets`, ...) are not added speculatively — extend on demand when a real
-# user-input miss is observed.
+# Plurals enumerated alongside singulars because word-boundary matching
+# no longer catches them via substring. Non-plural derived forms
+# (e.g. `tokenize`, `authoring`) are intentionally NOT included — they
+# are semantically distinct from the danger concept.
 DANGER_MEDIUM = (
-    "public api", "公共 api", "endpoint", "签名",
-    "hook", "hooks", "gate", "framework", "架构",
+    "public api", "公共 api", "endpoint", "endpoints", "签名",
+    "hook", "hooks", "gate", "gates", "framework", "frameworks", "架构",
     # Additive / generic schema talk — often PATCH-able when isolated. The
     # synthesizer escalates to MEDIUM only if compounded with other signals.
-    "create table", "create index", "ddl", "schema",
+    "create table", "create index", "ddl", "schema", "schemas",
 )
 
 FILE_HINT_PAT = re.compile(
