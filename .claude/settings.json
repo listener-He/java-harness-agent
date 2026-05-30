@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/scripts/harness/post_read_hook.py"
+            "command": ".claude/scripts/harness/post_read_hook.sh"
           }
         ]
       }
