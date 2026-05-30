@@ -47,9 +47,11 @@ PROFILE_RANK = {
 }
 
 # Shortcuts where the user has already declared intent; probe must not override.
+# Keep in sync with user_prompt_submit_hook.SHORTCUT_OVERRIDES — only list
+# shortcuts that have an actual behavior backing them.
 HARD_SKIP_SHORTCUTS = (
-    "@learn", "@read", "@cap", "@capabilities",
-    "@gc", "@librarian", "@distill", "@wiki-update", "@milestone",
+    "@learn", "@read",
+    "@distill",  # backed by /h-distill
 )
 
 # Below this length input is almost always a confirmation / yes-no / typo question.
@@ -58,8 +60,16 @@ MIN_LEN_FOR_PROBE = 15
 # HIGH-tier keywords escalate straight to STANDARD-HIGH. Lifecycle/policy/routing
 # names are included because edits to those framework files cascade to every
 # downstream task — they are the routing table itself.
+#
+# Short ASCII keywords (auth, hook, token, ...) are matched with \b word
+# boundaries — NOT substring — because slash-command names like
+# `/authoring-standards` or filenames like `tokenize.py` were spuriously
+# escalating to STANDARD-HIGH. See `_kw_match` below for the rule.
+# Auth family is enumerated explicitly so word-boundary matching still catches
+# `authentication` / `authorize` (substring did this by accident).
 DANGER_HIGH = (
-    "auth", "认证", "permission", "权限", "rbac",
+    "auth", "authentication", "authorize", "authorization",
+    "认证", "permission", "权限", "rbac",
     # Mutating DDL — touches existing live data. Additive `create table`
     # is intentionally NOT here; see Scenario B1 (PATCH).
     "alter table", "drop column", "drop table",
@@ -71,9 +81,13 @@ DANGER_HIGH = (
     "skill-precedence", "claude.md",
 )
 
+# `hooks` (plural) is enumerated alongside `hook` because word-boundary
+# matching no longer catches plurals via substring. Other plurals (`tokens`,
+# `secrets`, ...) are not added speculatively — extend on demand when a real
+# user-input miss is observed.
 DANGER_MEDIUM = (
     "public api", "公共 api", "endpoint", "签名",
-    "hook", "gate", "framework", "架构",
+    "hook", "hooks", "gate", "framework", "架构",
     # Additive / generic schema talk — often PATCH-able when isolated. The
     # synthesizer escalates to MEDIUM only if compounded with other signals.
     "create table", "create index", "ddl", "schema",
@@ -189,10 +203,36 @@ def _probe_ambiguity(prompt: str) -> str:
     return {0: "OK", 1: "WARN", 2: "FAIL"}.get(code, "OK")
 
 
+# Cache compiled word-boundary patterns for short ASCII keywords. Built lazily;
+# the keyword tuples never change at runtime so cache lives forever in-process.
+_WORD_BOUNDARY_RE_CACHE: dict[str, "re.Pattern[str]"] = {}
+
+
+def _kw_match(keyword: str, lowered_text: str) -> bool:
+    """Match a danger keyword against already-lowercased text.
+
+    For pure ASCII alphanumeric keywords (no spaces, dots, hyphens, or CJK),
+    use \\b<kw>\\b word-boundary regex so that substrings inside larger
+    identifiers do NOT match — e.g. `auth` must not fire on
+    `authoring-standards`, `hook` must not fire on `hooks-config` (where the
+    user actually meant the plural — add the plural form to the keyword tuple
+    instead). For multi-word, dotted, hyphenated, or CJK keywords, substring
+    match is correct: they are already distinctive enough, and Python's `\\b`
+    does not behave usefully on CJK boundaries.
+    """
+    if keyword.isascii() and keyword.isalnum():
+        pat = _WORD_BOUNDARY_RE_CACHE.get(keyword)
+        if pat is None:
+            pat = re.compile(rf"\b{re.escape(keyword)}\b")
+            _WORD_BOUNDARY_RE_CACHE[keyword] = pat
+        return pat.search(lowered_text) is not None
+    return keyword in lowered_text
+
+
 def _scan_danger_keywords(prompt: str) -> tuple[list[str], list[str]]:
     t = prompt.lower()
-    high = [k for k in DANGER_HIGH if k in t]
-    medium = [k for k in DANGER_MEDIUM if k in t]
+    high = [k for k in DANGER_HIGH if _kw_match(k, t)]
+    medium = [k for k in DANGER_MEDIUM if _kw_match(k, t)]
     return high, medium
 
 

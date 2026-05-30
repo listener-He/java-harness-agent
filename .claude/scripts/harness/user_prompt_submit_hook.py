@@ -29,10 +29,16 @@ TRIAGE_PROBE = str(_SCRIPTS_DIR / "local_intel" / "triage_probe.py")
 
 # Shortcuts that override the default triage — when present, the user has
 # already declared intent and we do not need to nudge them.
+#
+# Every entry MUST have a corresponding behavior (a `/h-*` command, a profile
+# routing rule, or a documented effect in lifecycle.md). Don't add a shortcut
+# here unless it does something — otherwise the ambiguity gate skips a real
+# concern with no payoff. Dead shortcuts (@gc, @librarian, @wiki-update,
+# @milestone, @cap, @capabilities) were removed 2026-05-30 — they had no
+# command backing and silently suppressed the ambiguity check.
 SHORTCUT_OVERRIDES = (
     "@vibe", "@patch", "@learn", "@read", "@quickfix", "@standard",
-    "@gc", "@librarian", "@distill", "@wiki-update", "@milestone",
-    "@capabilities", "@cap",
+    "@distill",  # backed by /h-distill
 )
 
 # Below this prompt length we assume the input is a confirmation, a quick

@@ -83,7 +83,7 @@ def main() -> int:
     if not reasons:
         return 0
 
-    print(f"[wiki-distill] threshold hit — run @distill to extract & clean: {'; '.join(reasons)}")
+    print(f"[wiki-distill] threshold hit — run /h-distill to scan & clean: {'; '.join(reasons)}")
     return 1
 
 
