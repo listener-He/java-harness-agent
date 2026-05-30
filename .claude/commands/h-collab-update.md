@@ -1,5 +1,5 @@
 ---
-description: TRIGGER after external team replied to a /h-collab deliverable OR user says '外部团队反馈了' / 'frontend signed off'. NOT FOR: initial deliverable draft (use /h-collab). Returns: updated collab state + open items log + optional sign-off lifting WAITING_APPROVAL.
+description: Log external team feedback on a collab deliverable — record questions/answers, update open items, optionally sign off to unblock Implement
 argument-hint: <slug> [--signoff] [--reviewer <name>]
 ---
 

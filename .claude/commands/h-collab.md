@@ -1,5 +1,5 @@
 ---
-description: TRIGGER between Propose and Implement when task needs external (frontend / 3rd-party / QA / ops) alignment OR user says '需要跟前端对齐'. NOT FOR: PR creation (use /h-pr); QA handoff (use /h-test-handoff). Returns: deliverable draft + collab state file + WAITING_APPROVAL marker.
+description: Generate a cross-team collaboration deliverable from task_brief — draft document, create collab state file, mark task pending external review
 argument-hint: <slug> [--type api|process|data|integration|custom]
 ---
 

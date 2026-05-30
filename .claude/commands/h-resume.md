@@ -1,5 +1,5 @@
 ---
-description: TRIGGER at session start when prior work is in flight OR user says '继续上次' / 'where were we'. NOT FOR: queue overview (use /h-status); starting fresh (use /h-brief or /h-from-ticket). Returns: active task_brief path + Machine Section loaded into context + phase for resumption.
+description: Resume an interrupted session — find IN_PROGRESS task and load its task_brief Machine Section
 ---
 
 Implement CLAUDE.md "Session Start step 2" / lifecycle.md "Resume protocol". You are recovering context after a session interruption.

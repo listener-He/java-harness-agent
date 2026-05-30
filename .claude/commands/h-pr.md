@@ -1,5 +1,5 @@
 ---
-description: TRIGGER after /h-archive when task is ready to ship OR user says 'open PR' / '创建 PR'. NOT FOR: archive itself (use /h-archive first); QA handoff (use /h-test-handoff); cross-team alignment (use /h-collab). Returns: PR URL + body from brief + launch_spec PR# binding.
+description: Create a pull request from the current task — pre-gate, build PR body from task_brief, gh pr create, write PR number back to launch_spec
 argument-hint: [slug] [--base <branch>] [--draft]
 ---
 

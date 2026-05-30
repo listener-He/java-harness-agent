@@ -1,5 +1,5 @@
 ---
-description: TRIGGER when user asks 'what's in flight' / '当前任务' / 'queue' OR before /h-release (which needs all rows DONE). NOT FOR: loading single task context (use /h-resume); detail of one task (read its task_brief directly). Returns: queue table + next-step suggestions.
+description: List all launch_spec tasks at a glance — global queue view (PENDING / IN_PROGRESS / WAITING_APPROVAL / DONE / FAILED) with parallelizable next steps
 argument-hint: [--all] [--days <N>] [--slug <prefix>]
 ---
 

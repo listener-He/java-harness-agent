@@ -1,5 +1,5 @@
 ---
-description: TRIGGER after compile+tests pass and QA needs context to design test cases OR user says 'QA 接手' / 'test handoff'. NOT FOR: PR description (use /h-pr — for reviewers, not QA); QA execution itself. Returns: structured handoff doc (reproduce / impact / test scope / rollback / open questions).
+description: Generate a QA-team handoff document from a code change or bug fix — covers reproduction, impact scope, recommended test scope, rollback, and open questions.
 argument-hint: [slug] [--bug-fix] [--commits <range>] [--branch <name>] [--ticket <ref>]
 ---
 
