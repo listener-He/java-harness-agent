@@ -41,6 +41,15 @@
             "command": ".claude/scripts/harness/post_tool_use_hook.py"
           }
         ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/scripts/harness/post_read_hook.py"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [

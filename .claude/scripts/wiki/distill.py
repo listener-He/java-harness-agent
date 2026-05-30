@@ -41,6 +41,14 @@ RUNS_DIR = Path(".claude/runs/distill")
 PROTECTED_NAMES = {"index.md", "KNOWLEDGE_GRAPH.md", "purpose.md"}
 ARCHIVE_AGE_DAYS = 180
 
+# T4.2 thresholds: a fragment that has *references* (refs > 0) but no actual
+# *reads* in 30 days AND is older than 60 days is a "ghost fragment" — linked
+# from somewhere but never opened. Auto-cleanup candidate. Catches the case
+# T2's refs==0 rule misses (entry survives a stale link audit but nobody reads
+# it). Conservative thresholds: requires both no-usage AND age — accidentally
+# never-read-but-recent fragments stay KEEP.
+USAGE_UNUSED_AGE_DAYS = 60
+
 # Trust-tier filter: WAL fragments carrying `origin: human-curated` in their
 # YAML frontmatter are exempt from auto-cleanup proposals (DELETE / MERGE).
 # Per `wal-documentation-rules` §1 ORIGIN ATTRIBUTION. Missing frontmatter is
@@ -48,6 +56,18 @@ ARCHIVE_AGE_DAYS = 180
 _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 _ORIGIN_RE = re.compile(r"^origin:\s*([a-z\-]+)\s*$", re.IGNORECASE | re.MULTILINE)
 _VALID_ORIGINS = ("agent-extracted", "human-curated")
+
+# T4.2: load usage_tracker via sibling-script import. If unavailable (script
+# moved/removed), scan_domain falls through to existing rules without
+# triggering the new usage-based DELETE — safer than aggressive default.
+_LOCAL_INTEL_DIR = Path(__file__).resolve().parent.parent / "local_intel"
+if str(_LOCAL_INTEL_DIR) not in sys.path:
+    sys.path.insert(0, str(_LOCAL_INTEL_DIR))
+try:
+    import usage_tracker  # type: ignore  # noqa: E402
+    _USAGE_AVAILABLE = True
+except ImportError:
+    _USAGE_AVAILABLE = False
 
 
 def _read_origin(p: Path) -> str:
@@ -177,25 +197,39 @@ def scan_domain(domain: Path, corpus_files: list[Path]) -> list[dict]:
         title = _title(p)
         dups = [other for other in titles_seen.get(title, []) if other != str(p)]
         origin = _read_origin(p)
+        # None when usage_tracker unavailable → ghost-fragment rule skipped
+        # entirely (safer than treating absence-of-data as zero usage and
+        # aggressively deleting recent agent-extracted fragments).
+        usage_30d = usage_tracker.score(str(p), days=30) if _USAGE_AVAILABLE else None
 
         # Trust-tier guard runs BEFORE all cleanup rules: human-curated
         # entries are exempt from DELETE / MERGE proposals regardless of
-        # refs / age / title duplication. Manual deletion still works;
+        # refs / age / usage / title duplication. Manual deletion still works;
         # distill.py just never SUGGESTS it.
         if origin == "human-curated":
             rec, reason = "KEEP", "human-curated (protected from auto-cleanup)"
         elif refs == 0:
             rec, reason = "DELETE", "0 references found (dead reference)"
+        elif (usage_30d == 0 and age_days >= 0 and age_days > USAGE_UNUSED_AGE_DAYS):
+            # Ghost fragment: someone references it but nobody reads it.
+            # `usage_30d == 0` only matches when usage_tracker IS available
+            # (else None != 0); preserves safe fallback.
+            rec, reason = "DELETE", (
+                f"ghost fragment (refs={refs} but 0 reads in 30d, "
+                f"age {age_days}d)"
+            )
         elif in_archive and age_days >= 0 and age_days > ARCHIVE_AGE_DAYS:
             rec, reason = "DELETE", f"archived for {age_days} days (cold storage cleanup)"
         elif dups:
             rec, reason = "MERGE", f"duplicate title '{title}' shared with {dups[0]}"
         else:
-            rec, reason = "KEEP", f"refs={refs}, age={age_days}d"
+            usage_note = f", usage30d={usage_30d}" if usage_30d is not None else ""
+            rec, reason = "KEEP", f"refs={refs}, age={age_days}d{usage_note}"
 
         results.append({
             "file": str(p), "title": title, "refs": refs, "age_days": age_days,
-            "in_archive": in_archive, "duplicates": dups, "origin": origin,
+            "usage_30d": usage_30d, "in_archive": in_archive,
+            "duplicates": dups, "origin": origin,
             "recommendation": rec, "reason": reason,
         })
     return results
