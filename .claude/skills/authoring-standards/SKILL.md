@@ -444,7 +444,7 @@ Format rules:
 - **No code blocks** except for: commands to run, file path templates, AskUserQuestion question text, Final report template.
 - **Cross-references**: relative or repo-rooted paths only (e.g., `.claude/rules/...`); never absolute `/Users/...`.
 - **Canonical exemplar (structure only)**: when in doubt, mirror `.claude/commands/h-archive.md` for SECTION STRUCTURE (Step / Hard constraints / Final report). NOTE its `description:` predates §4.D and is workflow-style; do NOT copy that pattern — use the trigger-based template above.
-- **Grandfather note**: 18 of 20 existing `/h-*` commands (at §4.D introduction time, 2026-05-30) carry workflow-style descriptions predating this rule. They are de-facto exempt pending bulk migration; the rule applies as authored to all NEW commands and to substantive rewrites of existing commands. Tracker: see task `F8` (bulk-migrate workflow-style → trigger-based) and `F9` (trim h-reflect description to ≤ 300).
+- **Migration history (resolved)**: At §4.D introduction (2026-05-30), 18 of 20 existing `/h-*` commands carried workflow-style descriptions predating this rule. Migrated 2026-05-31 (commit `7d277b0`, task F8): all 20 commands are now trigger-based. /h-reflect description was also trimmed from 349 → 236 chars in F9 (commit `28d0bfe`). NO grandfather exemption remains — all commands MUST conform.
 
 ---
 
