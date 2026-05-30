@@ -158,6 +158,21 @@ Run `python3 .claude/scripts/wiki/wiki_linter.py`.
 
 Edit the latest `.claude/runs/launch-specs/launch_spec_*.md` — change this task's row status from `IN_PROGRESS` to `DONE`. Do not touch other rows.
 
+## Step 7.5 — Record success signal
+
+A clean Archive is itself a positive sample for `failure_memory` (which until now only collected failures — `record-success` had 0 callers despite a documented interface). Use the deviation summary from Step 2 as the note so future `triage_probe` queries can reason about what kind of changes archive cleanly.
+
+```bash
+python3 .claude/scripts/local_intel/failure_memory.py record-success \
+  --intent Change \
+  --profile STANDARD \
+  --phase Archive \
+  --note "archived: <slug>; deviations: <one-line from Step 2 Plan Deviation Reflection, or 'none'>"
+```
+
+- exit 0 → continue; capture stdout for Step 8 `[Success Recorded]:` line
+- non-zero → surface inline as a warning but do NOT block Archive (record-success is best-effort signal, not a gate)
+
 ## Step 8 — Final report
 
 Output exactly this block, nothing else:
@@ -171,6 +186,7 @@ Output exactly this block, nothing else:
 [remember entries]: <list or "n/a — no cross-session knowledge">
 [wiki_linter]: OK | WARN(<one-line>) | FAIL(<one-line>)
 [Plan Deviations]: <one-sentence summary>
+[Success Recorded]: yes | skipped (<reason — e.g. "record-success exited non-zero">)
 [Next]: Run /h-status to see remaining queue. If empty: /h-brief or /h-from-ticket for new work, or /h-release if preparing a version. If deferred-AC remains: name the AC + which task picks it up.
 ```
 
@@ -212,6 +228,21 @@ mv .claude/runs/reports/<file> .claude/wiki/archive/reports/<file>
 
 - Edit latest `.claude/runs/launch-specs/launch_spec_*.md`: row `Status: IN_PROGRESS` → `DONE`. MUST NOT touch other rows.
 
+### Step 3.5R — Record success signal
+
+Same rationale as STANDARD Step 7.5 — a completed research report is a positive sample. Use intent=Research and the WAL election from Step 2R as the note.
+
+```bash
+python3 .claude/scripts/local_intel/failure_memory.py record-success \
+  --intent Research \
+  --profile RESEARCH \
+  --phase Archive \
+  --note "research archived: <slug>; wal: <Skip | dimensions chosen in 2R>"
+```
+
+- exit 0 → continue
+- non-zero → surface inline; do NOT block Archive
+
 ### Step 4R — Wiki lint + final report
 
 ```bash
@@ -231,6 +262,7 @@ Final block:
 [Gate]: PASS | WARN(<one-line>)
 [WAL]: Skip | <dimensions>
 [wiki_linter]: OK | WARN(<one-line>) | FAIL(<one-line>)
+[Success Recorded]: yes | skipped (<reason>)
 [Recommendations]: <count> Option blocks in §5 — list each "If chosen, run: ..." line verbatim for user as next-step candidates
 ```
 

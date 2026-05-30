@@ -48,6 +48,38 @@ MEMORY_PATH = str(_REPO_ROOT / ".claude" / "runs" / "local_intel" / "failure_mem
 MAX_RECORDS = 500
 INCIDENTS_DIR = str(_REPO_ROOT / ".claude" / "wiki" / "incidents")
 
+# Anti-Petrification lint (T3.1): refuse to record patterns that assert a
+# negative tool/state without describing a fix. Per
+# `wal-documentation-rules` §4: negative states decay (the tool may be
+# repaired tomorrow) and pollute future LLM context with stale
+# "don't try X" warnings. Recording the FIX persists value.
+_NEG_ASSERTIONS = (
+    "doesn't work", "does not work", "broken", "fails to",
+    "cannot be used", "can't be used", "not available", "unavailable",
+    "无法使用", "不可用", "不能用", "用不了",
+)
+_FIX_MARKERS = ("fix:", "workaround:", "修复:", "解决:", "绕过:")
+
+
+def _is_anti_petrification(pattern: str) -> tuple[bool, str]:
+    """Check whether `pattern` triggers the Anti-Petrification lint.
+
+    Returns (rejected, reason). rejected=True means the caller MUST refuse
+    to persist the record and surface `reason` to the user/LLM so they can
+    rewrite the pattern as a fix/workaround.
+    """
+    p = pattern.lower()
+    if not any(neg in p for neg in _NEG_ASSERTIONS):
+        return False, ""
+    if any(marker in p for marker in _FIX_MARKERS):
+        return False, ""
+    return True, (
+        "Anti-Petrification lint: pattern asserts a negative state without "
+        "a fix. Negative facts decay (the tool may be repaired tomorrow); "
+        "fixes persist. Rewrite as `fix: <command/config>` or "
+        "`workaround: <approach>` to make this record useful in 6 months."
+    )
+
 
 def _load() -> dict:
     if not os.path.exists(MEMORY_PATH):
@@ -74,7 +106,19 @@ def _save(data: dict) -> None:
 
 
 def record_failure(intent: str, profile: str, phase: str,
-                   gate: str, pattern: str, task_id: str = "") -> None:
+                   gate: str, pattern: str, task_id: str = "") -> bool:
+    """Record a failure. Returns True on acceptance, False on Anti-Petrification refusal.
+
+    Refusal reason (when False) is emitted to stderr so the CLI caller and
+    any LLM driving the script see actionable feedback. Backward note:
+    the function previously returned None; callers that ignored the return
+    value (none in-repo) still work, but `main()`'s `record` branch now
+    propagates the rejection as exit code 2.
+    """
+    rejected, reason = _is_anti_petrification(pattern)
+    if rejected:
+        print(f"REFUSED: {reason}", file=sys.stderr)
+        return False
     data = _load()
     data["failures"].append({
         "ts": datetime.now().isoformat(timespec="seconds"),
@@ -87,6 +131,7 @@ def record_failure(intent: str, profile: str, phase: str,
         "task_id": task_id,
     })
     _save(data)
+    return True
 
 
 def record_success(intent: str, profile: str, phase: str, note: str) -> None:
@@ -128,6 +173,7 @@ def query_failures(intent: str, phase: str, profile: str = "",
 def stats() -> dict:
     data = _load()
     failures = data["failures"]
+    successes = data["successes"]
     phase_counts: dict[str, int] = {}
     gate_counts: dict[str, int] = {}
     pattern_counts: dict[str, int] = {}
@@ -140,15 +186,29 @@ def stats() -> dict:
         pat = r.get("pattern", "?")
         pattern_counts[pat] = pattern_counts.get(pat, 0) + 1
 
+    # T5.3: parity aggregation for successes. Previously stats() only
+    # surfaced failure counts even after T0.2 wired record-success into
+    # /h-archive — leaving "By phase: {}" appearance for successes despite
+    # active recording.
+    success_phase_counts: dict[str, int] = {}
+    success_intent_counts: dict[str, int] = {}
+    for r in successes:
+        ph = r.get("phase", "?")
+        success_phase_counts[ph] = success_phase_counts.get(ph, 0) + 1
+        it = r.get("intent", "?")
+        success_intent_counts[it] = success_intent_counts.get(it, 0) + 1
+
     top_patterns = sorted(pattern_counts.items(), key=lambda x: x[1], reverse=True)[:5]
     top_gates = sorted(gate_counts.items(), key=lambda x: x[1], reverse=True)[:5]
 
     return {
         "total_failures": len(failures),
-        "total_successes": len(data["successes"]),
+        "total_successes": len(successes),
         "by_phase": phase_counts,
         "top_gates": top_gates,
         "top_patterns": top_patterns,
+        "success_by_phase": success_phase_counts,
+        "success_by_intent": success_intent_counts,
     }
 
 
@@ -314,8 +374,11 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.cmd == "record":
-        record_failure(args.intent, args.profile, args.phase,
-                       args.gate, args.pattern, args.task_id)
+        ok = record_failure(args.intent, args.profile, args.phase,
+                            args.gate, args.pattern, args.task_id)
+        if not ok:
+            # _is_anti_petrification already printed REFUSED reason to stderr
+            return 2
         print(f"Recorded: [{args.phase}/{args.gate}] {args.pattern}")
         return 0
 
@@ -346,6 +409,8 @@ def main() -> int:
             print("By phase:", s["by_phase"])
             print("Top gates:", s["top_gates"])
             print("Top patterns:", s["top_patterns"])
+            print("Successes by phase:", s["success_by_phase"])
+            print("Successes by intent:", s["success_by_intent"])
         return 0
 
     if args.cmd == "summary":
