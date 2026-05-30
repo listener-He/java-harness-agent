@@ -77,6 +77,19 @@ python3 .claude/scripts/wiki/wiki_linter.py
 - WARN → surface inline
 - FAIL → STOP, report linter output (no rollback — `git rm` history is preserved; user can `git restore` if needed)
 
+## Step 3.5 — Purge stale usage data (housekeeping)
+
+`.claude/runs/.usage/<sha1>.jsonl` files accumulate per tracked wiki/skill file
+(T4 sidecar). Drop entries whose most recent event is older than 180 days —
+they no longer influence the ghost-fragment rule and just waste disk.
+
+```bash
+python3 .claude/scripts/local_intel/usage_tracker.py purge --days 180
+```
+
+Capture stdout's `Removed N inactive usage files (>180d)` count for the
+Final Report. Non-blocking: failure here does not abort the flow.
+
 ## Step 4 — Final report
 
 Output exactly this block, nothing else:
@@ -87,6 +100,7 @@ Output exactly this block, nothing else:
 [Approved Ops]: <N delete + M merge>
 [Executed Ops]: <N delete + M merge, or 0 if NO-OP>
 [wiki_linter]: OK | WARN(<one-line>) | FAIL(<one-line>)
+[Usage Purged]: <N inactive sidecar files removed, or 0>
 [Next]: Run /h-status to see queue. Wiki growth was the trigger — re-check thresholds with: python3 .claude/scripts/wiki/distill_threshold.py
 ```
 
