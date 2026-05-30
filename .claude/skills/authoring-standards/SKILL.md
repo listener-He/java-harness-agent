@@ -92,6 +92,20 @@ Apply the relevant checklist below. Every "no" is a blocker for Step 4.
 | Maintenance note at end | yes | "Update this file when X / Y / Z" |
 | Registered in `CLAUDE.md` "Single Sources of Truth" table | yes if cross-cutting | Add the row in the same commit |
 
+### 1.D — When creating a Command (`.claude/commands/<name>.md`)
+
+| Element | Required? | Acceptance criterion |
+|---|---|---|
+| Filename | yes | Matches `^h-[a-z][a-z0-9-]*\.md$`. The `h-` prefix is project convention (per user-memory `feedback_custom_command_prefix.md`) to avoid collision with Claude Code built-in slash commands (`/init`, `/review`, `/code-review`, …). Unique under `.claude/commands/`. |
+| `description:` (frontmatter) | yes | ≤ 300 chars; trigger-based: `"TRIGGER when <user keyword / hook injection / phase>. NOT FOR: <route-elsewhere case 1>; <case 2>. Returns <one-line outcome>."`. NOT a workflow summary. Cap is looser than Skill §4.A (200) because commands typically carry 2 NOT FOR clauses + a Returns clause; Skills are narrower so 200 suffices. Both share the "trigger-based" structural rule. |
+| `argument-hint:` (frontmatter) | yes | `[optional-arg]` (square brackets), `<required-arg>` (angle brackets), or literal `(none)`. Required even when no args so the slash-command UI shows the right hint. |
+| Step section ordering | yes | Sequential `## Step N — <title>`. Sub-steps as `### Step Nx — <subtitle>`. Non-sequential numbers (`## Step 7.5`) only as last resort with inline rationale (canonical example: `h-archive.md` Step 7.5, added to minimize diff impact on downstream references). |
+| Hard constraints table | yes | Final section before any "Out of scope" addendum. MUST cover: Allowed edit set / Source-code edits FORBIDDEN / Anti-loop policy / Skip-path semantics / Idempotency. |
+| Final report block | yes | Last actionable step MUST output a structured `[<Command> Status]: ...` block users can grep. Mirror `h-archive.md` Step 8 pattern. |
+| Reference to gate scripts | yes if applicable | Cite `.claude/scripts/gates/*.py` by exact path in the relevant step (no abbreviations). |
+| Sub-agent dispatch invocation | yes if applicable | Dispatch prompt body MUST be built strictly per `.claude/rules/dispatch-template.md`; return MUST be parsed via `subagent_return_gate.py` after the sub-agent finishes. |
+| Collision check | yes | `find .claude/commands -name "<basename>" -not -path "*/<this-file>"` returns empty |
+
 ---
 
 ## Step 2 — Clarify Ambiguities
@@ -370,6 +384,67 @@ Format rules:
 - **File size cap**: 800 lines for rule files (rules must be skimmable). At cap, split by topic.
 - **Maintenance section** is the last section; do not append commentary after it
 - **Register in `CLAUDE.md`** "Single Sources of Truth" table if the file is cross-cutting (loaded by hooks, referenced from ≥2 other files)
+
+### § 4.D — Command format (`commands/<name>.md`)
+
+````markdown
+---
+description: TRIGGER when <user keyword / hook injection / phase boundary>. NOT FOR: <route-elsewhere case 1>; <case 2>. Returns <one-line outcome>.
+argument-hint: [optional-arg] | <required-arg> | (none)
+---
+
+<One-paragraph: what this command does, why it exists, relationship to adjacent commands.>
+
+## Step 0 — Resolve target (optional; only if input is ambiguous)
+
+Use `AskUserQuestion` if `$ARGUMENTS` is empty AND no implicit target can be derived from `.claude/runs/`.
+
+## Step 1 — <action>
+
+<actionable steps; cite scripts by exact path>
+
+```bash
+python3 .claude/scripts/<area>/<script>.py <args>
+```
+
+## Step 2 — <action>
+
+...
+
+## Step N — Final report
+
+Output exactly this block, nothing else:
+
+```
+[<Command> Status]: COMPLETE | PARTIAL | FAILED
+[<key field 1>]: <value or "n/a">
+[<key field 2>]: <value>
+...
+[Next]: <one sentence — what user should do next>
+```
+
+## Hard constraints
+
+| Rule | Value |
+|---|---|
+| Allowed edit set | <specific paths or "none — read-only command"> |
+| Source-code edits | FORBIDDEN |
+| Anti-loop | Max 2 retries per step; second failure → STOP, surface error |
+| Skip path | <how user opts out — e.g., "Step 2 select None → Step 4 still runs"> |
+| Idempotency | <safe-to-rerun semantics> |
+````
+
+Format rules:
+- **`description:` is the routing handle** — same trigger-based rule as § 4.A (≤ 200 chars; explicit TRIGGER + NOT FOR clauses). The slash-command UI surfaces this line before the user even invokes; precision matters.
+- **`h-` prefix mandatory** — per project convention (user-memory `feedback_custom_command_prefix.md`). Avoids collision with Claude Code built-ins (`/init`, `/review`, `/code-review`, `/security-review`, `/loop`, `/run`, `/verify`, …). Without this convention slash-command routing becomes ambiguous.
+- **Step headers sequentially numbered** — agents execute top-to-bottom; non-sequential numbers (e.g., inserting `## Step 1.5` mid-flow) only as last resort with rationale; canonical example: `h-archive.md` Step 7.5 added to minimize diff against downstream references.
+- **Final report block always last** — gives users a structured grep/parse handle (`[X Status]: COMPLETE`). Without this the command produces narrative prose only, defeating composability with other commands and CI scripts.
+- **Sub-agent dispatches**: prompt body MUST be built from `.claude/rules/dispatch-template.md`; return validated by `subagent_return_gate.py`. Do NOT inline a custom dispatch shape — it bypasses scope_guard and ACs-mapped contracts.
+- **Hard constraints table required** — at minimum cover: Allowed edit set / Source-code edits / Anti-loop / Skip path / Idempotency. Skipping this section is the main route to commands that silently mutate source code or cycle without an exit condition.
+- **No code blocks** except for: commands to run, file path templates, AskUserQuestion question text, Final report template.
+- **Cross-references**: relative or repo-rooted paths only (e.g., `.claude/rules/...`); never absolute `/Users/...`.
+- **Canonical exemplar (structure only)**: when in doubt, mirror `.claude/commands/h-archive.md` for SECTION STRUCTURE (Step / Hard constraints / Final report). NOTE its `description:` predates §4.D and is workflow-style; do NOT copy that pattern — use the trigger-based template above.
+- **Grandfather note**: 18 of 20 existing `/h-*` commands (at §4.D introduction time, 2026-05-30) carry workflow-style descriptions predating this rule. They are de-facto exempt pending bulk migration; the rule applies as authored to all NEW commands and to substantive rewrites of existing commands. Tracker: see task `F8` (bulk-migrate workflow-style → trigger-based) and `F9` (trim h-reflect description to ≤ 300).
 
 ---
 
