@@ -108,8 +108,13 @@ python3 .claude/scripts/gates/writeback_gate.py --topic <slug> --date <YYYYMMDD>
 
 - Path: `.claude/wiki/wiki/domain/wal/<YYYYMMDD>_<slug>_stub.md`
   - **Why `domain/wal/` regardless of the task's actual dimension**: a "None" decision is meta-knowledge ("we deliberately chose not to capture WAL"), not domain/api/data content. By convention all None stubs land in one location so a downstream scan can find them with a single `find <path> -name "*_stub.md"`. Tooling MUST filter `_stub.md` out when aggregating real domain knowledge — the `_stub.md` suffix is the signal.
-- Content:
+- Content (note: `origin: human-curated` — the "None" decision is itself a deliberate human choice and MUST be protected from auto-cleanup):
   ```markdown
+  ---
+  origin: human-curated
+  slug: <slug>
+  date: <YYYY-MM-DD>
+  ---
   # WAL Stub - <YYYY-MM-DD> - <slug>
 
   Source spec: `<relative_path_to_task_brief.md>`

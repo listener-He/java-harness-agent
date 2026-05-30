@@ -83,8 +83,13 @@ For each dimension in `[Chosen Dimensions]`, write the corresponding fragment pe
 
 ### 4. WAL Fragment Format
 
-Each fragment MUST follow this structure:
+Each fragment MUST follow this structure (YAML frontmatter first, per `wal-documentation-rules` §1 ORIGIN ATTRIBUTION):
 ```markdown
+---
+origin: agent-extracted
+slug: <slug>
+date: <YYYY-MM-DD>
+---
 # [Category] — <slug> (YYYY-MM-DD)
 
 ## Source
@@ -101,6 +106,8 @@ Each fragment MUST follow this structure:
 ### <Change 2 title>
 ...
 ```
+
+The `origin: agent-extracted` line is REQUIRED — `distill.py` uses it to filter cleanup candidates. Never write `origin: human-curated` from this sub-agent; that value is reserved for files a human authored or edited (and for the Path B stub written by `h-archive` itself).
 
 ### 5. Write fragments (idempotent)
 Write each chosen-dimension fragment to its corresponding `wal/` directory. Do NOT edit shared `index.md` files directly — merging happens later via the Librarian.

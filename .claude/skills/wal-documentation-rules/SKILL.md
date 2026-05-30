@@ -41,6 +41,17 @@ The historic rule "STANDARD Archive MUST write Domain + API + Rules" pushed agen
   - `[Confidence: LOW]` — based on single observation or undocumented behavior; mark as `⚠ Verify`
   - `[Evidence: file:line]` — the source location that supports this fact
   - Example row: `| OrderStatus | NEW, PROCESSING, DONE, CANCELLED | OrderService.java:87 [Confidence: HIGH] [Evidence: OrderServiceTest.java:42] |`
+- **ORIGIN ATTRIBUTION:** Every WAL fragment MUST begin with YAML frontmatter declaring its origin. This drives the trust-tier filtering used by `librarian` Distill and `distill.py` — `human-curated` entries are EXEMPT from auto-cleanup proposals.
+  ```yaml
+  ---
+  origin: agent-extracted | human-curated
+  slug: <feature_slug>
+  date: <YYYY-MM-DD>
+  ---
+  ```
+  - `agent-extracted` — written by `knowledge-extractor` sub-agent (the default; covers the 5 templates below)
+  - `human-curated` — explicitly written or hand-edited by a human, OR a stub recording a deliberate "no WAL" decision via `h-archive` Path B
+  - Missing frontmatter is treated as `agent-extracted` (backward compatibility); new fragments MUST include it explicitly
 - **FILENAME CONVENTION:** `.claude/wiki/wiki/{domain}/wal/YYYYMMDD_{topic}_{type}_append.md`
   - `{domain}`: `domain`, `api`, `rules`, or `data`
   - `{type}`: matches domain name — e.g., `domain_append`, `api_append`, `rules_append`, `data_append`
@@ -62,6 +73,11 @@ If the user elected **None**, do NOT write any of the type-specific fragments be
 
 **Template:**
 ```markdown
+---
+origin: agent-extracted
+slug: {topic}
+date: {YYYY-MM-DD}
+---
 # Domain WAL Append - {YYYY-MM-DD} - {topic}
 
 Source spec: `{relative_path_to_task_brief.md}`
@@ -89,6 +105,11 @@ Source spec: `{relative_path_to_task_brief.md}`
 
 **Template:**
 ```markdown
+---
+origin: agent-extracted
+slug: {topic}
+date: {YYYY-MM-DD}
+---
 # API WAL Append - {YYYY-MM-DD} - {topic}
 
 Source spec: `{relative_path_to_task_brief.md}`
@@ -115,6 +136,11 @@ Source spec: `{relative_path_to_task_brief.md}`
 
 **Template:**
 ```markdown
+---
+origin: agent-extracted
+slug: {topic}
+date: {YYYY-MM-DD}
+---
 # Rules WAL Append - {YYYY-MM-DD} - {topic}
 
 Source spec: `{relative_path_to_task_brief.md}`
@@ -136,6 +162,11 @@ Source spec: `{relative_path_to_task_brief.md}`
 
 **Template:**
 ```markdown
+---
+origin: agent-extracted
+slug: {topic}
+date: {YYYY-MM-DD}
+---
 # Data WAL Append - {YYYY-MM-DD} - {topic}
 
 Source spec: `{relative_path_to_task_brief.md}`
@@ -177,6 +208,7 @@ Do NOT close the Archive phase until the gate passes.
 | Copy-pasting entire spec sections into WAL | WAL must be distilled facts, not raw spec content |
 | Skipping `writeback_gate.py` verification | Silent missing WAL; downstream consumers get stale data |
 | Using freeform filenames (no convention) | Makes compaction impossible; files cannot be auto-discovered |
+| Recording negative tool/state assertions ("X doesn't work", "无法使用") | **Anti-Petrification**: negative facts decay — the tool may be repaired tomorrow, leaving a stale "don't try X" warning that misleads future LLMs. Record the **fix** instead: `fix: <command/config>` or `workaround: <approach>`. Enforced by `failure_memory.py record` lint (refuses input + suggests rewrite). |
 
 ---
 

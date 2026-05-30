@@ -41,6 +41,30 @@ RUNS_DIR = Path(".claude/runs/distill")
 PROTECTED_NAMES = {"index.md", "KNOWLEDGE_GRAPH.md", "purpose.md"}
 ARCHIVE_AGE_DAYS = 180
 
+# Trust-tier filter: WAL fragments carrying `origin: human-curated` in their
+# YAML frontmatter are exempt from auto-cleanup proposals (DELETE / MERGE).
+# Per `wal-documentation-rules` §1 ORIGIN ATTRIBUTION. Missing frontmatter is
+# treated as `agent-extracted` for backward compatibility with pre-T2 files.
+_FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
+_ORIGIN_RE = re.compile(r"^origin:\s*([a-z\-]+)\s*$", re.IGNORECASE | re.MULTILINE)
+_VALID_ORIGINS = ("agent-extracted", "human-curated")
+
+
+def _read_origin(p: Path) -> str:
+    """Parse `origin:` from YAML frontmatter; default `agent-extracted` if absent."""
+    try:
+        text = p.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return "agent-extracted"
+    m = _FRONTMATTER_RE.match(text)
+    if not m:
+        return "agent-extracted"
+    om = _ORIGIN_RE.search(m.group(1))
+    if not om:
+        return "agent-extracted"
+    val = om.group(1).strip().lower()
+    return val if val in _VALID_ORIGINS else "agent-extracted"
+
 # Roots to grep for reference detection. Single files are accepted directly.
 SCAN_ROOTS = [
     "src",
@@ -152,8 +176,15 @@ def scan_domain(domain: Path, corpus_files: list[Path]) -> list[dict]:
         refs = _ref_count(p, corpus_files)
         title = _title(p)
         dups = [other for other in titles_seen.get(title, []) if other != str(p)]
+        origin = _read_origin(p)
 
-        if refs == 0:
+        # Trust-tier guard runs BEFORE all cleanup rules: human-curated
+        # entries are exempt from DELETE / MERGE proposals regardless of
+        # refs / age / title duplication. Manual deletion still works;
+        # distill.py just never SUGGESTS it.
+        if origin == "human-curated":
+            rec, reason = "KEEP", "human-curated (protected from auto-cleanup)"
+        elif refs == 0:
             rec, reason = "DELETE", "0 references found (dead reference)"
         elif in_archive and age_days >= 0 and age_days > ARCHIVE_AGE_DAYS:
             rec, reason = "DELETE", f"archived for {age_days} days (cold storage cleanup)"
@@ -164,7 +195,7 @@ def scan_domain(domain: Path, corpus_files: list[Path]) -> list[dict]:
 
         results.append({
             "file": str(p), "title": title, "refs": refs, "age_days": age_days,
-            "in_archive": in_archive, "duplicates": dups,
+            "in_archive": in_archive, "duplicates": dups, "origin": origin,
             "recommendation": rec, "reason": reason,
         })
     return results
@@ -182,6 +213,22 @@ def render_plan(all_results: dict[str, list[dict]]) -> str:
         "content to the target then `git rm`s the source. History is preserved.",
         "",
     ]
+    # Surface human-curated files at the top so reviewers can see what
+    # was deliberately skipped. These rows are informational only — they
+    # have no `[ ]` checkbox because they are not action candidates.
+    protected = [
+        r for results in all_results.values() for r in results
+        if r.get("origin") == "human-curated"
+    ]
+    if protected:
+        lines.append("## Protected (human-curated — exempt from auto-cleanup)")
+        lines.append("")
+        for r in protected:
+            lines.append(f"- `KEEP` {r['file']}  — {r['reason']}")
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+
     for domain in sorted(all_results.keys()):
         results = all_results[domain]
         delete_cands = [r for r in results if r["recommendation"] == "DELETE"]
@@ -225,9 +272,11 @@ def cmd_scan() -> int:
     total = sum(len(v) for v in all_results.values())
     deletes = sum(1 for v in all_results.values() for r in v if r["recommendation"] == "DELETE")
     merges = sum(1 for v in all_results.values() for r in v if r["recommendation"] == "MERGE")
+    protected = sum(1 for v in all_results.values() for r in v if r.get("origin") == "human-curated")
     print(f"Scanned {total} files across {len(all_results)} domain(s).")
     print(f"  DELETE candidates: {deletes}")
     print(f"  MERGE candidates:  {merges}")
+    print(f"  PROTECTED (human-curated, exempt from cleanup): {protected}")
     print(f"Plan written: {out_path}")
     return 0
 
@@ -275,6 +324,13 @@ def cmd_execute(plan_path: Path, dry_run: bool) -> int:
         if not _safe_path(op["file"]):
             print(f"  [REFUSE] outside wiki tree or protected: {op['file']}", file=sys.stderr)
             continue
+        # Defense-in-depth: even if a hand-edited plan contains a `[x]` row
+        # pointing at a human-curated file, refuse the op. scan_domain
+        # already excludes these, so the only way to land here is manual
+        # editing of the plan — block it explicitly.
+        if _read_origin(Path(op["file"])) == "human-curated":
+            print(f"  [REFUSE] human-curated source: {op['file']}", file=sys.stderr)
+            continue
         if op["op"] == "DELETE":
             if dry_run:
                 print(f"  [DRY] git rm {op['file']}")
@@ -289,6 +345,9 @@ def cmd_execute(plan_path: Path, dry_run: bool) -> int:
             target = op.get("target")
             if not target or not _safe_path(target):
                 print(f"  [REFUSE] merge target missing or unsafe: {target}", file=sys.stderr)
+                continue
+            if _read_origin(Path(target)) == "human-curated":
+                print(f"  [REFUSE] merge target is human-curated: {target}", file=sys.stderr)
                 continue
             if dry_run:
                 print(f"  [DRY] append {op['file']} into {target}, then git rm")
