@@ -1,5 +1,5 @@
 ---
-description: TRIGGER on RESEARCH profile (analyze / feasibility / baseline) — [triage] suggested:RESEARCH OR @research/@analyze/@feasibility shortcut. NOT FOR: code change (use /h-brief); literature review only without report (just chat). Returns: research_report.md scaffold + launch_spec binding.
+description: Scaffold research_report.md (no code) — Phase R1 entry. TRIGGER: [triage] suggested:RESEARCH / @research / analyze keyword. NOT FOR: code change (use /h-brief).
 argument-hint: <slug> [--scope quick|deep]
 ---
 

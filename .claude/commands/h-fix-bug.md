@@ -1,5 +1,5 @@
 ---
-description: TRIGGER on bug report (test or production) OR user says '修 bug' / '查 bug' / 'P1 down'. NOT FOR: CI failure (use /h-ci); CI/system-only issue (route per Scenario DEBUG). Returns: root-cause confirmation + (if production) incident record + fix task_brief; no code until root cause locked.
+description: Bug → root-cause-first pipeline; production bugs get incident record. No code until root cause locked. TRIGGER: bug report / 'P1 down'. NOT FOR: CI fail (use /h-ci).
 argument-hint: [ticket-ref] [--source github|jira|linear|manual] [--production] [--severity p1|p2|p3]
 ---
 

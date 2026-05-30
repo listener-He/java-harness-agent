@@ -1,5 +1,5 @@
 ---
-description: TRIGGER when '[wiki-distill] threshold hit' appears OR user says '整理 wiki' / '清理过期'. NOT FOR doc cleanup (use documentation-curator) or index split (use knowledge-architect). Returns cleanup execution report.
+description: Wiki cleanup — librarian scan → user approves → execute. TRIGGER: [wiki-distill] hint / '整理 wiki'. NOT FOR: doc cleanup (use documentation-curator).
 argument-hint: (none)
 ---
 

@@ -1,5 +1,5 @@
 ---
-description: TRIGGER when wiki diverges from code reality OR user says 'reconcile wiki with code' / 'wiki 过时了 校对一下'. NOT FOR: WAL extraction at Archive (use knowledge-extractor via /h-archive); wiki internal dedup (use /h-distill via librarian). Returns: wiki diff log + reconciled claims.
+description: Reconcile wiki claims against current code, bounded scope. TRIGGER: 'wiki 过时了 校对一下' / 'reconcile'. NOT FOR: WAL at Archive (use /h-archive).
 argument-hint: <scope-spec> [--dry-run] [--max-add N] [--allow-direct-replace]
 ---
 

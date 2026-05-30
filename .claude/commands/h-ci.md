@@ -1,5 +1,5 @@
 ---
-description: TRIGGER on red CI run (GitHub Actions failure) OR user says 'CI 挂了' / 'pipeline failed' with run-id. NOT FOR: local test failures (use /h-fix-bug); known incident (use /h-incident). Returns: classified routing + failure_memory record + optional debug task or incident.
+description: Ingest CI/CD failure → classify → route (debug task / incident) + failure_memory record. TRIGGER: red GitHub Actions run / 'CI 挂了'. NOT FOR: local test fail (use /h-fix-bug).
 argument-hint: [--run-id <id>] [--repo <owner/repo>] [--from-file <path>]
 ---
 

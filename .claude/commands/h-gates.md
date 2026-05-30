@@ -1,5 +1,5 @@
 ---
-description: TRIGGER at phase transition or before commit/PR for full gate audit OR user says 'run gates' / '过门'. NOT FOR: per-edit checks (PreToolUse hook handles those); single-gate run (invoke script directly). Returns: severity-aggregated gate report across the full diff.
+description: Full gate suite audit across accumulated diff — phase-aware, severity-aggregated. TRIGGER: phase transition / '过门'. NOT FOR: per-edit (hook handles).
 argument-hint: [--phase explore|propose|implement|qa|archive] [--scenario B|C|E] [--all]
 ---
 

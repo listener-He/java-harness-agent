@@ -1,5 +1,5 @@
 ---
-description: TRIGGER after /h-brief on HIGH-risk or cross-domain task before Review OR user says '做设计' / 'design this'. NOT FOR: implementation (work directly off brief); ADR-only (use architecture-decision-records skill). Returns: filled §8 / §9 + ADR files per HIGH risk + updated brief.
+description: Design step for HIGH-risk brief — dispatch system-architect, write ADRs, fill §8/§9. TRIGGER: HIGH-risk after /h-brief / '做设计'. NOT FOR: implementation.
 argument-hint: [slug]
 ---
 

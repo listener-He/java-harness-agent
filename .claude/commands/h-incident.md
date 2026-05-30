@@ -1,5 +1,5 @@
 ---
-description: TRIGGER on production incident (Sentry alert / oncall log / post-mortem) OR user says '记录事故' / 'log incident'. NOT FOR: bug pipeline (use /h-fix-bug); CI failure (use /h-ci); test-env issue. Returns: .claude/wiki/incidents/<date>_<slug>.md + raw fact + future-LLM reminder line.
+description: Capture production incident → wiki/incidents/<date>_<slug>.md with future-LLM reminder line. TRIGGER: Sentry alert / '记录事故'. NOT FOR: bug pipeline (use /h-fix-bug).
 argument-hint: <source> <slug> [--from-file <path>]
 ---
 

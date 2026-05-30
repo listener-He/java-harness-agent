@@ -1,5 +1,5 @@
 ---
-description: TRIGGER on Phase 6 / Phase R3 (STANDARD/RESEARCH task ready to close) OR user says '归档' / 'archive'. NOT FOR: PATCH/SLIM (Step 1.5 rejects); cross-team handoff (use /h-collab); PR creation (use /h-pr). Returns: archive path + WAL fragments + linter status + record-success.
+description: Archive STANDARD/RESEARCH task at Phase 6/R3 — gate → WAL → move → DONE. TRIGGER: '归档' / Phase 6 boundary. NOT FOR: PATCH (rejected); PR (use /h-pr).
 argument-hint: [slug]
 ---
 

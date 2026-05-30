@@ -1,5 +1,5 @@
 ---
-description: TRIGGER on external ticket (GitHub Issue / Jira / Linear) needing workflow entry OR user pastes a ticket URL. NOT FOR: PRD/EPIC decomposition (use /h-decompose); bug already triaged (use /h-fix-bug). Returns: task_brief skeleton + ambiguity check + launch_spec row binding.
+description: Ingest GitHub Issue / Jira / Linear ticket → task_brief + ambiguity check + launch_spec row. TRIGGER: ticket URL pasted. NOT FOR: PRD/EPIC (use /h-decompose).
 argument-hint: <source> <ticket-ref> [--slim] [--risk low|medium|high]
 ---
 

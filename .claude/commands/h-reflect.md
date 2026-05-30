@@ -1,5 +1,5 @@
 ---
-description: TRIGGER when [reflect-hint] OR user says '复盘'/'反思'/'总结'. Multi-select session lessons (incident/wiki/failure/success/auto-memory) to capture; resets counters. NOT FOR: archive STANDARD (use /h-archive); known incident (use /h-incident).
+description: Session reflection — multi-select lessons (incident/wiki/failure/success/memory) → reset counters. TRIGGER: [reflect-hint] / '复盘'. NOT FOR: archive (use /h-archive).
 argument-hint: (none)
 ---
 
