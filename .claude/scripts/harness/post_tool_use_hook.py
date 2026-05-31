@@ -33,12 +33,13 @@ from pathlib import Path
 # of the harness's current working directory.
 _SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 _GATES_DIR = _SCRIPTS_DIR / "gates"
+_LOCAL_INTEL_DIR = _SCRIPTS_DIR / "local_intel"
 SECRETS_LINTER = str(_GATES_DIR / "secrets_linter.py")
 MIGRATION_GATE = str(_GATES_DIR / "migration_gate.py")
 DEPENDENCY_GATE = str(_GATES_DIR / "dependency_gate.py")
-SKILL_HINT = str(_SCRIPTS_DIR / "local_intel" / "skill_hint.py")
-INCIDENT_HINT = str(_SCRIPTS_DIR / "local_intel" / "incident_hint.py")
-SESSION_STATS = str(_SCRIPTS_DIR / "local_intel" / "session_stats.py")
+SKILL_HINT = str(_LOCAL_INTEL_DIR / "skill_hint.py")
+INCIDENT_HINT = str(_LOCAL_INTEL_DIR / "incident_hint.py")
+SESSION_STATS = str(_LOCAL_INTEL_DIR / "session_stats.py")
 
 # Job output modes:
 #   SILENT          — never print anything; swallow stdout. (secrets, stats)
@@ -49,6 +50,33 @@ SESSION_STATS = str(_SCRIPTS_DIR / "local_intel" / "session_stats.py")
 SILENT = "silent"
 EMIT_ON_NONPASS = "emit_on_nonpass"
 EMIT_ANY_STDOUT = "emit_any_stdout"
+
+
+def _record_gate_failure(gate_name: str, file_path: str) -> None:
+    """Best-effort failure_memory record for a hook-detected gate FAIL.
+
+    In-process import (no subprocess) so it costs ~0ms beyond the hook's
+    already-spawned interpreter. Pattern uses the 'fix:' marker so the
+    Anti-Petrification lint accepts it — the entry is actionable
+    ("review gate output for <file>") rather than a stale negative
+    assertion. Silent on every failure path; gate recording must never
+    cascade into hook misbehavior.
+    """
+    try:
+        if str(_LOCAL_INTEL_DIR) not in sys.path:
+            sys.path.insert(0, str(_LOCAL_INTEL_DIR))
+        import failure_memory  # type: ignore
+        failure_memory.record_failure(
+            intent="Change",
+            profile="",
+            phase="Implement",  # PostToolUse fires during edit-loop, ~Implement-ish
+            gate=gate_name,
+            pattern=f"fix: {gate_name} FAIL on {os.path.basename(file_path)} "
+                    f"— review hook stdout for specific finding",
+            task_id="auto:posthook",
+        )
+    except Exception:
+        pass
 
 
 def _scenario_gates(file_path: str) -> list[tuple[str, list[str], str]]:
@@ -148,6 +176,12 @@ def main() -> int:
             if rc != 0 and stdout:
                 print(f"[{name}] non-PASS (exit {rc}):")
                 print(stdout)
+                # Close the loop: feed the failure into failure_memory so
+                # future [failure-memory] context blocks surface recurring
+                # gate hits. Skipping when rc==1 (WARN) — only FAIL becomes
+                # a learnable pattern.
+                if rc == 2:
+                    _record_gate_failure(name, file_path)
         elif mode == EMIT_ANY_STDOUT:
             if stdout:
                 print(stdout)
