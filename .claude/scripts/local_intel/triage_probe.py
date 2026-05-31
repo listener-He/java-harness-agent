@@ -1,35 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Evidence Probe — collect 5 evidence signals + emit one advisory profile hint,
-and request a Haiku slow-path review when keyword evidence is genuinely
-ambiguous on a HIGH-sensitivity surface.
+Evidence Probe — collect 5 evidence signals + emit one advisory profile hint.
 
-NOT a classifier. Output is informational; the main agent decides the profile
-by combining this evidence with conversation context (shortcuts, domain,
-memory, user tone). The probe never escalates, never overrides, never decides.
+NOT a classifier. As of P2/P3 (Sensor/Policy/Enforce refactor) this script
+is NO LONGER auto-invoked by UserPromptSubmit hook. It is now an explicit
+CLI tool the agent calls when it wants a one-shot evidence snapshot
+(e.g., from /h-context-check, or directly when reading an ambiguous prompt).
 
-Fast-path signals (always collected, deterministic, <500ms):
+Signals collected (all deterministic, <500ms):
   - blast_radius: code_index.py --impact-of for each file hint
   - failure_history: failure_memory.py summary --days 30 --min-count 2
   - ambiguity: ambiguity_gate._check_intent → OK / WARN / FAIL
   - danger_keywords: static scan against HIGH / MEDIUM tier word lists
-                     (display-only + Probe Override trigger source +
-                      slow-path dispatch trigger source)
+                     (display-only — agent decides what to do)
   - intent_class: ambiguity_gate.classify_intent → CHANGE / RESEARCH / OTHER
-
-Slow-path tier (opt-in, dispatched by main agent on probe's request):
-  - needs_semantic_review: line emitted when keyword evidence cannot
-    disambiguate intent on a HIGH-sensitivity surface (HIGH keyword present
-    + no user shortcut + (ambiguity=FAIL OR intent_class=RESEARCH)).
-    Main agent dispatches the `triage-reviewer` sub-agent (Haiku) for a
-    one-shot semantic refinement before emitting [Risk: ...].
 
 Output:
   - default (human): a [triage-evidence] block; silent if no evidence worth showing
   - --json: structured dict for downstream consumers
 
-Designed to run inside UserPromptSubmit hook well under 500ms.
+The slow-path 'needs_semantic_review' auto-emission was removed: agent now
+decides whether to dispatch the triage-reviewer Haiku sub-agent based on
+its own semantic read, not on a keyword heuristic.
 """
 
 from __future__ import annotations
@@ -54,42 +47,13 @@ HARD_SKIP_SHORTCUTS = (
     "@distill",
 )
 
-# When any of these shortcuts is in the prompt, the user has already declared
-# the routing mode — `needs_semantic_review` is suppressed (no point asking a
-# Haiku reviewer to second-guess an explicit user choice).
-INTENT_DECLARED_SHORTCUTS = (
-    "@vibe", "@patch", "@quickfix", "@standard",
-    "@research", "@analyze", "@feasibility",
-    "@learn", "@read",
-)
-
-# Verbs/phrases that strongly indicate LEARN-class intent (read / explain,
-# not modify). When present, suppress `needs_semantic_review` even if HIGH
-# keywords + ambiguity=FAIL — the user clearly wants commentary, not a
-# change. Substring match (no word boundaries) so multi-word phrases work.
-# Conservative set: included only when "edit-disguised-as-explanation" risk
-# is low. Ambiguous verbs like "review/总结/评审" are intentionally NOT here.
-LEARN_VERBS = (
-    # Chinese — pure read intents
-    "看一下", "看看", "查看", "解释", "梳理", "说明",
-    "介绍", "了解", "讲解", "讲讲", "聊聊",
-    "描述", "阅读",
-    # English — pure read intents
-    "explain", "show me", "walk through", "walkthrough",
-    "describe", "look at", "look into", "tell me about",
-)
-
 MIN_LEN_FOR_PROBE = 15
 
-# HIGH-tier keywords. Display-only here (no escalation); also serve as:
-#   (1) trigger source for policy.md "Probe Override" — @vibe/@patch with
-#       any of these in keywords_observed → main agent MUST emit
-#       [Probe Override] block;
-#   (2) trigger source for slow-path `needs_semantic_review` — combined with
-#       ambiguity=FAIL or intent_class=RESEARCH and no shortcut, prompts
-#       dispatch of the triage-reviewer (Haiku) sub-agent.
-# Grouped by category for maintenance. Add a term only if false-positive rate
-# stays low under word-boundary matching (see _kw_match).
+# HIGH-tier keywords. Display-only — agent semantically decides what to do
+# with them. They surface in the [triage-evidence] keywords_observed line so
+# the caller can grep / decide. (Pre-P5 these also drove an auto-trigger of
+# the triage-reviewer sub-agent; that logic was removed — agent owns the
+# decision now.) Grouped by category for maintenance.
 DANGER_HIGH = (
     # Authentication & authorization
     "auth", "authentication", "authorize", "authorization",
@@ -280,49 +244,13 @@ def _scan_danger_keywords(prompt: str) -> tuple[list[str], list[str]]:
     return high, medium
 
 
-def _needs_semantic_review(prompt: str, ambiguity: str, high_kw: list[str],
-                           intent_class: str) -> tuple[bool, str]:
-    """Decide whether the main agent should dispatch the triage-reviewer agent.
-
-    Triggers only when keyword-based evidence cannot disambiguate intent:
-      - HIGH keyword present (sensitive surface)
-      - AND no user shortcut (user has not declared mode)
-      - AND (ambiguity FAIL OR intent_class RESEARCH)
-
-    Returns (needed, reason). Empty reason iff not needed.
-    """
-    if not high_kw:
-        return False, ""
-    lowered = prompt.lower()
-    if any(sc in lowered for sc in INTENT_DECLARED_SHORTCUTS):
-        return False, ""
-    # LEARN-class verbs suppress regardless of FAIL/RESEARCH — when the user
-    # is clearly asking for read/explain on a sensitive surface, Haiku review
-    # would add latency for zero information gain. The main agent reads the
-    # prompt and decides whether to actually treat as LEARN.
-    if any(v in lowered for v in LEARN_VERBS):
-        return False, ""
-    if ambiguity == "FAIL":
-        return True, (
-            f"HIGH keyword {high_kw[0]!r} + ambiguous intent — "
-            "disambiguate sensitivity vs scope"
-        )
-    if intent_class == "RESEARCH":
-        return True, (
-            f"HIGH keyword {high_kw[0]!r} + RESEARCH intent — "
-            "research-touches-sensitive vs change-intent boundary"
-        )
-    return False, ""
-
-
 def _format_evidence(blast: dict, failure: dict, ambiguity: str,
                      high_kw: list[str], medium_kw: list[str],
-                     intent_class: str, prompt: str) -> str:
+                     intent_class: str) -> str:
     """Render evidence as text. Pure formatter — no classification, no escalation.
 
     The single 'profile_hint' line is advisory only; the literal suffix
-    '(you decide)' is intentional and consumed by docs as a marker that the
-    main agent owns the decision.
+    '(you decide)' is intentional — the calling agent owns the decision.
     """
     lines = ["[triage-evidence]"]
 
@@ -350,10 +278,6 @@ def _format_evidence(blast: dict, failure: dict, ambiguity: str,
         lines.append("profile_hint: STANDARD-tier signals present (you decide)")
     elif blast["files"] >= 3 or ambiguity == "FAIL":
         lines.append("profile_hint: PATCH-tier signals (you decide)")
-
-    needs_review, reason = _needs_semantic_review(prompt, ambiguity, high_kw, intent_class)
-    if needs_review:
-        lines.append(f"needs_semantic_review: {reason}")
 
     return "\n".join(lines)
 
@@ -394,7 +318,7 @@ def main() -> int:
     high_kw, medium_kw = _scan_danger_keywords(prompt)
     intent_class = ambiguity_gate.classify_intent(prompt[:500])
 
-    text = _format_evidence(blast, failure, ambiguity, high_kw, medium_kw, intent_class, prompt)
+    text = _format_evidence(blast, failure, ambiguity, high_kw, medium_kw, intent_class)
 
     if args.as_json:
         # Extract profile_hint from rendered text (single source of truth for the rule).
@@ -403,14 +327,9 @@ def main() -> int:
              if ln.startswith("profile_hint:")),
             "",
         )
-        needs_review, review_reason = _needs_semantic_review(
-            prompt, ambiguity, high_kw, intent_class
-        )
         result = {
             "intent_class": intent_class,
             "profile_hint": hint_line,
-            "needs_semantic_review": needs_review,
-            "semantic_review_reason": review_reason,
             "blast_radius": blast,
             "failure_history": failure,
             "ambiguity": ambiguity,

@@ -10,8 +10,9 @@ to four context blocks every prompt:
   - [triage-evidence] — signal collection + advisory profile_hint
 
 All four were the canonical "push model" — hook decides, agent reads
-whatever was injected. The new pull model: agent reads /h-context-check
-when entering a new task or unsure. Hook just records the event.
+whatever was injected. The new pull model: agent runs /h-context-check
+when entering a new task or unsure; hook just records the event for
+downstream queries.
 
 What that buys:
   - Zero per-prompt token pollution (no automatic context injection)

@@ -15,7 +15,7 @@ Extract:
 
 **Conflict rule:** `--slim` together with `--risk medium|high` is contradictory → STOP and ask user to pick one. `--slim` alone or `--risk low` alone are both fine.
 
-If neither flag is provided: look for the main agent's earlier `[Risk: LOW|MEDIUM|HIGH | Scenario: ...]` line in this conversation (per CLAUDE.md Session Start, the main agent emits this before invoking /h-brief on STANDARD work). If no `[Risk: ...]` line found and conversation has no risk discussion → ask user via `AskUserQuestion` before proceeding. Do not silently default. The `[triage-evidence]` advisory `profile_hint` is one input the main agent already used when emitting `[Risk: ...]` — do NOT re-read `profile_hint` here.
+If neither flag is provided: look for the main agent's earlier `[Risk: LOW|MEDIUM|HIGH | Scenario: ...]` line in this conversation (per CLAUDE.md Session Start, the main agent emits this before invoking /h-brief on STANDARD work). If no `[Risk: ...]` line found and conversation has no risk discussion → ask user via `AskUserQuestion` before proceeding. Do not silently default. As of P2 (Sensor/Policy/Enforce refactor) there is no auto-injected `[triage-evidence]` to consult — the main agent's `[Risk: ...]` line is the canonical source; if you want fresh evidence, call `/h-context-check --prompt "..."` first.
 
 `spec_mode` is derived automatically from risk — no separate flag needed: LOW → SLIM, MEDIUM/HIGH → STANDARD.
 

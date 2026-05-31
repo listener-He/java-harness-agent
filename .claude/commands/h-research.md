@@ -1,5 +1,5 @@
 ---
-description: Scaffold research_report.md (no code) — Phase R1 entry. TRIGGER: [triage-evidence] intent_class:RESEARCH / @research / analyze keyword. NOT FOR: code change (use /h-brief).
+description: Scaffold research_report.md (no code) — Phase R1 entry. TRIGGER: prompt contains research verb (analyze / feasibility / evaluate / 调研) / @research shortcut. NOT FOR: code change (use /h-brief).
 argument-hint: <slug> [--scope quick|deep]
 ---
 
@@ -10,7 +10,7 @@ Phase R1 entry for RESEARCH profile. Produces `research_report.md`; binds to `la
 - `<slug>` (required, kebab-or-snake-case) — STOP if missing.
 - `--scope quick|deep` — when absent, invoke the "scope confirm" `AskUserQuestion` block below before proceeding. Do NOT silently default to `quick` — choice affects §3 quota (5 vs 15 findings) and is hard to revise mid-investigation.
 
-If invoked after `[triage-evidence]` carrying `intent_class: RESEARCH` without a slug → propose one (≤ 4 words, kebab-case), confirm via `AskUserQuestion`, then proceed.
+If invoked without a slug while the prompt clearly carries a research verb (analyze / feasibility / evaluate / 调研) → propose a slug (≤ 4 words, kebab-case), confirm via `AskUserQuestion`, then proceed.
 
 **Scope confirm** AskUserQuestion (fires only when `--scope` was not on the command line):
 
