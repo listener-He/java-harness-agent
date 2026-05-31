@@ -99,6 +99,17 @@ origin: human-design
 
 由 pre_tool_use_hook 在 main() 开头检测 env 时 emit。`override_drift` insight detector 消费。
 
+### `user_correction` — 用户 prompt 开头含纠偏语
+| 字段 | 类型 | 必有 | 说明 |
+|---|---|---|---|
+| `correction_phrase` | string | ✓ | 命中的纠偏短语（精确文本，e.g., "不对" / "actually" / "no,"） |
+| `prompt_excerpt` | string | ✓ | 完整 prompt 前 100 字符（脱敏用，detector 看的是这个） |
+| `session_id` | string | — | 与同回合 `prompt` event 共享 |
+
+由 user_prompt_submit_hook 在 prompt 首 50 字符匹配 `CORRECTION_PHRASES` 列表时 emit（与 `prompt` event 同时落，不替代）。`user_correction` detector 消费。
+
+**已知局限**：v1 是纯字符串前缀匹配，不绑定具体哪个 agent 决策被纠。绑定需 LLM 级语义比对，留 v2。
+
 ## 字段命名约定
 
 - 蛇形：`file_path`, `dirty_files`, `session_id`

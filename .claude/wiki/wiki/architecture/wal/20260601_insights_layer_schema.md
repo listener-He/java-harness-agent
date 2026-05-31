@@ -89,15 +89,16 @@ Enforce (人审过的规则变更通过 git commit 进入生效)
 
 **confidence**：count≥10 → high; ≥5 → medium; ≥3 → low
 
-### `user_correction`（v1 暂不实现 — 需更复杂的捕获机制）
-预留字段：
+### `user_correction`（v1 已实现 — 字符串前缀启发）
 | 字段 | 必有 | 说明 |
 |---|---|---|
-| `agent_action` | ✓ | agent 当时做了什么 (e.g., "classified as STANDARD-MEDIUM") |
-| `user_override` | ✓ | 用户的纠正动作 (e.g., "added @vibe") |
-| `count` | ✓ | 30d 内相同模式发生次数 |
+| `correction_phrase` | ✓ | 命中的纠偏短语（精确文本，e.g., "不对"） |
+| `count` | ✓ | 30d 内该 phrase 出现次数 |
+| `recent_excerpts` | — | 最近 3 个 prompt_excerpt 样本（agent 复盘自查用） |
 
-**v1 跳过原因**：检测需要 LLM 级语义比对，hook 层做不到。后续可由 /h-reflect 引导用户主动报告。
+**confidence**：count≥10 → high; ≥5 → medium; ≥3 → low
+
+**已知局限**：v1 只看 prompt 前缀短语，不绑定到具体被纠的 agent 决策。如果用户经常说"actually..."但其实在补充信息（不是纠偏），会有 false positive。v2 可加 "上一轮 agent 是否做了明确分类" 这个绑定条件，但需 LLM 比对。
 
 ## status 状态机
 

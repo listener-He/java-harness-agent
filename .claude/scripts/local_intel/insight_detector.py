@@ -173,15 +173,22 @@ def detect_recurring_failure_clusters(failures: list[dict] | None = None,
 # ----- Detector 2: co_edit_cluster -----------------------------------------
 
 def detect_co_edit_clusters(window_days: int = 30,
-                            proximity_minutes: int = 30) -> list[dict]:
+                            proximity_minutes: int = 30,
+                            min_age_hours: int = 24) -> list[dict]:
     """Files frequently edited within `proximity_minutes` of each other.
 
     Heuristic: bucket edits into proximity windows (any 30min sliding-ish
     grouping); count co-occurrence of file pairs across buckets. Files that
     pair ≥3 times become a candidate cluster.
+
+    `min_age_hours` (default 24): skip edits NEWER than this. Active-development
+    noise (you're literally editing 2 files together right now) creates large
+    spurious clusters; we want signal across SESSIONS, not within one. After
+    24h the same pair still co-editing is a real pattern.
     """
     min_ts = _now_naive() - timedelta(days=window_days)
-    # Collect (ts, file_path) for edit_post events
+    max_ts = _now_naive() - timedelta(hours=min_age_hours)
+    # Collect (ts, file_path) for edit_post events within the age window
     edits: list[tuple[datetime, str]] = []
     for ev in _iter_events(min_ts):
         if ev.get("kind") != "edit_post":
@@ -192,6 +199,8 @@ def detect_co_edit_clusters(window_days: int = 30,
             continue
         if ts.tzinfo:
             ts = ts.replace(tzinfo=None)
+        if ts > max_ts:
+            continue  # too fresh — likely current dev noise
         edits.append((ts, fp))
 
     if len(edits) < 2:
@@ -355,6 +364,58 @@ def detect_override_drift(window_days: int = 30) -> list[dict]:
     return insights
 
 
+# ----- Detector 5: user_correction -----------------------------------------
+
+def detect_user_corrections(window_days: int = 30) -> list[dict]:
+    """Aggregate user_correction events by correction_phrase.
+
+    v1 heuristic: prompt opens with phrase X → emit event. Detector groups
+    by phrase; recurring use (count ≥3) becomes an insight. Surfaces
+    systematic patterns ("user keeps saying 'actually'" likely means the
+    agent is systematically misinterpreting that class of prompts).
+    """
+    min_ts = _now_naive() - timedelta(days=window_days)
+    phrase_counts: Counter = Counter()
+    phrase_excerpts: dict[str, list[str]] = defaultdict(list)
+
+    for ev in _iter_events(min_ts):
+        if ev.get("kind") != "user_correction":
+            continue
+        phrase = ev.get("correction_phrase", "")
+        if not phrase:
+            continue
+        phrase_counts[phrase] += 1
+        excerpt = ev.get("prompt_excerpt", "")
+        if excerpt and len(phrase_excerpts[phrase]) < 3:
+            phrase_excerpts[phrase].append(excerpt)
+
+    insights = []
+    for phrase, c in phrase_counts.most_common():
+        confidence = _confidence_by_count(c, h=10, m=5, l=3)
+        if confidence is None:
+            continue
+        excerpts = phrase_excerpts[phrase]
+        sample = f"; samples: {' | '.join(repr(e[:40]) for e in excerpts[:2])}" if excerpts else ""
+        insights.append({
+            "kind": "user_correction",
+            "confidence": confidence,
+            "summary": (
+                f"User prompts start with {phrase!r} ×{c} in last {window_days}d{sample}"
+            ),
+            "suggested_action": (
+                f"Review recent classifications / actions on prompts containing "
+                f"{phrase!r} — systematic misread likely. /h-reflect or audit "
+                f"specific events."
+            ),
+            "evidence": [
+                {"kind": "phrase", "phrase": phrase, "count": c,
+                 "recent_excerpts": excerpts, "window_days": window_days}
+            ],
+            "detector": "user_correction",
+        })
+    return insights
+
+
 # ----- CLI orchestration ----------------------------------------------------
 
 DETECTORS = {
@@ -362,6 +423,7 @@ DETECTORS = {
     "co_edit_cluster": detect_co_edit_clusters,
     "decayed_knowledge": detect_decayed_knowledge,
     "override_drift": detect_override_drift,
+    "user_correction": detect_user_corrections,
 }
 
 
@@ -384,7 +446,8 @@ def main() -> int:
         try:
             # Pass --since to detectors that take a window_days kwarg
             if args.since and name in ("co_edit_cluster", "override_drift",
-                                       "recurring_failure_cluster"):
+                                       "recurring_failure_cluster",
+                                       "user_correction"):
                 days = _parse_duration(args.since).days or 1
                 all_insights.extend(fn(window_days=days))
             elif args.since and name == "decayed_knowledge":

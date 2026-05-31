@@ -39,6 +39,22 @@ if str(_LOCAL_INTEL_DIR) not in sys.path:
 
 PROMPT_TEXT_CAP = 2000  # truncate per schema doc to keep jsonl rows lean
 
+# Phrases that, when appearing at the START of a prompt, signal the user is
+# correcting / disagreeing with the agent's prior action. Pure string match
+# (no LLM) — false-positive tolerance: "actually" used in "let me actually
+# add this" will fire; user_correction insight only surfaces on RECURRING
+# phrases (count ≥3 in 30d), so a single false fire is noise-floor.
+# Match is case-insensitive, on the first 50 chars (stripped).
+CORRECTION_PHRASES = (
+    # Chinese
+    "不对", "不是", "错了", "应该是", "实际上", "我意思是", "我的意思是",
+    "不该", "不该是",
+    # English
+    "no,", "no ", "wrong", "actually", "i meant", "i mean", "that's not",
+    "thats not", "incorrect", "but no", "no it", "actually no",
+)
+CORRECTION_PREFIX_SCAN = 50  # chars from start
+
 
 def _read_prompt_text() -> tuple[str, str]:
     """Return (text, session_id). Both may be empty on parse failure."""
@@ -70,6 +86,16 @@ def _read_prompt_text() -> tuple[str, str]:
     return text, session_id
 
 
+def _match_correction_phrase(text: str) -> str:
+    """Return the FIRST CORRECTION_PHRASES match found in the prompt's first
+    CORRECTION_PREFIX_SCAN chars (lowercased compare). Empty string = no match."""
+    prefix = text[:CORRECTION_PREFIX_SCAN].lower().lstrip()
+    for phrase in CORRECTION_PHRASES:
+        if prefix.startswith(phrase):
+            return phrase
+    return ""
+
+
 def main() -> int:
     text, session_id = _read_prompt_text()
     if not text:
@@ -82,6 +108,17 @@ def main() -> int:
             text=text[:PROMPT_TEXT_CAP],
             session_id=session_id,
         )
+        # If prompt opens with a correction phrase, emit additional event
+        # for the user_correction insight detector. Separate event keeps
+        # `prompt` schema unchanged and lets detectors query precisely.
+        correction = _match_correction_phrase(text)
+        if correction:
+            event_writer.append(
+                "user_correction",
+                correction_phrase=correction,
+                prompt_excerpt=text[:100],
+                session_id=session_id,
+            )
     except Exception:
         pass
 
