@@ -41,16 +41,51 @@ IGNORE_GLOBS = [
     "**/.claude/router/runs/**",
 ]
 
+# Paths where a HIGH-confidence pattern is LIKELY a fixture / test value
+# rather than a real leaked secret. Match → demote FAIL → WARN (not skip:
+# real test secrets DO occasionally leak from test code paths into prod).
+# Add a path here only if false-positive rate in that directory is high
+# AND committing the file with the pattern won't compromise production.
+DOWNGRADE_GLOBS = [
+    "**/test/**",
+    "**/tests/**",
+    "**/__tests__/**",
+    "**/fixtures/**",
+    "**/testdata/**",
+    "**/*_test.*",                    # foo_test.go / foo_test.py
+    "**/*Test.java",                  # JUnit FooTest.java
+    "**/*Tests.java",                 # FooTests.java
+    "**/*.test.ts",                   # foo.test.ts
+    "**/*.test.js",
+    "**/*.spec.ts",                   # foo.spec.ts
+    "**/*.spec.js",
+    "**/src/test/**",                 # Maven convention
+]
 
-def _is_ignored(path: str) -> bool:
+
+def _normalize_path_for_glob(path: str) -> str:
+    """Slash-normalize + ensure leading ./ so '**/' prefix patterns can match
+    bare relative paths like '.claude/runs/foo'."""
     p = path.replace("\\", "/")
-    # Normalize bare relative paths so the "**/.claude/runs/**" prefix
-    # patterns match. Without this, ".claude/runs/foo" fails because **/
-    # demands at least one path segment before ".claude".
     if not p.startswith("/") and not p.startswith("./"):
         p = "./" + p
+    return p
+
+
+def _is_ignored(path: str) -> bool:
+    p = _normalize_path_for_glob(path)
     for ig in IGNORE_GLOBS:
         if glob.fnmatch.fnmatch(p, ig):
+            return True
+    return False
+
+
+def _is_downgrade(path: str) -> bool:
+    """True if path is in a test/fixture context where HIGH-confidence pattern
+    hits should be demoted to WARN (still surfaced, not blocked)."""
+    p = _normalize_path_for_glob(path)
+    for dg in DOWNGRADE_GLOBS:
+        if glob.fnmatch.fnmatch(p, dg):
             return True
     return False
 
@@ -61,7 +96,14 @@ def _scan_file(path: str) -> tuple[list[str], list[str]]:
             lines = f.readlines()
     except Exception:
         return [], []
-    return _scan_lines(lines, path)
+    fails, warns = _scan_lines(lines, path)
+    if fails and _is_downgrade(path):
+        # Demote FAIL → WARN: test fixtures CAN have test passwords; surface
+        # but don't block. Tag with "[downgrade:test-path]" so caller knows
+        # this isn't a clean PASS.
+        warns.extend(f"[downgrade:test-path] {x}" for x in fails)
+        fails = []
+    return fails, warns
 
 
 def _scan_lines(lines: list[str], label: str) -> tuple[list[str], list[str]]:
@@ -105,6 +147,12 @@ def main() -> int:
         if not content:
             return 0
         all_fails, all_warns = _scan_lines(content.splitlines(), target)
+        # Demote FAIL → WARN if target path is in a test/fixture context.
+        # PreToolUse hook respects this: WARN doesn't block; the hook prints
+        # the warning to stderr but returns 0.
+        if all_fails and args.target_path and _is_downgrade(args.target_path):
+            all_warns.extend(f"[downgrade:test-path] {x}" for x in all_fails)
+            all_fails = []
     else:
         if not args.paths:
             print("FAIL: --paths required in file mode")

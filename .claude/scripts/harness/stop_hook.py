@@ -1,30 +1,42 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Stop hook — pure sensor; fires when main agent ends a turn.
+"""Stop hook — pure sensor + 2 throttled push-back reminders.
 
-Phase P2 of the Sensor/Policy/Enforce refactor. Previously this script ran
-turn_health_check.py + reflect_threshold.py inline and printed their findings
-to stdout for next-turn injection. Both are now agent-on-demand:
+Sensor: emit turn_end event (branch/head/dirty_files) to events.jsonl.
 
-  - turn_health_check  → agent runs via /h-context-check (T6.3) or
-                         /h-gates --phase qa when ending Implement
-  - reflect_threshold  → agent reads session_stats counters when deciding
-                         whether to invoke /h-reflect
+Push-back (T9+T10), both with same throttling philosophy "only emit when
+the situation changes":
 
-The Stop hook just records "turn ended at HEAD=X branch=Y dirty=N" into
-events.jsonl. That's enough for events_query consumers to detect long-
-running sessions, frequent dirty-without-commit, etc.
+  - [insight-reminder]   (T9): unread HIGH-confidence insights await review.
+                               Throttle: emit only when the SET of active
+                               insight ids changes vs the last emit.
+  - [scope-check-reminder] (T10/R2): dirty file count high AND no recent
+                               /h-gates run. Throttle: emit only when dirty
+                               count increased or last emit was >1 hour ago.
+
+Both reminders are 1 line of stdout; they replace the discipline cost of
+"agent must remember to pull". They throttle on a shared state file so they
+don't spam every turn end.
 
 Respects `stop_hook_active` to prevent recursion. Always exit 0.
 """
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
 
 _LOCAL_INTEL_DIR = Path(__file__).resolve().parent.parent / "local_intel"
+_REMINDER_STATE_FILE = (
+    Path(__file__).resolve().parent.parent.parent / "runs"
+    / "local_intel" / "last_reminders.json"
+)
+SCOPE_DIRTY_THRESHOLD = 5
+SCOPE_REMINDER_AGE_HOURS = 1
 
 
 def _git(args: list[str], timeout: int = 3) -> str:
@@ -34,6 +46,91 @@ def _git(args: list[str], timeout: int = 3) -> str:
         ).strip()
     except Exception:
         return ""
+
+
+def _load_reminder_state() -> dict:
+    try:
+        if _REMINDER_STATE_FILE.is_file():
+            return json.loads(_REMINDER_STATE_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return {}
+
+
+def _save_reminder_state(state: dict) -> None:
+    try:
+        _REMINDER_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _REMINDER_STATE_FILE.write_text(
+            json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+    except Exception:
+        pass
+
+
+def _maybe_emit_insight_reminder(state: dict) -> dict:
+    """If active high-conf insights set CHANGED since last emit, emit + update state."""
+    try:
+        if str(_LOCAL_INTEL_DIR) not in sys.path:
+            sys.path.insert(0, str(_LOCAL_INTEL_DIR))
+        import insight_writer  # noqa: E402
+        active = insight_writer.query_active(top=20, min_confidence="high")
+    except Exception:
+        return state
+
+    current_ids = sorted(ins.get("id", "") for ins in active if ins.get("id"))
+    if not current_ids:
+        # nothing to remind about; clear state so next non-empty set re-fires
+        if state.get("insight"):
+            state.pop("insight", None)
+        return state
+
+    prev = state.get("insight", {})
+    prev_ids = sorted(prev.get("insight_ids", []))
+    if current_ids == prev_ids:
+        return state  # already reminded about exactly this set; stay quiet
+
+    n = len(current_ids)
+    print(f"[insight-reminder] {n} high-confidence insight(s) await review "
+          f"— run /h-context-check or /h-evolve --auto-pick")
+    state["insight"] = {
+        "insight_ids": current_ids,
+        "ts": datetime.now().isoformat(timespec="seconds"),
+    }
+    return state
+
+
+def _maybe_emit_scope_reminder(state: dict, dirty_files: int) -> dict:
+    """If dirty > threshold AND (count increased OR last emit aged out), emit."""
+    if dirty_files <= SCOPE_DIRTY_THRESHOLD:
+        # situation healthy — don't reset state (avoid re-emit on a small
+        # commit followed by re-dirtying)
+        return state
+
+    prev = state.get("scope", {})
+    prev_count = int(prev.get("dirty_count", 0))
+    prev_ts_str = prev.get("ts", "")
+    prev_ts = None
+    try:
+        prev_ts = datetime.fromisoformat(prev_ts_str)
+    except (ValueError, TypeError):
+        pass
+
+    aged_out = (
+        prev_ts is None
+        or (datetime.now() - prev_ts) > timedelta(hours=SCOPE_REMINDER_AGE_HOURS)
+    )
+    increased = dirty_files > prev_count
+    if not (aged_out or increased):
+        return state
+
+    print(f"[scope-check-reminder] dirty file count = {dirty_files} "
+          f"(>{SCOPE_DIRTY_THRESHOLD}); consider /h-gates --phase implement "
+          f"to audit scope, or commit/stash before continuing")
+    state["scope"] = {
+        "dirty_count": dirty_files,
+        "ts": datetime.now().isoformat(timespec="seconds"),
+    }
+    return state
 
 
 def main() -> int:
@@ -62,20 +159,12 @@ def main() -> int:
     except Exception:
         pass
 
-    # Minimal push-back (T9): if any HIGH-confidence insight awaits review,
-    # emit a single-line reminder. This is the ONLY non-event side effect of
-    # the sensor-tier hook layer; rationale: pull model risks agent never
-    # invoking /h-context-check. Turn-end is the lowest-frequency injection
-    # point + only fires when something actionable exists.
-    try:
-        import insight_writer  # noqa: E402
-        unread_high = insight_writer.query_active(top=10, min_confidence="high")
-        if unread_high:
-            n = len(unread_high)
-            print(f"[insight-reminder] {n} high-confidence insight(s) await review "
-                  f"— run /h-context-check or /h-evolve --auto-pick")
-    except Exception:
-        pass
+    # Throttled push-back reminders. Shared state file ensures we don't spam
+    # every turn end with the same nudge. Both functions update state in-place.
+    state = _load_reminder_state()
+    state = _maybe_emit_insight_reminder(state)
+    state = _maybe_emit_scope_reminder(state, dirty_files)
+    _save_reminder_state(state)
 
     return 0
 
