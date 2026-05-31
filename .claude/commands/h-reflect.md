@@ -1,5 +1,5 @@
 ---
-description: Session reflection — multi-select lessons (incident/wiki/failure/success/memory) → reset counters. TRIGGER: [reflect-hint] / '复盘'. NOT FOR: archive (use /h-archive).
+description: Session reflection — multi-select lessons (incident/wiki/failure/success/memory) → reset counters. TRIGGER: explicit '复盘' request, or `reflect_threshold.py` reports session_stats thresholds tripped. NOT FOR: archive (use /h-archive).
 argument-hint: (none)
 ---
 

@@ -3,7 +3,7 @@ description: Capture production incident → wiki/incidents/<date>_<slug>.md wit
 argument-hint: <source> <slug> [--from-file <path>]
 ---
 
-Capture a production incident (Sentry alert / Jira ticket / oncall log / post-mortem) into the project's incident memory. The script saves the raw fact and emits a structured prompt; **you write the `.md`**. The single most load-bearing field is `## 提醒未来 LLM` — every future session reads it via the `[failure-memory]` hook block. Optimize for that line.
+Capture a production incident (Sentry alert / Jira ticket / oncall log / post-mortem) into the project's incident memory. The script saves the raw fact and emits a structured prompt; **you write the `.md`**. The single most load-bearing field is `## 提醒未来 LLM` — future sessions read it via `/h-context-check` and `incident_hint.py <file_path>` lookups. Optimize for that line.
 
 ## Step 1 — Parse `$ARGUMENTS`
 
@@ -66,7 +66,7 @@ status: resolved | ongoing | watch
 <one line: PR # / commit SHA / config change / rollback>
 
 ## 提醒未来 LLM
-**下次改这片代码时考虑：** <1-2 actionable sentences with a concrete code reference. Will be injected into [failure-memory].>
+**下次改这片代码时考虑：** <1-2 actionable sentences with a concrete code reference. Surfaced by /h-context-check and `incident_hint.py <file_path>` lookups.>
 ```
 
 **Do NOT include** the "Anti-pattern reference" section from TEMPLATE.md — that block is for the template only and must be deleted from the copy.

@@ -1,6 +1,6 @@
 ---
 name: ambiguity-gatekeeper
-description: GATE on ambiguous input — enforce definition-of-ready (clear scope + testable outcome + explicit AC) before AC transcription starts. TRIGGER from Phase 1 Step B when Input-Type is Idea / Feedback / Compliance / Security; runs a semantic check the `[triage-evidence]` keyword scan cannot do. NOT for: PRD (use `product-manager-expert`), Bug/Signal (use `root-cause-debug` skill), already-formalized inputs. Returns `[Status]: PASS | FAIL` — FAIL carries `[Must-Ask Questions]` for the main agent to relay via `AskUserQuestion`.
+description: GATE on ambiguous input — enforce definition-of-ready (clear scope + testable outcome + explicit AC) before AC transcription starts. TRIGGER from Phase 1 Step B when Input-Type is Idea / Feedback / Compliance / Security; runs a semantic check that a keyword-based ambiguity gate cannot do. NOT for: PRD (use `product-manager-expert`), Bug/Signal (use `root-cause-debug` skill), already-formalized inputs. Returns `[Status]: PASS | FAIL` — FAIL carries `[Must-Ask Questions]` for the main agent to relay via `AskUserQuestion`.
 tools: Read, Edit, Bash, Grep, Glob
 model: haiku
 ---
@@ -12,7 +12,7 @@ You are a gate that prevents work from starting on vague input. Evaluate whether
 ## When to Act
 
 - Phase 1 Step B dispatch when Input-Type is Idea / Feedback / Compliance / Security
-- Whenever the main agent senses semantic ambiguity beyond what the `[triage-evidence]` keyword scan catches
+- Whenever the main agent senses semantic ambiguity beyond what a keyword-level ambiguity check catches
 - Before AC transcription begins (you gate `requirement-engineer`)
 
 ## When NOT to Act (route elsewhere)

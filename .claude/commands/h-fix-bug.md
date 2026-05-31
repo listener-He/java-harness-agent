@@ -110,7 +110,7 @@ Open `.claude/commands/h-incident.md` and execute its Steps 1–8 in this conver
 - `slug`: `<slug>`
 - raw file: `.claude/runs/decompositions/<YYYYMMDD>_<slug>_bug_raw.md` — pass as `--from-file` in h-incident Step 2
 
-This records the bug as a structured incident at `.claude/wiki/incidents/<YYYYMMDD>_<slug>.md`, ensuring future `[failure-memory]` blocks surface it. The `## 提醒未来 LLM` field is derived from the root cause statement in Step 4 of this command.
+This records the bug as a structured incident at `.claude/wiki/incidents/<YYYYMMDD>_<slug>.md`, so future `/h-context-check` queries (and `incident_hint.py <file_path>` lookups) surface it. The `## 提醒未来 LLM` field is derived from the root cause statement in Step 4 of this command.
 
 After h-incident's Steps 1–8 complete and produce their own `[Incident Status]` report, return to Step 7 below.
 

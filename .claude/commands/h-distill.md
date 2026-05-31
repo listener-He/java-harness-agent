@@ -1,5 +1,5 @@
 ---
-description: Wiki cleanup — librarian scan → user approves → execute. TRIGGER: [wiki-distill] hint / '整理 wiki'. NOT FOR: doc cleanup (use documentation-curator).
+description: Wiki cleanup — librarian scan → user approves → execute. TRIGGER: explicit user request ('整理 wiki' / 'clean stale wiki') or after `distill_threshold.py` reports growth thresholds tripped. NOT FOR: doc cleanup (use documentation-curator).
 argument-hint: (none)
 ---
 

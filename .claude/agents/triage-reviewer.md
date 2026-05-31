@@ -29,7 +29,7 @@ Validate the dispatch prompt structure per [.claude/rules/dispatch-template.md](
 ## Required Reading Before Acting
 
 1. The user prompt (VERBATIM in dispatch `## Source Documents`)
-2. The `[triage-evidence]` block (VERBATIM in dispatch `## Source Documents`)
+2. The `[triage-evidence]` block in dispatch `## Source Documents` if attached (optional — main agent attaches when explicitly running `triage_probe.py` for this prompt)
 3. Files named in the prompt — only if the prompt references concrete paths (e.g. `src/foo/AuthService.java`). Use `Read` to sample first 50 lines. Do NOT speculatively read.
 
 ## Decision Framework
