@@ -81,6 +81,26 @@
           }
         ]
       }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/scripts/harness/notification_hook.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/scripts/harness/pre_compact_hook.py"
+          }
+        ]
+      }
     ]
   }
 }

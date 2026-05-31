@@ -158,11 +158,16 @@ Present Human Section. Full → Implement. Partial → record approved, roll bac
 
 | Hook | Trigger | Action |
 |---|---|---|
-| PreToolUse | every Edit/Write | `pre_tool_use_hook.py` → `scope_guard.py` (blocks out-of-scope when active task_brief; silent skip otherwise) |
-| PostToolUse | every Edit/Write | `post_tool_use_hook.py` → `secrets_linter.py` on changed file |
+| PreToolUse | every Edit/Write | `pre_tool_use_hook.py`: (1) `secrets_linter.py --content-stdin` on payload content/new_string — FAIL blocks; (2) `scope_guard.py` blocks out-of-scope when active task_brief (silent skip if no task or path outside repo). Both gates non-blocking on subprocess failure (fail-open). |
+| PostToolUse (Edit\|Write) | every Edit/Write | `post_tool_use_hook.py`: (1) `secrets_linter.py` defense-in-depth file scan; (2) path-based scenario gates — `*.sql`→`migration_gate`, `pom.xml`→`dependency_gate`; (3) skill_hint / incident_hint / session_stats. Silent on PASS, prints findings on WARN/FAIL. Never blocks. |
+| PostToolUse (Read) | every Read | `post_read_hook.py` → `usage_tracker` sidecar (wiki/skill file access counters; distill consumes these) |
 | UserPromptSubmit | every prompt | `user_prompt_submit_hook.py`: evidence probe first; empty stdout (no evidence-worth-showing or heuristic-skip) suppresses `[ambiguity]` + distill same turn. `[failure-memory]` always emits |
+| SubagentStop | every sub-agent return | `subagent_stop_hook.py` → `subagent_return_gate.py` on final output; injects WARN/FAIL findings to main agent context |
+| Stop | every main agent turn end | `stop_hook.py` → `turn_health_check.py` (uncompiled state, dirty diff, launch_spec drift); non-blocking context inject |
+| Notification | UI notification event | `notification_hook.py` — append JSONL log; opt-in macOS bell via `CLAUDE_NOTIFY_SOUND=1` |
+| PreCompact | before context compression | `pre_compact_hook.py` — snapshot active task_brief / launch_spec rows / HEAD / recent commits to `last_compact_snapshot.json`; inject one-line recovery hint |
 
-Per-script semantics in script docstrings. Env: `CLAUDE_{TRIAGE,FAILURE_MEMORY,AMBIGUITY,DISTILL}_QUIET=1`, `CLAUDE_SCOPE_GUARD_BYPASS=1`.
+Per-script semantics in script docstrings. Env vars: `CLAUDE_{TRIAGE,FAILURE_MEMORY,AMBIGUITY,DISTILL}_QUIET=1`, `CLAUDE_SCOPE_GUARD_BYPASS=1`, `CLAUDE_NOTIFY_SOUND=1`.
 
 ## Phase Gates (Agent-Executed)
 
