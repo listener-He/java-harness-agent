@@ -55,12 +55,26 @@ def _repo_root() -> str:
 
 
 def _to_relative(file_path: str, repo_root: str) -> str:
+    """Return repo-relative path, or empty string if outside repo root.
+
+    Handles tilde (~/...), absolute, and relative inputs uniformly. The empty
+    return is the signal to the caller that scope_guard has no jurisdiction:
+    its Allowed Scope is repo-rooted, so any file under ~/.claude/ (memory,
+    user-level CLAUDE.md, user-level agents/skills/settings), /tmp/, or any
+    sibling repo cannot meaningfully be checked against a task_brief.
+    """
     if not file_path:
-        return file_path
-    abs_path = os.path.abspath(file_path)
-    if abs_path.startswith(repo_root + os.sep):
-        return abs_path[len(repo_root) + 1:]
-    return file_path
+        return ""
+    expanded = os.path.expanduser(file_path)
+    abs_path = os.path.abspath(expanded)
+    try:
+        common = os.path.commonpath([abs_path, repo_root])
+    except ValueError:
+        # Different drives on Windows, or other path incompatibility.
+        return ""
+    if common != repo_root:
+        return ""
+    return os.path.relpath(abs_path, repo_root)
 
 
 def main() -> int:
@@ -77,9 +91,11 @@ def main() -> int:
 
     rel_file = _to_relative(file_path, _repo_root())
 
-    # Outside the repo (e.g. user-home memory files in ~/.claude/projects/...)
-    # — scope_guard has no jurisdiction. Silent skip.
-    if os.path.isabs(rel_file):
+    # Empty result = file lives outside repo root. Covers ~/.claude/ memory,
+    # user-level CLAUDE.md / agents / skills / settings, and any Claude Code
+    # state stored outside the project tree. scope_guard's allowlist is
+    # repo-rooted; it has no jurisdiction here. Silent skip.
+    if not rel_file:
         return 0
 
     try:
