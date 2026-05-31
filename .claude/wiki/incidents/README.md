@@ -29,12 +29,12 @@ The Python script does almost nothing — it's a thin envelope. The LLM does the
 
 ## How it influences future code
 
-Two injection points:
+Two consumption paths (both on-demand, agent-initiated):
 
-1. **UserPromptSubmit hook** — at the start of every user turn, `failure_memory.py summary` reads incidents from the last 30 days and appends an `incidents:` section to the `[failure-memory]` block. The LLM sees a one-line lesson per incident.
-2. **PostToolUse hook** — when the LLM edits a file, `incident_hint.py` scans recent incidents for mentions of that file path or class name. On hit, it injects `[incident-hint]` pointing at the relevant `.md`.
+1. **`/h-context-check`** — when the agent invokes this command (typically at phase start or when entering an unfamiliar area), it queries `failure_memory.py summary` which surfaces recent incidents (last 30 days, plus any with `status: watch`). The agent sees a one-line lesson per incident.
+2. **`incident_hint.py <file_path>`** — agent calls this directly when about to edit a file; the script scans recent incidents for mentions of the file path or class name and returns a pointer to the relevant `.md`.
 
-Both are **non-blocking signals**, never gates. The LLM keeps the right to ignore them; the system just makes ignoring visible.
+Both are **non-blocking signals**, never gates. The LLM keeps the right to ignore them; the system makes the relevant facts retrievable when the agent asks.
 
 ## Filename convention
 
