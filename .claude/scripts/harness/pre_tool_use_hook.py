@@ -2,10 +2,19 @@
 # -*- coding: utf-8 -*-
 """PreToolUse hook for Edit|Write.
 
-Mechanically blocks edits that fall outside the active task_brief's Allowed Scope.
-- No active task_brief (no launch_spec or no IN_PROGRESS row) → silent skip.
-- CLAUDE_SCOPE_GUARD_BYPASS=1 → silent skip (emergency bypass).
-- scope_guard FAIL (exit 2) → block via non-zero exit + stderr message.
+Runs two pre-flight checks in order; either can block the tool call.
+
+  1. secrets_linter (content-stdin mode) — scans the about-to-be-written
+     bytes for high-confidence secret patterns. FAIL → block. Runs on EVERY
+     Edit/Write regardless of repo jurisdiction (a secret in user-home
+     memory is as bad as one in the repo).
+  2. scope_guard — blocks edits outside the active task_brief's Allowed
+     Scope. Skipped when there is no active task, when the file lives
+     outside the repo, or when CLAUDE_SCOPE_GUARD_BYPASS=1.
+
+Either exit 2 = block (stderr carries the reason). Defense in depth:
+PostToolUse still re-runs secrets_linter on the resulting file for any
+multi-line / future pattern Pre might have missed.
 """
 from __future__ import annotations
 
@@ -13,19 +22,32 @@ import json
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 EXIT_BLOCK = 2
 
-SCOPE_GUARD = ".claude/scripts/gates/scope_guard.py"
-FIND_ACTIVE = ".claude/scripts/harness/find_active_task_brief.py"
+_SCRIPTS_DIR = Path(__file__).resolve().parent.parent
+SCOPE_GUARD = str(_SCRIPTS_DIR / "gates" / "scope_guard.py")
+SECRETS_LINTER = str(_SCRIPTS_DIR / "gates" / "secrets_linter.py")
+FIND_ACTIVE = str(_SCRIPTS_DIR / "harness" / "find_active_task_brief.py")
 
 
-def _read_file_path() -> str:
+def _read_payload() -> tuple[str, str]:
+    """Return (file_path, content_to_scan).
+
+    content_to_scan is:
+      - tool_input.content for Write (full file body)
+      - tool_input.new_string for Edit (only the addition)
+      - empty string if neither present
+    """
     try:
         payload = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
-        return ""
-    return (payload.get("tool_input") or {}).get("file_path") or ""
+        return "", ""
+    tool_input = payload.get("tool_input") or {}
+    file_path = tool_input.get("file_path") or ""
+    content = tool_input.get("content") or tool_input.get("new_string") or ""
+    return file_path, content
 
 
 def _find_active_task_brief() -> str:
@@ -77,14 +99,60 @@ def _to_relative(file_path: str, repo_root: str) -> str:
     return os.path.relpath(abs_path, repo_root)
 
 
+def _secrets_precheck(file_path: str, content: str) -> int:
+    """Run secrets_linter in content-stdin mode. Returns the gate exit code
+    (0 OK / 1 WARN / 2 FAIL). On any subprocess error, returns 0 (fail-open
+    — never block due to harness failure)."""
+    if not content:
+        return 0
+    try:
+        proc = subprocess.run(
+            [sys.executable, SECRETS_LINTER,
+             "--content-stdin", "--target-path", file_path or "<unknown>"],
+            input=content,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except Exception:
+        return 0
+    if proc.returncode == EXIT_BLOCK:
+        sys.stderr.write(f"[secrets_linter] BLOCKED: {file_path}\n")
+        if proc.stdout:
+            sys.stderr.write(proc.stdout)
+            if not proc.stdout.endswith("\n"):
+                sys.stderr.write("\n")
+        sys.stderr.write(
+            "\nA high-confidence secret pattern was detected in the content "
+            "you are about to write. Remove or move the secret out-of-band "
+            "(env var, secret manager, .env file in .gitignore) and retry.\n"
+        )
+    elif proc.returncode == 1 and proc.stdout:
+        # WARN: surface but don't block.
+        sys.stderr.write(f"[secrets_linter] WARN: {file_path}\n")
+        sys.stderr.write(proc.stdout)
+        if not proc.stdout.endswith("\n"):
+            sys.stderr.write("\n")
+    return proc.returncode
+
+
 def main() -> int:
     if os.environ.get("CLAUDE_SCOPE_GUARD_BYPASS") == "1":
         return 0
 
-    file_path = _read_file_path()
+    file_path, content = _read_payload()
     if not file_path:
         return 0
 
+    # Check 1: secrets — runs first because secret leaks are worse than scope
+    # drift, and applies to ALL writes including out-of-repo paths (memory,
+    # user-level configs).
+    if _secrets_precheck(file_path, content) == EXIT_BLOCK:
+        return EXIT_BLOCK
+
+    # Check 2: scope_guard — only meaningful when there is an active
+    # task_brief AND the file lives inside the repo.
     task_brief = _find_active_task_brief()
     if not task_brief or not os.path.isfile(task_brief):
         return 0
