@@ -53,21 +53,30 @@ def _read_last_assistant_from_transcript(path: Path) -> str:
             continue
         if not isinstance(obj, dict):
             continue
-        # Try common shapes: {role: assistant, content: "..."} or
-        # {type: assistant, message: {content: [...]}} or {message: {role: ..., content: ...}}.
-        role = obj.get("role") or obj.get("type") or ""
-        if "assistant" not in str(role).lower():
-            # Some formats nest inside "message"
-            inner = obj.get("message") or {}
-            if isinstance(inner, dict):
-                role = inner.get("role") or inner.get("type") or ""
-                if "assistant" not in str(role).lower():
-                    continue
-                obj = inner
-            else:
+        # Three known shapes:
+        #   A: {role: assistant, content: ...}                — flat
+        #   B: {type: assistant, message: {content: [...]}}   — Claude Code current
+        #   C: {message: {role: assistant, content: ...}}     — outer wrapper only
+        # Strategy: find the `target` dict that actually holds `content`. If
+        # outer is assistant AND has a `message` sub-dict with content,
+        # prefer that (shape B). Otherwise fall back to outer (shape A) or
+        # descend into inner (shape C).
+        outer_role = obj.get("role") or obj.get("type") or ""
+        inner = obj.get("message") if isinstance(obj.get("message"), dict) else None
+
+        if "assistant" in str(outer_role).lower():
+            # Shape A or B. If inner.message carries content, prefer it (B).
+            target = inner if (inner is not None and inner.get("content") is not None) else obj
+        else:
+            # Shape C: outer has no role; check inner.
+            if inner is None:
                 continue
-        # Content might be a string or a list of {type: "text", text: "..."} parts.
-        content = obj.get("content")
+            inner_role = inner.get("role") or inner.get("type") or ""
+            if "assistant" not in str(inner_role).lower():
+                continue
+            target = inner
+
+        content = target.get("content")
         if isinstance(content, str) and content.strip():
             return content
         if isinstance(content, list):
@@ -82,6 +91,8 @@ def _read_last_assistant_from_transcript(path: Path) -> str:
             joined = "\n".join(parts).strip()
             if joined:
                 return joined
+        # If target's content was empty/missing, fall through to next line in
+        # the reversed transcript (an earlier assistant turn may have the text).
     return ""
 
 
