@@ -3,7 +3,7 @@
 """PostToolUse hook for Edit|Write.
 
 Claude Code passes the hook payload as JSON on stdin (NOT via env var).
-We extract tool_input.file_path and fan out to:
+We extract tool_input.file_path and fan out to up to 6 sibling scripts:
 
   1. secrets_linter  — always, silent on PASS (defense in depth)
   2. scenario gates  — path-based dispatch (silent on PASS, prints on WARN/FAIL):
@@ -12,6 +12,12 @@ We extract tool_input.file_path and fan out to:
   3. skill_hint     — anti-pattern reminder, silent on no match
   4. incident_hint  — past-incident reminder, silent on no match
   5. session_stats  — edit counter (silent)
+
+All subprocesses are spawned concurrently via Popen, then we wait on them in
+output order. Wall-clock is dominated by the slowest single subprocess
+(Python boot ~80-100ms) rather than the sequential sum. Output is collected
+and printed in deterministic order at the end so the agent sees a stable
+context block.
 
 Failures are silent — hooks must not abort tool execution. Exit 0 always.
 """
@@ -34,33 +40,60 @@ SKILL_HINT = str(_SCRIPTS_DIR / "local_intel" / "skill_hint.py")
 INCIDENT_HINT = str(_SCRIPTS_DIR / "local_intel" / "incident_hint.py")
 SESSION_STATS = str(_SCRIPTS_DIR / "local_intel" / "session_stats.py")
 
+# Job output modes:
+#   SILENT          — never print anything; swallow stdout. (secrets, stats)
+#   EMIT_ON_NONPASS — print only on non-zero exit, with [name] header.
+#                     (scenario gates)
+#   EMIT_ANY_STDOUT — print whatever stdout is non-empty, as-is.
+#                     (hints — they own their own format)
+SILENT = "silent"
+EMIT_ON_NONPASS = "emit_on_nonpass"
+EMIT_ANY_STDOUT = "emit_any_stdout"
 
-def _scenario_gates(file_path: str) -> list[tuple[str, list[str]]]:
-    """Build (gate_name, argv) tuples for path-based gates.
 
-    Empty list = no path-based gate applies. Each tuple is run in order;
-    non-zero exits print stdout under a `[<gate_name>]` prefix.
-    """
-    cmds: list[tuple[str, list[str]]] = []
+def _scenario_gates(file_path: str) -> list[tuple[str, list[str], str]]:
+    """(name, argv, mode) for path-based scenario gates. Empty list = none."""
+    jobs: list[tuple[str, list[str], str]] = []
     name = os.path.basename(file_path)
 
-    # SQL migration files → check for unsafe DDL patterns (DROP/TRUNCATE/etc).
     if file_path.endswith(".sql"):
         parent = os.path.dirname(file_path) or "."
-        cmds.append(("migration_gate", [
+        jobs.append(("migration_gate", [
             sys.executable, MIGRATION_GATE,
             "--sql-dir", parent,
             "--glob", name,
-        ]))
+        ], EMIT_ON_NONPASS))
 
-    # pom.xml → diff vs git HEAD for adds/removes/major version bumps.
     if name == "pom.xml":
-        cmds.append(("dependency_gate", [
+        jobs.append(("dependency_gate", [
             sys.executable, DEPENDENCY_GATE,
             "--pom", file_path,
-        ]))
+        ], EMIT_ON_NONPASS))
 
-    return cmds
+    return jobs
+
+
+def _build_jobs(file_path: str) -> list[tuple[str, list[str], str]]:
+    """Static job list for this file_path. Order = output order."""
+    jobs: list[tuple[str, list[str], str]] = []
+    # secrets first — defense in depth; silent regardless.
+    jobs.append(("secrets_linter",
+                 [sys.executable, SECRETS_LINTER, "--paths", file_path],
+                 SILENT))
+    # scenario gates (may emit findings).
+    jobs.extend(_scenario_gates(file_path))
+    # hints (may emit context).
+    jobs.append(("skill_hint",
+                 [sys.executable, SKILL_HINT, file_path],
+                 EMIT_ANY_STDOUT))
+    jobs.append(("incident_hint",
+                 [sys.executable, INCIDENT_HINT, file_path],
+                 EMIT_ANY_STDOUT))
+    # session_stats last — pure counter, silent.
+    jobs.append(("session_stats",
+                 [sys.executable, SESSION_STATS, "bump", "edit", file_path],
+                 SILENT))
+    return jobs
 
 
 def main() -> int:
@@ -73,74 +106,51 @@ def main() -> int:
     if not file_path:
         return 0
 
-    try:
-        subprocess.run(
-            [sys.executable, SECRETS_LINTER, "--paths", file_path],
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=10,
-        )
-    except Exception:
-        pass
+    jobs = _build_jobs(file_path)
 
-    # Path-based scenario gates (migration / dependency). Silent on PASS,
-    # prints findings on WARN/FAIL under a [<gate>] header so the agent
-    # sees the diagnostic without the hook ever blocking the edit.
-    for gate_name, argv in _scenario_gates(file_path):
+    # Phase 1: spawn all subprocesses concurrently. Each Popen starts a
+    # Python interpreter in parallel; the kernel handles scheduling. This
+    # is the win — sequential would be sum(boots), concurrent is max(boot).
+    procs: list[tuple[str, str, subprocess.Popen | None]] = []
+    for name, argv, mode in jobs:
         try:
-            proc = subprocess.run(
-                argv, check=False, capture_output=True, text=True, timeout=15,
+            p = subprocess.Popen(
+                argv,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
             )
-            if proc.returncode != 0:
-                body = (proc.stdout or "").rstrip()
-                if body:
-                    print(f"[{gate_name}] non-PASS (exit {proc.returncode}):")
-                    print(body)
+            procs.append((name, mode, p))
         except Exception:
-            pass
+            procs.append((name, mode, None))
 
-    # Symptom-driven skill hint: non-blocking, silent on no match. The hint
-    # routes the agent to the relevant SKILL.md only when the just-edited file
-    # shows an anti-pattern — not before Implement, not on every Java edit.
-    try:
-        proc = subprocess.run(
-            [sys.executable, SKILL_HINT, file_path],
-            check=False, capture_output=True, text=True,
-            timeout=10,
-        )
-        out = (proc.stdout or "").rstrip()
-        if out:
-            print(out)
-    except Exception:
-        pass
+    # Phase 2: collect output in deterministic order. communicate() blocks on
+    # the current proc but later ones are likely already done by then.
+    for name, mode, p in procs:
+        if p is None:
+            continue
+        try:
+            stdout, _ = p.communicate(timeout=15)
+            rc = p.returncode
+        except subprocess.TimeoutExpired:
+            try:
+                p.kill()
+            except Exception:
+                pass
+            continue
+        except Exception:
+            continue
 
-    # Past-incident reverse lookup: if a recent incident touched this file,
-    # remind the LLM. Non-blocking, silent on no match.
-    try:
-        proc = subprocess.run(
-            [sys.executable, INCIDENT_HINT, file_path],
-            check=False, capture_output=True, text=True,
-            timeout=10,
-        )
-        out = (proc.stdout or "").rstrip()
-        if out:
-            print(out)
-    except Exception:
-        pass
-
-    # Bump session edit counter for the reflect-threshold heuristic
-    # (T1.1). Pure sink — silent stdout, never blocks.
-    try:
-        subprocess.run(
-            [sys.executable, SESSION_STATS, "bump", "edit", file_path],
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=5,
-        )
-    except Exception:
-        pass
+        stdout = (stdout or "").rstrip()
+        if mode == SILENT:
+            continue
+        if mode == EMIT_ON_NONPASS:
+            if rc != 0 and stdout:
+                print(f"[{name}] non-PASS (exit {rc}):")
+                print(stdout)
+        elif mode == EMIT_ANY_STDOUT:
+            if stdout:
+                print(stdout)
 
     return 0
 
