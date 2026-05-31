@@ -49,6 +49,12 @@ Build the gate list from the detected (or overridden) context:
 |---|---|
 | `secrets_linter.py --paths <git-diff-changed-files>` | `git diff` is empty |
 
+**Health (always, cheap; read-only; never blocks even on WARN)**
+
+| Gate | When skipped | What it checks |
+|---|---|---|
+| `collab_sync_gate.py` | no `.claude/runs/collabs/` directory | `*_collab.md` `status:` ↔ latest launch_spec `\| COLLAB:` markers in sync; orphan task_briefs; duplicate-active collabs for one slug. Exit 0 clean / 1 drift / never 2. |
+
 **Phase-keyed (from lifecycle.md Part 3)**
 
 | Phase | Gate(s) |
