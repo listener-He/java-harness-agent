@@ -5,10 +5,12 @@
   1. `[failure-memory]` — recurring failures, last 30 days.
   2. distill nudge — wiki growth thresholds tripped.
   3. `[ambiguity]` — prompt missing action/object/success signals.
-  4. `[triage]` — risk-signal-based profile suggestion.
+  4. `[triage-evidence]` — 5 evidence signals + 1 advisory profile_hint
+     line; NOT authoritative, main agent decides the profile.
 
-Triage runs first; empty stdout (VIBE-all-green or heuristic-skip) suppresses
-ambiguity + distill the same turn. failure_memory always emits.
+Evidence probe runs first; empty stdout (no evidence-worth-showing or
+heuristic-skip) suppresses ambiguity + distill the same turn.
+failure_memory always emits.
 """
 from __future__ import annotations
 

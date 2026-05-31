@@ -15,7 +15,7 @@ Extract:
 
 **Conflict rule:** `--slim` together with `--risk medium|high` is contradictory → STOP and ask user to pick one. `--slim` alone or `--risk low` alone are both fine.
 
-If neither flag is provided: look for the `[triage]` block earlier in this conversation. Use `suggested_profile` to set risk (VIBE → reject this command; PATCH → LOW; STANDARD-MEDIUM → MEDIUM; STANDARD-HIGH → HIGH). If no `[triage]` found and conversation has no risk discussion → ask user via `AskUserQuestion` before proceeding. Do not silently default.
+If neither flag is provided: look for the main agent's earlier `[Risk: LOW|MEDIUM|HIGH | Scenario: ...]` line in this conversation (per CLAUDE.md Session Start, the main agent emits this before invoking /h-brief on STANDARD work). If no `[Risk: ...]` line found and conversation has no risk discussion → ask user via `AskUserQuestion` before proceeding. Do not silently default. The `[triage-evidence]` advisory `profile_hint` is one input the main agent already used when emitting `[Risk: ...]` — do NOT re-read `profile_hint` here.
 
 `spec_mode` is derived automatically from risk — no separate flag needed: LOW → SLIM, MEDIUM/HIGH → STANDARD.
 
@@ -129,6 +129,6 @@ Output exactly this block:
 
 - **Allowed edits**: only the new brief file + the target launch_spec. Nothing else.
 - **No source-code edits**. If user wants to start coding, tell them to enter Implement phase via `/h-resume` after Approval Gate (HIGH) or after Review (MEDIUM).
-- **No silent risk defaulting** — risk MUST come from `--risk` arg, `[triage]` block, or explicit user answer.
+- **No silent risk defaulting** — risk MUST come from `--risk` arg, the main agent's `[Risk: ...]` line, or explicit user answer.
 - **Refuse to overwrite** existing task_brief at the computed path.
 - Anti-loop: max 2 retries on `task_brief_gate.py` revisions, then STOP.

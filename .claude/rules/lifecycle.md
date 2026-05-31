@@ -8,22 +8,23 @@
 | **STANDARD** | MEDIUM or HIGH risk change | `task_brief.md` + launch_spec | HIGH: required |
 | **MAINTENANCE** | Wiki / WAL operations | WAL fragments | no |
 
-## Step 0 — Triage Probe (auto-injected via UserPromptSubmit hook)
+## Step 0 — Evidence Probe (auto-injected via UserPromptSubmit hook)
 
-`triage_probe.py` synthesizes 5 signals (`blast_radius`, `failure_history`, `ambiguity`, `danger_keywords`, `intent_class`) → `suggested_profile` ∈ {VIBE, RESEARCH, PATCH, STANDARD-MEDIUM, STANDARD-HIGH}.
+`triage_probe.py` collects 5 signals (`blast_radius`, `failure_history`, `ambiguity`, `danger_keywords`, `intent_class`) and emits a `[triage-evidence]` block plus one advisory `profile_hint` line ending in `(you decide)`. The probe is **NOT a classifier**; it neither escalates nor decides. The main agent reads the evidence, combines it with conversation context (shortcuts, domain, memory, user tone), and assigns the profile.
 
-- No `[triage]` → heuristic-skipped (<15 chars / pure question / `@learn`/`@read`); fall back per CLAUDE.md §5
-- `[triage]` present → adopt or escalate; never downgrade. `suggested: RESEARCH` is risk-orthogonal (danger keywords become `signals_yellow`, NOT escalation)
-- `@vibe`/`@patch` with red signals → emit `[Probe Override]` per [policy.md](policy.md#probe-override)
+- No `[triage-evidence]` → heuristic-skipped (<15 chars / pure question / `@learn`/`@read`); fall back per CLAUDE.md §5
+- `[triage-evidence]` present → treat `profile_hint` as advisory only. Free to choose VIBE / PATCH / STANDARD-MEDIUM / STANDARD-HIGH / RESEARCH on your own judgment.
+- `needs_semantic_review: <reason>` line present → fast-path evidence is ambiguous; dispatch `triage-reviewer` (Haiku) for a one-shot semantic refinement before emitting `[Risk: ...]`. Trigger condition: HIGH keyword + no user shortcut + (ambiguity=FAIL OR intent_class=RESEARCH).
+- `@vibe`/`@patch`/`@quickfix` with HIGH `keywords_observed` → emit `[Probe Override]` per [policy.md](policy.md#probe-override)
 
-## Risk Classification
+## Risk Classification (main agent self-assessed, using probe evidence as one input)
 
-| Risk | Probe Signals | Profile |
+| Risk | Evidence pattern | Profile |
 |---|---|---|
-| **TRIVIAL** | `suggested=VIBE` AND no red/yellow AND no danger keywords | PATCH (inline) |
-| **LOW** | `suggested=PATCH` (single soft signal: blast 3–6 files / ambiguity FAIL / 2 recurring failures / MEDIUM keyword) | PATCH (Slim Spec) |
-| **MEDIUM** | `suggested=STANDARD-MEDIUM` (blast ≥7 OR ≥3 recurring failures OR two PATCH signals compounding) | STANDARD |
-| **HIGH** | `suggested=STANDARD-HIGH` (HIGH danger keyword: auth, mutating DDL, migration, error code, lifecycle/policy/routing files, secret/token/credential). Additive `CREATE TABLE` = B1, NOT HIGH | STANDARD + ADR per actual irreversible decision + Approval Gate |
+| **TRIVIAL** | No `profile_hint` line AND no HIGH `keywords_observed` | PATCH (inline) |
+| **LOW** | `profile_hint: PATCH-tier signals (you decide)` (single soft signal: blast 3–6 files / ambiguity FAIL / 2 recurring failures / MEDIUM keyword) | PATCH (Slim Spec) |
+| **MEDIUM** | `profile_hint: STANDARD-tier signals present` with blast ≥7 OR ≥3 recurring failures OR two PATCH signals compounding, but no HIGH keyword | STANDARD |
+| **HIGH** | `keywords_observed` contains a HIGH keyword (auth, mutating DDL, migration, error code, lifecycle/policy/routing files, secret/token/credential). Additive `CREATE TABLE` = B1, NOT HIGH | STANDARD + ADR per actual irreversible decision + Approval Gate |
 
 Never escalate on "important"/"production" alone. Mid-implementation public-API/DB/auth discovery → `[Plan Invalidation]`.
 
@@ -40,7 +41,7 @@ Never escalate on "important"/"production" alone. Mid-implementation public-API/
 | **B2** Mutating DDL / Migration | `ALTER`/`DROP`/`MODIFY`/`RENAME` on existing OR A→B migration | STANDARD-HIGH (forced) | Approval Gate; `migration_gate.py`; `h-archive` pre-checks Data WAL. Read: `skills-archive/migration-planner` |
 | **C** Breaking API | remove/rename endpoint, BC-incompatible, auth strategy change | STANDARD-HIGH (forced) | `api_breaking_gate.py`; migration guide in task_brief |
 | **D** Performance | slow query / high latency / memory / CPU | RESEARCH → STANDARD | baseline → §5 Recommendations → user picks Option → STANDARD with §5.chosen as Context |
-| **RESEARCH** | analyze/research/evaluate/feasibility; or `@research`; or `[Suggested Profile]: RESEARCH` | RESEARCH | report at `.claude/runs/reports/<...>_research.md`; `research_report_gate.py` at Archive. Forbidden edits: `src/`, `pom.xml`, `*.sql`, migrations, any `task_brief.md` |
+| **RESEARCH** | analyze/research/evaluate/feasibility; or `@research`; or `[triage-evidence]` carries `intent_class: RESEARCH` | RESEARCH | report at `.claude/runs/reports/<...>_research.md`; `research_report_gate.py` at Archive. Forbidden edits: `src/`, `pom.xml`, `*.sql`, migrations, any `task_brief.md` |
 | **E** Dependency Upgrade | `pom.xml` change | PATCH (patch ver) / STANDARD (minor+) | `dependency_gate.py` |
 | **GREENFIELD** | no `src/` OR "from scratch" | STANDARD-HIGH | Read: `skills-archive/greenfield-scaffold` (optionally `deepinit`) |
 | **RELEASE** | release / version tag / deploy | MAINTENANCE | Read: `skills-archive/release` |
@@ -159,7 +160,7 @@ Present Human Section. Full → Implement. Partial → record approved, roll bac
 |---|---|---|
 | PreToolUse | every Edit/Write | `pre_tool_use_hook.py` → `scope_guard.py` (blocks out-of-scope when active task_brief; silent skip otherwise) |
 | PostToolUse | every Edit/Write | `post_tool_use_hook.py` → `secrets_linter.py` on changed file |
-| UserPromptSubmit | every prompt | `user_prompt_submit_hook.py`: triage first; empty triage stdout (VIBE-all-green or heuristic-skip) suppresses `[ambiguity]` + distill same turn. `[failure-memory]` always emits |
+| UserPromptSubmit | every prompt | `user_prompt_submit_hook.py`: evidence probe first; empty stdout (no evidence-worth-showing or heuristic-skip) suppresses `[ambiguity]` + distill same turn. `[failure-memory]` always emits |
 
 Per-script semantics in script docstrings. Env: `CLAUDE_{TRIAGE,FAILURE_MEMORY,AMBIGUITY,DISTILL}_QUIET=1`, `CLAUDE_SCOPE_GUARD_BYPASS=1`.
 

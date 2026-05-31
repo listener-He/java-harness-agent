@@ -3,7 +3,7 @@ description: Ingest CI/CD failure → classify → route (debug task / incident)
 argument-hint: [--run-id <id>] [--repo <owner/repo>] [--from-file <path>]
 ---
 
-Close the CI/CD feedback loop. Pulls failed CI run logs (via `gh`), classifies the failure type, routes it into the correct workflow channel (debug task, incident, or warn), and records it in failure_memory so future `[triage]` blocks surface the pattern. Requires `gh` CLI.
+Close the CI/CD feedback loop. Pulls failed CI run logs (via `gh`), classifies the failure type, routes it into the correct workflow channel (debug task, incident, or warn), and records it in failure_memory so future `[triage-evidence]` blocks surface the pattern in `recurring_failures_30d`. Requires `gh` CLI.
 
 ## Step 1 — Parse `$ARGUMENTS`
 

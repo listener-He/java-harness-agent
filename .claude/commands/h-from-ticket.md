@@ -67,7 +67,7 @@ Priority (first match wins):
 1. `--risk` arg → use it directly
 2. `--slim` arg → LOW
 3. GitHub labels: `breaking-change`, `security`, `migration`, `auth` → HIGH; `enhancement`, `feature` → MEDIUM; `bug`, `chore`, `docs` → LOW
-4. `[triage]` block if present in this conversation
+4. Main agent's earlier `[Risk: LOW|MEDIUM|HIGH | Scenario: ...]` line in this conversation
 5. Ask user via `AskUserQuestion` with three options (LOW / MEDIUM / HIGH) + descriptions. Do not silently default.
 
 If risk = LOW → `spec_mode: SLIM`. MEDIUM/HIGH → `spec_mode: STANDARD`.
@@ -158,7 +158,7 @@ Output exactly this block:
 
 - **Allowed edits**: new task_brief, `.claude/runs/decompositions/<raw input file>`, target `launch_spec_*.md`. Nothing else.
 - **No source-code edits**.
-- **No silent risk defaulting** — risk MUST come from arg, labels, `[triage]`, or explicit user answer.
+- **No silent risk defaulting** — risk MUST come from arg, labels, the main agent's `[Risk: ...]` line, or explicit user answer.
 - **Refuse to overwrite** existing task_brief at the computed path.
 - **PRD and Bug tickets are NOT handled here** — redirect to `/h-decompose` and DEBUG scenario respectively.
 - Anti-loop: max 2 ambiguity-gate iterations (two rounds of Must-Ask questions). Third unresolved → STOP and report.

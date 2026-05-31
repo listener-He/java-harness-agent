@@ -17,17 +17,19 @@ Single source of truth for: safety/commit rules, WAL write-back, agent invocatio
 <a id="probe-override"></a>
 ### Probe Override
 
-When the user invokes `@vibe` / `@patch` / `@quickfix` but the `[triage]` block (from `triage_probe.py`, see [lifecycle.md Step 0](lifecycle.md#step-0--triage-probe-auto-injected-via-userpromptsubmit-hook)) reports any `signals_red`, the agent MUST print this block at turn start before any other output:
+Trigger: user invokes `@vibe` / `@patch` / `@quickfix` AND the `[triage-evidence]` block (from `triage_probe.py`, see [lifecycle.md Step 0](lifecycle.md#step-0--evidence-probe-auto-injected-via-userpromptsubmit-hook)) carries a `keywords_observed:` line containing any HIGH keyword (auth, mutating DDL, migration, error code, lifecycle/policy/routing files, secret/token/credential — full list in `triage_probe.DANGER_HIGH`).
+
+When triggered, the agent MUST print this block at turn start before any other output:
 
 ```
 [Probe Override]
-User invoked <shortcut>; ignoring probe signals:
-  - <signal-1>
-  - <signal-2>
+User invoked <shortcut>; HIGH keywords observed in evidence:
+  - <keyword-1>
+  - <keyword-2>
 Proceeding in <Vibe|Patch> at user's explicit request.
 ```
 
-Non-blocking; user intent wins. The block is for audit only — prevents silent escalations and surfaces over-eager Vibe usage.
+Non-blocking; user intent wins. The block is audit-only — preserves the trail when a user-declared mode overrides what the evidence would have suggested.
 
 ## Commit Policy
 
@@ -97,7 +99,7 @@ Gate: `python3 .claude/scripts/wiki/wiki_linter.py` — FAIL on dead links OR ca
 | Archive-time WAL question | Mandatory single AskUserQuestion; user MUST pick Skip or Extract |
 | Extract cap | ≤ 2 dimensions per research task; > 2 → use STANDARD follow-up instead |
 | Extract trigger | Research surfaced stable reusable facts independent of §5 Recommendations |
-| `signals_yellow` effect | Amplifies §3 evidence rigor (≥ 10 entries), does NOT change WAL default |
+| HIGH `keywords_observed` in RESEARCH | Amplifies §3 evidence rigor (≥ 10 entries), does NOT change WAL default |
 
 ---
 

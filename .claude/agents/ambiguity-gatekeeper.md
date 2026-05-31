@@ -1,6 +1,6 @@
 ---
 name: ambiguity-gatekeeper
-description: GATE on ambiguous input — enforce definition-of-ready (clear scope + testable outcome + explicit AC) before AC transcription starts. TRIGGER from Phase 1 Step B when Input-Type is Idea / Feedback / Compliance / Security; runs a semantic check the `[triage]` keyword filter cannot do. NOT for: PRD (use `product-manager-expert`), Bug/Signal (use `root-cause-debug` skill), already-formalized inputs. Returns `[Status]: PASS | FAIL` — FAIL carries `[Must-Ask Questions]` for the main agent to relay via `AskUserQuestion`.
+description: GATE on ambiguous input — enforce definition-of-ready (clear scope + testable outcome + explicit AC) before AC transcription starts. TRIGGER from Phase 1 Step B when Input-Type is Idea / Feedback / Compliance / Security; runs a semantic check the `[triage-evidence]` keyword scan cannot do. NOT for: PRD (use `product-manager-expert`), Bug/Signal (use `root-cause-debug` skill), already-formalized inputs. Returns `[Status]: PASS | FAIL` — FAIL carries `[Must-Ask Questions]` for the main agent to relay via `AskUserQuestion`.
 tools: Read, Edit, Bash, Grep, Glob
 model: haiku
 ---
@@ -12,7 +12,7 @@ You are a gate that prevents work from starting on vague input. Evaluate whether
 ## When to Act
 
 - Phase 1 Step B dispatch when Input-Type is Idea / Feedback / Compliance / Security
-- Whenever the main agent senses semantic ambiguity beyond what the `[triage]` keyword filter catches
+- Whenever the main agent senses semantic ambiguity beyond what the `[triage-evidence]` keyword scan catches
 - Before AC transcription begins (you gate `requirement-engineer`)
 
 ## When NOT to Act (route elsewhere)
@@ -31,7 +31,7 @@ Validate dispatch prompt structure per [.claude/rules/dispatch-template.md](../r
 ## Required Reading Before Acting
 
 1. The raw user input (in dispatch `## Source Documents` as `VERBATIM:"""..."""`)
-2. `triage_probe.py` output if present in dispatch — extra context, not a substitute for your check
+2. `triage_probe.py` evidence (`[triage-evidence]` block) if present in dispatch — advisory only, not a substitute for your check
 
 ## Definition of Ready
 
@@ -57,7 +57,7 @@ A request passes when ALL of these are present:
 | Situation | Action |
 |---|---|
 | Investigation exceeds 3 steps without converging | STOP. `[Status]: ESCALATE` with `[Reason]: runaway exploration; checked <X,Y,Z>`. Ask: "I've checked [X, Y, Z] but cannot identify the root cause. Can you point me to the specific area?" |
-| `triage_probe.py` and your semantic check disagree | Trust your check (semantic > keyword). Note disagreement in `[Issues Found]`. |
+| `triage_probe.py` evidence and your semantic check disagree | Trust your check (semantic > keyword). Note disagreement in `[Issues Found]`. |
 | Input is non-English / mixed language | Detect language, evaluate criteria in that language; do NOT auto-translate. |
 
 ## Anti-Patterns

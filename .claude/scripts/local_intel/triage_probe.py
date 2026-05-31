@@ -1,21 +1,35 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Triage Probe — synthesize four signals into a suggested workflow profile.
+Evidence Probe — collect 5 evidence signals + emit one advisory profile hint,
+and request a Haiku slow-path review when keyword evidence is genuinely
+ambiguous on a HIGH-sensitivity surface.
 
-Signals composed:
-  - blast_radius: code_index.py --impact-of for each file hint extracted from prompt
+NOT a classifier. Output is informational; the main agent decides the profile
+by combining this evidence with conversation context (shortcuts, domain,
+memory, user tone). The probe never escalates, never overrides, never decides.
+
+Fast-path signals (always collected, deterministic, <500ms):
+  - blast_radius: code_index.py --impact-of for each file hint
   - failure_history: failure_memory.py summary --days 30 --min-count 2
-  - ambiguity: ambiguity_gate.py --intent
+  - ambiguity: ambiguity_gate._check_intent → OK / WARN / FAIL
   - danger_keywords: static scan against HIGH / MEDIUM tier word lists
+                     (display-only + Probe Override trigger source +
+                      slow-path dispatch trigger source)
+  - intent_class: ambiguity_gate.classify_intent → CHANGE / RESEARCH / OTHER
+
+Slow-path tier (opt-in, dispatched by main agent on probe's request):
+  - needs_semantic_review: line emitted when keyword evidence cannot
+    disambiguate intent on a HIGH-sensitivity surface (HIGH keyword present
+    + no user shortcut + (ambiguity=FAIL OR intent_class=RESEARCH)).
+    Main agent dispatches the `triage-reviewer` sub-agent (Haiku) for a
+    one-shot semantic refinement before emitting [Risk: ...].
 
 Output:
-  - default (human): a [triage] block; silent if profile=VIBE and no red signals
-  - --json: full structured result for downstream consumers
+  - default (human): a [triage-evidence] block; silent if no evidence worth showing
+  - --json: structured dict for downstream consumers
 
-Designed to run inside UserPromptSubmit hook in well under 1s — upstream signals
-(code_index, failure_memory, ambiguity_gate) are gathered via in-process imports
-(no subprocess fan-out), total typically under 600ms.
+Designed to run inside UserPromptSubmit hook well under 500ms.
 """
 
 from __future__ import annotations
@@ -27,9 +41,6 @@ import re
 import sys
 from pathlib import Path
 
-# Import sibling modules directly — subprocess fan-out cost a measured ~4s per
-# hook invocation, which made the prompt-submit hook unusable. In-process
-# imports drop the same workload to ~250ms.
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(_REPO_ROOT / ".claude" / "scripts" / "local_intel"))
 sys.path.insert(0, str(_REPO_ROOT / ".claude" / "scripts" / "gates"))
@@ -38,60 +49,91 @@ import code_index  # noqa: E402
 import failure_memory  # noqa: E402
 import ambiguity_gate  # noqa: E402
 
-PROFILE_RANK = {
-    "VIBE": 0,
-    "RESEARCH": 1,
-    "PATCH": 2,
-    "STANDARD-MEDIUM": 3,
-    "STANDARD-HIGH": 4,
-}
-
-# Shortcuts where the user has already declared intent; probe must not override.
-# Keep in sync with user_prompt_submit_hook.SHORTCUT_OVERRIDES — only list
-# shortcuts that have an actual behavior backing them.
 HARD_SKIP_SHORTCUTS = (
     "@learn", "@read",
-    "@distill",  # backed by /h-distill
+    "@distill",
 )
 
-# Below this length input is almost always a confirmation / yes-no / typo question.
+# When any of these shortcuts is in the prompt, the user has already declared
+# the routing mode — `needs_semantic_review` is suppressed (no point asking a
+# Haiku reviewer to second-guess an explicit user choice).
+INTENT_DECLARED_SHORTCUTS = (
+    "@vibe", "@patch", "@quickfix", "@standard",
+    "@research", "@analyze", "@feasibility",
+    "@learn", "@read",
+)
+
 MIN_LEN_FOR_PROBE = 15
 
-# HIGH-tier keywords escalate straight to STANDARD-HIGH. Lifecycle/policy/routing
-# names are included because edits to those framework files cascade to every
-# downstream task — they are the routing table itself.
-#
-# Short ASCII keywords (auth, hook, token, ...) are matched with \b word
-# boundaries — NOT substring — because slash-command names like
-# `/authoring-standards` or filenames like `tokenize.py` were spuriously
-# escalating to STANDARD-HIGH. See `_kw_match` below for the rule.
-# Auth family is enumerated explicitly so word-boundary matching still catches
-# `authentication` / `authorize` (substring did this by accident).
+# HIGH-tier keywords. Display-only here (no escalation); also serve as:
+#   (1) trigger source for policy.md "Probe Override" — @vibe/@patch with
+#       any of these in keywords_observed → main agent MUST emit
+#       [Probe Override] block;
+#   (2) trigger source for slow-path `needs_semantic_review` — combined with
+#       ambiguity=FAIL or intent_class=RESEARCH and no shortcut, prompts
+#       dispatch of the triage-reviewer (Haiku) sub-agent.
+# Grouped by category for maintenance. Add a term only if false-positive rate
+# stays low under word-boundary matching (see _kw_match).
 DANGER_HIGH = (
+    # Authentication & authorization
     "auth", "authentication", "authorize", "authorization",
-    "认证", "permission", "permissions", "权限", "rbac",
-    # Mutating DDL — touches existing live data. Additive `create table`
-    # is intentionally NOT here; see Scenario B1 (PATCH).
-    "alter table", "drop column", "drop table",
-    "modify column", "rename column", "rename table",
-    "migration", "migrations", "迁移",
-    "error code", "错误码", "errcode",
+    "sso", "oauth", "oauth2", "oidc", "saml", "jwt",
+    "login", "logout", "signin", "sign-in", "signup", "sign-up",
+    "signout", "sign-out", "password",
+    "permission", "permissions", "rbac", "abac",
+    "认证", "鉴权", "授权", "权限", "登录", "登出", "注销", "密码",
+    # Credentials / crypto / keys
     "secret", "secrets", "token", "tokens",
-    "credential", "credentials", "凭证",
+    "credential", "credentials",
+    "api key", "apikey", "api-key", "access key", "access-key",
+    "private key", "public key", "certificate", "x509", "x.509",
+    "encrypt", "decrypt", "cipher", "ssl", "tls", "mtls",
+    "凭证", "密钥", "私钥", "证书",
+    # Mutating DDL / schema migration (existing data at risk)
+    "alter table", "drop column", "drop table", "drop index",
+    "modify column", "rename column", "rename table",
+    "truncate table", "cascade",
+    "migration", "migrations", "schema migration", "data migration",
+    "迁移", "改表",
+    # Anti-patterns banned by project standards
+    "hard delete", "hard-delete", "物理删除",
+    # Error contract / API breaking
+    "error code", "错误码", "errcode",
+    "breaking change", "breaking-change", "不兼容",
+    # Compliance / PII / security
+    "gdpr", "pii", "personal data", "personally identifiable",
+    "cve", "vulnerability", "exploit",
+    "个人信息", "隐私", "脱敏", "漏洞",
+    # Harness routing / policy files (edits cascade to every task)
     "lifecycle", "lifecycle.md", "policy.md", "dispatch-template",
-    "skill-precedence", "claude.md",
+    "skill-precedence", "tasklist-policy", "claude.md", "settings.json",
 )
 
-# Plurals enumerated alongside singulars because word-boundary matching
-# no longer catches them via substring. Non-plural derived forms
-# (e.g. `tokenize`, `authoring`) are intentionally NOT included — they
-# are semantically distinct from the danger concept.
+# MEDIUM-tier keywords. Display only; NOT a Probe Override trigger (only
+# HIGH triggers override). Useful as a soft hint that the change touches
+# extensible / cross-cutting surfaces. Categorized for the same reason.
 DANGER_MEDIUM = (
-    "public api", "公共 api", "endpoint", "endpoints", "签名",
-    "hook", "hooks", "gate", "gates", "framework", "frameworks", "架构",
-    # Additive / generic schema talk — often PATCH-able when isolated. The
-    # synthesizer escalates to MEDIUM only if compounded with other signals.
-    "create table", "create index", "ddl", "schema", "schemas",
+    # Public API surface
+    "public api", "endpoint", "endpoints", "rest", "rest api",
+    "graphql", "grpc", "openapi", "swagger",
+    "公共 api", "签名", "接口",
+    # Harness hook / gate / framework surface
+    "hook", "hooks", "gate", "gates",
+    "framework", "frameworks", "架构",
+    # Additive / generic schema talk (PATCH-able when isolated)
+    "create table", "create index", "ddl",
+    "schema", "schemas", "backfill", "rollback",
+    # Build manifests & dependency surface
+    "pom.xml", "build.gradle", "package.json", "requirements.txt",
+    "maven", "gradle", "依赖", "dependency",
+    # Configuration / environment
+    "env var", "environment variable", ".env",
+    "config map", "configmap", "feature flag", "环境变量",
+    # Concurrency / transactional state
+    "transaction", "transactional", "lock", "mutex", "semaphore",
+    "事务", "锁",
+    # Caching / consistency
+    "cache invalidation", "cache eviction", "缓存一致性",
 )
 
 FILE_HINT_PAT = re.compile(
@@ -107,7 +149,6 @@ FILE_HINT_PAT = re.compile(
 
 
 def _read_prompt() -> str:
-    """Read raw prompt from stdin. Accepts plain text or a JSON envelope."""
     try:
         raw = sys.stdin.read()
     except Exception:
@@ -134,7 +175,6 @@ def _should_skip(prompt: str) -> bool:
         return True
     if any(sc in t for sc in HARD_SKIP_SHORTCUTS):
         return True
-    # Pure question without an action verb — almost always LEARN-class chat.
     if t.endswith("?") or t.endswith("？"):
         action_verbs = (
             "改", "加", "修", "删", "实现", "新增", "重构", "迁移",
@@ -204,23 +244,10 @@ def _probe_ambiguity(prompt: str) -> str:
     return {0: "OK", 1: "WARN", 2: "FAIL"}.get(code, "OK")
 
 
-# Cache compiled word-boundary patterns for short ASCII keywords. Built lazily;
-# the keyword tuples never change at runtime so cache lives forever in-process.
 _WORD_BOUNDARY_RE_CACHE: dict[str, "re.Pattern[str]"] = {}
 
 
 def _kw_match(keyword: str, lowered_text: str) -> bool:
-    """Match a danger keyword against already-lowercased text.
-
-    For pure ASCII alphanumeric keywords (no spaces, dots, hyphens, or CJK),
-    use \\b<kw>\\b word-boundary regex so that substrings inside larger
-    identifiers do NOT match — e.g. `auth` must not fire on
-    `authoring-standards`, `hook` must not fire on `hooks-config` (where the
-    user actually meant the plural — add the plural form to the keyword tuple
-    instead). For multi-word, dotted, hyphenated, or CJK keywords, substring
-    match is correct: they are already distinctive enough, and Python's `\\b`
-    does not behave usefully on CJK boundaries.
-    """
     if keyword.isascii() and keyword.isalnum():
         pat = _WORD_BOUNDARY_RE_CACHE.get(keyword)
         if pat is None:
@@ -237,88 +264,81 @@ def _scan_danger_keywords(prompt: str) -> tuple[list[str], list[str]]:
     return high, medium
 
 
-def _synthesize(blast: dict, failure: dict, ambiguity: str,
-                high_kw: list[str], medium_kw: list[str],
-                intent_class: str) -> tuple[str, list[str], list[str]]:
-    """Combine signals → (profile, signals_red, signals_yellow).
+def _needs_semantic_review(prompt: str, ambiguity: str, high_kw: list[str],
+                           intent_class: str) -> tuple[bool, str]:
+    """Decide whether the main agent should dispatch the triage-reviewer agent.
 
-    Conservative thresholds: a single soft signal lands at PATCH, never MEDIUM.
-    MEDIUM requires either large blast radius (≥7), high-recurrence failures
-    (≥3), or a soft signal that compounds. HIGH is reserved for HIGH-tier
-    danger keywords (auth, schema, framework routing files).
+    Triggers only when keyword-based evidence cannot disambiguate intent:
+      - HIGH keyword present (sensitive surface)
+      - AND no user shortcut (user has not declared mode)
+      - AND (ambiguity FAIL OR intent_class RESEARCH)
 
-    RESEARCH short-circuits Change-side escalation: when intent_class=RESEARCH,
-    danger keywords and large blast radius become signals_yellow (heightened
-    evidence rigor) rather than signals_red (profile escalation). The user's
-    declared intent is "produce a report", not "change code" — even when the
-    research touches sensitive areas.
+    Returns (needed, reason). Empty reason iff not needed.
     """
-    signals_yellow: list[str] = []
+    if not high_kw:
+        return False, ""
+    lowered = prompt.lower()
+    if any(sc in lowered for sc in INTENT_DECLARED_SHORTCUTS):
+        return False, ""
+    if ambiguity == "FAIL":
+        return True, (
+            f"HIGH keyword {high_kw[0]!r} + ambiguous intent — "
+            "disambiguate sensitivity vs scope"
+        )
+    if intent_class == "RESEARCH":
+        return True, (
+            f"HIGH keyword {high_kw[0]!r} + RESEARCH intent — "
+            "research-touches-sensitive vs change-intent boundary"
+        )
+    return False, ""
+
+
+def _format_evidence(blast: dict, failure: dict, ambiguity: str,
+                     high_kw: list[str], medium_kw: list[str],
+                     intent_class: str, prompt: str) -> str:
+    """Render evidence as text. Pure formatter — no classification, no escalation.
+
+    The single 'profile_hint' line is advisory only; the literal suffix
+    '(you decide)' is intentional and consumed by docs as a marker that the
+    main agent owns the decision.
+    """
+    lines = ["[triage-evidence]"]
+
+    if blast["files"] > 0:
+        sample = ", ".join(blast["sample"])
+        lines.append(
+            f"files_impacted: {blast['files']} "
+            f"(callers={blast['callers']}, sample: {sample})"
+        )
+    if failure["recurring"] > 0:
+        lines.append(
+            f"recurring_failures_30d: {failure['recurring']} "
+            f"(top: {failure['top_pattern']})"
+        )
+    if ambiguity != "OK":
+        lines.append(f"ambiguity_check: {ambiguity}")
+    if high_kw or medium_kw:
+        lines.append(f"keywords_observed: {', '.join(high_kw + medium_kw)}")
+    if intent_class == "RESEARCH":
+        lines.append("intent_class: RESEARCH (analyze / feasibility verb detected)")
 
     if intent_class == "RESEARCH":
-        profile = "RESEARCH"
-        signals: list[str] = []
-        if high_kw:
-            signals_yellow.append(
-                f"research touches sensitive area ({', '.join(high_kw[:2])}) — "
-                "require ≥ 10 evidence entries"
-            )
-        if blast["files"] >= 7:
-            signals_yellow.append(
-                f"research spans {blast['files']} files — keep §1 Question scoped"
-            )
-        if failure["recurring"] >= 2:
-            signals_yellow.append(
-                f"failure history: {failure['recurring']} recurring patterns — "
-                "factor into Findings"
-            )
-        return profile, signals, signals_yellow
+        lines.append("profile_hint: RESEARCH (verb-driven; you decide)")
+    elif high_kw or blast["files"] >= 7 or failure["recurring"] >= 3:
+        lines.append("profile_hint: STANDARD-tier signals present (you decide)")
+    elif blast["files"] >= 3 or ambiguity == "FAIL":
+        lines.append("profile_hint: PATCH-tier signals (you decide)")
 
-    profile = "VIBE"
-    signals: list[str] = []
+    needs_review, reason = _needs_semantic_review(prompt, ambiguity, high_kw, intent_class)
+    if needs_review:
+        lines.append(f"needs_semantic_review: {reason}")
 
-    def upgrade(target: str, reason: str) -> None:
-        nonlocal profile
-        if PROFILE_RANK[target] > PROFILE_RANK[profile]:
-            profile = target
-        signals.append(reason)
-
-    # HIGH-tier danger keywords are non-negotiable.
-    if high_kw:
-        upgrade("STANDARD-HIGH", f"danger keywords: {', '.join(high_kw[:3])}")
-
-    # Blast radius — code_index based.
-    if blast["files"] >= 7:
-        upgrade("STANDARD-MEDIUM",
-                f"blast: impacts {blast['files']} files ({blast['callers']} callers)")
-    elif blast["files"] >= 3:
-        upgrade("PATCH", f"blast: impacts {blast['files']} files")
-
-    # Failure recurrence — soft signal, requires multiple hits to escalate.
-    if failure["recurring"] >= 3:
-        upgrade("STANDARD-MEDIUM",
-                f"failure: {failure['recurring']} recurring patterns in last 30d")
-    elif failure["recurring"] >= 2:
-        upgrade("PATCH",
-                f"failure: {failure['recurring']} recurring patterns in last 30d")
-
-    # Ambiguity — FAIL is common for short imperative prompts, so cap at PATCH.
-    # WARN is too noisy to record at all.
-    if ambiguity == "FAIL":
-        upgrade("PATCH", "ambiguity: FAIL (missing action/object signal)")
-
-    # MEDIUM-tier keywords — only escalate if no higher signal already landed.
-    if medium_kw and profile == "VIBE":
-        upgrade("PATCH", f"keywords: {', '.join(medium_kw[:3])}")
-    elif medium_kw:
-        signals.append(f"keywords: {', '.join(medium_kw[:3])}")
-
-    return profile, signals, signals_yellow
+    return "\n".join(lines)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Triage probe — synthesize signals into a suggested profile"
+        description="Evidence probe — emit [triage-evidence] block"
     )
     parser.add_argument("--prompt-file",
                         help="read prompt from file (default: stdin)")
@@ -351,44 +371,37 @@ def main() -> int:
     ambiguity = _probe_ambiguity(prompt)
     high_kw, medium_kw = _scan_danger_keywords(prompt)
     intent_class = ambiguity_gate.classify_intent(prompt[:500])
-    profile, signals, signals_yellow = _synthesize(
-        blast, failure, ambiguity, high_kw, medium_kw, intent_class
-    )
 
-    result = {
-        "suggested_profile": profile,
-        "intent_class": intent_class,
-        "signals_red": signals,
-        "signals_yellow": signals_yellow,
-        "blast_radius": blast,
-        "failure_history": failure,
-        "ambiguity": ambiguity,
-        "danger_keywords": {"high": high_kw, "medium": medium_kw},
-        "file_hints": hints,
-    }
+    text = _format_evidence(blast, failure, ambiguity, high_kw, medium_kw, intent_class, prompt)
 
     if args.as_json:
+        # Extract profile_hint from rendered text (single source of truth for the rule).
+        hint_line = next(
+            (ln.split(": ", 1)[1] for ln in text.splitlines()
+             if ln.startswith("profile_hint:")),
+            "",
+        )
+        needs_review, review_reason = _needs_semantic_review(
+            prompt, ambiguity, high_kw, intent_class
+        )
+        result = {
+            "intent_class": intent_class,
+            "profile_hint": hint_line,
+            "needs_semantic_review": needs_review,
+            "semantic_review_reason": review_reason,
+            "blast_radius": blast,
+            "failure_history": failure,
+            "ambiguity": ambiguity,
+            "danger_keywords": {"high": high_kw, "medium": medium_kw},
+            "file_hints": hints,
+        }
         print(json.dumps(result, ensure_ascii=False))
         return 0
 
-    # Human-readable: silent when probe sees nothing worth flagging.
-    if profile == "VIBE" and not signals and not signals_yellow:
+    # Human-readable: silent if no evidence beyond the bare header.
+    if text.strip() == "[triage-evidence]":
         return 0
-
-    print("[triage]")
-    print(f"suggested: {profile}")
-    if signals:
-        print("signals_red:")
-        for s in signals:
-            print(f"  - {s}")
-    if signals_yellow:
-        print("signals_yellow:")
-        for s in signals_yellow:
-            print(f"  - {s}")
-    if high_kw or medium_kw:
-        print(f"keywords: {', '.join(high_kw + medium_kw)}")
-    if blast["sample"]:
-        print(f"impacted_sample: {', '.join(blast['sample'])}")
+    print(text)
     return 0
 
 

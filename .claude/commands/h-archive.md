@@ -165,7 +165,7 @@ Edit the latest `.claude/runs/launch-specs/launch_spec_*.md` — change this tas
 
 ## Step 7.5 — Record success signal
 
-A clean Archive is itself a positive sample for `failure_memory` (which until now only collected failures — `record-success` had 0 callers despite a documented interface). Use the deviation summary from Step 2 as the note so future `triage_probe` queries can reason about what kind of changes archive cleanly.
+A clean Archive is itself a positive sample for `failure_memory` (which until now only collected failures — `record-success` had 0 callers despite a documented interface). Use the deviation summary from Step 2 as the note so future `[triage-evidence]` blocks can reason about what kind of changes archive cleanly.
 
 ```bash
 python3 .claude/scripts/local_intel/failure_memory.py record-success \

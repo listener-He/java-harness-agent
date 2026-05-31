@@ -89,8 +89,8 @@ Production incident facts live under `.claude/wiki/incidents/<date>_<slug>.md`. 
 
 | Mode | When | Profile (routing) | Flow |
 |---|---|---|---|
-| **Vibe** | TRIVIAL: probe ALL-GREEN AND no danger keyword, OR `@vibe`/`@quickfix`/`@learn`, OR diff <3 lines cosmetic | LEARN / PATCH(TRIVIAL) | Act directly. No spec, no Explorer, no WAL. |
-| **Patch** | LOW: probe `suggested=PATCH` (any single soft signal — blast 3–6 files, ambiguity FAIL, ≥2 recurring failures, MEDIUM keyword), OR explicit `@patch` | PATCH(LOW) | **Slim Spec** (one paragraph: scope + AC) → Implement → QA → Archive. No task_brief, no WAL prompt. |
+| **Vibe** | TRIVIAL: no `[triage-evidence]` block OR evidence shows no `profile_hint` AND no HIGH keywords; OR `@vibe`/`@quickfix`/`@learn`; OR diff <3 lines cosmetic | LEARN / PATCH(TRIVIAL) | Act directly. No spec, no Explorer, no WAL. |
+| **Patch** | LOW: `[triage-evidence]` shows `profile_hint: PATCH-tier signals (you decide)` (single soft signal — blast 3–6 files, ambiguity FAIL, ≥2 recurring failures, MEDIUM keyword), OR explicit `@patch` | PATCH(LOW) | **Slim Spec** (one paragraph: scope + AC) → Implement → QA → Archive. No task_brief, no WAL prompt. |
 | **Research** | 调研 / 分析 / 评估 / 可行性 — deliverable is report, not code | RESEARCH | Investigate → Synthesize → Archive. Produces `research_report.md`. Skip Propose/Review/Approval. Risk-orthogonal. |
 | **Standard** | MEDIUM/HIGH risk, public API/DB/auth changes, EPIC | STANDARD | Explorer → Propose → Review → [Approval if HIGH] → Implement → QA → Archive |
 
@@ -98,22 +98,22 @@ Production incident facts live under `.claude/wiki/incidents/<date>_<slug>.md`. 
 
 ### Vibe Eligibility (white-list, not fallback)
 
-Enter Vibe ONLY if **all** hold: probe ALL-GREEN (or heuristic-skipped) AND no HIGH-tier danger keyword — OR an explicit `@vibe`/`@quickfix`/`@learn` shortcut — OR a diff <3 lines obviously cosmetic.
+Enter Vibe ONLY if **all** hold: `[triage-evidence]` absent OR carries no `profile_hint` AND no HIGH-tier `keywords_observed` — OR explicit `@vibe`/`@quickfix`/`@learn` — OR diff <3 lines obviously cosmetic.
 
-`@vibe` while probe shows red signals → emit `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override).
+`@vibe` while `[triage-evidence]` shows HIGH `keywords_observed` → emit `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override).
 
 ### Patch Eligibility (white-list, not fallback)
 
-Enter Patch ONLY if: probe `suggested=PATCH` (per [lifecycle.md Risk Classification](.claude/rules/lifecycle.md#risk-classification)) — OR an explicit `@patch` shortcut.
+Enter Patch ONLY if: `[triage-evidence]` shows `profile_hint: PATCH-tier signals (you decide)` (per [lifecycle.md Risk Classification](.claude/rules/lifecycle.md#risk-classification)) — OR explicit `@patch`.
 
 Patch MUST emit a **Slim Spec** (one paragraph stating scope + AC) before any code. No task_brief required.
 
-`@patch` while probe shows red signals → emit `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override).
+`@patch` while `[triage-evidence]` shows HIGH `keywords_observed` → emit `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override).
 
 ### Research Eligibility (any trigger fires)
 
 - `@research` / `@analyze` / `@feasibility` shortcut
-- `[triage] suggested: RESEARCH` (research verb present, no Change verb)
+- `[triage-evidence]` carries `intent_class: RESEARCH` (research verb present, no Change verb)
 - Scenario D (Performance Tuning baseline)
 
 Research vs Vibe/Patch: mutually exclusive. Vibe/Patch = code path; Research = committed report file. Both apply → Research wins.
@@ -128,11 +128,12 @@ Standard mode composes PDD + SDD/SPEC + BDD + TDD — see [.claude/wiki/purpose.
 2. Resuming an interrupted session: read `.claude/runs/launch-specs/launch_spec_*.md` and restore from Phase.
 3. User provided concrete paths or snippets: read them directly.
 4. Intent ambiguous: ask one clarifying question, then proceed.
-5. **Fallback** — no `[triage]` block this turn: act directly; if any skill in the available list has > 1% chance of applying, invoke `Skill` first.
+5. **Read `[triage-evidence]`** — it is evidence, not a decision. Combine the `profile_hint` advisory with conversation context (shortcuts, domain, memory, user tone) to decide the profile yourself. No `[triage-evidence]` block this turn → act directly; if any skill in the available list has > 1% chance of applying, invoke `Skill` first.
+6. **If `[triage-evidence]` carries a `needs_semantic_review: <reason>` line** — keyword evidence is ambiguous on a HIGH-sensitivity surface. MUST dispatch the `triage-reviewer` sub-agent (Haiku) before emitting the `[Risk: ...]` line. Use its `[Semantic Review]` `refined_hint` as input alongside the probe evidence; the Haiku verdict is also advisory, not authoritative.
 
 Vibe-eligible request → act, no classification line.
 Patch-eligible → emit a one-paragraph Slim Spec before code, then act.
-Standard-required → emit one line before any output: `[Risk: HIGH | Scenario: B] → task_brief required`.
+Standard-required → emit one line before any output: `[Risk: HIGH | Scenario: B] → task_brief required`. This `[Risk: ...]` line is the source of truth for downstream commands (`/h-brief`, `/h-from-ticket`); they read it from the conversation, not from the probe.
 
 ## Single Sources of Truth
 
