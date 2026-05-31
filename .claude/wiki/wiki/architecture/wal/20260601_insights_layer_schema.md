@@ -103,16 +103,19 @@ Enforce (人审过的规则变更通过 git commit 进入生效)
 ## status 状态机
 
 ```
-new ──────────────────────► acknowledged (agent 在 /h-context-check 中读了)
- │                                │
- │                                ▼
- └─────────────────────────► acted_on (/h-evolve 应用了规则变更)
-                                  │
-                                  ▼
-                              dismissed (人/agent 明确拒绝)
+new ──────────────► acknowledged (agent 在 /h-context-check 中读了)
+ │                       │
+ │                       ▼
+ │                  acted_on (/h-evolve 应用了规则变更)
+ │
+ ├──────────────► published (/h-publish-insight 写成 git-tracked 团队文档)
+ │
+ └──────────────► dismissed (人/agent 明确拒绝)
 ```
 
-只允许单向迁移：new → {acknowledged, acted_on, dismissed}；acknowledged → {acted_on, dismissed}。状态变更通过追加 insights.jsonl 记录 `{id, ts, kind: "status_change", status: <new>}` 行（不修改原 insight 行 — 保持 append-only 不变性）。
+只允许单向迁移：`new → {acknowledged, acted_on, published, dismissed}`；`acknowledged → {acted_on, published, dismissed}`。`published` 与 `acted_on` 互斥但都是 terminal — 同一 insight 走二选一（要么改规则、要么写团队文档；都做相当于两次记录）。状态变更通过追加 insights.jsonl 记录 `{id, ts, kind: "status_change", status: <new>}` 行（不修改原 insight 行 — 保持 append-only 不变性）。
+
+**`published` 语义**：通过 `/h-publish-insight` 命令，把单机本地 insight 转成 git-tracked 的 `.claude/wiki/insights/<date>_<id>_<slug>.md` 文档。这是单机 expert system → 团队共享 system 的桥接点。**必须显式用户调用**，绝不自动 fire — published 是个有意识的"分享给团队"动作，不该被 hook 或 detector 触发。
 
 ## /h-evolve 输出范式
 

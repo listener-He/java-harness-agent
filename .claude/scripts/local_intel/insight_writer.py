@@ -33,7 +33,7 @@ VALID_KINDS = (
     "status_change",  # internal — produced by mark_status, not by detectors
 )
 VALID_CONFIDENCE = ("high", "medium", "low")
-VALID_STATUS = ("new", "acknowledged", "acted_on", "dismissed")
+VALID_STATUS = ("new", "acknowledged", "acted_on", "published", "dismissed")
 
 
 def _ts() -> str:
@@ -201,6 +201,7 @@ def query_active(top: int = 5, min_confidence: str = "medium") -> list[dict]:
     result = []
     for iid, ins in insights.items():
         status = status_overrides.get(iid, ins.get("status", "new"))
+        # Active = not terminal. Terminal statuses: acted_on, published, dismissed.
         if status not in ("new", "acknowledged"):
             continue
         if _CONFIDENCE_RANK.get(ins.get("confidence", ""), -1) < min_rank:
