@@ -106,6 +106,21 @@ ambiguity: <OK | WARN | FAIL>
 - detect "you're about to repeat a known failure" (recurring + your planned action overlap)
 - spot dirty diff that shouldn't ship (uncommitted ≥5 files + new task starting)
 - confirm there's no active task brief blocking your scope
+- act on high-confidence insights (via `/h-evolve --insight-id <id>`)
+
+## Step 5 — Final report
+
+After emitting the `[context-check]` data block in Step 3, emit this status block (greppable):
+
+```
+[Context-Check Status]: OK | DEGRADED | EMPTY
+[Sources Run]: <comma-list of source names>
+[Sources Skipped]: <comma-list with reason, or "none">
+[Insights Surfaced]: <N high+medium active>
+[Next Action]: <one-line — typical: "Proceed with classification" or "Run /h-evolve on insight <id>">
+```
+
+`DEGRADED` = at least one source timed out / failed; `EMPTY` = no data anywhere (fresh repo).
 
 ## When to call this command
 
@@ -116,10 +131,21 @@ ambiguity: <OK | WARN | FAIL>
 | /h-resume invoked | NO (h-resume does its own state read) |
 | Before /h-pr or /h-archive | YES (last-chance review) |
 | User asks "what's the state" | YES (then report a synthesized summary, not the raw block) |
+| Stop hook printed `[insight-reminder]` | YES (the reminder explicitly nudges this) |
 
 ## Hard constraints
 
-- **Read-only command** — never edit files. All queries are reads.
-- **Each query has its own timeout** — if any single query hangs > 5s, skip it and note in output. Don't block the whole context-check on one slow source.
-- **No subagent dispatch** — this is a synchronous data-gather, not a reasoning task.
-- **Output once, do not loop** — single block per invocation. If you want updated context, call again.
+| Constraint | Rule |
+|---|---|
+| **Allowed edit set** | The data block does `insight_detector --write` which appends to `.claude/runs/local_intel/insights.jsonl`. **No other writes.** Reading everything else is read-only. |
+| **Source-code edits FORBIDDEN** | Never edit `src/**`, never edit any rule file from this command. If insight says "edit X", that's `/h-evolve`'s job, not this command's. |
+| **Anti-loop** | Single block per invocation. Each source has a 5s timeout — exceed → skip + mark in `[Sources Skipped]`. Never retry. |
+| **Skip-path semantics** | Empty events.jsonl / no failures / no insights → still emit Step 5 status block with `EMPTY` and `[Sources Skipped]: none`. Never return silent. |
+| **Idempotency** | Re-invoking back-to-back produces same output (modulo new events that arrived between calls). insight_detector --write is dedup-safe via hash id. |
+| **Sub-agent dispatch** | None — pure data orchestration; do NOT call Agent tool from this command. |
+
+## Out of scope
+
+- Acting on insights → `/h-evolve --insight-id <id>`
+- Marking insights dismissed without proposal → `python3 .claude/scripts/local_intel/insight_writer.py mark-status`
+- Generating a task_brief — `/h-brief`

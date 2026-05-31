@@ -62,6 +62,21 @@ def main() -> int:
     except Exception:
         pass
 
+    # Minimal push-back (T9): if any HIGH-confidence insight awaits review,
+    # emit a single-line reminder. This is the ONLY non-event side effect of
+    # the sensor-tier hook layer; rationale: pull model risks agent never
+    # invoking /h-context-check. Turn-end is the lowest-frequency injection
+    # point + only fires when something actionable exists.
+    try:
+        import insight_writer  # noqa: E402
+        unread_high = insight_writer.query_active(top=10, min_confidence="high")
+        if unread_high:
+            n = len(unread_high)
+            print(f"[insight-reminder] {n} high-confidence insight(s) await review "
+                  f"— run /h-context-check or /h-evolve --auto-pick")
+    except Exception:
+        pass
+
     return 0
 
 

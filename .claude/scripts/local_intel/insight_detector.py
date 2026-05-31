@@ -224,26 +224,65 @@ def detect_co_edit_clusters(window_days: int = 30,
         for a, b in combinations(sorted(bucket), 2):
             pair_counts[(a, b)] += 1
 
-    insights = []
-    # Identify pair clusters with count ≥ 3 and de-duplicate file overlap into bigger clusters
+    # Union-Find to merge overlapping pairs into larger clusters.
+    # Pre-T9: (A,B), (A,C), (B,C) each emit separately → 3 noisy insights.
+    # Post-T9: detect connected component → 1 insight for cluster {A,B,C}
+    # with summed pair count.
     qualifying = [(pair, c) for pair, c in pair_counts.items() if c >= 3]
-    qualifying.sort(key=lambda x: -x[1])
-    # Take top 5 pairs to avoid noise
-    for (a, b), c in qualifying[:5]:
-        confidence = _confidence_by_count(c, h=10, m=5, l=3)
+    if not qualifying:
+        return []
+
+    parent: dict[str, str] = {}
+
+    def find(x: str) -> str:
+        if parent.setdefault(x, x) != x:
+            parent[x] = find(parent[x])
+        return parent[x]
+
+    def union(x: str, y: str) -> None:
+        rx, ry = find(x), find(y)
+        if rx != ry:
+            parent[rx] = ry
+
+    for (a, b), _c in qualifying:
+        union(a, b)
+
+    # Aggregate pair counts per component root
+    cluster_pair_counts: dict[str, int] = defaultdict(int)
+    cluster_members: dict[str, set[str]] = defaultdict(set)
+    for (a, b), c in qualifying:
+        root = find(a)  # same as find(b) post-union
+        cluster_pair_counts[root] += c
+        cluster_members[root].update((a, b))
+
+    insights = []
+    # Sort components by total pair count desc; top 5
+    sorted_clusters = sorted(
+        cluster_pair_counts.items(), key=lambda kv: -kv[1]
+    )[:5]
+    for root, total in sorted_clusters:
+        members = sorted(cluster_members[root])
+        confidence = _confidence_by_count(total, h=10, m=5, l=3)
         if confidence is None:
             continue
+        member_names = ", ".join(Path(m).name for m in members[:4])
+        more = f" (+{len(members) - 4} more)" if len(members) > 4 else ""
         insights.append({
             "kind": "co_edit_cluster",
             "confidence": confidence,
-            "summary": f"{Path(a).name} + {Path(b).name} co-edited ×{c} in {window_days}d",
+            "summary": (
+                f"Cluster of {len(members)} files co-edited ×{total} pairs total "
+                f"in {window_days}d: {member_names}{more}"
+            ),
             "suggested_action": (
-                f"If a task brief touches one of these, list both in Allowed Scope "
-                f"upfront to avoid mid-implementation [Plan Invalidation]"
+                f"If a task brief touches any of these, list ALL in Allowed Scope "
+                f"upfront to avoid mid-implementation [Plan Invalidation]. "
+                f"Consider defining a wiki scope template for this cluster."
             ),
             "evidence": [
-                {"kind": "files", "paths": [a, b], "co_edit_count": c,
-                 "window_days": window_days}
+                {"kind": "files", "paths": members,
+                 "total_pair_count": total, "member_count": len(members),
+                 "window_days": window_days, "min_age_hours": min_age_hours}
             ],
             "detector": "co_edit_cluster",
         })
@@ -366,17 +405,23 @@ def detect_override_drift(window_days: int = 30) -> list[dict]:
 
 # ----- Detector 5: user_correction -----------------------------------------
 
-def detect_user_corrections(window_days: int = 30) -> list[dict]:
+def detect_user_corrections(window_days: int = 30,
+                            require_prior_action: bool = True) -> list[dict]:
     """Aggregate user_correction events by correction_phrase.
 
-    v1 heuristic: prompt opens with phrase X → emit event. Detector groups
-    by phrase; recurring use (count ≥3) becomes an insight. Surfaces
-    systematic patterns ("user keeps saying 'actually'" likely means the
-    agent is systematically misinterpreting that class of prompts).
+    v2 (T9): bind to prior_actions_5min. By default (`require_prior_action=True`),
+    only count corrections where prior_actions_5min ≥ 1 — i.e. the agent
+    actually did something in the last 5 min that the user might be correcting.
+    Without this filter, "actually let me start a new task" types of phrases
+    fire spuriously at session start.
+
+    Surfaces systematic patterns: "user keeps saying 'wtf' AFTER edit_post
+    events" → agent likely making the same kind of mistake repeatedly.
     """
     min_ts = _now_naive() - timedelta(days=window_days)
     phrase_counts: Counter = Counter()
     phrase_excerpts: dict[str, list[str]] = defaultdict(list)
+    bound_counts: Counter = Counter()  # for evidence display
 
     for ev in _iter_events(min_ts):
         if ev.get("kind") != "user_correction":
@@ -384,7 +429,12 @@ def detect_user_corrections(window_days: int = 30) -> list[dict]:
         phrase = ev.get("correction_phrase", "")
         if not phrase:
             continue
+        bound = (ev.get("prior_actions_5min", 0) or 0) > 0
+        if require_prior_action and not bound:
+            continue
         phrase_counts[phrase] += 1
+        if bound:
+            bound_counts[phrase] += 1
         excerpt = ev.get("prompt_excerpt", "")
         if excerpt and len(phrase_excerpts[phrase]) < 3:
             phrase_excerpts[phrase].append(excerpt)
@@ -396,19 +446,24 @@ def detect_user_corrections(window_days: int = 30) -> list[dict]:
             continue
         excerpts = phrase_excerpts[phrase]
         sample = f"; samples: {' | '.join(repr(e[:40]) for e in excerpts[:2])}" if excerpts else ""
+        bind_note = ""
+        if require_prior_action:
+            bind_note = f" (all bound to agent-active windows)"
         insights.append({
             "kind": "user_correction",
             "confidence": confidence,
             "summary": (
-                f"User prompts start with {phrase!r} ×{c} in last {window_days}d{sample}"
+                f"User prompts open with {phrase!r} ×{c} in last {window_days}d"
+                f"{bind_note}{sample}"
             ),
             "suggested_action": (
-                f"Review recent classifications / actions on prompts containing "
-                f"{phrase!r} — systematic misread likely. /h-reflect or audit "
-                f"specific events."
+                f"Review recent agent decisions in windows preceding these "
+                f"corrections — systematic misread / frustration likely. "
+                f"Use events_query.py --kind edit_post --since 30d to correlate."
             ),
             "evidence": [
                 {"kind": "phrase", "phrase": phrase, "count": c,
+                 "bound_to_prior_action": bound_counts[phrase],
                  "recent_excerpts": excerpts, "window_days": window_days}
             ],
             "detector": "user_correction",

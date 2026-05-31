@@ -40,20 +40,40 @@ if str(_LOCAL_INTEL_DIR) not in sys.path:
 PROMPT_TEXT_CAP = 2000  # truncate per schema doc to keep jsonl rows lean
 
 # Phrases that, when appearing at the START of a prompt, signal the user is
-# correcting / disagreeing with the agent's prior action. Pure string match
-# (no LLM) — false-positive tolerance: "actually" used in "let me actually
-# add this" will fire; user_correction insight only surfaces on RECURRING
-# phrases (count ≥3 in 30d), so a single false fire is noise-floor.
+# correcting / disagreeing / frustrated-with the agent's prior action. Pure
+# string match (no LLM) — false-positive tolerance: "actually" used in
+# "let me actually add this" will fire; user_correction insight only surfaces
+# on RECURRING phrases (count ≥3 in 30d, AND ideally with prior_actions_5min>0
+# binding), so a single false fire is noise-floor.
 # Match is case-insensitive, on the first 50 chars (stripped).
 CORRECTION_PHRASES = (
-    # Chinese
+    # --- Chinese: explicit correction ---
     "不对", "不是", "错了", "应该是", "实际上", "我意思是", "我的意思是",
-    "不该", "不该是",
-    # English
+    "不该", "不该是", "搞错了", "搞错",
+    # --- Chinese: frustration / sarcasm (人类气急败坏 / 阴阳怪气) ---
+    "你认真的", "你认真吗", "认真的吗", "你确定", "你不懂", "懂不懂",
+    "胡说", "胡扯", "扯淡", "瞎扯", "瞎搞", "搞什么", "搞毛",
+    "妈的", "tmd", "我擦", "卧槽",
+    "停一下", "停", "等等", "打住",
+    # --- English: explicit correction ---
     "no,", "no ", "wrong", "actually", "i meant", "i mean", "that's not",
     "thats not", "incorrect", "but no", "no it", "actually no",
+    # --- English: frustration / sarcasm ---
+    "wtf", "wth", "what the", "ffs", "seriously?", "really?",
+    "are you serious", "are you kidding", "you don't get it",
+    "you don't understand", "stop", "wait", "hold on",
+    "no no no", "ugh",
 )
 CORRECTION_PREFIX_SCAN = 50  # chars from start
+
+# Sub-second tail read of events.jsonl to determine whether agent was
+# active in the last 5 minutes — used to BIND user_correction to a real
+# prior decision instead of correcting nothing. Only edit_post +
+# subagent_return events count as "agent did something visible".
+PRIOR_ACTION_WINDOW_MINUTES = 5
+PRIOR_ACTION_KINDS = ("edit_post", "subagent_return")
+# Tail this many lines max — keeps the hook bounded.
+PRIOR_ACTION_TAIL_LINES = 100
 
 
 def _read_prompt_text() -> tuple[str, str]:
@@ -96,6 +116,50 @@ def _match_correction_phrase(text: str) -> str:
     return ""
 
 
+def _count_prior_actions() -> int:
+    """Count edit_post / subagent_return events in last PRIOR_ACTION_WINDOW_MINUTES.
+
+    Reads only the tail of events.jsonl (~100 lines) so cost is bounded.
+    Returns 0 on any IO error (fail-open — false-negative beats hook hang).
+    """
+    events_file = _LOCAL_INTEL_DIR.parent.parent / "runs" / "local_intel" / "events.jsonl"
+    if not events_file.is_file():
+        return 0
+    import time
+    try:
+        # Tail read: open + seek to last ~30KB (covers ~100 typical lines)
+        with open(events_file, "rb") as f:
+            f.seek(0, 2)
+            end = f.tell()
+            start = max(0, end - 30 * 1024)
+            f.seek(start)
+            raw = f.read().decode("utf-8", errors="ignore")
+        lines = raw.splitlines()[-PRIOR_ACTION_TAIL_LINES:]
+    except Exception:
+        return 0
+    cutoff_epoch = time.time() - PRIOR_ACTION_WINDOW_MINUTES * 60
+    count = 0
+    for line in lines:
+        try:
+            obj = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if obj.get("kind") not in PRIOR_ACTION_KINDS:
+            continue
+        ts_str = obj.get("ts", "")
+        if not ts_str:
+            continue
+        # Lenient ISO 8601 parse; fall back to skipping line
+        try:
+            from datetime import datetime
+            ts = datetime.fromisoformat(ts_str)
+            if ts.timestamp() >= cutoff_epoch:
+                count += 1
+        except (ValueError, AttributeError):
+            continue
+    return count
+
+
 def main() -> int:
     text, session_id = _read_prompt_text()
     if not text:
@@ -109,8 +173,10 @@ def main() -> int:
             session_id=session_id,
         )
         # If prompt opens with a correction phrase, emit additional event
-        # for the user_correction insight detector. Separate event keeps
-        # `prompt` schema unchanged and lets detectors query precisely.
+        # for the user_correction insight detector. Bind to prior_actions
+        # so detector can filter: a correction with prior_actions=0 likely
+        # means "fresh conversation, user is just being curt", not "agent
+        # screwed up".
         correction = _match_correction_phrase(text)
         if correction:
             event_writer.append(
@@ -118,6 +184,7 @@ def main() -> int:
                 correction_phrase=correction,
                 prompt_excerpt=text[:100],
                 session_id=session_id,
+                prior_actions_5min=_count_prior_actions(),
             )
     except Exception:
         pass
