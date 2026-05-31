@@ -36,6 +36,7 @@ SNAPSHOT_DIR = Path(".claude/runs/local_intel/compact_snapshots")
 LATEST = Path(".claude/runs/local_intel/last_compact_snapshot.json")
 LAUNCH_DIR = Path(".claude/runs/launch-specs")
 FIND_ACTIVE = ".claude/scripts/harness/find_active_task_brief.py"
+SNAPSHOT_RETENTION = 20  # keep most-recent N timestamped files, delete rest
 
 
 def _run(cmd: list[str], timeout: int = 5) -> str:
@@ -113,6 +114,18 @@ def main() -> int:
         LATEST.write_text(
             json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8"
         )
+        # Retention: keep most recent SNAPSHOT_RETENTION files, GC the rest.
+        # Sort by mtime descending; slice keeps newest, drop the tail.
+        all_snaps = sorted(
+            SNAPSHOT_DIR.glob("snapshot_*.json"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        for old in all_snaps[SNAPSHOT_RETENTION:]:
+            try:
+                old.unlink()
+            except Exception:
+                pass
     except Exception:
         pass
 

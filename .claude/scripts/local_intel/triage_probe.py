@@ -63,6 +63,22 @@ INTENT_DECLARED_SHORTCUTS = (
     "@learn", "@read",
 )
 
+# Verbs/phrases that strongly indicate LEARN-class intent (read / explain,
+# not modify). When present, suppress `needs_semantic_review` even if HIGH
+# keywords + ambiguity=FAIL — the user clearly wants commentary, not a
+# change. Substring match (no word boundaries) so multi-word phrases work.
+# Conservative set: included only when "edit-disguised-as-explanation" risk
+# is low. Ambiguous verbs like "review/总结/评审" are intentionally NOT here.
+LEARN_VERBS = (
+    # Chinese — pure read intents
+    "看一下", "看看", "查看", "解释", "梳理", "说明",
+    "介绍", "了解", "讲解", "讲讲", "聊聊",
+    "描述", "阅读",
+    # English — pure read intents
+    "explain", "show me", "walk through", "walkthrough",
+    "describe", "look at", "look into", "tell me about",
+)
+
 MIN_LEN_FOR_PROBE = 15
 
 # HIGH-tier keywords. Display-only here (no escalation); also serve as:
@@ -279,6 +295,12 @@ def _needs_semantic_review(prompt: str, ambiguity: str, high_kw: list[str],
         return False, ""
     lowered = prompt.lower()
     if any(sc in lowered for sc in INTENT_DECLARED_SHORTCUTS):
+        return False, ""
+    # LEARN-class verbs suppress regardless of FAIL/RESEARCH — when the user
+    # is clearly asking for read/explain on a sensitive surface, Haiku review
+    # would add latency for zero information gain. The main agent reads the
+    # prompt and decides whether to actually treat as LEARN.
+    if any(v in lowered for v in LEARN_VERBS):
         return False, ""
     if ambiguity == "FAIL":
         return True, (

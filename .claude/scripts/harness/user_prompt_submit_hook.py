@@ -149,8 +149,11 @@ def _emit_ambiguity_check(prompt_text: str) -> None:
         )
     except subprocess.TimeoutExpired:
         return
-    # 0 = PASS (silent). 1 = WARN, 2 = FAIL — both surface as a soft nudge.
-    if proc.returncode == 0:
+    # 0 = PASS, 1 = WARN, 2 = FAIL. Only FAIL surfaces — WARN was firing on
+    # ~50% of prompts (almost any concise input lacks an explicit "success
+    # signal") and rarely produced an actionable nudge. FAIL is rarer and
+    # genuinely indicates missing action/object that's worth asking about.
+    if proc.returncode != 2:
         return
     out = (proc.stdout or "").rstrip()
     if not out:
