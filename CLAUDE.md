@@ -80,8 +80,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 Production incident facts live under `.claude/wiki/incidents/<date>_<slug>.md`. They are surfaced two ways:
 
-- **UserPromptSubmit:** the `[failure-memory]` block at turn start lists recent incidents (last 30 days + any with `status: watch`), each with a one-line "提醒未来 LLM" lesson. Skim them like you'd skim a standup digest.
-- **PostToolUse:** when you edit a file referenced by a past incident, an `[incident-hint]` block injects a pointer. **Open that specific `.md`** — it has the actual root cause, fix, and what to avoid this time.
+- **On task start / unsure state:** run `/h-context-check` — it queries `events.jsonl` + `failure_memory.json` + `incidents/` and surfaces recent failures, in-progress task, dirty diff, related past incidents. Replaces the pre-P2 `[failure-memory]` / `[incident-hint]` auto-injection.
+- **Per-file lookup:** `python3 .claude/scripts/local_intel/incident_hint.py <file_path>` returns any past incident touching that file; agent invokes on demand (e.g. before deep-editing a sensitive area).
 
 **Ingesting a new incident:** run `python3 .claude/scripts/local_intel/ingest_incident.py --help` — script saves the raw fact + prints a template; you write `.claude/wiki/incidents/<date>_<slug>.md` per the template. The `## 提醒未来 LLM` field is what every future session sees — write it well.
 
@@ -89,31 +89,33 @@ Production incident facts live under `.claude/wiki/incidents/<date>_<slug>.md`. 
 
 | Mode | When | Profile (routing) | Flow |
 |---|---|---|---|
-| **Vibe** | TRIVIAL: no `[triage-evidence]` block OR evidence shows no `profile_hint` AND no HIGH keywords; OR `@vibe`/`@quickfix`/`@learn`; OR diff <3 lines cosmetic | LEARN / PATCH(TRIVIAL) | Act directly. No spec, no Explorer, no WAL. |
-| **Patch** | LOW: `[triage-evidence]` shows `profile_hint: PATCH-tier signals (you decide)` (single soft signal — blast 3–6 files, ambiguity FAIL, ≥2 recurring failures, MEDIUM keyword), OR explicit `@patch` | PATCH(LOW) | **Slim Spec** (one paragraph: scope + AC) → Implement → QA → Archive. No task_brief, no WAL prompt. |
+| **Vibe** | TRIVIAL: read-only / explanation / cosmetic <3-line edit / `@vibe`/`@quickfix`/`@learn` shortcut / no sensitive surface in prompt | LEARN / PATCH(TRIVIAL) | Act directly. No spec, no Explorer, no WAL. |
+| **Patch** | LOW: small bounded change (3–6 files), no irreversible decision, ambiguity recoverable; OR explicit `@patch` | PATCH(LOW) | **Slim Spec** (one paragraph: scope + AC) → Implement → QA → Archive. No task_brief, no WAL prompt. |
 | **Research** | 调研 / 分析 / 评估 / 可行性 — deliverable is report, not code | RESEARCH | Investigate → Synthesize → Archive. Produces `research_report.md`. Skip Propose/Review/Approval. Risk-orthogonal. |
 | **Standard** | MEDIUM/HIGH risk, public API/DB/auth changes, EPIC | STANDARD | Explorer → Propose → Review → [Approval if HIGH] → Implement → QA → Archive |
 
 **Vocabulary:** *Mode* = user-facing label (Title-case, this table). *Profile* = internal routing tier (ALL-CAPS, see [lifecycle.md Profiles](.claude/rules/lifecycle.md#profiles)). Risk tiers (TRIVIAL/LOW/MEDIUM/HIGH) live inside Profiles.
 
+**Classification is the agent's call.** As of P2 (Sensor/Policy/Enforce refactor), hooks no longer push pre-classified profile suggestions. Read the prompt semantically + use `/h-context-check` when unsure + pick a mode. The triage_probe.py keyword scan + ambiguity_gate are now opt-in tools, not auto-injected context.
+
 ### Vibe Eligibility (white-list, not fallback)
 
-Enter Vibe ONLY if **all** hold: `[triage-evidence]` absent OR carries no `profile_hint` AND no HIGH-tier `keywords_observed` — OR explicit `@vibe`/`@quickfix`/`@learn` — OR diff <3 lines obviously cosmetic.
+Enter Vibe ONLY if **all** hold: prompt is read-only / explanation / cosmetic (judged by you reading the actual text) — OR explicit `@vibe`/`@quickfix`/`@learn` — OR diff <3 lines obviously cosmetic.
 
-`@vibe` while `[triage-evidence]` shows HIGH `keywords_observed` → emit `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override).
+`@vibe` on a prompt containing HIGH-sensitivity keywords (auth/migration/secret/lifecycle/etc.) → emit `[Probe Override]` audit block per [policy.md](.claude/rules/policy.md#probe-override) before acting.
 
 ### Patch Eligibility (white-list, not fallback)
 
-Enter Patch ONLY if: `[triage-evidence]` shows `profile_hint: PATCH-tier signals (you decide)` (per [lifecycle.md Risk Classification](.claude/rules/lifecycle.md#risk-classification)) — OR explicit `@patch`.
+Enter Patch ONLY if: small bounded scope (≤6 files), no irreversible decision (no auth strategy change, no mutating DDL, no public-API break), ambiguity recoverable mid-flight; OR explicit `@patch`.
 
 Patch MUST emit a **Slim Spec** (one paragraph stating scope + AC) before any code. No task_brief required.
 
-`@patch` while `[triage-evidence]` shows HIGH `keywords_observed` → emit `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override).
+`@patch` on a prompt with HIGH-sensitivity keywords → emit `[Probe Override]` per [policy.md](.claude/rules/policy.md#probe-override).
 
 ### Research Eligibility (any trigger fires)
 
 - `@research` / `@analyze` / `@feasibility` shortcut
-- `[triage-evidence]` carries `intent_class: RESEARCH` (research verb present, no Change verb)
+- Prompt verb is analyze / research / evaluate / feasibility / 调研 / 分析 / 评估 (and no Change verb)
 - Scenario D (Performance Tuning baseline)
 
 Research vs Vibe/Patch: mutually exclusive. Vibe/Patch = code path; Research = committed report file. Both apply → Research wins.
@@ -128,8 +130,8 @@ Standard mode composes PDD + SDD/SPEC + BDD + TDD — see [.claude/wiki/purpose.
 2. Resuming an interrupted session: read `.claude/runs/launch-specs/launch_spec_*.md` and restore from Phase.
 3. User provided concrete paths or snippets: read them directly.
 4. Intent ambiguous: ask one clarifying question, then proceed.
-5. **Read `[triage-evidence]`** — it is evidence, not a decision. Combine the `profile_hint` advisory with conversation context (shortcuts, domain, memory, user tone) to decide the profile yourself. No `[triage-evidence]` block this turn → act directly; if any skill in the available list has > 1% chance of applying, invoke `Skill` first.
-6. **If `[triage-evidence]` carries a `needs_semantic_review: <reason>` line** — keyword evidence is ambiguous on a HIGH-sensitivity surface. MUST dispatch the `triage-reviewer` sub-agent (Haiku) before emitting the `[Risk: ...]` line. Use its `[Semantic Review]` `refined_hint` as input alongside the probe evidence; the Haiku verdict is also advisory, not authoritative.
+5. **Read the prompt semantically and decide profile yourself.** As of P2, no inline `[triage-evidence]` / `[failure-memory]` / `[ambiguity]` blocks get auto-injected — hooks are now pure sensors writing to `.claude/runs/local_intel/events.jsonl`. If you're unsure (new task, sensitive surface, recent failures unknown) → run `/h-context-check` to pull recent events + failures + active brief + scope. Don't auto-dispatch `triage-reviewer` either; call it explicitly if you genuinely can't disambiguate intent.
+6. **Run `/h-gates --phase implement`** before declaring Implement done. As of P3, PreToolUse hook no longer enforces scope per-edit (only secrets pre-check stays). Scope drift, SQL safety, dependency bumps, breaking-API checks all run via `/h-gates` at phase boundaries. Skipping = drift escapes silently.
 
 Vibe-eligible request → act, no classification line.
 Patch-eligible → emit a one-paragraph Slim Spec before code, then act.

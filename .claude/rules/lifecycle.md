@@ -8,23 +8,32 @@
 | **STANDARD** | MEDIUM or HIGH risk change | `task_brief.md` + launch_spec | HIGH: required |
 | **MAINTENANCE** | Wiki / WAL operations | WAL fragments | no |
 
-## Step 0 — Evidence Probe (auto-injected via UserPromptSubmit hook)
+## Step 0 — Evidence on Demand (no auto-injection)
 
-`triage_probe.py` collects 5 signals (`blast_radius`, `failure_history`, `ambiguity`, `danger_keywords`, `intent_class`) and emits a `[triage-evidence]` block plus one advisory `profile_hint` line ending in `(you decide)`. The probe is **NOT a classifier**; it neither escalates nor decides. The main agent reads the evidence, combines it with conversation context (shortcuts, domain, memory, user tone), and assigns the profile.
+As of P2 (Sensor/Policy/Enforce refactor), hooks emit events to `.claude/runs/local_intel/events.jsonl`; the agent **pulls** context when it needs it instead of having `[triage-evidence]` / `[failure-memory]` / `[ambiguity]` blocks pushed on every prompt.
 
-- No `[triage-evidence]` → heuristic-skipped (<15 chars / pure question / `@learn`/`@read`); fall back per CLAUDE.md §5
-- `[triage-evidence]` present → treat `profile_hint` as advisory only. Free to choose VIBE / PATCH / STANDARD-MEDIUM / STANDARD-HIGH / RESEARCH on your own judgment.
-- `needs_semantic_review: <reason>` line present → fast-path evidence is ambiguous; dispatch `triage-reviewer` (Haiku) for a one-shot semantic refinement before emitting `[Risk: ...]`. Trigger condition: HIGH keyword + no user shortcut + (ambiguity=FAIL OR intent_class=RESEARCH).
-- `@vibe`/`@patch`/`@quickfix` with HIGH `keywords_observed` → emit `[Probe Override]` per [policy.md](policy.md#probe-override)
+How to gather evidence:
 
-## Risk Classification (main agent self-assessed, using probe evidence as one input)
+| Need | Tool |
+|---|---|
+| "what's been edited recently / scope of changes" | `python3 .claude/scripts/local_intel/events_query.py --kind edit_post --since 1h` |
+| "any recurring failures in this area" | `python3 .claude/scripts/local_intel/failure_memory.py summary --days 30 --min-count 2` |
+| "past incident touched this file" | `python3 .claude/scripts/local_intel/incident_hint.py <path>` |
+| "blast radius of touching <symbol>" | `python3 .claude/scripts/local_intel/code_index.py --impact-of <symbol>` |
+| "is this prompt structurally ambiguous" | `python3 .claude/scripts/gates/ambiguity_gate.py --intent "<text>"` |
+| **all of the above bundled** | `/h-context-check` (preferred entry, runs the relevant subset based on session state) |
+| "I genuinely can't disambiguate intent semantically" | dispatch `triage-reviewer` Haiku sub-agent explicitly |
 
-| Risk | Evidence pattern | Profile |
+`@vibe`/`@patch`/`@quickfix` on a prompt containing HIGH-sensitivity keywords (auth/mutating DDL/migration/secret/lifecycle/policy/routing files) → emit `[Probe Override]` audit block per [policy.md](policy.md#probe-override) before acting.
+
+## Risk Classification (agent self-assessed from semantic read + on-demand evidence)
+
+| Risk | When | Profile |
 |---|---|---|
-| **TRIVIAL** | No `profile_hint` line AND no HIGH `keywords_observed` | PATCH (inline) |
-| **LOW** | `profile_hint: PATCH-tier signals (you decide)` (single soft signal: blast 3–6 files / ambiguity FAIL / 2 recurring failures / MEDIUM keyword) | PATCH (Slim Spec) |
-| **MEDIUM** | `profile_hint: STANDARD-tier signals present` with blast ≥7 OR ≥3 recurring failures OR two PATCH signals compounding, but no HIGH keyword | STANDARD |
-| **HIGH** | `keywords_observed` contains a HIGH keyword (auth, mutating DDL, migration, error code, lifecycle/policy/routing files, secret/token/credential). Additive `CREATE TABLE` = B1, NOT HIGH | STANDARD + ADR per actual irreversible decision + Approval Gate |
+| **TRIVIAL** | Read-only / explanation / cosmetic ≤3-line edit / no sensitive surface | PATCH (inline) |
+| **LOW** | Small bounded change (≤6 files), no irreversible decision, recoverable mid-flight | PATCH (Slim Spec) |
+| **MEDIUM** | Cross-cutting refactor (blast ≥7) OR repeated-failure area (≥3 recurring in 30d) OR multi-domain touch without irreversible call | STANDARD |
+| **HIGH** | Auth strategy / mutating DDL / migration / error code semantics / lifecycle-policy-routing files / secret-token-credential handling. Additive `CREATE TABLE` = B1, NOT HIGH | STANDARD + ADR per actual irreversible decision + Approval Gate |
 
 Never escalate on "important"/"production" alone. Mid-implementation public-API/DB/auth discovery → `[Plan Invalidation]`.
 
@@ -41,7 +50,7 @@ Never escalate on "important"/"production" alone. Mid-implementation public-API/
 | **B2** Mutating DDL / Migration | `ALTER`/`DROP`/`MODIFY`/`RENAME` on existing OR A→B migration | STANDARD-HIGH (forced) | Approval Gate; `migration_gate.py`; `h-archive` pre-checks Data WAL. Read: `skills-archive/migration-planner` |
 | **C** Breaking API | remove/rename endpoint, BC-incompatible, auth strategy change | STANDARD-HIGH (forced) | `api_breaking_gate.py`; migration guide in task_brief |
 | **D** Performance | slow query / high latency / memory / CPU | RESEARCH → STANDARD | baseline → §5 Recommendations → user picks Option → STANDARD with §5.chosen as Context |
-| **RESEARCH** | analyze/research/evaluate/feasibility; or `@research`; or `[triage-evidence]` carries `intent_class: RESEARCH` | RESEARCH | report at `.claude/runs/reports/<...>_research.md`; `research_report_gate.py` at Archive. Forbidden edits: `src/`, `pom.xml`, `*.sql`, migrations, any `task_brief.md` |
+| **RESEARCH** | analyze/research/evaluate/feasibility verb in prompt; or `@research` shortcut | RESEARCH | report at `.claude/runs/reports/<...>_research.md`; `research_report_gate.py` at Archive. Forbidden edits: `src/`, `pom.xml`, `*.sql`, migrations, any `task_brief.md` |
 | **E** Dependency Upgrade | `pom.xml` change | PATCH (patch ver) / STANDARD (minor+) | `dependency_gate.py` |
 | **GREENFIELD** | no `src/` OR "from scratch" | STANDARD-HIGH | Read: `skills-archive/greenfield-scaffold` (optionally `deepinit`) |
 | **RELEASE** | release / version tag / deploy | MAINTENANCE | Read: `skills-archive/release` |
@@ -156,18 +165,20 @@ Present Human Section. Full → Implement. Partial → record approved, roll bac
 
 ## Automated Hooks (settings.json)
 
+All hooks (except PreToolUse secrets-pre-check) are **pure sensors** as of P2/P3: they append events to `.claude/runs/local_intel/events.jsonl` and never inject inline context. Use `events_query.py` to pull when needed.
+
 | Hook | Trigger | Action |
 |---|---|---|
-| PreToolUse | every Edit/Write | `pre_tool_use_hook.py`: (1) `secrets_linter.py --content-stdin` on payload content/new_string — FAIL blocks; (2) `scope_guard.py` blocks out-of-scope when active task_brief (silent skip if no task or path outside repo). Both gates non-blocking on subprocess failure (fail-open). |
-| PostToolUse (Edit\|Write) | every Edit/Write | `post_tool_use_hook.py`: (1) `secrets_linter.py` defense-in-depth file scan; (2) path-based scenario gates — `*.sql`→`migration_gate`, `pom.xml`→`dependency_gate`; (3) skill_hint / incident_hint / session_stats. Silent on PASS, prints findings on WARN/FAIL. Never blocks. |
-| PostToolUse (Read) | every Read | `post_read_hook.py` → `usage_tracker` sidecar (wiki/skill file access counters; distill consumes these) |
-| UserPromptSubmit | every prompt | `user_prompt_submit_hook.py`: evidence probe first; empty stdout (no evidence-worth-showing or heuristic-skip) suppresses `[ambiguity]` + distill same turn. `[failure-memory]` always emits |
-| SubagentStop | every sub-agent return | `subagent_stop_hook.py` → `subagent_return_gate.py` on final output; injects WARN/FAIL findings to main agent context |
-| Stop | every main agent turn end | `stop_hook.py` → `turn_health_check.py` (uncompiled state, dirty diff, launch_spec drift); non-blocking context inject |
-| Notification | UI notification event | `notification_hook.py` — append JSONL log; opt-in macOS bell via `CLAUDE_NOTIFY_SOUND=1` |
-| PreCompact | before context compression | `pre_compact_hook.py` — snapshot active task_brief / launch_spec rows / HEAD / recent commits to `last_compact_snapshot.json`; inject one-line recovery hint |
+| PreToolUse | every Edit/Write | `pre_tool_use_hook.py`: ONLY `secrets_linter --content-stdin` — FAIL exit 2 blocks. PASS/WARN → emit `edit_pre` event + return 0. Scope_guard moved to `/h-gates`. |
+| PostToolUse (Edit\|Write) | every Edit/Write | `post_tool_use_hook.py`: emit `edit_post` event + bump session_stats edit counter. No subprocess, no inline output. |
+| PostToolUse (Read) | every Read | `post_read_hook.py`: usage_tracker bump (wiki/skill only) + emit `read` event. |
+| UserPromptSubmit | every prompt | `user_prompt_submit_hook.py`: emit `prompt` event with text (truncated 2000) + session_id. No inline blocks. |
+| SubagentStop | every sub-agent return | `subagent_stop_hook.py`: extract last assistant text (3-shape aware) + emit `subagent_return` event. Gate validation moved to `/h-gates`. |
+| Stop | every main agent turn end | `stop_hook.py`: emit `turn_end` event with branch/head/dirty_files. Health checks moved to `/h-context-check`. |
+| Notification | UI notification event | `notification_hook.py`: append `notifications.jsonl` + opt-in macOS bell via `CLAUDE_NOTIFY_SOUND=1`. |
+| PreCompact | before context compression | `pre_compact_hook.py`: snapshot active task_brief / launch_spec rows / HEAD / recent commits to `last_compact_snapshot.json` + inject one-line recovery hint. |
 
-Per-script semantics in script docstrings. Env vars: `CLAUDE_{TRIAGE,FAILURE_MEMORY,AMBIGUITY,DISTILL}_QUIET=1`, `CLAUDE_SCOPE_GUARD_BYPASS=1`, `CLAUDE_NOTIFY_SOUND=1`.
+Per-script semantics in script docstrings. Env vars: `CLAUDE_SCOPE_GUARD_BYPASS=1` (legacy, skips PreToolUse entirely), `CLAUDE_SECRETS_BYPASS=1` (skips secrets pre-check only), `CLAUDE_NOTIFY_SOUND=1` (macOS bell on notification), `CLAUDE_SUBAGENT_RETURN_QUIET=1` (skip subagent_stop event).
 
 ## Phase Gates (Agent-Executed)
 

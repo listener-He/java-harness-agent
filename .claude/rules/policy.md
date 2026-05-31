@@ -15,21 +15,20 @@ Single source of truth for: safety/commit rules, WAL write-back, agent invocatio
 | **State Files** | Only two: `launch_spec_*.md` (task queue) and `task_brief.md` (per-task contract). No brake_snapshot, no engine_state.json. |
 
 <a id="probe-override"></a>
-### Probe Override
+### Probe Override (audit when user-declared mode contradicts HIGH-sensitivity prompt)
 
-Trigger: user invokes `@vibe` / `@patch` / `@quickfix` AND the `[triage-evidence]` block (from `triage_probe.py`, see [lifecycle.md Step 0](lifecycle.md#step-0--evidence-probe-auto-injected-via-userpromptsubmit-hook)) carries a `keywords_observed:` line containing any HIGH keyword (auth, mutating DDL, migration, error code, lifecycle/policy/routing files, secret/token/credential — full list in `triage_probe.DANGER_HIGH`).
+Trigger: user invokes `@vibe` / `@patch` / `@quickfix` shortcut AND the prompt text itself contains a HIGH-sensitivity keyword the agent recognizes (auth, mutating DDL, migration, error code, lifecycle/policy/routing files, secret/token/credential). Detection is **semantic by the agent** — there is no longer a `triage-evidence` push to consult; the agent reads the prompt and decides whether HIGH-sensitivity surface is in play.
 
 When triggered, the agent MUST print this block at turn start before any other output:
 
 ```
 [Probe Override]
-User invoked <shortcut>; HIGH keywords observed in evidence:
-  - <keyword-1>
-  - <keyword-2>
+User invoked <shortcut>; prompt touches HIGH-sensitivity surface:
+  - <observed keyword or phrase>
 Proceeding in <Vibe|Patch> at user's explicit request.
 ```
 
-Non-blocking; user intent wins. The block is audit-only — preserves the trail when a user-declared mode overrides what the evidence would have suggested.
+Non-blocking; user intent wins. The block is audit-only — preserves the trail when a user-declared mode overrides what risk classification would otherwise have selected. Records also flow into events.jsonl (via the normal `prompt` event) so post-hoc analysis can correlate shortcut usage with sensitive-surface touches.
 
 ## Commit Policy
 
