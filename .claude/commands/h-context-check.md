@@ -1,5 +1,5 @@
 ---
-description: Pull-model context probe — recent events + recurring failures + active task + dirty diff + sensitive-surface scan + active insights. Replaces P2-removed [triage-evidence] / [failure-memory] auto-injection. TRIGGER: phase start / 不确定状态 / 进入未知领域. NOT FOR: every prompt (this is on-demand, not push).
+description: Pull-model context probe — recent events + recurring failures + active task + dirty diff + sensitive-surface scan + active insights. The canonical entry to gather context before deciding profile / scope / next action. TRIGGER: phase start / 不确定状态 / 进入未知领域. NOT FOR: every prompt (this is on-demand, not push).
 argument-hint: [--prompt "<text>"] [--brief-only] [--no-events] [--no-insights]
 ---
 

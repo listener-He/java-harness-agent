@@ -13,7 +13,7 @@ return validation — happens here at phase boundaries when the agent invokes
 
 Output is severity-aggregated per `.claude/skills-archive/linter-severity-standard/SKILL.md`.
 
-### Relationship to the PreToolUse hook (post-P3)
+### Relationship to the PreToolUse hook
 
 `pre_tool_use_hook.py` runs **only** `secrets_linter --content-stdin` on the
 about-to-be-written content. HIGH-confidence pattern → exit 2 (block). No

@@ -29,7 +29,7 @@ CLAUDE.md                      # Single entry point
 │   ├── ambiguity-gatekeeper.md   # GATE on ambiguous input — enforce definition-of-ready (clear scope + testable outcome + explicit AC) before AC transcription. Returns [Status]: PASS|FAIL; FAIL carries [Must-Ask Questions]. Phase: Phase 1 Step B (Idea/Feedback/Compliance/Security).
 │   ├── requirement-engineer.md   # Translate raw Idea/Feedback/Compliance/Security input → testable Given/When/Then ACs + structured Must-Ask question list. Does NOT call AskUserQuestion (no such tool on sub-agents). Phase: Phase 1 Explorer.
 │   ├── system-architect.md       # Design system architecture BEFORE any code — high-level interactions, schema, API contracts, irreversible decisions captured as ADRs. Acts as Foreman in EPIC (slices large work into INVEST micro-tasks). Phase: Phase 2 Propose (HIGH risk / Scenario EPIC / GREENFIELD / B2).
-│   ├── triage-reviewer.md        # ★ NEW (T9): semantic second-opinion sub-agent (Haiku) for prompts where keyword-based evidence is ambiguous on a HIGH-sensitivity surface. EXPLICIT dispatch only — main agent decides when to call. Returns [Semantic Review] {refined_hint, reason, confidence}.
+│   ├── triage-reviewer.md        # semantic second-opinion sub-agent (Haiku) for prompts where keyword-based evidence is ambiguous on a HIGH-sensitivity surface. EXPLICIT dispatch only — main agent decides when to call. Returns [Semantic Review] {refined_hint, reason, confidence}.
 │   ├── lead-engineer.md          # Implement per task_brief Machine Section — translate Allowed Scope + ACs + Hard Constraints into compilable Java/Maven changes following TDD (RED→GREEN→REFACTOR). Main agent prefers inline for MEDIUM with AC ≤ 3 + single domain. Phase: Phase 4 Implement.
 │   ├── java-build-resolver.md    # Diagnose Java/Maven build failures (mvn compile / test-compile / javac). Returns [Root Cause] + [Suggested Fix] block; main agent applies the fix and re-runs (max 2 dispatches per same root cause). Model: haiku. Phase: Phase 4 on compile failure.
 │   ├── test-runner.md            # Run JUnit/Surefire tests scoped to changed modules, parse output, return AC-id → test method → PASS|FAIL|SKIP mapping + minimal failure excerpts. Does NOT modify code. Model: haiku. Phase: Phase 5 QA when AC ≥ 4 OR risk = HIGH.
@@ -41,22 +41,22 @@ CLAUDE.md                      # Single entry point
 │   ├── librarian.md              # Maintain wiki health: **Compact** (merge WAL fragments into stable indexes + GC) and **Distill** (scan + plan + human-approved deletion). Phase: Maintenance (user requests wiki consolidation / stale-knowledge cleanup).
 │   └── knowledge-architect.md    # Split oversized wiki index files (> 3000 lines per wiki_linter.py cap) into focused sub-documents + rewrite original as a lean routing graph. Phase: Maintenance (triggered by linter overflow).
 ├── commands/                    # 24 user-invokable slash commands (h- prefix, avoid Claude Code built-in collision)
-│   ├── h-help.md                # ★ NEW (T10/R5): scenario-driven catalog of all /h-* commands grouped by use case (new work / in-progress / debugging / delivery / knowledge / collaboration). Onboarding entry.
+│   ├── h-help.md                # scenario-driven catalog of all /h-* commands grouped by use case (new work / in-progress / debugging / delivery / knowledge / collaboration). Onboarding entry.
 │   ├── h-from-ticket.md         # GitHub/Jira/Linear ticket → task_brief skeleton + launch_spec row (runs ambiguity-gatekeeper + input-classifier)
 │   ├── h-decompose.md           # PRD/EPIC pre-validation → task-decomposition-guide → N brief skeletons → DAG bound to launch_spec
 │   ├── h-brief.md               # Schema-compliant task_brief + bidirectional launch_spec binding
 │   ├── h-design.md              # Dispatch system-architect with strict Source Documents → write ≥2 ADRs (HIGH) → fill brief §8/§9
 │   ├── h-research.md            # Scaffold RESEARCH profile report skeleton (7 sections per schema); --scope quick|deep drives §3 findings quota; bind launch_spec at RES/Research/IN_PROGRESS
-│   ├── h-context-check.md       # ★ NEW (P6): pull-model context probe — recent events + recurring failures + active task + dirty diff + active insights. Replaces the pre-P2 [triage-evidence]/[failure-memory] auto-injection that was push-modeled.
+│   ├── h-context-check.md       # pull-model context probe — recent events + recurring failures + active task + dirty diff + active insights. The canonical entry to gather context before deciding profile / scope / next action.
 │   ├── h-resume.md              # Read-only: locate IN_PROGRESS task + restore Machine Section + report Next Action
 │   ├── h-status.md              # Global queue snapshot — list all launch_spec rows (PENDING/IN_PROGRESS/WAITING_APPROVAL/DONE/FAILED) with parallelizable next steps
 │   ├── h-fix-bug.md             # Ticket/manual → root-cause-debug Phase 1 (MUST complete) → launch_spec row at correct risk level; p1/p2 triggers h-incident
-│   ├── h-gates.md               # Phase/scenario-aware gate suite + failure_memory recording (post-P3: scope_guard / migration / dependency moved HERE from per-edit hook)
+│   ├── h-gates.md               # Phase/scenario-aware gate suite + failure_memory recording (scope_guard / migration / dependency live here, NOT in per-edit hooks)
 │   ├── h-archive.md             # Plan Deviation Reflection → knowledge-extractor → archive brief → wiki_linter → mark DONE
 │   ├── h-collab.md              # Generate cross-team deliverable (api/process/data/integration/custom) + collab state file + COLLAB marker in launch_spec
 │   ├── h-collab-update.md       # Log external feedback → update deliverable → --signoff removes COLLAB marker; BLOCKED state recorded only
-│   ├── h-evolve.md              # ★ NEW (P7): turn a high-confidence insight → concrete rule-change proposal. 5 per-kind templates (gate refinement / wiki scope template / archive / threshold loosening / behavior review). --apply requires AskUserQuestion Yes.
-│   ├── h-publish-insight.md     # ★ NEW (R1): manually bridge local insight → git-tracked team knowledge doc under .claude/wiki/insights/<date>_<id>_<slug>.md. Solves "learning is single-machine local" pain. NEVER auto-fires.
+│   ├── h-evolve.md              # turn a high-confidence insight → concrete rule-change proposal. 5 per-kind templates (gate refinement / wiki scope template / archive / threshold loosening / behavior review). --apply requires AskUserQuestion Yes.
+│   ├── h-publish-insight.md     # manually bridge local insight → git-tracked team knowledge doc under .claude/wiki/insights/<date>_<id>_<slug>.md. Solves "learning is single-machine local" pain. NEVER auto-fires.
 │   ├── h-pr.md                  # secrets_linter + scope_guard → gh pr create → write PR URL into task_brief; launch_spec stays IN_PROGRESS with `| PR #<n>` Artifact marker
 │   ├── h-test-handoff.md        # Generate QA-team handoff doc from a code change or bug fix — reproduction steps, impact scope, recommended test scope, rollback, open questions
 │   ├── h-ci.md                  # Fetch CI run data → classify failures (compile/test/security/coverage) → failure_memory + routing recommendation
@@ -113,7 +113,7 @@ CLAUDE.md                      # Single entry point
 │   ├── purpose.md             # Design philosophy
 │   ├── schema/                # Contract templates (task_brief, subagent_contract, research_report)
 │   ├── incidents/             # Production incident records (committed; surfaced by incident_hint)
-│   ├── insights/              # ★ NEW (R1): team-published insights (via /h-publish-insight). Bridges local Insight Layer → team knowledge
+│   ├── insights/              # team-published insights (via /h-publish-insight). Bridges local Insight Layer → team knowledge
 │   ├── archive/               # Completed task_briefs + research reports (cold storage)
 │   └── wiki/                  # Domain, API, Data, Architecture, Specs, Testing, Reviews, Preferences
 ├── scripts/
@@ -139,34 +139,34 @@ CLAUDE.md                      # Single entry point
 │   │   ├── task_brief_gate.py                  # task_brief.md structural validation (Propose→Implement)
 │   │   ├── wal_template_gate.py                # WAL fragment template compliance
 │   │   └── writeback_gate.py                   # Archive WAL presence check (supports --accept-stub for None)
-│   ├── harness/                                # 11 runtime entry points (Claude Code hooks + engine) — all hooks post-P2 are pure sensors except pre_tool_use (secrets-only block)
+│   ├── harness/                                # 11 runtime entry points (Claude Code hooks + engine) — all hooks are pure sensors except pre_tool_use (secrets-only block)
 │   │   ├── engine.py                           # Central runtime: gate dispatch + severity aggregation
 │   │   ├── find_active_task_brief.py           # Locate active task_brief from launch_spec IN_PROGRESS row
 │   │   ├── pre_tool_use_hook.py                # PreToolUse[Edit|Write]: ONLY secrets_linter --content-stdin (blocks on HIGH-conf secret). Scope_guard moved to /h-gates. CLAUDE_SECRETS_BYPASS=1 emergency override.
-│   │   ├── post_tool_use_hook.py               # PostToolUse[Edit|Write]: pure sensor — emit edit_post event + bump session_stats. (Pre-P2 was 5 parallel subprocesses; now in-process.)
+│   │   ├── post_tool_use_hook.py               # PostToolUse[Edit|Write]: pure sensor — emit edit_post event + bump session_stats. 
 │   │   ├── post_read_hook.py                   # PostToolUse[Read]: usage_tracker bump on .claude/wiki/** + .claude/skills/** + emit read event
-│   │   ├── user_prompt_submit_hook.py          # UserPromptSubmit: pure sensor — emit prompt event (+ user_correction event when prompt opens with correction/frustration phrase). NO inline context push (post-P2).
+│   │   ├── user_prompt_submit_hook.py          # UserPromptSubmit: pure sensor — emit prompt event (+ user_correction event when prompt opens with correction/frustration phrase). NO inline context push. 
 │   │   ├── subagent_stop_hook.py               # SubagentStop: extract last-assistant text (3-shape transcript aware) + emit subagent_return event. Gate validation moved to /h-gates.
 │   │   ├── stop_hook.py                        # Stop: emit turn_end event + throttled [insight-reminder] (high-conf insight set changed) + [scope-check-reminder] (dirty count > 5)
-│   │   ├── notification_hook.py                # ★ NEW (#4): append notifications.jsonl + opt-in macOS bell via CLAUDE_NOTIFY_SOUND=1
-│   │   ├── pre_compact_hook.py                 # ★ NEW (#4): snapshot active task_brief / launch_spec rows / HEAD / commits to last_compact_snapshot.json (retention 20) + inject [pre-compact-snapshot] recovery hint
-│   │   └── test_subagent_stop_hook.py          # ★ NEW (c64f69c): 12-case regression test for SubagentStop payload extraction across 3 transcript shapes (run after Claude Code upgrades)
+│   │   ├── notification_hook.py                # append notifications.jsonl + opt-in macOS bell via CLAUDE_NOTIFY_SOUND=1
+│   │   ├── pre_compact_hook.py                 # snapshot active task_brief / launch_spec rows / HEAD / commits to last_compact_snapshot.json (retention 20) + inject [pre-compact-snapshot] recovery hint
+│   │   └── test_subagent_stop_hook.py          # ★ (c64f69c): 12-case regression test for SubagentStop payload extraction across 3 transcript shapes (run after Claude Code upgrades)
 │   ├── local_intel/                            # 15 zero-cost local intelligence tools
 │   │   ├── code_index.py                       # Java symbol index + --impact-of caller enumeration
-│   │   ├── failure_memory.py                   # Gate failure ledger (query / record / summary). Post-T7: rotation when > 5MB OR oldest > 90d
+│   │   ├── failure_memory.py                   # Gate failure ledger (query / record / summary). Rotation when > 5MB OR oldest > 90d
 │   │   ├── session_stats.py                    # Per-session counters (edits / failures) feeding /h-reflect threshold
 │   │   ├── reflect_threshold.py                # /h-reflect threshold heuristic (queried, not auto-fired)
-│   │   ├── incident_hint.py                    # Per-path incident lookup (on-demand, post-P2 not auto-pushed)
+│   │   ├── incident_hint.py                    # Per-path incident lookup (on-demand, not auto-pushed)
 │   │   ├── ingest_incident.py                  # Incident raw-fact ingestion + emit template prompt
 │   │   ├── skill_hint.py                       # Per-path SKILL.md anti-pattern hint (on-demand)
-│   │   ├── triage_probe.py                     # Evidence collector: 5 signals (blast/failure/ambiguity/keywords/intent) + 1 advisory profile_hint. Post-P2 is an explicit CLI tool, NOT auto-injected.
+│   │   ├── triage_probe.py                     # Evidence collector: 5 signals (blast/failure/ambiguity/keywords/intent) + 1 advisory profile_hint. Explicit CLI tool, NOT auto-injected.
 │   │   ├── usage_tracker.py                    # .claude/wiki/** and .claude/skills/** file-access counters (ghost fragment detection for distill)
 │   │   ├── turn_health_check.py                # Per-turn observability (uncompiled / drift / dirty-pile)
 │   │   ├── wiki_search.py                      # BM25 search over .claude/wiki/
-│   │   ├── event_writer.py                     # ★ NEW (P1): single append(kind, **fields) API for events.jsonl (Sensor layer L1 — events.jsonl@10MB rotate)
-│   │   ├── events_query.py                     # ★ NEW (P1): events.jsonl query CLI — --kind / --file / --since / --last / --aggregate-by-{kind,file} / --json
-│   │   ├── insight_writer.py                   # ★ NEW (P7): insights.jsonl writer (Insight Layer L2 — append + dedup by kind+summary hash + mark_status + query_active)
-│   │   └── insight_detector.py                 # ★ NEW (P7+T8+T9): 5 pure-function detectors — recurring_failure_cluster / co_edit_cluster (age filter + union-find dedup) / decayed_knowledge / override_drift / user_correction (prior_actions bound)
+│   │   ├── event_writer.py                     # single append(kind, **fields) API for events.jsonl (Sensor layer L1 — events.jsonl@10MB rotate)
+│   │   ├── events_query.py                     # events.jsonl query CLI — --kind / --file / --since / --last / --aggregate-by-{kind,file} / --json
+│   │   ├── insight_writer.py                   # insights.jsonl writer (Insight Layer L2 — append + dedup by kind+summary hash + mark_status + query_active)
+│   │   └── insight_detector.py                 # ★ 5 pure-function detectors — recurring_failure_cluster / co_edit_cluster (age filter + union-find dedup) / decayed_knowledge / override_drift / user_correction (prior_actions bound)
 │   ├── tools/                                  # 6 helper scripts (one-shot operations)
 │   │   ├── archive_session_artifacts.py        # Move task_brief from runs/ to wiki/archive/
 │   │   ├── bootstrap.py                        # First-time project bootstrap
@@ -194,14 +194,14 @@ CLAUDE.md                      # Single entry point
 │   ├── reports/                               # Active research_report drafts (moved to wiki/archive on Archive)
 │   ├── qa-handoffs/                           # /h-test-handoff outputs
 │   ├── cache/                                 # local_intel caches (code_index, wiki BM25)
-│   └── local_intel/                           # ★ Sensor layer sidecars (post-P1 + P7 added)
+│   └── local_intel/                           # ★ Sensor layer sidecars (events + insights streams)
 │       ├── events.jsonl                       # Unified event stream — schema in .claude/wiki/wiki/architecture/events_jsonl_schema.md
-│       ├── insights.jsonl                     # ★ NEW (P7): pattern-recognition outputs — schema insights_layer_schema.md
+│       ├── insights.jsonl                     # pattern-recognition outputs — schema insights_layer_schema.md
 │       ├── failure_memory.json                # Gate failure ledger
-│       ├── notifications.jsonl                # ★ NEW (#4): Claude Code UI notification log
-│       ├── last_compact_snapshot.json         # ★ NEW (#4): most recent PreCompact snapshot
-│       ├── compact_snapshots/                 # ★ NEW (#4): 20-retention PreCompact history
-│       ├── last_reminders.json                # ★ NEW (T10): throttle state for [insight-reminder] + [scope-check-reminder]
+│       ├── notifications.jsonl                # Claude Code UI notification log
+│       ├── last_compact_snapshot.json         # most recent PreCompact snapshot
+│       ├── compact_snapshots/                 # 20-retention PreCompact history
+│       ├── last_reminders.json                # throttle state for [insight-reminder] + [scope-check-reminder]
 │       └── .usage/                            # ★ Per-file read counters (post_read_hook → ghost fragment detection)
 └── settings.json              # Permissions and hooks configuration (8 hook events registered)
 ```
@@ -224,7 +224,7 @@ CLAUDE.md                      # Single entry point
 
 ## Architecture — 4-Layer Sensor / Insight / Policy / Enforce
 
-As of P2–P7 (refactor commits in May–June 2026), the harness is organized as four cleanly separated layers. Each layer has a single responsibility and is owned by a specific kind of artifact.
+The harness is organized as four cleanly separated layers. Each layer has a single responsibility and is owned by a specific kind of artifact.
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────┐
@@ -257,9 +257,9 @@ As of P2–P7 (refactor commits in May–June 2026), the harness is organized as
 - L3 Policy is the agent + slash commands — the "smart" layer that combines pulled evidence with conversation context to decide
 - L4 Enforce phase-boundary gates fire when the agent explicitly invokes /h-gates --phase <implement|qa|archive>, NOT per-edit
 
-**Why the pull model** (post-P2 design):
+**Why the pull model:**
 
-| Before P2 | After P2 |
+| Before P2 | Pull model |
 |---|---|
 | Hooks pushed 4 context blocks per prompt ([failure-memory] / [triage-evidence] / [ambiguity] / [wiki-distill]) | Hooks emit events to events.jsonl; agent pulls via /h-context-check |
 | ~310ms UserPromptSubmit + ~330ms PostToolUse per Edit | ~60ms + ~70ms |
@@ -439,7 +439,7 @@ User-invokable shortcuts that wrap multi-step lifecycle flows into single invoca
 | Command | Phase | Effect | When to use |
 |---------|-------|--------|-------------|
 | `/h-help [--scenario <kw>]` | Any | Print scenario-driven catalog of all `/h-*` commands grouped by use case | New user / rusty user / not sure which command fits |
-| `/h-context-check [--prompt "<text>"] [--brief-only] [--no-events] [--no-insights]` | Any | Pull-model context probe: recent events + recurring failures + active task + dirty diff + active insights. Replaces post-P2 push-model auto-injection. | Phase start / unsure state / about to /h-pr or /h-archive |
+| `/h-context-check [--prompt "<text>"] [--brief-only] [--no-events] [--no-insights]` | Any | Pull-model context probe: recent events + recurring failures + active task + dirty diff + active insights. | Phase start / unsure state / about to /h-pr or /h-archive |
 
 ### Intake & Planning
 
@@ -485,7 +485,7 @@ User-invokable shortcuts that wrap multi-step lifecycle flows into single invoca
 
 ### Knowledge & Self-Evolution
 
-★ Post-P7 (June 2026): the Insight Layer turns observed patterns into actionable proposals. These commands bridge **observation → policy change** (always human-approved).
+The Insight Layer turns observed patterns into actionable proposals. These commands bridge **observation → policy change** (always human-approved).
 
 | Command | Phase | Effect | When to use |
 |---------|-------|--------|-------------|
@@ -673,21 +673,21 @@ Every user request is classified into an **intent** and routed to a **profile**:
 | **Behavioral Principles** | Four cross-cutting LLM rules in `CLAUDE.md` (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution) — applied to every turn before mode/profile selection |
 | **Context Funnel** | Structured navigation from root index → domain index → specific document; prevents blind searching |
 | **Dependency Graph (DAG)** | Tasks declare upstream dependencies in `launch_spec.md`; dispatch is gated on dependency satisfaction |
-| **★ Sensor/Insight/Policy/Enforce 4-Layer** | Post-P2 architecture: hooks are pure sensors → insight_detector finds patterns → agent pulls evidence on demand via /h-context-check → /h-gates enforces at phase boundaries. ONE blocking hook (secrets pre-check) remains. See Architecture section above. |
+| **★ Sensor/Insight/Policy/Enforce 4-Layer** | hooks are pure sensors → insight_detector finds patterns → agent pulls evidence on demand via /h-context-check → /h-gates enforces at phase boundaries. ONE blocking hook (secrets pre-check) remains. See Architecture section above. |
 | **★ Events Stream (`events.jsonl`)** | Unified append-only event log (8 kinds: prompt / edit_pre / edit_post / read / subagent_return / turn_end / notification / compact / env_bypass / user_correction). Queried via `events_query.py`. Schema versioned in wiki. |
 | **★ Insight Layer (`insights.jsonl`)** | 5 pure-function detectors over Sensor data emit structured insights with confidence (low/medium/high) + status state machine (new → acknowledged → acted_on / published / dismissed). Append-only, dedup by kind+summary hash. |
 | **★ /h-publish-insight → team knowledge** | Bridges single-machine Insight Layer → git-tracked `.claude/wiki/insights/` docs. Solves the "learning is local" team-collaboration pain. Always manual, never auto-fires. |
-| **Scope Guard** | Post-P3: moved from per-Edit PreToolUse hook to `/h-gates --phase implement` (phase-boundary enforcement). Implicit allowlist exempts `.claude/runs/` + WAL + archive paths. |
-| **Secrets Pre-Check** | PreToolUse hook scans about-to-be-written content; HIGH-conf pattern → exit 2 (block). Post-T10/R3: path-aware downgrade — `test/`, `fixtures/`, `*_test.*`, `*Test.java` patterns get FAIL → WARN demotion (still surfaced, not blocked). `CLAUDE_SECRETS_BYPASS=1` emergency override. |
+| **Scope Guard** | Lives in `/h-gates --phase implement` (phase-boundary enforcement). Implicit allowlist exempts `.claude/runs/` + WAL + archive paths. |
+| **Secrets Pre-Check** | PreToolUse hook scans about-to-be-written content; HIGH-conf pattern → exit 2 (block). Path-aware downgrade — `test/`, `fixtures/`, `*_test.*`, `*Test.java` patterns get FAIL → WARN demotion (still surfaced, not blocked). `CLAUDE_SECRETS_BYPASS=1` emergency override. |
 | **Plan Review Checklist** | Completeness, Consistency, Feasibility, Risk Coverage, Dependency Soundness — must pass before exiting Review (≥3 tasks) |
 | **Plan Deviation Reflection** | Compare planned vs actual at Archive — scope drift, dependency accuracy, AC coverage |
 | **Throttled Push-Back Reminders** | Stop hook emits `[insight-reminder]` (high-conf insight set changed) + `[scope-check-reminder]` (dirty > 5 + last emit aged). Shared throttle state in `last_reminders.json` prevents per-turn noise. |
 | **Hook System** | 8 hook events registered: PreToolUse[Edit\|Write] (secrets only) / PostToolUse[Edit\|Write] (sensor) / PostToolUse[Read] (sensor + usage_tracker) / UserPromptSubmit (sensor) / SubagentStop (sensor) / Stop (sensor + 2 throttled reminders) / Notification (jsonl log + opt-in bell) / PreCompact (state snapshot for recovery) |
 | **PreCompact State Snapshot** | Before context compression: snapshot active task_brief / launch_spec / HEAD / recent commits to `last_compact_snapshot.json` (retention 20). Post-compact agent reads to resume context. |
 | **Local Intelligence** | BM25 wiki search, Java symbol index, failure memory — zero-cost context. failure_memory rotates at >5MB or oldest > 90d. |
-| **Gate Scripts** | 21 deterministic Python scripts in `scripts/gates/` that block or warn on quality/security/compliance issues. Invoked by `/h-gates --phase` at phase boundaries (NOT per-edit, post-P3). |
+| **Gate Scripts** | 21 deterministic Python scripts in `scripts/gates/` that block or warn on quality/security/compliance issues. Invoked by `/h-gates --phase` at phase boundaries. |
 | **Insight Detector Detectors** | 5 detectors with thresholds tuned for low/medium/high confidence: count ≥ 3 / 5 / 10 within window. `co_edit_cluster` includes union-find subset dedup + 24h age filter (avoids self-noise during active dev). `user_correction` bound to `prior_actions_5min > 0` (filters opening-prompt false fires). |
-| **Triage Reviewer (Haiku)** | Optional semantic second-opinion sub-agent for genuinely ambiguous prompts on HIGH-sensitivity surface. Explicit dispatch only (post-P6); pre-P6 was auto-triggered by `needs_semantic_review` flag, since removed. |
+| **Triage Reviewer (Haiku)** | Optional semantic second-opinion sub-agent for genuinely ambiguous prompts on HIGH-sensitivity surface. Explicit dispatch only — agent decides when to call; not auto-triggered. |
 
 ---
 

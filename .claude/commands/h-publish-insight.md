@@ -5,7 +5,7 @@ argument-hint: <--insight-id <id>> [--slug <kebab>] [--dry-run]
 
 The single bridge from local Insight Layer (gitignored `.claude/runs/local_intel/insights.jsonl`) to committed team knowledge. **By design, never auto-fires** — publishing is a deliberate human "I think the team should know this" act.
 
-Solves the multi-developer pain identified in T9: insights you generate stay on your laptop; teammates re-trip the same patterns. This command lets you elevate a specific insight into a `.claude/wiki/insights/<date>_<id>_<slug>.md` doc that ships in git.
+Solves the multi-developer pain: insights you generate stay on your laptop; teammates re-trip the same patterns. This command lets you elevate a specific insight into a `.claude/wiki/insights/<date>_<id>_<slug>.md` doc that ships in git.
 
 ## Step 1 — Parse args
 

@@ -29,7 +29,7 @@ CLAUDE.md                      # 唯一入口
 │   ├── ambiguity-gatekeeper.md   # 歧义守门员 · Ambiguity Gatekeeper — 阻断模糊输入，强制 definition-of-ready（清晰范围 + 可测试结果 + 显式 AC）。返回 [Status]: PASS|FAIL；FAIL 携带 [Must-Ask Questions]。工作阶段：Phase 1 Step B（Idea/Feedback/Compliance/Security 类输入）。
 │   ├── requirement-engineer.md   # 需求工程师 · Requirement Engineer — 将原始 Idea/Feedback/Compliance/Security 输入翻译为 Given/When/Then 可测试 AC + 结构化 Must-Ask 问题清单。不调用 AskUserQuestion（子智能体无此工具）。工作阶段：Phase 1 Explorer。
 │   ├── system-architect.md       # 系统架构师 · System Architect — 在编码前设计架构：高层交互、库表设计、API 契约、不可逆决策（ADR）。EPIC 场景担任 Foreman，按 INVEST 拆分大任务到子智能体。工作阶段：Phase 2 Propose（HIGH 风险 / Scenario EPIC / GREENFIELD / B2）。
-│   ├── triage-reviewer.md        # ★ 新增 (T9): 语义二次判别子智能体（Haiku）。仅用于 HIGH-敏感性表面 + 关键词证据真模糊的 prompt。**显式 dispatch**（无自动触发，主智能体决定何时调）。返回 [Semantic Review] {refined_hint, reason, confidence}。
+│   ├── triage-reviewer.md        # 语义二次判别子智能体（Haiku）。仅用于 HIGH-敏感性表面 + 关键词证据真模糊的 prompt。**显式 dispatch**（无自动触发，主智能体决定何时调）。返回 [Semantic Review] {refined_hint, reason, confidence}。
 │   ├── lead-engineer.md          # 首席工程师 · Lead Engineer — 按 task_brief Machine Section 编写 Java/Maven 可编译代码：允许范围 + ACs + 硬约束 → TDD（RED→GREEN→REFACTOR）。主智能体对 MEDIUM 且 AC ≤ 3 单域任务优先选择内联。工作阶段：Phase 4 Implement。
 │   ├── java-build-resolver.md    # Java 构建错误解析器 · Java Build Resolver — 诊断 mvn compile / test-compile / javac 失败，返回 [Root Cause] + [Suggested Fix]；主智能体应用修复并重跑（同一 root cause 最多派遣 2 次）。Model: haiku。工作阶段：Phase 4 编译失败时。
 │   ├── test-runner.md            # 测试运行器 · Test Runner — 在变更模块范围内运行 JUnit/Surefire，解析输出，返回 AC-id → 测试方法 → PASS|FAIL|SKIP 映射 + 最小失败片段。不修改代码。Model: haiku。工作阶段：Phase 5 QA（AC ≥ 4 或 HIGH 风险时）。
@@ -41,22 +41,22 @@ CLAUDE.md                      # 唯一入口
 │   ├── librarian.md              # 图书管理员 · Librarian — 维护 wiki 健康两种 flow：**Compact**（合并 WAL 碎片到稳定索引 + GC）和 **Distill**（扫描 + 计划 + 人工批准后删除）。工作阶段：Maintenance（用户请求 wiki 合并 / 过期清理）。
 │   └── knowledge-architect.md    # 知识架构师 · Knowledge Architect — wiki 索引文件超过 3000 行（wiki_linter.py cap）时执行拆分到聚焦子文档 + 原文件重写为精简路由图。工作阶段：Maintenance（由 linter 溢出触发）。
 ├── commands/                    # 24 个用户可调用的 slash 命令（h- 前缀，避免与 Claude Code 内置命令冲突）
-│   ├── h-help.md                # ★ 新增 (T10/R5): 按场景分组列所有 /h-* 命令（开新工作 / 工作进行中 / 出问题 / 收尾 / 知识 / 协作）。新人 onboarding 入口。
+│   ├── h-help.md                # 按场景分组列所有 /h-* 命令（开新工作 / 工作进行中 / 出问题 / 收尾 / 知识 / 协作）。新人 onboarding 入口。
 │   ├── h-from-ticket.md         # GitHub/Jira/Linear ticket → task_brief 骨架 + launch_spec 行（跑 ambiguity-gatekeeper + input-classifier）
 │   ├── h-decompose.md           # PRD/EPIC 预校验 → task-decomposition-guide 拆解 → N 个 brief 骨架 → DAG 绑定 launch_spec
 │   ├── h-brief.md               # 按 schema 生成 task_brief + 双向绑定 launch_spec
 │   ├── h-design.md              # 用严格 Source Documents 契约派遣 system-architect → HIGH 写 ≥2 ADR → 填 brief §8/§9
 │   ├── h-research.md            # 脚手架 RESEARCH 模式报告（按 schema 渲染 7 个章节）；--scope quick|deep 决定 §3 findings 配额；launch_spec 绑定为 RES/Research/IN_PROGRESS
-│   ├── h-context-check.md       # ★ 新增 (P6): pull-model 上下文探针——拉取最近 events + 复发失败 + active task + dirty diff + 活跃 insight。替代 pre-P2 [triage-evidence]/[failure-memory] push-model 自动注入。
+│   ├── h-context-check.md       # pull-model 上下文探针：最近 events + 复发失败 + active task + dirty diff + 活跃 insight。决定 profile / scope / 下一步前的标准入口。
 │   ├── h-resume.md              # 只读：定位 IN_PROGRESS 任务 + 恢复 Machine Section + 给出 Next Action（自动检测 COLLAB 阻断状态）
 │   ├── h-status.md              # 全局队列快照——列出所有 launch_spec 行（PENDING/IN_PROGRESS/WAITING_APPROVAL/DONE/FAILED）+ 可并行的下一步建议
 │   ├── h-fix-bug.md             # ticket/手动输入 → root-cause-debug Phase 1（必须完成）→ 按风险创建 launch_spec 行；p1/p2 触发 h-incident
-│   ├── h-gates.md               # Phase/Scenario 感知的 gate 套件 + failure_memory 失败记录（post-P3: scope_guard / migration / dependency 从 per-edit hook 迁移到这里）
+│   ├── h-gates.md               # Phase/Scenario 感知的 gate 套件 + failure_memory 失败记录（scope_guard / migration / dependency 在这里跑，不在 per-edit hook）
 │   ├── h-archive.md             # Plan Deviation Reflection → knowledge-extractor → 归档 brief → wiki_linter → 标记 DONE
 │   ├── h-collab.md              # 从 task_brief 生成跨团队协作文档（api/process/data/integration/custom）+ collab 状态文件 + launch_spec COLLAB 标记
 │   ├── h-collab-update.md       # 记录外部反馈 → 更新文档 → --signoff 移除 COLLAB 标记；BLOCKED 状态仅记录不阻断
-│   ├── h-evolve.md              # ★ 新增 (P7): 把 high-confidence insight → 具体规则变更 proposal。5 类 per-kind 模板（gate 收紧 / wiki scope 模板 / 归档 / 阈值放宽 / 行为审查）。--apply 强制 AskUserQuestion Yes。
-│   ├── h-publish-insight.md     # ★ 新增 (R1): 手动把本地 insight → git-tracked 团队知识文档（.claude/wiki/insights/<date>_<id>_<slug>.md）。解决"学习仅单机本地"的团队盲区。**永不自动 fire**。
+│   ├── h-evolve.md              # 把 high-confidence insight → 具体规则变更 proposal。5 类 per-kind 模板（gate 收紧 / wiki scope 模板 / 归档 / 阈值放宽 / 行为审查）。--apply 强制 AskUserQuestion Yes。
+│   ├── h-publish-insight.md     # 手动把本地 insight → git-tracked 团队知识文档（.claude/wiki/insights/<date>_<id>_<slug>.md）。解决"学习仅单机本地"的团队盲区。**永不自动 fire**。
 │   ├── h-pr.md                  # secrets_linter + scope_guard → gh pr create → PR URL 写回 task_brief；launch_spec 维持 IN_PROGRESS + `| PR #<n>` Artifact 标记
 │   ├── h-test-handoff.md        # 基于代码变更或 bug 修复生成给测试团队的交接文档（复现步骤、影响范围、推荐测试范围、回滚方案、待澄清问题）
 │   ├── h-ci.md                  # 拉取 CI 运行数据 → 分类失败（编译/测试/安全/覆盖率）→ failure_memory + 路由建议
@@ -113,7 +113,7 @@ CLAUDE.md                      # 唯一入口
 │   ├── purpose.md             # 设计哲学
 │   ├── schema/                # 契约模板（task_brief / subagent_contract / research_report）
 │   ├── incidents/             # 生产事故记录（入 git；由 incident_hint 浮出）
-│   ├── insights/              # ★ 新增 (R1): 团队公开 insight（来自 /h-publish-insight）。本地 Insight Layer → 团队知识的桥梁
+│   ├── insights/              # 团队公开 insight（来自 /h-publish-insight）。本地 Insight Layer → 团队知识的桥梁
 │   ├── archive/               # 完成的 task_brief + research_report（冷存储）
 │   └── wiki/                  # 领域、API、数据、架构、规格、测试、审查、偏好
 ├── scripts/
@@ -139,34 +139,34 @@ CLAUDE.md                      # 唯一入口
 │   │   ├── task_brief_gate.py                  # task_brief.md 结构校验（Propose→Implement 边界）
 │   │   ├── wal_template_gate.py                # WAL fragment 模板合规
 │   │   └── writeback_gate.py                   # Archive WAL 存在性检查（支持 --accept-stub 对应 None）
-│   ├── harness/                                # 11 个运行时入口（Claude Code hooks + engine）— post-P2 全部 hook 退化为纯 sensor，例外仅 pre_tool_use（仅 secrets 阻断）
+│   ├── harness/                                # 11 个运行时入口（Claude Code hooks + engine）— 全部 hook 是纯 sensor，唯一例外是 pre_tool_use（仅 secrets 阻断）
 │   │   ├── engine.py                           # 中央运行时：门禁分派 + 严重度聚合
 │   │   ├── find_active_task_brief.py           # 从 launch_spec 的 IN_PROGRESS 行定位活跃 task_brief
 │   │   ├── pre_tool_use_hook.py                # PreToolUse[Edit|Write]：仅 secrets_linter --content-stdin（HIGH-conf 密钥阻断）。Scope_guard 已迁移到 /h-gates。CLAUDE_SECRETS_BYPASS=1 紧急绕过。
-│   │   ├── post_tool_use_hook.py               # PostToolUse[Edit|Write]：纯 sensor — emit edit_post event + bump session_stats。（Pre-P2 是 5 并发子进程；现在 in-process。）
+│   │   ├── post_tool_use_hook.py               # PostToolUse[Edit|Write]：纯 sensor — emit edit_post event + bump session_stats。
 │   │   ├── post_read_hook.py                   # PostToolUse[Read]：usage_tracker 在 .claude/wiki/** + .claude/skills/** 计数 + emit read event
-│   │   ├── user_prompt_submit_hook.py          # UserPromptSubmit：纯 sensor — emit prompt event（+ user_correction event 当 prompt 以纠偏 / 阴阳怪气 短语开头）。post-P2 不再 inline 注入上下文。
+│   │   ├── user_prompt_submit_hook.py          # UserPromptSubmit：纯 sensor — emit prompt event（+ user_correction event 当 prompt 以纠偏 / 阴阳怪气 短语开头）。不 inline 注入上下文。
 │   │   ├── subagent_stop_hook.py               # SubagentStop：提取最后一条 assistant 文本（3-shape transcript 兼容）+ emit subagent_return event。Gate 校验迁移到 /h-gates。
 │   │   ├── stop_hook.py                        # Stop：emit turn_end event + 节流的 [insight-reminder]（high-conf insight set 变化时）+ [scope-check-reminder]（dirty > 5 时）
-│   │   ├── notification_hook.py                # ★ 新增 (#4): 写 notifications.jsonl + 可选 macOS 铃声 via CLAUDE_NOTIFY_SOUND=1
-│   │   ├── pre_compact_hook.py                 # ★ 新增 (#4): 上下文压缩前快照 active task_brief / launch_spec rows / HEAD / 最近 commits → last_compact_snapshot.json（retention 20）+ 注入 [pre-compact-snapshot] 恢复线索
-│   │   └── test_subagent_stop_hook.py          # ★ 新增 (c64f69c): SubagentStop payload 提取的 12-case 回归测试（覆盖 3 种 transcript shape；Claude Code 升级后跑）
+│   │   ├── notification_hook.py                # 写 notifications.jsonl + 可选 macOS 铃声 via CLAUDE_NOTIFY_SOUND=1
+│   │   ├── pre_compact_hook.py                 # 上下文压缩前快照 active task_brief / launch_spec rows / HEAD / 最近 commits → last_compact_snapshot.json（retention 20）+ 注入 [pre-compact-snapshot] 恢复线索
+│   │   └── test_subagent_stop_hook.py          # ★ (c64f69c): SubagentStop payload 提取的 12-case 回归测试（覆盖 3 种 transcript shape；Claude Code 升级后跑）
 │   ├── local_intel/                            # 15 个零成本本地情报工具
 │   │   ├── code_index.py                       # Java 符号索引 + --impact-of 调用方枚举
-│   │   ├── failure_memory.py                   # 门禁失败台账（query / record / summary）。Post-T7：>5MB 或最旧 >90d 时按日 rotate
+│   │   ├── failure_memory.py                   # 门禁失败台账（query / record / summary）。>5MB 或最旧 >90d 时按日 rotate
 │   │   ├── session_stats.py                    # 会话级计数器（edits / failures）供 /h-reflect 阈值消费
 │   │   ├── reflect_threshold.py                # /h-reflect 阈值启发式（被查询，不自动 fire）
-│   │   ├── incident_hint.py                    # 单文件 incident 查询（按需调用，post-P2 不再自动 push）
+│   │   ├── incident_hint.py                    # 单文件 incident 查询（按需调用，不自动 push）
 │   │   ├── ingest_incident.py                  # 事故原始事实摄取 + 输出模板提示
 │   │   ├── skill_hint.py                       # 单文件 SKILL.md 反模式提示（按需调用）
-│   │   ├── triage_probe.py                     # 证据收集器：5 信号（blast / failure / ambiguity / keywords / intent）+ 1 advisory profile_hint。Post-P2 是显式 CLI 工具，不再自动 inject。
+│   │   ├── triage_probe.py                     # 证据收集器：5 信号（blast / failure / ambiguity / keywords / intent）+ 1 advisory profile_hint。显式 CLI 工具，不自动 inject。
 │   │   ├── usage_tracker.py                    # .claude/wiki/** 和 .claude/skills/** 文件读取计数器（distill 用以识别 ghost fragment）
 │   │   ├── turn_health_check.py                # 每轮可观察健康检查（未编译 / launch_spec drift / dirty 堆积）
 │   │   ├── wiki_search.py                      # BM25 搜索 .claude/wiki/
-│   │   ├── event_writer.py                     # ★ 新增 (P1): events.jsonl 单 append(kind, **fields) API（Sensor 层 L1 — events.jsonl@10MB rotate）
-│   │   ├── events_query.py                     # ★ 新增 (P1): events.jsonl 查询 CLI — --kind / --file / --since / --last / --aggregate-by-{kind,file} / --json
-│   │   ├── insight_writer.py                   # ★ 新增 (P7): insights.jsonl 写入器（Insight 层 L2 — append + 按 kind+summary hash dedup + mark_status + query_active）
-│   │   └── insight_detector.py                 # ★ 新增 (P7+T8+T9): 5 个纯函数 detector — recurring_failure_cluster / co_edit_cluster（age filter + union-find dedup）/ decayed_knowledge / override_drift / user_correction（prior_actions 绑定）
+│   │   ├── event_writer.py                     # events.jsonl 单 append(kind, **fields) API（Sensor 层 L1 — events.jsonl@10MB rotate）
+│   │   ├── events_query.py                     # events.jsonl 查询 CLI — --kind / --file / --since / --last / --aggregate-by-{kind,file} / --json
+│   │   ├── insight_writer.py                   # insights.jsonl 写入器（Insight 层 L2 — append + 按 kind+summary hash dedup + mark_status + query_active）
+│   │   └── insight_detector.py                 # ★ 5 个纯函数 detector — recurring_failure_cluster / co_edit_cluster（age filter + union-find dedup）/ decayed_knowledge / override_drift / user_correction（prior_actions 绑定）
 │   ├── tools/                                  # 6 个辅助脚本（一次性操作）
 │   │   ├── archive_session_artifacts.py        # 把 task_brief 从 runs/ 移到 wiki/archive/
 │   │   ├── bootstrap.py                        # 首次项目引导
@@ -194,14 +194,14 @@ CLAUDE.md                      # 唯一入口
 │   ├── reports/                               # 活动 research_report 草稿（Archive 时迁移到 wiki/archive）
 │   ├── qa-handoffs/                           # /h-test-handoff 输出
 │   ├── cache/                                 # local_intel 缓存（code_index、wiki BM25）
-│   └── local_intel/                           # ★ Sensor 层边车文件（post-P1 + P7 新增）
+│   └── local_intel/                           # ★ Sensor 层边车文件（事件 + insight 流）
 │       ├── events.jsonl                       # 统一事件流 — schema 在 .claude/wiki/wiki/architecture/events_jsonl_schema.md
-│       ├── insights.jsonl                     # ★ 新增 (P7): 模式识别产出 — schema insights_layer_schema.md
+│       ├── insights.jsonl                     # 模式识别产出 — schema insights_layer_schema.md
 │       ├── failure_memory.json                # 门禁失败台账
-│       ├── notifications.jsonl                # ★ 新增 (#4): Claude Code UI 通知日志
-│       ├── last_compact_snapshot.json         # ★ 新增 (#4): 最近一次 PreCompact 快照
-│       ├── compact_snapshots/                 # ★ 新增 (#4): PreCompact 历史快照（保留 20）
-│       ├── last_reminders.json                # ★ 新增 (T10): [insight-reminder] + [scope-check-reminder] 节流状态
+│       ├── notifications.jsonl                # Claude Code UI 通知日志
+│       ├── last_compact_snapshot.json         # 最近一次 PreCompact 快照
+│       ├── compact_snapshots/                 # PreCompact 历史快照（保留 20）
+│       ├── last_reminders.json                # [insight-reminder] + [scope-check-reminder] 节流状态
 │       └── .usage/                            # ★ 单文件读取计数（post_read_hook → distill ghost fragment 识别）
 └── settings.json              # 权限 + 8 个 hook event 注册
 ```
@@ -257,9 +257,9 @@ CLAUDE.md                      # 唯一入口
 - L3 Policy 是 agent + slash 命令的"智能"层，combine 已拉取证据 + 会话上下文做决策
 - L4 Enforce phase 边界 gate **由 agent 显式调** /h-gates --phase \<implement|qa|archive\>，**非 per-edit**
 
-**为什么用 pull 模型**（post-P2 设计）：
+**为什么用 pull 模型**：
 
-| Pre-P2 | Post-P2 |
+| Push model | Pull model |
 |---|---|
 | 每个 prompt 自动 push 4 个 context 块（[failure-memory] / [triage-evidence] / [ambiguity] / [wiki-distill]） | Hook emit event 到 events.jsonl；agent 经 /h-context-check 主动 pull |
 | 每次 Edit ~310ms UserPromptSubmit + ~330ms PostToolUse | ~60ms + ~70ms |
@@ -439,7 +439,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 | 命令 | 阶段 | 效果 | 使用时机 |
 |------|------|------|---------|
 | `/h-help [--scenario <kw>]` | 任意 | 按场景分组打印所有 `/h-*` 命令目录 | 新用户 / 老用户记不清 / 不确定该用哪个命令 |
-| `/h-context-check [--prompt "<text>"] [--brief-only] [--no-events] [--no-insights]` | 任意 | Pull-model 上下文探针：最近 events + 复发失败 + 活动任务 + dirty diff + 活跃 insight。替代 post-P2 push-model 自动注入。 | Phase 起点 / 不确定状态 / 即将 /h-pr 或 /h-archive |
+| `/h-context-check [--prompt "<text>"] [--brief-only] [--no-events] [--no-insights]` | 任意 | Pull-model 上下文探针：最近 events + 复发失败 + 活动任务 + dirty diff + 活跃 insight。决定 profile / scope / 下一步前的标准入口。 | Phase 起点 / 不确定状态 / 即将 /h-pr 或 /h-archive |
 
 ### 需求接入 & 规划
 
@@ -485,7 +485,7 @@ STANDARD 生命周期实现 **PDD → BDD → SDD/SPEC → TDD → BDD** 闭环�
 
 ### 知识 & 自进化
 
-★ Post-P7（2026 年 6 月）：Insight Layer 把观察到的模式转化为可操作的提议。这些命令桥接**观察 → 规则变更**（永远人审）。
+Insight Layer 把观察到的模式转化为可操作的提议。这些命令桥接**观察 → 规则变更**（永远人审）。
 
 | 命令 | 阶段 | 效果 | 使用时机 |
 |------|------|------|---------|
@@ -671,21 +671,21 @@ Step 1.5 守门：`spec_mode: SLIM` 任务不走 WAL 流程。手动 `mv .claude
 | **行为原则** | `CLAUDE.md` 中四条跨场景 LLM 准则（先思考再编码、简洁优先、外科手术式修改、目标驱动执行）—— 在 mode/profile 选择前对每轮对话生效 |
 | **上下文漏斗** | 结构化导航：根索引 → 领域索引 → 具体文档；杜绝盲目搜索 |
 | **依赖图（DAG）** | 任务在 `launch_spec.md` 中声明上游依赖；分派受依赖满足度门控 |
-| **★ Sensor/Insight/Policy/Enforce 4 层** | Post-P2 架构：hook 退化为纯 sensor → insight_detector 找模式 → agent 按需 pull via /h-context-check → /h-gates 在 phase 边界 enforce。仅 1 个阻断 hook（密钥预检）。详见上方架构节。 |
+| **★ Sensor/Insight/Policy/Enforce 4 层** | hook 退化为纯 sensor → insight_detector 找模式 → agent 按需 pull via /h-context-check → /h-gates 在 phase 边界 enforce。仅 1 个阻断 hook（密钥预检）。详见上方架构节。 |
 | **★ 事件流（`events.jsonl`）** | 统一 append-only 事件日志（8 类：prompt / edit_pre / edit_post / read / subagent_return / turn_end / notification / compact / env_bypass / user_correction）。via `events_query.py` 查询。Schema 在 wiki 中版本化。 |
 | **★ Insight Layer（`insights.jsonl`）** | 5 个纯函数 detector 扫 Sensor 数据 emit 结构化 insight，带 confidence（low/medium/high）+ status 状态机（new → acknowledged → acted_on / published / dismissed）。Append-only，按 kind+summary hash dedup。 |
 | **★ /h-publish-insight → 团队知识** | 本地 Insight Layer → git-tracked `.claude/wiki/insights/` 文档的桥梁。解决"学习仅本地"的团队协作盲区。永远手动，绝不自动 fire。 |
-| **Scope Guard** | Post-P3：从 per-Edit PreToolUse hook 迁移到 `/h-gates --phase implement`（phase 边界 enforce）。Implicit allowlist 豁免 `.claude/runs/` + WAL + archive 路径。 |
-| **Secrets 预检** | PreToolUse hook 扫描即将写入的内容；HIGH-conf pattern → exit 2 阻断。Post-T10/R3：路径感知降级 — `test/`、`fixtures/`、`*_test.*`、`*Test.java` 等模式 FAIL→WARN（仍提示，不阻断）。`CLAUDE_SECRETS_BYPASS=1` 紧急绕过。 |
+| **Scope Guard** | 从 per-Edit hook 移到 `/h-gates --phase implement`（phase 边界 enforce）。Implicit allowlist 豁免 `.claude/runs/` + WAL + archive 路径。 |
+| **Secrets 预检** | PreToolUse hook 扫描即将写入的内容；HIGH-conf pattern → exit 2 阻断。路径感知降级 — `test/`、`fixtures/`、`*_test.*`、`*Test.java` 等模式 FAIL→WARN（仍提示，不阻断）。`CLAUDE_SECRETS_BYPASS=1` 紧急绕过。 |
 | **Plan Review Checklist** | 完整性、一致性、可行性、风险覆盖、依赖合理性 — 退出 Review 前必须通过（≥3 个任务） |
 | **Plan Deviation Reflection** | Archive 时对比计划与实际 — 范围漂移、依赖准确性、AC 覆盖 |
 | **节流推送提醒** | Stop hook emit `[insight-reminder]`（high-conf insight set 变化时）+ `[scope-check-reminder]`（dirty > 5 且上次 emit 老化）。共享 `last_reminders.json` 节流防止每轮噪音。 |
 | **钩子系统** | 8 个 hook event 注册：PreToolUse[Edit\|Write]（仅 secrets）/ PostToolUse[Edit\|Write]（sensor）/ PostToolUse[Read]（sensor + usage_tracker）/ UserPromptSubmit（sensor）/ SubagentStop（sensor）/ Stop（sensor + 2 节流 reminder）/ Notification（jsonl 日志 + 可选铃声）/ PreCompact（恢复用状态快照） |
 | **PreCompact 状态快照** | 上下文压缩前快照 active task_brief / launch_spec / HEAD / 最近 commits → `last_compact_snapshot.json`（保留 20）。Post-compact agent 读取恢复上下文。 |
 | **Local Intelligence** | BM25 wiki 搜索（`wiki_search.py`）、Java 符号索引（`code_index.py`）、失败记忆（`failure_memory.py`）— 零成本上下文。Explorer phase 经 `local-code-intelligence` skill 自动调用；也可 CLI 直接调。failure_memory > 5MB 或最旧 > 90d 时 rotate。 |
-| **Gate Scripts** | `scripts/gates/` 21 个确定性 Python 脚本，阻断或警告质量/安全/合规问题。由 `/h-gates --phase` 在 phase 边界调用（post-P3 不再 per-edit）。 |
+| **Gate Scripts** | `scripts/gates/` 21 个确定性 Python 脚本，阻断或警告质量/安全/合规问题。由 `/h-gates --phase` 在 phase 边界调用（不在 per-edit hook 里跑）。 |
 | **Insight Detector 检测器** | 5 个 detector，置信度阈值统一为 low/medium/high：30d 窗口内 count ≥ 3 / 5 / 10。`co_edit_cluster` 含 union-find 子集去重 + 24h age filter（避免活跃开发自命中）。`user_correction` 绑定 `prior_actions_5min > 0`（过滤会话开场误报）。 |
-| **Triage Reviewer (Haiku)** | 可选的语义二次判别子 agent，用于 HIGH-敏感性 surface 真模糊的 prompt。**显式 dispatch**（post-P6）；pre-P6 是 `needs_semantic_review` flag 自动触发，已删除。 |
+| **Triage Reviewer (Haiku)** | 可选的语义二次判别子 agent，用于 HIGH-敏感性 surface 真模糊的 prompt。**显式 dispatch** — agent 决定何时调；不自动触发。 |
 
 ---
 

@@ -80,7 +80,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 Production incident facts live under `.claude/wiki/incidents/<date>_<slug>.md`. They are surfaced two ways:
 
-- **On task start / unsure state:** run `/h-context-check` — it queries `events.jsonl` + `failure_memory.json` + `incidents/` and surfaces recent failures, in-progress task, dirty diff, related past incidents. Replaces the pre-P2 `[failure-memory]` / `[incident-hint]` auto-injection.
+- **On task start / unsure state:** run `/h-context-check` — it queries `events.jsonl` + `failure_memory.json` + `incidents/` and surfaces recent failures, in-progress task, dirty diff, related past incidents. The canonical pull-model entry; no inline auto-injection of these blocks happens otherwise.
 - **Per-file lookup:** `python3 .claude/scripts/local_intel/incident_hint.py <file_path>` returns any past incident touching that file; agent invokes on demand (e.g. before deep-editing a sensitive area).
 
 **Ingesting a new incident:** run `python3 .claude/scripts/local_intel/ingest_incident.py --help` — script saves the raw fact + prints a template; you write `.claude/wiki/incidents/<date>_<slug>.md` per the template. The `## 提醒未来 LLM` field is what every future session sees — write it well.
@@ -96,7 +96,7 @@ Production incident facts live under `.claude/wiki/incidents/<date>_<slug>.md`. 
 
 **Vocabulary:** *Mode* = user-facing label (Title-case, this table). *Profile* = internal routing tier (ALL-CAPS, see [lifecycle.md Profiles](.claude/rules/lifecycle.md#profiles)). Risk tiers (TRIVIAL/LOW/MEDIUM/HIGH) live inside Profiles.
 
-**Classification is the agent's call.** As of P2 (Sensor/Policy/Enforce refactor), hooks no longer push pre-classified profile suggestions. Read the prompt semantically + use `/h-context-check` when unsure + pick a mode. The triage_probe.py keyword scan + ambiguity_gate are now opt-in tools, not auto-injected context.
+**Classification is the agent's call.** Hooks do not push pre-classified profile suggestions. Read the prompt semantically + use `/h-context-check` when unsure + pick a mode. The triage_probe.py keyword scan + ambiguity_gate are opt-in tools, not auto-injected context.
 
 ### Vibe Eligibility (white-list, not fallback)
 
@@ -130,8 +130,8 @@ Standard mode composes PDD + SDD/SPEC + BDD + TDD — see [.claude/wiki/purpose.
 2. Resuming an interrupted session: read `.claude/runs/launch-specs/launch_spec_*.md` and restore from Phase.
 3. User provided concrete paths or snippets: read them directly.
 4. Intent ambiguous: ask one clarifying question, then proceed.
-5. **Read the prompt semantically and decide profile yourself.** As of P2, no inline `[triage-evidence]` / `[failure-memory]` / `[ambiguity]` blocks get auto-injected — hooks are now pure sensors writing to `.claude/runs/local_intel/events.jsonl`. If you're unsure (new task, sensitive surface, recent failures unknown) → run `/h-context-check` to pull recent events + failures + active brief + scope. Don't auto-dispatch `triage-reviewer` either; call it explicitly if you genuinely can't disambiguate intent.
-6. **Run `/h-gates --phase implement`** before declaring Implement done. As of P3, PreToolUse hook no longer enforces scope per-edit (only secrets pre-check stays). Scope drift, SQL safety, dependency bumps, breaking-API checks all run via `/h-gates` at phase boundaries. Skipping = drift escapes silently.
+5. **Read the prompt semantically and decide profile yourself.** No inline `[triage-evidence]` / `[failure-memory]` / `[ambiguity]` blocks get auto-injected — hooks are pure sensors writing to `.claude/runs/local_intel/events.jsonl`. If you're unsure (new task, sensitive surface, recent failures unknown) → run `/h-context-check` to pull recent events + failures + active brief + scope. Don't auto-dispatch `triage-reviewer` either; call it explicitly if you genuinely can't disambiguate intent.
+6. **Run `/h-gates --phase implement`** before declaring Implement done. PreToolUse hook does not enforce scope per-edit (only secrets pre-check blocks). Scope drift, SQL safety, dependency bumps, breaking-API checks all run via `/h-gates` at phase boundaries. Skipping = drift escapes silently.
 
 Vibe-eligible request → act, no classification line.
 Patch-eligible → emit a one-paragraph Slim Spec before code, then act.

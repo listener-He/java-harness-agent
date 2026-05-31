@@ -10,7 +10,7 @@
 
 ## Step 0 — Evidence on Demand (no auto-injection)
 
-As of P2 (Sensor/Policy/Enforce refactor) + P7 (Insight Layer), the architecture is:
+The harness is organized as a 4-layer architecture:
 
 ```
 Sensor (hook → events.jsonl + failure_memory.json + usage_tracker)
@@ -179,7 +179,7 @@ Present Human Section. Full → Implement. Partial → record approved, roll bac
 
 ## Automated Hooks (settings.json)
 
-All hooks (except PreToolUse secrets-pre-check) are **pure sensors** as of P2/P3: they append events to `.claude/runs/local_intel/events.jsonl` and never inject inline context. Use `events_query.py` to pull when needed.
+All hooks (except the PreToolUse secrets pre-check) are **pure sensors**: they append events to `.claude/runs/local_intel/events.jsonl` and never inject inline context. Use `events_query.py` to pull when needed.
 
 | Hook | Trigger | Action |
 |---|---|---|
