@@ -1,179 +1,89 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""UserPromptSubmit hook — emits up to four context blocks:
+"""UserPromptSubmit hook — pure sensor.
 
-  1. `[failure-memory]` — recurring failures, last 30 days.
-  2. distill nudge — wiki growth thresholds tripped.
-  3. `[ambiguity]` — prompt missing action/object/success signals.
-  4. `[triage-evidence]` — 5 evidence signals + 1 advisory profile_hint
-     line; NOT authoritative, main agent decides the profile.
+Phase P2 of the Sensor/Policy/Enforce refactor. This script used to emit up
+to four context blocks every prompt:
+  - [failure-memory] — recurring failures push
+  - [wiki-distill]   — growth threshold nudge
+  - [ambiguity]      — definition-of-ready check
+  - [triage-evidence] — signal collection + advisory profile_hint
 
-Evidence probe runs first; empty stdout (no evidence-worth-showing or
-heuristic-skip) suppresses ambiguity + distill the same turn.
-failure_memory always emits.
+All four were the canonical "push model" — hook decides, agent reads
+whatever was injected. The new pull model: agent reads /h-context-check
+when entering a new task or unsure. Hook just records the event.
+
+What that buys:
+  - Zero per-prompt token pollution (no automatic context injection)
+  - Higher prompt-cache hit rate (input is just the user text)
+  - Latency: ~310ms → ~30-50ms
+
+What it loses (and where the replacement lives):
+  - failure_memory surfacing → events_query --kind edit_post / failure_memory.py summary
+  - ambiguity nudge          → agent self-checks via /h-context-check
+  - triage evidence          → triage_probe.py still callable for explicit context
+  - distill nudge            → distill threshold runs at /h-distill, not per-prompt
+
+Failures: silent. Exit 0 always.
 """
 from __future__ import annotations
 
 import json
-import os
-import subprocess
 import sys
-
 from pathlib import Path
 
-# Resolve sibling scripts relative to this file so the hook works regardless
-# of the harness's current working directory.
-_SCRIPTS_DIR = Path(__file__).resolve().parent.parent
-FAILURE_MEMORY = str(_SCRIPTS_DIR / "local_intel" / "failure_memory.py")
-DISTILL_THRESHOLD = str(_SCRIPTS_DIR / "wiki" / "distill_threshold.py")
-AMBIGUITY_GATE = str(_SCRIPTS_DIR / "gates" / "ambiguity_gate.py")
-TRIAGE_PROBE = str(_SCRIPTS_DIR / "local_intel" / "triage_probe.py")
+_LOCAL_INTEL_DIR = Path(__file__).resolve().parent.parent / "local_intel"
+if str(_LOCAL_INTEL_DIR) not in sys.path:
+    sys.path.insert(0, str(_LOCAL_INTEL_DIR))
 
-# Shortcuts that override the default triage — when present, the user has
-# already declared intent and we do not need to nudge them.
-#
-# Every entry MUST have a corresponding behavior (a `/h-*` command, a profile
-# routing rule, or a documented effect in lifecycle.md). Don't add a shortcut
-# here unless it does something — otherwise the ambiguity gate skips a real
-# concern with no payoff. Dead shortcuts (@gc, @librarian, @wiki-update,
-# @milestone, @cap, @capabilities) were removed 2026-05-30 — they had no
-# command backing and silently suppressed the ambiguity check.
-SHORTCUT_OVERRIDES = (
-    "@vibe", "@patch", "@learn", "@read", "@quickfix", "@standard",
-    "@distill",  # backed by /h-distill
-)
-
-# Below this prompt length we assume the input is a confirmation, a quick
-# follow-up, or a yes/no — running the ambiguity gate would only produce noise.
-MIN_PROMPT_LEN_FOR_AMBIGUITY_CHECK = 10
+PROMPT_TEXT_CAP = 2000  # truncate per schema doc to keep jsonl rows lean
 
 
-def _read_prompt_from_stdin() -> str:
-    """Read user prompt from stdin. Supports both raw text and a JSON envelope."""
+def _read_prompt_text() -> tuple[str, str]:
+    """Return (text, session_id). Both may be empty on parse failure."""
     try:
         raw = sys.stdin.read()
     except Exception:
-        return ""
+        return "", ""
     if not raw:
-        return ""
+        return "", ""
     raw = raw.strip()
-    if raw.startswith("{"):
-        try:
-            obj = json.loads(raw)
-            if isinstance(obj, dict):
-                for key in ("prompt", "user_prompt", "input", "text"):
-                    value = obj.get(key)
-                    if isinstance(value, str):
-                        return value
-        except json.JSONDecodeError:
-            pass
-    return raw
-
-
-def _emit_failure_memory() -> None:
-    if os.environ.get("CLAUDE_FAILURE_MEMORY_QUIET") == "1":
-        return
+    if not raw.startswith("{"):
+        # Plain text (older Claude Code envelopes)
+        return raw, ""
     try:
-        proc = subprocess.run(
-            [sys.executable, FAILURE_MEMORY, "summary",
-             "--days", "30", "--min-count", "2", "--top", "5",
-             "--include-incidents"],
-            check=False, capture_output=True, text=True,
-            timeout=10,
-        )
-    except subprocess.TimeoutExpired:
-        return  # hook is best-effort; silent on timeout
-    out = (proc.stdout or "").rstrip()
-    if not out:
-        return
-    print("[failure-memory] Recent failures and incidents — keep in mind while planning:")
-    print(out)
-
-
-def _emit_distill_nudge() -> None:
-    if os.environ.get("CLAUDE_DISTILL_QUIET") == "1":
-        return
-    try:
-        proc = subprocess.run(
-            [sys.executable, DISTILL_THRESHOLD],
-            check=False, capture_output=True, text=True,
-            timeout=10,
-        )
-    except subprocess.TimeoutExpired:
-        return
-    out = (proc.stdout or "").rstrip()
-    if not out:
-        return
-    print(out)
-
-
-def _capture_triage_probe(prompt_text: str) -> str:
-    """Run triage_probe and return its stdout (stripped).
-
-    Empty string ↔ probe was silent: heuristic-skipped (short / pure question /
-    @shortcut) or VIBE with no red/yellow signals. main() uses that signal to
-    gate the ambiguity + distill nudges for the same turn — a silent probe has
-    already classified the input as not-worth-escalating, so the downstream
-    nudges would only add noise.
-    """
-    if os.environ.get("CLAUDE_TRIAGE_QUIET") == "1":
-        return ""
-    text = (prompt_text or "").strip()
-    if not text:
-        return ""
-    try:
-        proc = subprocess.run(
-            [sys.executable, TRIAGE_PROBE, "--quiet-on-skip"],
-            input=text, check=False, capture_output=True, text=True,
-            timeout=10,
-        )
-    except subprocess.TimeoutExpired:
-        return ""
-    return (proc.stdout or "").rstrip()
-
-
-def _emit_ambiguity_check(prompt_text: str) -> None:
-    if os.environ.get("CLAUDE_AMBIGUITY_QUIET") == "1":
-        return
-    text = (prompt_text or "").strip()
-    if len(text) < MIN_PROMPT_LEN_FOR_AMBIGUITY_CHECK:
-        return
-    lowered = text.lower()
-    if any(marker in lowered for marker in SHORTCUT_OVERRIDES):
-        return
-    try:
-        proc = subprocess.run(
-            [sys.executable, AMBIGUITY_GATE, "--intent", text[:500]],
-            check=False, capture_output=True, text=True,
-            timeout=10,
-        )
-    except subprocess.TimeoutExpired:
-        return
-    # 0 = PASS, 1 = WARN, 2 = FAIL. Only FAIL surfaces — WARN was firing on
-    # ~50% of prompts (almost any concise input lacks an explicit "success
-    # signal") and rarely produced an actionable nudge. FAIL is rarer and
-    # genuinely indicates missing action/object that's worth asking about.
-    if proc.returncode != 2:
-        return
-    out = (proc.stdout or "").rstrip()
-    if not out:
-        return
-    print("[ambiguity] input may be underspecified — consider clarifying via AskUserQuestion before acting:")
-    print(out)
+        obj = json.loads(raw)
+    except json.JSONDecodeError:
+        return raw, ""
+    if not isinstance(obj, dict):
+        return raw, ""
+    text = ""
+    for key in ("prompt", "user_prompt", "input", "text"):
+        v = obj.get(key)
+        if isinstance(v, str) and v:
+            text = v
+            break
+    session_id = obj.get("session_id") or ""
+    if not isinstance(session_id, str):
+        session_id = ""
+    return text, session_id
 
 
 def main() -> int:
-    prompt_text = _read_prompt_from_stdin()
+    text, session_id = _read_prompt_text()
+    if not text:
+        return 0
 
-    triage_output = _capture_triage_probe(prompt_text)
-    probe_quiet = not triage_output
+    try:
+        import event_writer  # noqa: E402
+        event_writer.append(
+            "prompt",
+            text=text[:PROMPT_TEXT_CAP],
+            session_id=session_id,
+        )
+    except Exception:
+        pass
 
-    _emit_failure_memory()
-    if not probe_quiet:
-        _emit_distill_nudge()
-        _emit_ambiguity_check(prompt_text)
-    if triage_output:
-        print(triage_output)
     return 0
 
 

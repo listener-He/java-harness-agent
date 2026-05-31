@@ -43,14 +43,14 @@ def test_each_text_field_alone() -> None:
     """
     for field in hook.TEXT_FIELDS:
         payload = {field: "hello"}
-        got = hook._extract_return_text(payload)
+        got, _ = hook._extract_return_text(payload)
         assert got == "hello", f"field={field!r}: expected 'hello', got {got!r}"
 
 
 def test_text_field_whitespace_only_is_skipped() -> None:
     """Field present but only whitespace should fall through to other fields."""
     payload = {"response": "   ", "output": "real text"}
-    got = hook._extract_return_text(payload)
+    got, _ = hook._extract_return_text(payload)
     assert got == "real text", f"got {got!r}"
 
 
@@ -61,7 +61,7 @@ def test_nested_text_fields() -> None:
     for outer in ("subagent", "agent", "tool_result"):
         for field in hook.TEXT_FIELDS:
             payload = {outer: {field: "nested"}}
-            got = hook._extract_return_text(payload)
+            got, _ = hook._extract_return_text(payload)
             assert got == "nested", f"{outer}.{field}: got {got!r}"
 
 
@@ -82,7 +82,7 @@ def test_transcript_role_content_string() -> None:
         {"role": "assistant", "content": "FOUND"},
     ])
     try:
-        got = hook._extract_return_text({"transcript_path": str(p)})
+        got, _ = hook._extract_return_text({"transcript_path": str(p)})
         assert got == "FOUND", f"got {got!r}"
     finally:
         p.unlink()
@@ -103,7 +103,7 @@ def test_transcript_message_content_list() -> None:
         },
     ])
     try:
-        got = hook._extract_return_text({"transcript_path": str(p)})
+        got, _ = hook._extract_return_text({"transcript_path": str(p)})
         assert "PART1" in got and "PART2" in got, f"got {got!r}"
     finally:
         p.unlink()
@@ -120,7 +120,7 @@ def test_transcript_inner_message_role() -> None:
         },
     ])
     try:
-        got = hook._extract_return_text({"transcript_path": str(p)})
+        got, _ = hook._extract_return_text({"transcript_path": str(p)})
         assert got == "INNER", f"got {got!r}"
     finally:
         p.unlink()
@@ -134,7 +134,7 @@ def test_transcript_picks_LAST_assistant() -> None:
         {"role": "assistant", "content": "NEW"},
     ])
     try:
-        got = hook._extract_return_text({"transcript_path": str(p)})
+        got, _ = hook._extract_return_text({"transcript_path": str(p)})
         assert got == "NEW", f"expected last assistant, got {got!r}"
     finally:
         p.unlink()
@@ -142,7 +142,7 @@ def test_transcript_picks_LAST_assistant() -> None:
 
 def test_transcript_missing_file_falls_through() -> None:
     """If transcript_path is set but file is missing, fall through to other fields."""
-    got = hook._extract_return_text({
+    got, _ = hook._extract_return_text({
         "transcript_path": "/tmp/nonexistent_xyz_12345.jsonl",
         "response": "fallback",
     })
@@ -159,7 +159,7 @@ def test_transcript_malformed_lines_skipped() -> None:
         encoding="utf-8",
     )
     try:
-        got = hook._extract_return_text({"transcript_path": str(p)})
+        got, _ = hook._extract_return_text({"transcript_path": str(p)})
         assert got == "VALID", f"got {got!r}"
     finally:
         p.unlink()
@@ -169,18 +169,18 @@ def test_transcript_malformed_lines_skipped() -> None:
 
 def test_empty_payload_returns_empty() -> None:
     """Empty dict → empty string (caller writes debug dump)."""
-    assert hook._extract_return_text({}) == ""
+    assert hook._extract_return_text({}) == ("", "")
 
 
 def test_unknown_field_returns_empty() -> None:
     """Catches a future Claude Code rename: any single unrecognized key alone fails."""
-    assert hook._extract_return_text({"weirdfield_v2": "x"}) == ""
+    assert hook._extract_return_text({"weirdfield_v2": "x"}) == ("", "")
 
 
 def test_non_string_content_ignored() -> None:
     """Field present but wrong type (e.g. dict where str expected) should not crash."""
     payload = {"response": {"nested": "x"}, "output": "real"}
-    got = hook._extract_return_text(payload)
+    got, _ = hook._extract_return_text(payload)
     assert got == "real", f"got {got!r}"
 
 

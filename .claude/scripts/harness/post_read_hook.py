@@ -45,15 +45,22 @@ def main() -> int:
         return 0
 
     # Fast bail before any heavier work: ~99% of Reads are NOT wiki/skill.
-    if not any(prefix in file_path for prefix in _TRACK_PREFIXES):
+    tracked = any(prefix in file_path for prefix in _TRACK_PREFIXES)
+    if not tracked:
         return 0
 
-    # In-process track via import — avoids a second Python startup that
-    # would otherwise add ~60ms per qualifying Read.
+    # In-process imports — avoids a second Python startup. usage_tracker is
+    # the legacy sidecar (kept for distill compatibility); event_writer is
+    # the new unified stream. Both fire only when path qualifies.
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "local_intel"))
     try:
         import usage_tracker  # type: ignore
         usage_tracker.track(file_path)
+    except Exception:
+        pass
+    try:
+        import event_writer  # type: ignore
+        event_writer.append("read", file_path=file_path, tracked=True)
     except Exception:
         pass
 
