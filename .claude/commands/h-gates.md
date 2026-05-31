@@ -3,15 +3,33 @@ description: Full gate suite audit across accumulated diff — phase-aware, seve
 argument-hint: [--phase explore|propose|implement|qa|archive] [--scenario B|C|E] [--all]
 ---
 
-Run the gates that apply to the current state of work. Hooks already cover edit-time scope/secrets checks; this command does the **full-suite audit** you'd run before a commit, phase transition, or PR. Output is severity-aggregated per `.claude/skills-archive/linter-severity-standard/SKILL.md`.
+Run the gates that apply to the current state of work. Per the
+Sensor/Policy/Enforce architecture, hooks are now pure sensors (they only
+record events to `.claude/runs/local_intel/events.jsonl`) **with one
+exception**: `pre_tool_use_hook.py` still blocks on secrets-pre-check (red
+line). Everything else — scope drift, SQL safety, dependency bumps, structural
+return validation — happens here at phase boundaries when the agent invokes
+`/h-gates`.
 
-### Relationship to the PreToolUse hook
+Output is severity-aggregated per `.claude/skills-archive/linter-severity-standard/SKILL.md`.
 
-`pre_tool_use_hook.py` runs `scope_guard.py` on **every single Edit/Write** with that one file as the only changed file. It's a per-edit tripwire — fast, scoped to one path, fails the Edit before the diff lands.
+### Relationship to the PreToolUse hook (post-P3)
 
-`/h-gates` runs `scope_guard.py` (and the rest of the suite) on the **full accumulated git diff**. It's a batch audit — catches drift across many edits, finds files that escaped per-edit detection (e.g. created via Bash redirection or a script that bypassed the hook), and aggregates with other gates that have no per-edit equivalent (`task_brief_gate.py`, `migration_gate.py`, etc.).
+`pre_tool_use_hook.py` runs **only** `secrets_linter --content-stdin` on the
+about-to-be-written content. HIGH-confidence pattern → exit 2 (block). No
+scope check, no other gates. Bypass via `CLAUDE_SECRETS_BYPASS=1` for
+genuine emergencies.
 
-They are complementary, not redundant: per-edit catches issues at write-time; batch catches "the whole change set still consistent?" before a phase transition. Run `/h-gates` at phase boundaries even when the hook reported zero blocks during Implement.
+Everything else — `scope_guard.py`, `migration_gate.py`, `dependency_gate.py`,
+`api_breaking_gate.py`, `task_brief_gate.py`, `subagent_return_gate.py` etc.
+— moved here, to `/h-gates`. Agent MUST invoke at phase boundaries (in particular
+**before** Implement→QA and **before** QA→Archive) since they no longer fire
+per-edit.
+
+The trade: per-edit scope/SQL friction → zero; phase-boundary discipline →
+required. If the agent forgets to invoke `/h-gates --phase implement` before
+declaring QA-ready, scope drift escapes silently. This is by design — flexibility
+during exploration, rigor at handoff.
 
 ## Step 1 — Detect context
 

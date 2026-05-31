@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""PreToolUse hook for Edit|Write.
+"""PreToolUse hook for Edit|Write — secrets-only enforcement + event emit.
 
-Runs two pre-flight checks in order; either can block the tool call.
+Phase P3 of the Sensor/Policy/Enforce refactor. This hook used to run TWO
+checks:
+  1. secrets_linter pre-check on content/new_string (block on HIGH)
+  2. scope_guard against active task_brief (block on out-of-scope edit)
 
-  1. secrets_linter (content-stdin mode) — scans the about-to-be-written
-     bytes for high-confidence secret patterns. FAIL → block. Runs on EVERY
-     Edit/Write regardless of repo jurisdiction (a secret in user-home
-     memory is as bad as one in the repo).
-  2. scope_guard — blocks edits outside the active task_brief's Allowed
-     Scope. Skipped when there is no active task, when the file lives
-     outside the repo, or when CLAUDE_SCOPE_GUARD_BYPASS=1.
+Check #2 (scope_guard) moved OUT of the hook to /h-gates --phase implement.
+Rationale: per-edit scope blocking interrupts mid-implementation discovery
+and is mismatched with the LEARN/PATCH-style flexibility most edits warrant.
+Phase-boundary check catches drift before it ships without per-edit friction.
 
-Either exit 2 = block (stderr carries the reason). Defense in depth:
-PostToolUse still re-runs secrets_linter on the resulting file for any
-multi-line / future pattern Pre might have missed.
+Check #1 (secrets) stays in the hook because secret leakage is the one
+irreversible-on-write red line. Even VIBE/LEARN edits must not commit a
+credential.
+
+Bypass envs:
+  CLAUDE_SECRETS_BYPASS=1       — skip secrets pre-check (emergency only)
+  CLAUDE_SCOPE_GUARD_BYPASS=1   — legacy, still respected to skip the entire
+                                   hook (mostly redundant now scope_guard left)
+
+Sensor side-effect: emit edit_pre event with secrets_check outcome + blocked
+flag so events_query consumers can analyze pre-check incidence.
 """
 from __future__ import annotations
 
@@ -26,85 +34,45 @@ from pathlib import Path
 
 EXIT_BLOCK = 2
 
-_SCRIPTS_DIR = Path(__file__).resolve().parent.parent
-SCOPE_GUARD = str(_SCRIPTS_DIR / "gates" / "scope_guard.py")
+_HARNESS_DIR = Path(__file__).resolve().parent
+_SCRIPTS_DIR = _HARNESS_DIR.parent
+_LOCAL_INTEL_DIR = _SCRIPTS_DIR / "local_intel"
 SECRETS_LINTER = str(_SCRIPTS_DIR / "gates" / "secrets_linter.py")
-FIND_ACTIVE = str(_SCRIPTS_DIR / "harness" / "find_active_task_brief.py")
 
 
-def _read_payload() -> tuple[str, str]:
-    """Return (file_path, content_to_scan).
-
-    content_to_scan is:
-      - tool_input.content for Write (full file body)
-      - tool_input.new_string for Edit (only the addition)
-      - empty string if neither present
-    """
+def _read_payload() -> tuple[str, str, str]:
+    """Return (file_path, content_to_scan, tool_name)."""
     try:
         payload = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
-        return "", ""
+        return "", "", ""
     tool_input = payload.get("tool_input") or {}
     file_path = tool_input.get("file_path") or ""
     content = tool_input.get("content") or tool_input.get("new_string") or ""
-    return file_path, content
+    tool_name = payload.get("tool_name") or ""
+    return file_path, content, tool_name
 
 
-def _find_active_task_brief() -> str:
+def _emit_event(file_path: str, tool_name: str, secrets_check: str, blocked: bool) -> None:
+    if str(_LOCAL_INTEL_DIR) not in sys.path:
+        sys.path.insert(0, str(_LOCAL_INTEL_DIR))
     try:
-        proc = subprocess.run(
-            [sys.executable, FIND_ACTIVE],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=10,
+        import event_writer  # noqa: E402
+        event_writer.append(
+            "edit_pre",
+            file_path=file_path,
+            tool=tool_name,
+            secrets_check=secrets_check,
+            blocked=blocked,
         )
     except Exception:
-        return ""
-    return (proc.stdout or "").strip()
+        pass
 
 
-def _repo_root() -> str:
-    try:
-        out = subprocess.check_output(
-            ["git", "rev-parse", "--show-toplevel"],
-            stderr=subprocess.DEVNULL,
-            timeout=30,
-        )
-        return out.decode().strip()
-    except Exception:
-        return os.getcwd()
-
-
-def _to_relative(file_path: str, repo_root: str) -> str:
-    """Return repo-relative path, or empty string if outside repo root.
-
-    Handles tilde (~/...), absolute, and relative inputs uniformly. The empty
-    return is the signal to the caller that scope_guard has no jurisdiction:
-    its Allowed Scope is repo-rooted, so any file under ~/.claude/ (memory,
-    user-level CLAUDE.md, user-level agents/skills/settings), /tmp/, or any
-    sibling repo cannot meaningfully be checked against a task_brief.
-    """
-    if not file_path:
-        return ""
-    expanded = os.path.expanduser(file_path)
-    abs_path = os.path.abspath(expanded)
-    try:
-        common = os.path.commonpath([abs_path, repo_root])
-    except ValueError:
-        # Different drives on Windows, or other path incompatibility.
-        return ""
-    if common != repo_root:
-        return ""
-    return os.path.relpath(abs_path, repo_root)
-
-
-def _secrets_precheck(file_path: str, content: str) -> int:
-    """Run secrets_linter in content-stdin mode. Returns the gate exit code
-    (0 OK / 1 WARN / 2 FAIL). On any subprocess error, returns 0 (fail-open
-    — never block due to harness failure)."""
+def _secrets_precheck(file_path: str, content: str) -> tuple[int, str]:
+    """Returns (rc, gate_stdout). rc 0 OK / 1 WARN / 2 FAIL. fail-open on subprocess error."""
     if not content:
-        return 0
+        return 0, ""
     try:
         proc = subprocess.run(
             [sys.executable, SECRETS_LINTER,
@@ -116,83 +84,49 @@ def _secrets_precheck(file_path: str, content: str) -> int:
             timeout=10,
         )
     except Exception:
-        return 0
-    if proc.returncode == EXIT_BLOCK:
-        sys.stderr.write(f"[secrets_linter] BLOCKED: {file_path}\n")
-        if proc.stdout:
-            sys.stderr.write(proc.stdout)
-            if not proc.stdout.endswith("\n"):
-                sys.stderr.write("\n")
-        sys.stderr.write(
-            "\nA high-confidence secret pattern was detected in the content "
-            "you are about to write. Remove or move the secret out-of-band "
-            "(env var, secret manager, .env file in .gitignore) and retry.\n"
-        )
-    elif proc.returncode == 1 and proc.stdout:
-        # WARN: surface but don't block.
-        sys.stderr.write(f"[secrets_linter] WARN: {file_path}\n")
-        sys.stderr.write(proc.stdout)
-        if not proc.stdout.endswith("\n"):
-            sys.stderr.write("\n")
-    return proc.returncode
+        return 0, ""
+    return proc.returncode, (proc.stdout or "")
 
 
 def main() -> int:
+    # Legacy bypass — kept for backward compat. Skips the entire hook.
     if os.environ.get("CLAUDE_SCOPE_GUARD_BYPASS") == "1":
         return 0
 
-    file_path, content = _read_payload()
+    file_path, content, tool_name = _read_payload()
     if not file_path:
         return 0
 
-    # Check 1: secrets — runs first because secret leaks are worse than scope
-    # drift, and applies to ALL writes including out-of-repo paths (memory,
-    # user-level configs).
-    if _secrets_precheck(file_path, content) == EXIT_BLOCK:
-        return EXIT_BLOCK
-
-    # Check 2: scope_guard — only meaningful when there is an active
-    # task_brief AND the file lives inside the repo.
-    task_brief = _find_active_task_brief()
-    if not task_brief or not os.path.isfile(task_brief):
+    # Secrets bypass — new emergency escape for the secrets gate specifically.
+    if os.environ.get("CLAUDE_SECRETS_BYPASS") == "1":
+        _emit_event(file_path, tool_name, secrets_check="SKIP_BYPASS", blocked=False)
         return 0
 
-    rel_file = _to_relative(file_path, _repo_root())
+    rc, gate_out = _secrets_precheck(file_path, content)
+    secrets_check = {0: "PASS", 1: "WARN", 2: "FAIL"}.get(rc, "ERROR")
 
-    # Empty result = file lives outside repo root. Covers ~/.claude/ memory,
-    # user-level CLAUDE.md / agents / skills / settings, and any Claude Code
-    # state stored outside the project tree. scope_guard's allowlist is
-    # repo-rooted; it has no jurisdiction here. Silent skip.
-    if not rel_file:
-        return 0
-
-    try:
-        proc = subprocess.run(
-            [sys.executable, SCOPE_GUARD,
-             "--task-brief", task_brief,
-             "--files", rel_file],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-    except subprocess.TimeoutExpired:
-        # Fail-open: if scope_guard hangs, don't block the edit.
-        return 0
-    if proc.returncode == EXIT_BLOCK:
-        sys.stderr.write(
-            f"[scope_guard] BLOCKED: {rel_file} is outside Allowed Scope of {task_brief}\n"
-        )
-        if proc.stdout:
-            sys.stderr.write(proc.stdout)
-            if not proc.stdout.endswith("\n"):
+    if rc == EXIT_BLOCK:
+        sys.stderr.write(f"[secrets_linter] BLOCKED: {file_path}\n")
+        if gate_out:
+            sys.stderr.write(gate_out)
+            if not gate_out.endswith("\n"):
                 sys.stderr.write("\n")
         sys.stderr.write(
-            "\nTo proceed, either add the file to the task_brief's '## Allowed Scope' section\n"
-            "or set CLAUDE_SCOPE_GUARD_BYPASS=1 for one-shot emergency bypass.\n"
+            "\nA high-confidence secret pattern was detected in the content "
+            "you are about to write. Remove the secret, move it to a secret "
+            "manager, or — emergency only — re-run with "
+            "CLAUDE_SECRETS_BYPASS=1 prefix.\n"
         )
+        _emit_event(file_path, tool_name, secrets_check, blocked=True)
         return EXIT_BLOCK
 
+    if rc == 1 and gate_out:
+        sys.stderr.write(f"[secrets_linter] WARN: {file_path}\n")
+        sys.stderr.write(gate_out)
+        if not gate_out.endswith("\n"):
+            sys.stderr.write("\n")
+
+    _emit_event(file_path, tool_name, secrets_check, blocked=False)
     return 0
 
 
