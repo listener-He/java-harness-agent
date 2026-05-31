@@ -77,6 +77,11 @@ def main() -> int:
 
     rel_file = _to_relative(file_path, _repo_root())
 
+    # Outside the repo (e.g. user-home memory files in ~/.claude/projects/...)
+    # — scope_guard has no jurisdiction. Silent skip.
+    if os.path.isabs(rel_file):
+        return 0
+
     try:
         proc = subprocess.run(
             [sys.executable, SCOPE_GUARD,

@@ -21,6 +21,26 @@ import sys
 EXIT_WARN = 1
 EXIT_FAIL = 2
 
+# Harness-meta paths the agent writes during normal operation. These are
+# orthogonal to any single task's Allowed Scope — counting them as drift
+# would block memory writes, launch_spec status updates, WAL fragments,
+# archive moves, and similar housekeeping that no task_brief should have to
+# enumerate. Honored by both the PreToolUse hook and `/h-gates` audits.
+IMPLICIT_ALLOWED_PREFIXES = (
+    ".claude/runs/",          # all runtime state: briefs, specs, sidecars, caches, failure_memory
+    ".claude/wiki/archive/",  # archive destinations for completed briefs / reports / collabs
+)
+
+
+def _is_implicitly_allowed(file_path: str) -> bool:
+    """True iff path is a harness-meta write that no task_brief should gate."""
+    if file_path.startswith(IMPLICIT_ALLOWED_PREFIXES):
+        return True
+    # WAL fragments live under any wiki domain: .claude/wiki/wiki/<domain>/wal/...
+    if file_path.startswith(".claude/wiki/") and "/wal/" in file_path:
+        return True
+    return False
+
 
 def _read_allowed_prefixes(task_brief_path: str) -> list[str]:
     with open(task_brief_path, "r", encoding="utf-8") as f:
@@ -118,6 +138,8 @@ def main() -> int:
 
     violations = []
     for f in files:
+        if _is_implicitly_allowed(f):
+            continue
         if f in allowed_exact:
             continue
         if any(f.startswith(p) for p in allowed_prefixes):
