@@ -195,8 +195,8 @@ CLAUDE.md                      # 唯一入口
 │   ├── qa-handoffs/                           # /h-test-handoff 输出
 │   ├── cache/                                 # local_intel 缓存（code_index、wiki BM25）
 │   └── local_intel/                           # ★ Sensor 层边车文件（post-P1 + P7 新增）
-│       ├── events.jsonl                       # 统一事件流 — schema 在 .claude/wiki/wiki/architecture/wal/20260531_events_jsonl_schema.md
-│       ├── insights.jsonl                     # ★ 新增 (P7): 模式识别产出 — schema 20260601_insights_layer_schema.md
+│       ├── events.jsonl                       # 统一事件流 — schema 在 .claude/wiki/wiki/architecture/events_jsonl_schema.md
+│       ├── insights.jsonl                     # ★ 新增 (P7): 模式识别产出 — schema insights_layer_schema.md
 │       ├── failure_memory.json                # 门禁失败台账
 │       ├── notifications.jsonl                # ★ 新增 (#4): Claude Code UI 通知日志
 │       ├── last_compact_snapshot.json         # ★ 新增 (#4): 最近一次 PreCompact 快照
@@ -707,7 +707,7 @@ Step 1.5 守门：`spec_mode: SLIM` 任务不走 WAL 流程。手动 `mv .claude
 - [.claude/wiki/KNOWLEDGE_GRAPH.md](.claude/wiki/KNOWLEDGE_GRAPH.md) — 知识图谱根节点
 - [.claude/skills/skill-index/SKILL.md](.claude/skills/skill-index/SKILL.md) — 技能导航
 - [.claude/wiki/purpose.md](.claude/wiki/purpose.md) — 设计哲学
-- [.claude/wiki/wiki/architecture/wal/20260531_events_jsonl_schema.md](.claude/wiki/wiki/architecture/wal/20260531_events_jsonl_schema.md) — events.jsonl schema（Sensor 层 L1）
-- [.claude/wiki/wiki/architecture/wal/20260601_insights_layer_schema.md](.claude/wiki/wiki/architecture/wal/20260601_insights_layer_schema.md) — insights.jsonl schema（Insight 层 L2）
+- [.claude/wiki/wiki/architecture/events_jsonl_schema.md](.claude/wiki/wiki/architecture/events_jsonl_schema.md) — events.jsonl schema（Sensor 层 L1）
+- [.claude/wiki/wiki/architecture/insights_layer_schema.md](.claude/wiki/wiki/architecture/insights_layer_schema.md) — insights.jsonl schema（Insight 层 L2）
 - [.claude/wiki/insights/README.md](.claude/wiki/insights/README.md) — 团队公开 insight 目录（来自 /h-publish-insight）
 - [.claude/wiki/incidents/](.claude/wiki/incidents/) — 生产事故记录

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """event_writer — JSONL append API for the unified event stream.
 
-Schema lives at .claude/wiki/wiki/architecture/wal/20260531_events_jsonl_schema.md.
+Schema lives at .claude/wiki/wiki/architecture/events_jsonl_schema.md.
 
 Design contract:
   - append(kind, **fields) → None, silent on all IO errors (hook safety)

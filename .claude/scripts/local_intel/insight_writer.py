@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """insight_writer — append API for insights.jsonl.
 
-Schema: .claude/wiki/wiki/architecture/wal/20260601_insights_layer_schema.md.
+Schema: .claude/wiki/wiki/architecture/insights_layer_schema.md.
 
 Append-only JSONL; status updates use a separate `status_change` record
 rather than rewriting the original (preserves auditability).

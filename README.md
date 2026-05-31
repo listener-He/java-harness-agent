@@ -195,8 +195,8 @@ CLAUDE.md                      # Single entry point
 │   ├── qa-handoffs/                           # /h-test-handoff outputs
 │   ├── cache/                                 # local_intel caches (code_index, wiki BM25)
 │   └── local_intel/                           # ★ Sensor layer sidecars (post-P1 + P7 added)
-│       ├── events.jsonl                       # Unified event stream — schema in .claude/wiki/wiki/architecture/wal/20260531_events_jsonl_schema.md
-│       ├── insights.jsonl                     # ★ NEW (P7): pattern-recognition outputs — schema 20260601_insights_layer_schema.md
+│       ├── events.jsonl                       # Unified event stream — schema in .claude/wiki/wiki/architecture/events_jsonl_schema.md
+│       ├── insights.jsonl                     # ★ NEW (P7): pattern-recognition outputs — schema insights_layer_schema.md
 │       ├── failure_memory.json                # Gate failure ledger
 │       ├── notifications.jsonl                # ★ NEW (#4): Claude Code UI notification log
 │       ├── last_compact_snapshot.json         # ★ NEW (#4): most recent PreCompact snapshot
@@ -709,7 +709,7 @@ Every user request is classified into an **intent** and routed to a **profile**:
 - [.claude/wiki/KNOWLEDGE_GRAPH.md](.claude/wiki/KNOWLEDGE_GRAPH.md) — knowledge graph root
 - [.claude/skills/skill-index/SKILL.md](.claude/skills/skill-index/SKILL.md) — skill navigator
 - [.claude/wiki/purpose.md](.claude/wiki/purpose.md) — design philosophy
-- [.claude/wiki/wiki/architecture/wal/20260531_events_jsonl_schema.md](.claude/wiki/wiki/architecture/wal/20260531_events_jsonl_schema.md) — events.jsonl schema (Sensor layer L1)
-- [.claude/wiki/wiki/architecture/wal/20260601_insights_layer_schema.md](.claude/wiki/wiki/architecture/wal/20260601_insights_layer_schema.md) — insights.jsonl schema (Insight layer L2)
+- [.claude/wiki/wiki/architecture/events_jsonl_schema.md](.claude/wiki/wiki/architecture/events_jsonl_schema.md) — events.jsonl schema (Sensor layer L1)
+- [.claude/wiki/wiki/architecture/insights_layer_schema.md](.claude/wiki/wiki/architecture/insights_layer_schema.md) — insights.jsonl schema (Insight layer L2)
 - [.claude/wiki/insights/README.md](.claude/wiki/insights/README.md) — team-published insights directory (from /h-publish-insight)
 - [.claude/wiki/incidents/](.claude/wiki/incidents/) — production incident records
