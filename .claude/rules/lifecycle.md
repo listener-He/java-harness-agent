@@ -10,7 +10,19 @@
 
 ## Step 0 — Evidence on Demand (no auto-injection)
 
-As of P2 (Sensor/Policy/Enforce refactor), hooks emit events to `.claude/runs/local_intel/events.jsonl`; the agent **pulls** context when it needs it instead of having `[triage-evidence]` / `[failure-memory]` / `[ambiguity]` blocks pushed on every prompt.
+As of P2 (Sensor/Policy/Enforce refactor) + P7 (Insight Layer), the architecture is:
+
+```
+Sensor (hook → events.jsonl + failure_memory.json + usage_tracker)
+   ↓
+Insight Layer (insight_detector → insights.jsonl; pattern recognition)
+   ↓
+Policy (agent + /h-context-check + /h-evolve; decisions, on-demand)
+   ↓
+Enforce (PreToolUse secrets pre-check + /h-gates --phase ...; the only blocking layer)
+```
+
+Hooks emit events; insight_detector finds patterns; agent **pulls** context via `/h-context-check` and turns insights into rule changes via `/h-evolve` (always human-approved). No more `[triage-evidence]` / `[failure-memory]` / `[ambiguity]` blocks pushed on every prompt.
 
 How to gather evidence:
 
@@ -21,7 +33,9 @@ How to gather evidence:
 | "past incident touched this file" | `python3 .claude/scripts/local_intel/incident_hint.py <path>` |
 | "blast radius of touching <symbol>" | `python3 .claude/scripts/local_intel/code_index.py --impact-of <symbol>` |
 | "is this prompt structurally ambiguous" | `python3 .claude/scripts/gates/ambiguity_gate.py --intent "<text>"` |
-| **all of the above bundled** | `/h-context-check` (preferred entry, runs the relevant subset based on session state) |
+| "any new insights since last check" | `python3 .claude/scripts/local_intel/insight_detector.py --write && python3 .claude/scripts/local_intel/insight_writer.py query` |
+| **all of the above bundled (incl. insights)** | `/h-context-check` (preferred entry, runs the relevant subset based on session state) |
+| "act on a specific insight (turn it into a rule change)" | `/h-evolve --insight-id <id>` (proposal only); `--apply` to commit after human OK |
 | "I genuinely can't disambiguate intent semantically" | dispatch `triage-reviewer` Haiku sub-agent explicitly |
 
 `@vibe`/`@patch`/`@quickfix` on a prompt containing HIGH-sensitivity keywords (auth/mutating DDL/migration/secret/lifecycle/policy/routing files) → emit `[Probe Override]` audit block per [policy.md](policy.md#probe-override) before acting.

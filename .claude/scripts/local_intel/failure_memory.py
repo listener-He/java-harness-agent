@@ -48,6 +48,13 @@ MEMORY_PATH = str(_REPO_ROOT / ".claude" / "runs" / "local_intel" / "failure_mem
 MAX_RECORDS = 500
 INCIDENTS_DIR = str(_REPO_ROOT / ".claude" / "wiki" / "incidents")
 
+# Rotation thresholds. Either condition tripping pre-save → rotate.
+# File-size cap is the primary brake (5MB ≈ ~10k records of typical size).
+# Age-cap targets the "30d window summary" use case: anything older than 90d
+# is highly unlikely to inform future-decision and just pollutes file.
+ROTATE_SIZE_BYTES = 5 * 1024 * 1024
+ROTATE_OLDEST_DAYS = 90
+
 # Anti-Petrification lint (T3.1): refuse to record patterns that assert a
 # negative tool/state without describing a fix. Per
 # `wal-documentation-rules` §4: negative states decay (the tool may be
@@ -95,9 +102,55 @@ def _load() -> dict:
         return {"failures": [], "successes": []}
 
 
+def _should_rotate() -> bool:
+    """Rotate if file > 5MB OR oldest record > 90d."""
+    if not os.path.exists(MEMORY_PATH):
+        return False
+    try:
+        if os.path.getsize(MEMORY_PATH) > ROTATE_SIZE_BYTES:
+            return True
+    except OSError:
+        return False
+    # Cheap age check: look at first failure entry's ts
+    try:
+        with open(MEMORY_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        items = (data.get("failures") or []) + (data.get("successes") or [])
+        if not items:
+            return False
+        oldest_ts = min((it.get("ts", "") for it in items if it.get("ts")), default="")
+        if not oldest_ts:
+            return False
+        oldest = datetime.fromisoformat(oldest_ts[:19])
+        if (datetime.now() - oldest).days > ROTATE_OLDEST_DAYS:
+            return True
+    except Exception:
+        return False
+    return False
+
+
+def _rotate() -> None:
+    """Rename failure_memory.json → failure_memory.<YYYY-MM-DD>[.N].json."""
+    if not os.path.exists(MEMORY_PATH):
+        return
+    base = MEMORY_PATH[:-5]  # strip ".json"
+    date = datetime.now().strftime("%Y-%m-%d")
+    target = f"{base}.{date}.json"
+    n = 0
+    while os.path.exists(target):
+        n += 1
+        target = f"{base}.{date}.{n}.json"
+    try:
+        os.rename(MEMORY_PATH, target)
+    except OSError:
+        pass
+
+
 def _save(data: dict) -> None:
     os.makedirs(os.path.dirname(MEMORY_PATH), exist_ok=True)
-    # FIFO eviction per category
+    if _should_rotate():
+        _rotate()
+    # FIFO eviction per category (post-rotate: fresh file gets caps applied)
     for key in ("failures", "successes"):
         if len(data.get(key, [])) > MAX_RECORDS:
             data[key] = data[key][-MAX_RECORDS:]

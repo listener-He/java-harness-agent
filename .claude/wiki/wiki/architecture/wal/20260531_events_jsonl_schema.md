@@ -90,6 +90,15 @@ origin: human-design
 | `active_task_brief` | string | — | active task_brief 路径 |
 | `in_progress_slugs` | list[string] | — | launch_spec 中 IN_PROGRESS 的 slug 列表 |
 
+### `env_bypass` — 用户/agent 用 env var 绕过 hook 阻断
+| 字段 | 类型 | 必有 | 说明 |
+|---|---|---|---|
+| `env_var` | string | ✓ | env var 名 (e.g., `CLAUDE_SECRETS_BYPASS`, `CLAUDE_SCOPE_GUARD_BYPASS`) |
+| `hook` | string | ✓ | 受影响的 hook 名 (e.g., `pre_tool_use_hook`) |
+| `file_path` | string | — | 当时编辑的目标文件（如适用） |
+
+由 pre_tool_use_hook 在 main() 开头检测 env 时 emit。`override_drift` insight detector 消费。
+
 ## 字段命名约定
 
 - 蛇形：`file_path`, `dirty_files`, `session_id`

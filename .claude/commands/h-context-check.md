@@ -1,6 +1,6 @@
 ---
-description: Pull-model context probe — recent events + recurring failures + active task + dirty diff + sensitive-surface scan. Replaces P2-removed [triage-evidence] / [failure-memory] auto-injection. TRIGGER: phase start / 不确定状态 / 进入未知领域. NOT FOR: every prompt (this is on-demand, not push).
-argument-hint: [--prompt "<text>"] [--brief-only] [--no-events]
+description: Pull-model context probe — recent events + recurring failures + active task + dirty diff + sensitive-surface scan + active insights. Replaces P2-removed [triage-evidence] / [failure-memory] auto-injection. TRIGGER: phase start / 不确定状态 / 进入未知领域. NOT FOR: every prompt (this is on-demand, not push).
+argument-hint: [--prompt "<text>"] [--brief-only] [--no-events] [--no-insights]
 ---
 
 Run when you (the main agent) need a quick situational read **before** deciding profile / scope / next action. Hooks no longer push context blocks since P2; this command is the canonical pull entry.
@@ -16,16 +16,18 @@ Aggregates 5 cheap data sources, formats a single readable block:
 | `find_active_task_brief.py` + `launch_spec_*.md` | Current task identity / phase / status |
 | `git diff --name-only` | Uncommitted change set |
 | `triage_probe.py --json` (only if `--prompt` provided) | Per-prompt evidence: keywords / blast / ambiguity / intent class |
+| `insight_detector.py --write` + `insight_writer.py query` | Active high/medium insights (recurring failures, co-edit clusters, decayed knowledge, override drift) |
 
-All inputs are reads. The command writes nothing.
+All inputs are reads. The command writes nothing **except** insights.jsonl gets appended by `insight_detector --write` (dedup ensures no duplicates). Insight detection is part of the pull cycle — runs every time you call /h-context-check so insights stay fresh.
 
 ## Step 1 — Parse args
 
 | Arg | Effect |
 |---|---|
 | `--prompt "<text>"` | Also run triage_probe on this prompt for keyword + intent evidence |
-| `--brief-only` | Skip events + failures + git; only show active brief + phase. Fastest, smallest output. |
+| `--brief-only` | Skip events + failures + git + insights; only show active brief + phase. Fastest, smallest output. |
 | `--no-events` | Skip events_query (use when events.jsonl unavailable or very large) |
+| `--no-insights` | Skip insight_detector + insight_writer query |
 
 Defaults: all sources, no triage_probe.
 
@@ -48,6 +50,10 @@ git diff --name-only | head -20
 
 # Per-prompt evidence (if --prompt)
 echo "$PROMPT_TEXT" | python3 .claude/scripts/local_intel/triage_probe.py --json
+
+# Insights (unless --no-insights): detect fresh, then query top active
+python3 .claude/scripts/local_intel/insight_detector.py --write
+python3 .claude/scripts/local_intel/insight_writer.py query --top 5 --min-confidence medium
 ```
 
 ## Step 3 — Format the output block
@@ -81,6 +87,13 @@ intent_class: <CHANGE | RESEARCH | OTHER>
 profile_hint: <advisory>
 keywords_observed: <comma-list or "none">
 ambiguity: <OK | WARN | FAIL>
+
+== Active Insights (last 5, status ∈ {new, acknowledged}, confidence ≥ medium) ==
+- [<conf>] id=<id> status=<status>
+    <summary>
+    → <suggested_action>
+- ...
+(or "none")
 
 == Suggested Next Action ==
 <one line — what you'd most logically do given the above>

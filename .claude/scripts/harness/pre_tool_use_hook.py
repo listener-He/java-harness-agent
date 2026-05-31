@@ -88,9 +88,31 @@ def _secrets_precheck(file_path: str, content: str) -> tuple[int, str]:
     return proc.returncode, (proc.stdout or "")
 
 
+def _emit_bypass(env_var: str, file_path: str) -> None:
+    """Record env-bypass usage for the override_drift insight detector."""
+    if str(_LOCAL_INTEL_DIR) not in sys.path:
+        sys.path.insert(0, str(_LOCAL_INTEL_DIR))
+    try:
+        import event_writer  # noqa: E402
+        event_writer.append(
+            "env_bypass",
+            env_var=env_var,
+            hook="pre_tool_use_hook",
+            file_path=file_path,
+        )
+    except Exception:
+        pass
+
+
 def main() -> int:
     # Legacy bypass — kept for backward compat. Skips the entire hook.
     if os.environ.get("CLAUDE_SCOPE_GUARD_BYPASS") == "1":
+        # Capture file_path even when fully bypassed so drift detector knows context.
+        try:
+            payload_fp = (json.load(sys.stdin).get("tool_input") or {}).get("file_path", "")
+        except Exception:
+            payload_fp = ""
+        _emit_bypass("CLAUDE_SCOPE_GUARD_BYPASS", payload_fp)
         return 0
 
     file_path, content, tool_name = _read_payload()
@@ -100,6 +122,7 @@ def main() -> int:
     # Secrets bypass — new emergency escape for the secrets gate specifically.
     if os.environ.get("CLAUDE_SECRETS_BYPASS") == "1":
         _emit_event(file_path, tool_name, secrets_check="SKIP_BYPASS", blocked=False)
+        _emit_bypass("CLAUDE_SECRETS_BYPASS", file_path)
         return 0
 
     rc, gate_out = _secrets_precheck(file_path, content)
